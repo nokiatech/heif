@@ -1,2 +1,2 @@
 # heif
-High Efficiency Image File Format
+High Efficiency Image File Format Implementation
