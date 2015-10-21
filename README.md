@@ -28,5 +28,5 @@ This repository contains the following items:
 Please see LICENSE file for the terms of use of the contents of this repository.
 For more information/questions/source code related issues, please contact: <heif@nokia.com>
 
-##**Copyright (c) 2015, Nokia Technologies Ltd.**
-##**All rights reserved.**
+###**Copyright (c) 2015, Nokia Technologies Ltd.**
+###**All rights reserved.**
