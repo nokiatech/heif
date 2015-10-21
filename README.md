@@ -2,7 +2,7 @@
 HEIF is a visual media container format standardized by the Moving Picture Experts Group (MPEG) for storage and sharing of images and image sequences. It is based on the well-known ISO Base Media File Format (ISOBMFF) standard. HEIF Reader/Writer Engine is an implementation of HEIF standard in order to demonstrate its powerful features and capabilities.
 
 Please follow this **[link](https://nokiatech.github.io/heif)** to access HEIF Web-Site. 
-You can also check the Wiki pages for more information.
+You can also check the **[Wiki] (https://github.com/nokiatech/heif/wiki)** pages for more information.
 
 ## Features:
 HEIF is a media container format. It is not an image or video encoder per se. Hence, the quality of the visual media depends highly on the proper usage of visual media encoder (e.g. HEVC). Current standard allows containing High Efficiency Video Codec (HEVC, H.265) encoded bitstreams. This can be easily extended to future visual media codecs. It has many powerful features which are currently not present in other image file formats. Some of these features are:
