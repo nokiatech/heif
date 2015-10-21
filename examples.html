@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<!--
+// Copyright (c) 2015-2017, Nokia Technologies Ltd.
+// All rights reserved.
+//
+// Licensed under the Nokia High-Efficiency Image File Format (HEIF)
+// License (the "License").
+//
+// You may not use the High-Efficiency Image File Format except in
+// compliance with the License.
+// The License accompanies the software and can be found in the file
+// "LICENSE.TXT".
+//
+// You may also obtain the License at:
+// https://nokiatech.github.io/heif/license.txt
+//
+-->
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="HEIF example gallery to demonstrate storage of still images, image bursts, animations, derived images, and non-destructive image processing.">
+        <meta name="keywords" content="High Efficiency Image File, High Efficiency Video Coding, HEVC, HEIF, HEIC, MP4, ISOBMFF, MPEG, ISO Base Media File Format, Image Format, Image burst, animation format, derived images, non-destructive image processing, Nokia Technologies, HEIF source code">
+
+        <title>HEIF Example Images - High Efficiency Image File Format</title>
+
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+        <link href="css/bootstrap.min.css" rel="stylesheet" type='text/css'>
+        <link href="css/styles.css" rel="stylesheet" type='text/css'>
+        <script src="lib/jquery.min.js"></script>
+        <script src="lib/handlebars-v4.0.2.js"></script>
+        <script src="js/libde265-selector.js"></script>
+        <script src="js/heif-api.js"></script>
+        <script src="js/heif-extension.js"></script>
+        <script src="js/hevc-decoder.js"></script>
+        <script src="js/image-provider.js"></script>
+        <script src="js/examples.js"></script>
+        <script src="js/footer.js"></script>
+    </head>
+    <body id="body">
+        <script id="burst-template" type="text/x-handlebars-template">
+            <table>
+                <tbody>
+                    <tr>
+                        <td colspan="{{mainCanvasColSpan}}">
+                            <canvas id="heif-burst-main-canvas"></canvas>
+                        </td>
+                    </tr>
+                    <tr>
+                    {{#canvases}}
+                        <td id="{{canvasId}}"></td>
+                    {{/canvases}}
+                    </tr>
+                </tbody>
+            </table>
+        </script>
+        <div class="heif-nav-container">
+            <nav class="heif-nav">
+                <div class="row center-block">
+                    <div class="col-sm-12 col-md-4">
+                        <a href="index.html">
+                            <div class="heif-nav-title">
+                                <div class="heif-nav-title-big">HEIF</div>
+                                <div class="heif-nav-title-small">Image Format</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-sm-12 col-md-8">
+                        <a href="examples.html">
+                            <div class="heif-nav-item heif-nav-item-selected">
+                                EXAMPLES
+                            </div>
+                        </a>
+                        <a href="comparison.html">
+                            <div class="heif-nav-item">
+                                COMPARE
+                            </div>
+                        </a>
+                        <a href="technical.html">
+                            <div class="heif-nav-item">
+                                TECHNICAL INFO
+                            </div>
+                        </a>
+                        <a href="news.html">
+                            <div class="heif-nav-item">
+                                NEWS
+                            </div>
+                        </a>
+                        <a href="#download">
+                            <div class="heif-nav-item">
+                                DOWNLOAD
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="heif-examples-container">
+            <div class="heif-examples-message-container">
+			    <p><center><b><font color="darkblue">All the example files in this page are under copyright © Nokia Technologies 2017</font></center></b></p>
+                <h4>HEIF files can store:</h4>
+                <ul>
+                    <li>Still Images, their thumbnails and related metadata such as EXIF or XMP information</li>
+                </ul>
+                <ul>
+                    <li>Image Collections, their thumbnails and related metadata such as EXIF or XMP information</li>
+                </ul>
+                <ul>
+                    <li>Image sequences such as cinemagraphs or image bursts and related metadata</li>
+                </ul>
+                <ul>
+                    <li>Unprocessed image and processed images in the same file with proper labelling and referencing</li>
+                </ul>
+                <ul>
+                    <li>Image derivation information such as rotation, overlay and grid view along with the images, so that different image derivations can make use of the same image data set</li>
+                </ul>
+                <ul>
+                    <li>Auxiliary image data such as depth map and alpha channel along with the images</li>
+                </ul>
+                <ul>
+                    <li>Audio tracks and cover images along with still images and image sequences</li>
+                </ul>
+
+                HEIF files also inherit many properties of ISOBMFF such as edit lists, media alternatives, media data groupings. Moreover, an MP4 file can be “branded” so that it can also contain images and image sequences as well as video and audio (i.e. dual branding)
+            </div>
+            <div class="heif-examples-message-container">
+                <h2>Still images</h2>
+                <p>Each file contains a high quality still image and its thumbnail:</p>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="still-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="still-2">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="still-3">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="still-4">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="still-5">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="still-6">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="still-7">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="still-8">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="still-9">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="heif-examples-message-container">
+                <h2>Image collections</h2>
+                <p>Each file contains multiple still images, just like an album or collection:</p>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="collection-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="collection-2">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="heif-examples-message-container">
+                <h2>Image bursts</h2>
+                <p>Each file contains a short video, thumbnails of each frame in the video and high quality version
+                   of the “selected best shots” from an image burst.</p>
+                <p>The files are represented in two different modes: 1. Burst images, 2. Video and HD quality images:</p>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="burst-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="burst-2">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="burst-3">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="burst-4">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="heif-examples-message-container">
+                <h2>Image sequences</h2>
+                <p>Sequence of images can be stored just like Cinemagraphs or Animated GIFs:</p>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="sequence-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="sequence-2">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="heif-examples-message-container">
+                <h2>Image Derivations</h2>
+                <p>Each file contains derived image information which is composed of other images present in the file.<br>
+                    Such a design drastically increases storage and representation efficiency.<br>
+                    The following HEIF files contain Grid and Overlay derived Image examples and they are marked as the “cover images” of the files:</p>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="grid-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="overlay-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="heif-examples-message-container">
+                <h2>Auxiliary Image Storage</h2>
+                <p>It is also possible to store helper images such as an alpha mask or depth map along with the original image.<br>
+                    The following example contains a derived image composed of two overlays and one of the images contain a gradient alpha mask to provide gradual transparency:</p>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="alpha-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="heif-examples-modal-backdrop" id="heif-examples-modal-backdrop"></div>
+        <div class="heif-examples-modal-window" id="heif-examples-modal-window">
+            <div class="heif-examples-modal-title" id="heif-examples-modal-title"></div>
+            <div class="heif-examples-modal-quit" id="heif-examples-modal-quit"></div>
+            <div class="heif-examples-modal-content" id="heif-examples-modal-content"></div>
+            <div class="heif-examples-modal-hint" id="heif-examples-modal-hint"></div>
+        </div>
+        <script>
+            var footer = new Footer();
+            var examples = new Examples();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,526 @@
+/* Copyright (c) 2015, Nokia Technologies Ltd.
+// All rights reserved.
+//
+// Licensed under the Nokia High-Efficiency Image File Format (HEIF)
+// License (the "License").
+//
+// You may not use the High-Efficiency Image File Format except in
+// compliance with the License.
+// The License accompanies the software and can be found in the file
+// "LICENSE.TXT".
+//
+// You may also obtain the License at:
+// https://nokiatech.github.io/heif/license.txt
+*/
+
+body {
+    font-family: 'Open Sans', sans-serif !important;
+    height: 100%;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+.heif-nav {
+    width: 95%;
+    margin-left: 5%;
+    margin-top: 1vw;
+    margin-bottom: 1vw;
+    color: #4b5f82;
+}
+
+.heif-nav .heif-nav-title-big {
+    margin-right: 10%;
+    font-weight: 600;
+    letter-spacing: 4px;
+    font-size: 40px;
+    text-align: center;
+    line-height: 40px;
+    color: #1b6f9f;
+}
+
+.heif-nav .heif-nav-title-small {
+    margin-right: 10%;
+    font-weight: 400;
+    font-size: 12px;
+    text-align: center;
+    line-height: 12px;
+    color: #1b6f9f;
+}
+
+.heif-nav .heif-nav-item {
+    float: left;
+    display: inline-block;
+    margin-right: 5%;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 52px;
+    color: #1b6f9f;
+}
+
+.heif-nav .heif-nav-item-selected {
+    color: #9ca8bb;
+}
+
+.heif-nav-container {
+    width: 100%;
+    border-bottom-style: solid;
+    border-bottom-color: #9ca8bb;
+    border-bottom-width: 1px;
+}
+
+.heif-welcome-container {
+    width: 100%;
+    position: relative;
+    color: #4b5f82;
+    text-align: center;
+    background-color: #74b7dd;
+}
+
+.heif-welcome-container canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.heif-welcome-message-container {
+    top: 30%;
+    position: absolute;
+    width: 100%;
+    font-weight: 100;
+}
+
+.heif-examples-message-big,
+.heif-welcome-message-big {
+    font-size: 4vw;
+    color: white;
+}
+
+.heif-examples-message-small,
+.heif-welcome-message-small {
+    font-size: 2vw;
+    color: white;
+}
+
+.heif-welcome-hero-technical-info {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    color: white;
+    font-size: 1.25vw;
+}
+
+.heif-about-container.row {
+    margin: 0;
+    width: 100%;
+    background-color: #74b7dd;
+}
+
+.heif-about-content,
+.heif-features-content,
+.heif-download-content
+{
+    margin-bottom: 26px;
+    padding-top: 5%;
+    padding-left: 10%;
+    color: white;
+}
+
+.heif-about-content,
+.heif-features-content
+{
+    margin-bottom: 0px;
+    padding-top: 2%;
+}
+
+.heif-about-content-title,
+.heif-features-content-title,
+.heif-download-content-title {
+    margin-bottom: 26px;
+    line-height: 38px;
+    font-size: 40px;
+}
+
+.heif-about-content-info,
+.heif-download-content-info,
+.heif-download-content-link {
+    margin-bottom: 26px;
+    line-height: 28px;
+    font-size: 20px;
+}
+
+.heif-download-container.row {
+    margin-left: 0;
+    width: 100%;
+    height: 498px;
+    background-color: #10425f;
+}
+
+.heif-features-content li,
+.heif-download-content li {
+    margin-bottom: 26px;
+    color: white;
+    font-size: 20px;
+}
+
+.heif-features-content ul,
+.heif-download-content ul {
+    padding-left: 28px;
+}
+
+.heif-features-content {
+    padding-right: 10%;
+}
+
+.heif-download-content a {
+    color: white;
+}
+
+.heif-download-content a:hover {
+    color: #74b7dd;
+}
+
+.heif-footer-container {
+    text-align: center;
+    color: white;
+    background-color: #10425f;
+    padding-bottom: 10px;
+}
+
+.heif-footer-container span {
+    display: block;
+}
+
+.heif-examples-container {
+    background-color: #faf9f9;
+    padding: 20px;
+}
+
+.heif-examples-container .row {
+    margin: 0;
+}
+
+.heif-examples-message-container {
+    margin-left: 20px;
+    padding: 0;
+}
+
+.heif-examples-container .heif-example-container {
+    height: 50vh;
+    background-color: #faf9f9;
+    padding: 20px;
+}
+
+.heif-example-container .heif-example-content {
+    background-color: grey;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    position: relative;
+    transition: opacity .1s ease-in-out;
+    box-shadow: 2px 2px 2px #888888;
+    cursor: pointer;
+}
+
+.heif-example-container .heif-example-content:hover {
+    opacity: 0.5;
+}
+
+.heif-example-content .heif-example-title {
+    font-size: 3vh;
+    font-weight: 100;
+    height: 30%;
+    width: calc(100% - 20px);
+    color: black;
+    padding: 5px 20px 5px 5px;
+    background-color: rgba(242, 250, 253, 0.4);
+    position: absolute;
+    bottom: 10px;
+    overflow: hidden;
+}
+
+.heif-example-content .heif-example-title:after {
+    content: ">";
+    position: absolute;
+    right: 10px;
+}
+
+.heif-example-content {
+    background-size: cover;
+}
+
+.heif-examples-modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: black;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+}
+
+.heif-examples-modal-backdrop.display {
+    display: block;
+}
+
+.heif-examples-modal-quit {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    width: 40px;
+    height: 40px;
+    background-image: url("../img/close-icon.png");
+    background-size: contain;
+}
+
+.heif-examples-modal-title {
+    position: absolute;
+    top: calc(80px - 2vw);
+    left: 40px;
+    font-size: 2vw;
+    color: white;
+}
+
+.heif-examples-modal-hint {
+    position: absolute;
+    top: 120px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    font-size: 2vw;
+    color: white;
+    width: 75%;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 1vw;
+}
+
+.heif-examples-modal-window {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    padding-top: 100px;
+    margin: 0;
+}
+
+.heif-examples-modal-content {
+    position: relative;
+    width: 100%;
+    padding-top: 0;
+    padding-left: 40px;
+    padding-right: 40px;
+    margin: 0;
+}
+
+.heif-examples-modal-window.display {
+    display: block;
+}
+
+.heif-technical-content h3 {
+    margin-top: 1.5em;
+}
+
+.heif-comparison-content,
+.heif-technical-content,
+.heif-news-content {
+    padding: 10px 20px 40px 40px;
+    color: black;
+    background-color: #faf9f9;
+}
+
+.heif-comparison-content canvas,
+.heif-comparison-content img {
+    width: 100%;
+}
+
+.heif-comparison-content #heif-container,
+.heif-comparison-content #gif-container {
+    position: relative;
+}
+
+.heif-comparison-content .row {
+    margin-bottom: 10px;
+}
+
+.heif-comparison-content .sequences-comparison-content {
+    position: relative;
+}
+
+.heif-comparison-content .sequences-comparison-content .sequences-comparison-image-container {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.heif-comparison-content .sequences-comparison-content .sequences-comparison-loading {
+    position: absolute;
+    text-align: center;
+    top: 50%;
+    width: 100%;
+    padding: 0;
+    font-size: 20px;
+    color: black;
+    transition: visibility 0s linear 0.5s, opacity 0.5s linear;
+}
+
+.heif-comparison-content .sequences-comparison-content p,
+.heif-image-comparison-content .heif-image-comparison-heif p,
+.heif-image-comparison-content .heif-image-comparison-jpg p,
+.heif-image-comparison-content-crop .heif-image-comparison-heif p,
+.heif-image-comparison-content-crop .heif-image-comparison-jpg p {
+    position: absolute;
+    bottom: 5px;
+    left: 20px;
+    margin: 0;
+    padding: 0;
+    color: white;
+    font-size: 1.5vw;
+}
+
+.heif-image-comparison-content .heif-image-comparison-heif p,
+.heif-image-comparison-content .heif-image-comparison-jpg p,
+.heif-image-comparison-content-crop .heif-image-comparison-heif p,
+.heif-image-comparison-content-crop .heif-image-comparison-jpg p {
+    top: 5px;
+    bottom: 0;
+}
+
+.heif-image-comparison-content-crop {
+    position: relative;
+    margin-bottom: 40px;
+}
+
+.heif-image-comparison-heif,
+.heif-image-comparison-jpg {
+    position: relative;
+}
+
+.heif-image-comparison-heif img,
+.heif-image-comparison-heif canvas {
+    width: 100%;
+}
+
+.heif-image-comparison-separator {
+    width: 100%;
+    margin-bottom: 64px;
+}
+
+.heif-image-comparison-jpg {
+    position: relative;
+}
+
+.heif-image-comparison-crop-window {
+    border-color: red;
+    border-style: solid;
+    border-width: 1px;
+    position: absolute;
+}
+
+table, th, td {
+    border-style: solid;
+    border-width: 1px;
+}
+
+table {
+    width: 100%;
+}
+
+th, td {
+    padding: 2px;
+}
+
+.heif-tr-subtitle {
+    background-color: #dddddd;
+}
+
+.heif-technical-image {
+    width: 30%;
+    display: block;
+    margin: 40px auto 10px auto;
+    text-align: center;
+}
+
+.heif-image-caption {
+    width: 30%;
+    display: block;
+    margin: 20px auto 40px auto;
+    text-align: center;
+}
+
+.heif-news-content .heif-news-item {
+    margin-top: 1.5em;
+}
+
+.heif-news-date {
+    display: block;
+    font-size: 10px;
+}
+
+.heif-news-title {
+    display: block;
+    font-size: 20px;
+}
+
+.heif-news-body {
+    display: block;
+}
+
+#heic-image {
+    width: 100%;
+    height: auto;
+}
+
+#heic-image.heif-fixed-512px {
+    max-width: 512px;
+    margin-left: calc(50% - 256px);
+}
+
+div.heif-fixed-512px {
+    max-width: 512px;
+}
+
+.heif-burst-thumbnail-canvas-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    padding-left: 40px;
+    padding-right: 40px;
+}
+
+.heif-burst-thumbnail-canvas-container table,
+.heif-burst-thumbnail-canvas-container td,
+.heif-burst-thumbnail-canvas-container tr {
+    border: 0;
+    padding: 0;
+}
+
+.heif-burst-thumbnail-canvas-container td {
+    vertical-align: bottom;
+}
+
+.heif-burst-thumbnail-canvas {
+    width: 100%;
+    cursor: pointer;
+}
+
+.heif-burst-video {
+    position: absolute;
+    right: 40px;
+    top: 0;
+    width: 30%;
+    height: auto;
+    z-index: 1001;
+}
+
+#heif-burst-main-canvas {
+    width: 100%;
+    height: auto;
+}
+

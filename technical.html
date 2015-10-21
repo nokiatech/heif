@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+
+<!--
+// Copyright (c) 2015, Nokia Technologies Ltd.
+// All rights reserved.
+//
+// Licensed under the Nokia High-Efficiency Image File Format (HEIF)
+// License (the "License").
+//
+// You may not use the High-Efficiency Image File Format except in
+// compliance with the License.
+// The License accompanies the software and can be found in the file
+// "LICENSE.TXT".
+//
+// You may also obtain the License at:
+// https://nokiatech.github.io/heif/license.txt
+//
+-->
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="High Efficiency Image File Format (HEIF, ISO/IEC 23008-12) specifies the storage of individual images,
+            image sequences and their metadata into a container file conforming to the ISO Base Media File Format (ISO/IEC 14496-12).">
+        <meta name="keywords" content="High Efficiency Image File, High Efficiency Video Coding, HEVC, HEIF, HEIC, MP4, ISOBMFF, MPEG, ISO Base Media File Format, Image Format, Image burst, animation format, derived images, non-destructive image processing, Nokia Technologies, HEIF source code">
+
+        <title>HEIF Technical Information - High Efficiency Image File Format</title>
+
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+        <link href="css/bootstrap.min.css" rel="stylesheet" type='text/css'>
+        <link href="css/styles.css" rel="stylesheet" type='text/css'>
+
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <script src="js/footer.js"></script>
+    </head>
+    <body>
+        <div class="heif-nav-container">
+            <nav class="heif-nav">
+                <div class="row center-block">
+                    <div class="col-sm-12 col-md-4">
+                        <a href="index.html">
+                            <div class="heif-nav-title">
+                                <div class="heif-nav-title-big">HEIF</div>
+                                <div class="heif-nav-title-small">Image Format</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="col-sm-12 col-md-8">
+                        <a href="examples.html">
+                            <div class="heif-nav-item">
+                                EXAMPLES
+                            </div>
+                        </a>
+                        <a href="comparison.html">
+                            <div class="heif-nav-item">
+                                COMPARE
+                            </div>
+                        </a>
+                        <a href="technical.html">
+                            <div class="heif-nav-item heif-nav-item-selected">
+                                TECHNICAL INFO
+                            </div>
+                        </a>
+                        <a href="news.html">
+                            <div class="heif-nav-item">
+                                NEWS
+                            </div>
+                        </a>
+                        <a href="#download">
+                            <div class="heif-nav-item">
+                                DOWNLOAD
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="heif-technical-content">
+            <h2>Technical information</h2>
+            <h3>Introduction</h3>
+            <p>
+            High Efficiency Image File Format (HEIF, ISO/IEC 23008-12) specifies the storage of individual images,
+            image sequences and their metadata into a container file conforming to the ISO Base Media File Format
+            (ISO/IEC 14496-12). HEIF includes the storage specification of HEVC intra images and HEVC image
+            sequences in which inter prediction is applied in a constrained manner. Use cases supported by HEIF
+            include:
+                <ul>
+                    <li>Storage of still images as well as collection of images in a single container file,</li>
+                    <li>Storage of burst photos,</li>
+                    <li>Storage and efficient representation of video animations and cinemagraphs.</li>
+                    <li>Support for simultaneous capture of video and still images, i.e. storing still images and timed image sequences into the same file.</li>
+                    <li>Storage of images derived from other images of the file, either as derived images represented
+                    by non-destructive image editing operations or as pre-computed derived images.</li>
+                    <li>Storage of focal and exposure stacks into the same container file.</li>
+                    <li>Support for storing other media, such as audio and timed text, into the same container file with
+                    timed image sequences and synchronizing their playback.</li>
+                </ul>
+            </p>
+            <p>
+                As HEVC provides support for various chroma formats and sample fidelities up to lossless coding, the
+                format can serve the whole spectrum of use cases from today's consumer devices storing images
+                typically at 8 bits per sample to high-end professional devices with sample fidelity and dynamic range
+                requirements going all the way up to 16 bits per sample.
+            </p>
+
+            <p>
+                Computational photography forms a new category of use cases that can benefit from the HEIF file
+                format. Now a set of related images can be stored in a single file with associated metadata indicating
+                relationships between different pictures.
+            </p>
+
+            <p>
+                HEIF specifies a structural format, from which codec-specific image formats can be derived. HEIF also
+                includes the specification for encapsulating images and image sequences conforming to the High
+                Efficiency Video Coding (HEVC, ISO/IEC 23008-2 | ITU-T Rec. H.265).
+            </p>
+
+            <p>
+                In ISOBMFF, a continuous or timed media or metadata stream forms a track, whereas static media or
+                metadata is stored as items. Consequently, HEIF has the following basic design:
+                <ul>
+                    <li>
+                        1. Still images are stored as items. All image items are independently coded and do not depend on
+                        any other item in their decoding. Any number of image items can be included in the same file.
+                    </li>
+                    <li>
+                        2. Image sequences are stored as tracks. An image sequence track can be indicated to be displayed
+                        either as a timed sequence or in a non-timed manner, such as a gallery of images. An image
+                        sequence track may be used instead of image items when there is coding dependency between
+                        images.
+                    </li>
+                </ul>
+            </p>
+
+            <p>
+                A file may contain both image items and image sequence tracks along with other media. For example, it
+                is possible to create a file, which includes image items or image sequence tracks conforming to HEIF, and
+                audio and timed text tracks conforming to any derivative format of the ISOBMFF.
+            </p>
+
+            <p>
+                <img class="heif-technical-image" src="img/isobmff.png"/>
+                <b><span class="heif-image-caption">Image I. ISOBMFF compliant file high level structure with meta box and items</span></b>
+            </p>
+
+            <p>
+                Files conforming to ISOBMFF consist of a sequence of data structures called boxes, each containing a
+                four-character code (4CC) indicating the type of the box, the size of the box in terms of bytes, and the
+                payload of the box. Boxes may be nested, i.e. a box may contain other boxes. ISOBMFF and HEIF specify
+                constraints on the allowed box order and hierarchy.
+            </p>
+
+            <h3>HEIF Related Brands and MIME Types</h3>
+
+            <p>
+                Files conforming to HEIF start with a FileTypeBox as defined in the ISOBMFF standard, which contains a
+                list of brands the file complies with. As the FileTypeBox is located at the start of the file, it provides
+                easily accessible indications of the file contents to media players. Each brand is identified by its unique
+                four-character code. The specification of a brand can include requirements and constraints for files of
+                the brand and for file players supporting the brand. A brand included in the FileTypeBox permits a player
+                that supports the requirements of the brand to play the file.
+            </p>
+
+            <p>
+                The brands specified in the HEIF standard are presented in Table I. The HEIF standard specifies the 'mif1'
+                and 'msf1' structural brands. Additionally, HEVC-specific brands are specified as listed in Table I. The
+                dedicated brand names, 'heic' and 'hevc' indicates that HEVC Main Profile is utilized.
+            </p>
+
+            <p>
+                <b>Table I. Brands, MIME subtypes, and file extensions for HEIF.</b>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>
+                            Brand
+                        </th>
+                        <th>
+                            Coding format
+                        </th>
+                        <th>
+                            Image or sequence?
+                        </th>
+                        <th>
+                            MIME Type
+                        </th>
+                        <th>
+                            MIME subtype
+                        </th>
+                        <th>
+                            File extension
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>
+                            mif1
+                        </td>
+                        <td>
+                            Any
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heif
+                        </td>
+                        <td>
+                            .heif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            msf1
+                        </td>
+                        <td>
+                            Any
+                        </td>
+                        <td>
+                            sequence
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heif-sequence
+                        </td>
+                        <td>
+                            .heif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            heic
+                        </td>
+                        <td>
+                            HEVC (Main or Main Still Picture profile)
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heic
+                        </td>
+                        <td>
+                            .heic
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            heix
+                        </td>
+                        <td>
+                            HEVC (Main 10 or format range extensions profile)
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heic
+                        </td>
+                        <td>
+                            .heic
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            hevc
+                        </td>
+                        <td>
+                            HEVC (Main or Main Still Picture profile)
+                        </td>
+                        <td>
+                            sequence
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heic-sequence
+                        </td>
+                        <td>
+                            .heic
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            hevx
+                        </td>
+                        <td>
+                            HEVC (Main 10 or format range extensions profile)
+                        </td>
+                        <td>
+                            sequence
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heic-sequence
+                        </td>
+                        <td>
+                            .heic
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </p>
+
+            <p>
+                Internet media types, also known as MIME (Multipurpose Internet Mail Extensions) types, are used by
+                various applications to identify the type of a resource or a file. MIME types consist of a media type
+                ('image' in the case of HEIF files), a subtype, and zero or more optional parameters. For multi-purpose
+                files, the selection of the subtype can be made on the basis of the primary use of the file.
+            </p>
+            <p>
+                An optional codecs MIME parameter can be present to indicate the used coding formats of the tracks
+                and items present in the file. The codecs MIME parameter also includes the profile-tier-level value to
+                which an HEVC-coded image item or an image sequence track conforms. More information about the
+                MIME type registration and optional parameter can be found in Annex D and Annex E of the HEIF
+                standard.
+            </p>
+
+            <h3>Comparison to other Image Formats</h3>
+            <p>
+                Table IX provides a comparison of the features of HEIF to other
+                selected image formats. It can be observed that HEIF is more extensible and comprehensive than the
+                other compared file formats. Particularly the possibility to include other media types, the advanced
+                multi-picture features, and the support for non-destructive editing make HEIF more advanced than the
+                other formats. The rich set of features make HEIF suitable for a broad range of devices and applications,
+                including for example burst photography.
+            </p>
+            <p>
+                The references used to conclude the information in Table II are included in Table X.
+            </p>
+
+            <a name="table-2"></a>
+            <p>
+                <b>Table II. Comparison of the features of some image file formats.</b>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                            </th>
+                            <th>
+                                .heic
+                            </th>
+                            <th>
+                                JPEG/Exif
+                            </th>
+                            <th>
+                                PNG
+                            </th>
+                            <th>
+                                GIF (89a)
+                            </th>
+                            <th>
+                                WebP
+                            </th>
+                            <th>
+                                JPEG-XR / TIFF
+                            </th>
+                            <th>
+                                JPEG-XR / JPX
+                            </th>
+                            <th>
+                                BPG
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="heif-tr-subtitle">
+                            <td>
+                                <b>Formats and extensibility</b>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Base container file format
+                            </td>
+                            <td>
+                                ISOBMFF
+                            </td>
+                            <td>
+                                TIFF
+                            </td>
+                            <td>
+                                -
+                            </td>
+                            <td>
+                                -
+                            </td>
+                            <td>
+                                RIFF
+                            </td>
+                            <td>
+                                TIFF
+                            </td>
+                            <td>
+                                - <sup>4</sup>
+                            </td>
+                            <td>
+                                -
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Lossy compression
+                            </td>
+                            <td>
+                                Yes (HEVC)
+                            </td>
+                            <td>
+                                Yes (JPEG)
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes (VP8)
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes (HEVC<sup>10</sup>)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Lossless compression
+                            </td>
+                            <td>
+                                Yes (HEVC)
+                            </td>
+                            <td>
+                                Yes (TIFF Rev 6.0)
+                            </td>
+                            <td>
+                                Yes (PNG)<sup>1</sup>
+                            </td>
+                            <td>
+                                Yes (GIF)<sup>1</sup>
+                            </td>
+                            <td>
+                                Yes (VP8L)
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes (HEVC<sup>10</sup>)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Extensible to other coding formats
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes<sup>8</sup>
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes<sup>8</sup>
+                            </td>
+                            <td>
+                                Yes<sup>5</sup>
+                            </td>
+                            <td>
+                                No
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Metadata format (on top of internal)
+                            </td>
+                            <td>
+                                Exif, XMP, MPEG-7
+                            </td>
+                            <td>
+                                Exif
+                            </td>
+                            <td>
+                                -
+                            </td>
+                            <td>
+                                -
+                            </td>
+                            <td>
+                                Exif, XMP
+                            </td>
+                            <td>
+                                Exif, XMP
+                            </td>
+                            <td>
+                                JPX, (XMP)<sup>6</sup>
+                            </td>
+                            <td>
+                                Exif, XMP
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Extensible to other metadata formats
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes (XML-based)
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Other media types (audio, text, etc.)
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Audio<sup>2</sup>
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes<sup>7</sup>
+                            </td>
+                            <td>
+                                No
+                            </td>
+                        </tr>
+                        <tr class="heif-tr-subtitle">
+                            <td>
+                                <b>Multi-picture features</b>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Multiple images in the same file
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No<sup>11</sup>
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes<sup>3</sup>
+                            </td>
+                            <td>
+                                Yes<sup>3</sup>
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes<sup>9</sup>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Image sequences / animations
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Image coding
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                        </tr>
+                        <tr class="heif-tr-subtitle">
+                            <td>
+                                <b>Derived images</b>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Multiple-of-90-degree rotations
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Cropping
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Tiling/overlaying
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Extensible to other editing operations
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                        </tr>
+                        <tr class="heif-tr-subtitle">
+                            <td>
+                                <b>Auxiliary picture information</b>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Transparency (alpha plane)
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No<sup>12</sup>
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Thumbnail image
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                No
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                            <td>
+                                Yes
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+            <p>
+                <sup>1</sup> In GIF and indexed color PNG encoding, lossy color quantization is applied while the color-quantized image is losslessly compressed.<br>
+                <sup>2</sup> PCM, µ-Law PCM and ADPCM encapsulated in RIFF WAV<br>
+                <sup>3</sup> Only for animations and tiling/overlaying<br>
+                <sup>4</sup> JPX is a box-structured format compatible with ISOBMFF. However, only the File Type box is common in JPX and ISOBMFF.<br>
+                <sup>5</sup> Encapsulation of JPEG-2000 and JPEG-XR have been specified for JPX container. Mappings for other codecs could be similarly specified.<br>
+                <sup>6</sup> JPX (ITU-T T.800 and T.801) specifies an own metadata schema, but is capable of carrying an XML formatted metadata, such as XMP.<br>
+                <sup>7</sup> JPX can contain media complying with ISOBMFF (or derivatives thereof). No accurate synchronization between JPX animations and other media.<br>
+                <sup>8</sup> TIFF as a container format facilitates extensions to other coding formats.<br>
+                <sup>9</sup> Only for animations, thumbnails, and alpha planes. Non-timed image collections not supported.<br>
+                <sup>10</sup> HEVC Main 4:4:4 16 Still Picture profile, Level 8.5, with additional constraints<br>
+                <sup>11</sup> Can be enabled through the MP extension<br>
+                <sup>12</sup> A palette index for fully transparency can be specified<br>
+            </p>
+            <p>
+                It is acknowledged that a summary such as that in <a href="#table-2">Table II</a> might be somewhat incomplete when it
+                comes to features of different formats. For example, the table does not cover some of the extensions of JPEG. We welcome feedback and corrections to the table.
+            </p>
+
+            <a name="table-3"></a>
+            <p>
+                <b>Table III. References for the compared image file formats</b>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Image format
+                            </th>
+                            <th>
+                                Version or date
+                            </th>
+                            <th>
+                                Reference and/or URL
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                HEIF (.heic)
+                            </td>
+                            <td>
+                                03/2015
+                            </td>
+                            <td>
+                                ISO/IEC 23008-12<br>
+                                <a href="http://mpeg.chiariglione.org/standards/mpeg-h/image-file-format/draft-text-isoiec-fdis-23008-12-carriage-still-image-and-image">http://mpeg.chiariglione.org/standards/mpeg-h/image-file-format/draft-text-isoiec-fdis-23008-12-carriage-still-image-and-image</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                JPEG
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                                ISO/IEC 10918-1 | ITU-T Rec. T.81<br>
+                                <a href="http://www.w3.org/Graphics/JPEG/itu-t81.pdf">http://www.w3.org/Graphics/JPEG/itu-t81.pdf</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Exif
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                                <a href="http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf">http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                PNG
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                                <a href="http://www.w3.org/TR/PNG/">http://www.w3.org/TR/PNG/</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                GIF
+                            </td>
+                            <td>
+                                89a
+                            </td>
+                            <td>
+                                <a href="http://www.w3.org/Graphics/GIF/spec-gif89a.txt">http://www.w3.org/Graphics/GIF/spec-gif89a.txt</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                WebP
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                                <a href="https://developers.google.com/speed/webp/docs/riff_container">https://developers.google.com/speed/webp/docs/riff_container</a><br>
+                                VP8L:<br>
+                                <a href="https://developers.google.com/speed/webp/docs/webp_lossless_bitstream_specification">https://developers.google.com/speed/webp/docs/webp_lossless_bitstream_specification</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                JPEG-XR
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                                ISO/IEC 29199-2 | ITU-T Rec. T.832<br>
+                                ISO/IEC 15444-2 | ITU-T Rec. T.801 (for JPX)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                BPG
+                            </td>
+                            <td>
+                                0.9.5
+                            </td>
+                            <td>
+                                <a href="http://bellard.org/bpg/bpg_spec.txt">http://bellard.org/bpg/bpg_spec.txt</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+            <p>
+                The file size of container files are directly affected by the compression performance of the image/video
+                codec being utilized. Such a comparison can be found in Annex B of this document.
+            </p>
+
+            <h3>Compression Performance</h3>
+            <p>
+                <a href="#table-4">Table IV</a> illustrates coding efficiency of HEVC intra coding with respect to well-known still picture codecs.
+                The results indicate that JPEG would require on average 139 % higher bitrate than HEVC
+                (i.e. 2.39 times the file size) in order to achieve the same objective picture quality. For JPEG-XR and
+                JPEG-2000 the average increase in bitrates are 66 % and 44 %, respectively.
+            </p>
+            <b>Table IV. HEVC intra coding performance with respect to legacy formats.
+               Bitrate increase required to achieve the objective quality provided by HEVC intra coding is reported
+               for each test category.</b>
+            <p>
+                <a name="table-4"></a>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Class
+                            </th>
+                            <th>
+                                Resolution
+                            </th>
+                            <th>
+                                Charasteristics
+                            </th>
+                            <th>
+                                JPEG
+                            </th>
+                            <th>
+                                JPEG XR
+                            </th>
+                            <th>
+                                JPEG 2000
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                Class A
+                            </td>
+                            <td>
+                                2560x1600
+                            </td>
+                            <td>
+                                Cropped 4Kx2K sequences for Ultra HDTV services
+                            </td>
+                            <td>
+                                87 %
+                            </td>
+                            <td>
+                                44 %
+                            </td>
+                            <td>
+                                48 %
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class B
+                            </td>
+                            <td>
+                                1920x1080
+                            </td>
+                            <td>
+                                High resolution sequences for streaming and broadcast services
+                            </td>
+                            <td>
+                                124 %
+                            </td>
+                            <td>
+                                62 %
+                            </td>
+                            <td>
+                                15 %
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class C
+                            </td>
+                            <td>
+                                832x480
+                            </td>
+                            <td>
+                                Medium resolution sequences for Internet/mobile video services
+                            </td>
+                            <td>
+                                122 %
+                            </td>
+                            <td>
+                                53 %
+                            </td>
+                            <td>
+                                50 %
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class C
+                            </td>
+                            <td>
+                                832x480
+                            </td>
+                            <td>
+                                Medium resolution sequences for Internet/mobile video services
+                            </td>
+                            <td>
+                                122 %
+                            </td>
+                            <td>
+                                53 %
+                            </td>
+                            <td>
+                                50 %
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class D
+                            </td>
+                            <td>
+                                416x240
+                            </td>
+                            <td>
+                                Low resolution sequences for services to resource constrained devices
+                            </td>
+                            <td>
+                                110 %
+                            </td>
+                            <td>
+                                47 %
+                            </td>
+                            <td>
+                                43 %
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class E
+                            </td>
+                            <td>
+                                1280x720
+                            </td>
+                            <td>
+                                720p sequences for video conferencing applications
+                            </td>
+                            <td>
+                                170 %
+                            </td>
+                            <td>
+                                73 %
+                            </td>
+                            <td>
+                                23 %
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class F
+                            </td>
+                            <td>
+                            1024x768,
+                            1280x720
+                            </td>
+                            <td>
+                                Computer screen content and computer generated content
+                            </td>
+                            <td>
+                                223 %
+                            </td>
+                            <td>
+                                118 %
+                            </td>
+                            <td>
+                                87 %
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <b>Average</b>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                                <b>139 %</b>
+                            </td>
+                            <td>
+                                <b>66 %</b>
+                            </td>
+                            <td>
+                                <b>44 %</b>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+
+            <p>
+                <a href="#table-5">Table V</a> indicate that one can expect that for natural content the restricted inter coding can typically
+                provide two to three times better compression than intra picture coding. In special cases like animations
+                where majority of the scene is static the compression efficiency can significantly exceed those levels and
+                be tens of times more efficient than intra coding.
+            </p>
+            <b>Table V. Coding efficiency improvements provided by low latency predictive coding of the HEVC Image
+               File Format. Bitrate impact and coding gain are reported with respect to HEVC intra coding.</b>
+            <p>
+                <a name="table-5"></a>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Content
+                            </th>
+                            <th>
+                                Type
+                            </th>
+                            <th>
+                                Frames
+                            </th>
+                            <th>
+                                Bitrate change
+                            </th>
+                            <th>
+                                Coding gain
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                Class A
+                            </td>
+                            <td>
+                                Image burst
+                            </td>
+                            <td>
+                                8
+                            </td>
+                            <td>
+                                -46 %
+                            </td>
+                            <td>
+                                1.9
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class B
+                            </td>
+                            <td>
+                                Image burst
+                            </td>
+                            <td>
+                                8
+                            </td>
+                            <td>
+                                -51 %
+                            </td>
+                            <td>
+                                2.0
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class C
+                            </td>
+                            <td>
+                                Image burst
+                            </td>
+                            <td>
+                                8
+                            </td>
+                            <td>
+                                -60 %
+                            </td>
+                            <td>
+                                2.5
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class D
+                            </td>
+                            <td>
+                                Image burst
+                            </td>
+                            <td>
+                                8
+                            </td>
+                            <td>
+                                -63 %
+                            </td>
+                            <td>
+                                2.7
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class E
+                            </td>
+                            <td>
+                                Image burst
+                            </td>
+                            <td>
+                                8
+                            </td>
+                            <td>
+                                -79 %
+                            </td>
+                            <td>
+                                4.8
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Class F
+                            </td>
+                            <td>
+                                Image burst
+                            </td>
+                            <td>
+                                8
+                            </td>
+                            <td>
+                                -55 %
+                            </td>
+                            <td>
+                                2.2
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Memorial
+                            </td>
+                            <td>
+                                Exposure stack
+                            </td>
+                            <td>
+                                16
+                            </td>
+                            <td>
+                                -29 %
+                            </td>
+                            <td>
+                                1.4
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Mersu
+                            </td>
+                            <td>
+                                Focal stack
+                            </td>
+                            <td>
+                                13
+                            </td>
+                            <td>
+                                -25 %
+                            </td>
+                            <td>
+                                1.3
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Car&amp;Tractor
+                            </td>
+                            <td>
+                                Cinemagraph
+                            </td>
+                            <td>
+                                48
+                            </td>
+                            <td>
+                                -97 %
+                            </td>
+                            <td>
+                                33.3
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+
+            <h3>Images in HEIF Files</h3>
+            <p>
+                Multiple images can be stored in a HEIF file. It can be useful to differentiate between them by
+                assigning them certain roles. The roles specified in HEIF are listed and described in <a href="#table-6">Table VI</a>.
+                Note that a single image can be associated with more than one role.
+            </p>
+            <a name="table-6"></a>
+            <p>
+                <b>Table VI. Roles of images.</b>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Role
+                            </th>
+                            <th>
+                                Description
+                            </th>
+                        </tr>
+                        <tr>
+                            <td>
+                                cover image
+                            </td>
+                            <td>
+                                A representative image of the image items and image sequence tracks of the file.<br>
+                                The cover image should be displayed when no other information is available on the
+                                preference to display the image items of the file. The file can have only one cover image.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                thumbnail image
+                            </td>
+                            <td>
+                                A smaller-resolution representation of a master image.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                auxiliary image
+                            </td>
+                            <td>
+                                An image that complements a master image. For example, an alpha plane or a depth map.<br>
+                                Can assist in displaying the master image but is not typically displayed as such.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                master image
+                            </td>
+                            <td>
+                                An image that is not a thumbnail image or an auxiliary image. Typically represents a
+                                full-resolution displayable image.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                hidden image
+                            </td>
+                            <td>
+                                An image that should never be displayed. Can be present in the file for example as an
+                                input image for a derived image.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                pre-derived coded image
+                            </td>
+                            <td>
+                                A coded image that has been derived from other images.<br>For example, a high dynamic
+                                range image derived from an exposure-bracketed set of images.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                coded image
+                            </td>
+                            <td>
+                                A coded representation of an image.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                derived image
+                            </td>
+                            <td>
+                                An image that is represented in a file by an indicated operation to indicated input
+                                images and can be obtained by performing the indicated operation to the indicated input
+                                images.
+                            </td>
+                        </tr>
+                    </thead>
+                </table>
+            </p>
+
+            <h3>Properties of Images</h3>
+            <p>HEIF allows the storage of image properties which are shared among different image items in a compact
+               way. These properties are stored in ItemPropertyContainerBox. There are mainly two types of properties:
+               descriptive and transformative. Descriptive properties provide information about the image item without
+               applying modifications on the image itself. Transformative properties provide information about the
+               transformative modification that needs to be done on the image item. The order of application of these
+               properties to the image items are defined in the standard. <a href="#table-7">Table VII</a> lists currently
+               defined properties. In addition to descriptive image properties, image items can optionally be
+               characterized with metadata items, the format of which follows Exif, XMP, or MPEG-7 metadata.
+            </p>
+
+            <a name="table-7"></a>
+            <p>
+                <b>Table VII. Image Properties</b>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Name
+                            </th>
+                            <th>
+                                Type
+                            </th>
+                            <th>
+                                Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                Decoder configuration and initialization
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                The information needed to initialize the decoder. The structure of this information
+                                is usually defined in the related image coding format specification.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Image spatial Extents (‘ispe’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                indicates the width and height of the associated image item
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Pixel Aspect Ratio (‘pasp’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                has the same syntax as the PixelAspectRatioBox as defined in ISO/IEC 14496-12.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Color Information (‘colr’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                has the same syntax as the ColourInformationBox as defined in ISO/IEC 14496-12.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Pixel Information (‘pixi’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                indicates the number and bit depth of colour components in the reconstructed image of the associated image item.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Relative Location (‘rloc’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                indicates the horizontal and vertical offset of the reconstructed image item relative to the associated image item.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Image Properties for Auxiliary Images (‘auxC’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Auxiliary images must be associated with an AuxiliaryTypeProperty.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Image Rotation (‘irot’)
+                            </td>
+                            <td>
+                                Transformative
+                            </td>
+                            <td>
+                                Rotation by 90, 180, or 270 degrees.
+
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Clean Aperture (‘clap’)
+                            </td>
+                            <td>
+                                Transformative
+                            </td>
+                            <td>
+                                Cropping according to a given cropping rectangle.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+
+            <h3>Derived Images</h3>
+            <p>
+                Derived images enable non-destructive image editing, where the original coded images are kept in the
+                file, while new images, called derived images, can be introduced by specifying a transformation operation
+                that is applied to one or more input images. HEIF specifies the generic structures used for storing
+                derived images as items as well as a few specific types of derived images. Derived images can also have
+                descriptive or transformative image properties.  Item references of type 'dimg' specify the input image(s)
+                of the derived image. The input images can be coded images or derived images. The derived image types
+                specified in the HEIF standard are listed in <a href="#table-8">Table VIII</a>. Other types may be specified
+                in other documents or later versions of the HEIF standard.
+            </p>
+
+            <a name="table-8"></a>
+            <p>
+                <b>Table VIII. Derived Images</b>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Name
+                            </th>
+                            <th>
+                                Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                Identity transformation (‘iden’)
+                            </td>
+                            <td>
+                                Cropping and/or rotation by 90, 180, or 270 degrees, imposed through the respective
+                                transformative properties.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Image Overlay (‘iovl’)
+                            </td>
+                            <td>
+                                Overlaying any number of input images in indicated order and locations onto the canvas of the output image.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Image Grid (‘grid’)
+                            </td>
+                            <td>
+                                Reconstructing a grid of input images of the same width and height.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+            <p>
+                <a href="examples.html">Here are some examples of Derived Images</a>
+            </p>
+
+            <h3>Image Metadata</h3>
+            <p>
+                HEIF files allow the storage of the metadata which can be related to images and image sequences.
+                Such metadata can be information related to integrity checks, EXIF or XMP data or MPEG-7 related
+                metadata. For image items, such metadata can be stored as a metadata item and reference the related
+                image items with a ‘cdsc’ item reference. For image sequences, timed metadata tracks can refer to an
+                image sequence track with a ‘cdsc’ track reference.
+            </p>
+
+            <h3>Indicating Alternative Representations</h3>
+
+            <p>
+                HEIF files can contain several image items representing the same image content
+                (i.e. alternative representations). A media player may select one of the alternative representations
+                of the same image content for displaying. A mechanism, known as entity grouping (defined in the
+                GroupsListBox), is used for indicating alternate groups, which can contain both image items and media
+                tracks (image sequences). The capability to define alternate groups between tracks and image items
+                provides a unique mechanism for display initialization based on preferences of the media player and the
+                content creator. Examples where alternate groups can be useful are:
+            </p>
+            <ul>
+                <li>
+                    The same original image is coded into two or more image items with different properties, such as spatial resolution, bit-depth, or color gamut.
+                </li>
+                <li>
+                    The same original image is coded into two or more image items with a different coding format or profile.
+                </li>
+                <li>
+                    A timed image sequence, such as a cinemagraph, is an alternative to an image item.
+                </li>
+            </ul>
+
+            <h3>Image sequences</h3>
+
+            <p>
+                Images that have a particular correlation (e.g. image bursts or animations like cinemagraphs) can be
+                efficiently stored in HEIF files, thanks to the inherited media track features of ISOBMFF. Such images
+                are called image sequences and they can reside in the same file with image items.
+                <a href="#table-9">Table IX</a> lists the roles of the image sequence tracks which are currently defined.
+            </p>
+
+            <a name="table-9"></a>
+            <p>
+                <b>Table IX. Roles of image sequence tracks.</b>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>
+                            Role
+                        </th>
+                        <th>
+                            Description
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>
+                            thumbnail image sequence
+                        </td>
+                        <td>
+                            A smaller-resolution representation of a master image sequence. T
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            auxiliary image sequence
+                        </td>
+                        <td>
+                            An image sequence that complements a master image sequence. For example, a sequence of
+                            alpha plane or depth map images. Can assist in displaying the master image sequence but is not typically displayed as such.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            master image sequence
+                        </td>
+                        <td>
+                            An image sequence that is not a thumbnail image sequence or an auxiliary image sequence.
+                            Typically contains full-resolution displayable images.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </p>
+
+            <p>
+                HEIF enables the usage of Inter-picture prediction for compact storage of image sequences. Moreover,
+                image sequence use cases may require faster access to individual images and the ability to edit
+                individual images without affecting any other images. HEIF therefore includes the following two features:
+            </p>
+            <ul>
+                <li>
+                    CodingConstraintsBox to indicate prediction constraints which applies to all the linked samples.
+                    For example, it can be indicated that all reference images used for inter-picture prediction are
+                    intra-coded images.
+                </li>
+                <li>
+                    DirectReferenceSamplesList to have sample-wise listing of referenced samples using the sample
+                    grouping mechanism of ISOBMFF. This feature enables decoding of only those samples that are needed
+                    for accessing a particular sample (e.g. random access) and avoids the need of sequential decoding
+                    of each sample starting from the previous intra-coded image.
+                </li>
+            </ul>
+
+            <h3>Processing of image items by file players</h3>
+            <p>
+                <a href="#figure-1">Figure 1</a> illustrates how a file player processes the coded images and the derived images included in a
+                file. The file player decodes a coded image into a reconstructed image. Similarly, the file player
+                applies the operation of the derived image to the indicated one or more input images to obtain the
+                respective reconstructed image. The descriptive image properties generally describe the reconstructed
+                image, with the exception of the decoder configuration and initialization information, which is
+                associated with the coded image. The transformative image properties, if any, are applied to the
+                reconstructed image to obtain an output image. The output image can be displayed, when the coded
+                image or the derived image is not a hidden image. The output image can also act as an input image to
+                derived images.
+            </p>
+
+            <a name="figure-1"></a>
+            <p>
+                <img class="heif-technical-image" src="img/operations.png"/>
+                <b><span class="heif-image-caption">Figure 1. Operations performed by file players</span></b>
+            </p>
+
+            <h3>HEIF File Playback Options</h3>
+            <p>
+                The most important features that enable controlling the playback of an HEIF file are listed in
+                <a href="#table-10">Table X</a>. Some of these features were introduced in the ISOBMFF or ISO/IEC 14496-15 and
+                are explicitly inherited by HEIF, while other features were specifically designed for the HEIF standard.
+            </p>
+            <a name="table-10"></a>
+            <p>
+                <b>Table X. Features controlling image sequence playback.</b>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Feature
+                            </th>
+                            <th>
+                                First appeared in
+                            </th>
+                            <th>
+                                Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                non-displayable sample
+                            </td>
+                            <td>
+                                ISO/IEC 14496-15
+                            </td>
+                            <td>
+                                Is never displayed, but can be used as a reference for predicting other images in the track.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                timed vs. non-timed playback
+                            </td>
+                            <td>
+                                HEIF
+                            </td>
+                            <td>
+                                In timed playback, the image sequence is played as video, whereas in non-timed
+                                playback the samples of the track are displayed by other means, such as an image
+                                gallery. Non-timed playback may be indicated e.g. when a track is used for achieving
+                                a better compression efficiency for an exposure stack.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                edit list
+                            </td>
+                            <td>
+                                ISOBMFF
+                            </td>
+                            <td>
+                                A list of ranges of the image sequence track in their playback order.
+                                Enables modifying the playback order and pace of samples.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                looping
+                            </td>
+                            <td>
+                                HEIF
+                            </td>
+                            <td>
+                                HEIF allows indicating edit list repetition e.g. for looping animations.
+                                The repetition can be indicated to last for a certain duration or be infinite.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                cropping and rotation
+                            </td>
+                            <td>
+                                ISOBMFF
+                            </td>
+                            <td>
+                                Rectangular cropping and rotation by 90, 180, 270 degrees can be specified.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+
+            <h3>Storing HEVC Encoded Pictures in HEIF: HEVC Image Files</h3>
+            <p>
+                The HEIF standard includes the specification for encapsulating HEVC-coded images and image sequences into HEIF-compliant files. The specification includes the following aspects:
+            </p>
+            <ul>
+                <li>
+                    The sample entry format and the sample format of HEVC image sequence tracks are identical to those of the HEVC video tracks specified in ISO/IEC 14496-15. For compatibility with HEVC-capable video players, it is therefore advisable to create both an HEVC image sequence track and an HEVC video track that refer to the same coded images. This is called a Dual-Branded File and has an insignificant impact on the file size.
+                </li>
+                <li>
+                    The format of the decoder configuration information in the HEVC configuration item property is identical to that in the sample entry format. Likewise, the item format is identical to the sample format of HEVC video and image sequence tracks. This enables having the same intra-coded image as an image item and as a sample in an HEVC image sequence or video track.
+                </li>
+                <li>
+                    The configuration information of alpha planes and depth maps follows the respective supplemental enhancement information of HEVC.
+                </li>
+            </ul>
+
+        </div>
+        <script>
+            var footer = new Footer();
+        </script>
+    </body>
+</html>
