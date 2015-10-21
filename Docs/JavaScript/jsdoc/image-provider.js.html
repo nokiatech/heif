@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: image-provider.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: image-provider.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use strict";
+
+/** Decoder for HEIF files. Glues HEIFReader and HevcDecoder together.
+ * @constructor
+ * @param {HEIFReader} heifReader HEIF file reader object to read hevc encoded data.
+ * @param {HevcDecoder} hevcDecoder HEVC decoder object to decode hevc encoded data. */
+function ImageProvider (heifReader, hevcDecoder) {
+
+    var _name = "ImageProvider";
+
+    var self = this;
+
+    this._decoderParameters = null;
+    this._heifReader = heifReader;
+    this._hevcDecoder = hevcDecoder;
+
+    function _appendBuffer(buffer1, buffer2) {
+        var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+        tmp.set(new Uint8Array(buffer1), 0);
+        tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
+        return tmp.buffer;
+    }
+
+    // **** PUBLIC API BEGINS ****
+
+    /** Payload structure returned to the caller as a callback parameter.
+     *  @constructor
+     *  @param {boolean} success True if decoding was successful.
+     *  @param {Uint8Array} frames Array of frame data.
+     *  @param {number} displayWidth Max width of all frames.
+     *  @param {number} displayHeight Max height of all frames. */
+    function Payload (success, frames, displayWidth, displayHeight) {
+        this.success = success;
+        this.frames = frames;
+        this.displayWidth = displayWidth;
+        this.displayHeight = displayHeight;
+    }
+
+    /** RequestContext is used to queue data requests and is pushed to HevcDecoder.
+     *  @constructor
+     *  @param {function} callback Called when all items (frames) are decoded. The result is passed a as parameter.
+     *  @param {Array.&lt;number>} itemIds Array of item id's to be decoded.
+     *  @param {Uint8Array} stream The data stream as Uint8Array.
+     *  @param dependencies Item id map of dependency/reference frames that are not to be displayed.
+     *  @param {Payload} payload The object returned to the caller. */
+    function RequestContext (callback, itemIds, stream, dependencies, payload) {
+        this.callback = callback;
+        this.itemIds = itemIds;
+        this.currentFrameIndex = 0;
+        this.stream = stream;
+        this.dependencies = dependencies;
+        this.payload = payload;
+    };
+
+    /** Request decoded image data for given item id's.
+     *  @param {number} contextId Id of the context.
+     *  @param {Array.&lt;number>} itemIds Array of item id's to be decoded.
+     *  @param {function} callback Callback function that receives the payload as a parameter. */
+    this.requestImageData = function (contextId, itemIds, callback) {
+
+        console.log(_name + ": REQUEST IMAGE DATA: " + itemIds);
+
+        if (itemIds.constructor !== Array) {
+            itemIds = [itemIds];
+        }
+
+        if (itemIds.length &lt; 1) {
+            return;
+        }
+
+        var stream = new Uint8Array();
+        var decodeIds = [];
+        var dependencies = {};
+        var displayDependencies = {};
+        for (var i = 0; i &lt; itemIds.length; i++) {
+            var refs = self._heifReader.getItemDecodeDependencies(contextId, itemIds[i]);
+            for (var j = 0; j &lt; refs.length; j++) {
+                if (refs[j] !== itemIds[i]) {
+                    // Add dependency data to the stream if the id is not already listed in dependencies
+                    if(!(refs[j] in dependencies) &amp;&amp; !(refs[j] in displayDependencies)) {
+                        dependencies[refs[j]] = true;
+                        stream = _appendBuffer(stream, new Uint8Array(self._heifReader.getItemDataWithDecoderParameters(contextId, refs[j])));
+                        decodeIds.push(refs[j]);
+                    }
+                } else {
+                    // Item has itself as dependency => we want to display that item despite being a dependency
+                    displayDependencies[refs[j]] = true;
+                }
+            }
+        }
+
+        // Add data of the actual items to the stream (that already contains dependency data)
+        for (i = 0; i &lt; itemIds.length; i++) {
+            stream = _appendBuffer(stream, new Uint8Array(self._heifReader.getItemDataWithDecoderParameters(contextId, itemIds[i])));
+            decodeIds.push(itemIds[i]);
+        }
+
+        var payload = new Payload(true, [], 0, 0);
+        self._hevcDecoder.pushRequestContext(new RequestContext(callback, decodeIds, stream, dependencies, payload));
+        self._hevcDecoder.decode();
+    };
+
+    this._getDisplayItems = function (fileInfo, contextId) {
+        if (fileInfo.getContextType(contextId) === "trak") {
+            return self._heifReader.getItemListByType(contextId, "display");
+        } else {
+            return self._heifReader.getItemListByType(contextId, "master");
+        }
+    };
+
+    /** A convenience method to get display height of given context.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @param {number} contextId Id of the context.
+     *  @return {number} Display height. */
+    this.getDisplayHeight = function (fileInfo, contextId) {
+        var items = self._getDisplayItems(fileInfo, contextId);
+        var maxHeight = 0;
+        for (var i = 0; i &lt; items.length; i++) {
+            var height = self._heifReader.getItemHeight(contextId, items[i]);
+            if (height > maxHeight) {
+                maxHeight = height;
+            }
+        }
+        return maxHeight;
+    };
+
+    /** A convenience method to get display width of given context.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @param {number} contextId Id of the context.
+     *  @return {number} Display width. */
+    this.getDisplayWidth = function (fileInfo, contextId) {
+        var items = self._getDisplayItems(fileInfo, contextId);
+        var maxWidth = 0;
+        for (var i = 0; i &lt; items.length; i++) {
+            var width = self._heifReader.getItemWidth(contextId, items[i]);
+            if (width > maxWidth) {
+                maxWidth = width;
+            }
+        }
+        return maxWidth;
+    };
+
+    /** A convenience function to get item id by thumbnail id.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @param {number} contextId Id of the context.
+     *  @param {number} thumbnailId Id of the thumbnail.
+     *  @return {number} Id of the corresponding item. */
+    this.getItemIdByThumbnailId = function (fileInfo, contextId, thumbnailId) {
+        // In Trak thumbnails and master images are on separate tracks with corresponding ids.
+        if (fileInfo.trackProperties &amp;&amp; fileInfo.trackProperties.length) {
+            return thumbnailId;
+        } else if (fileInfo.fileFeature.hasRootLevelMetaBox) {
+            var refs = self._heifReader.getReferencedFromItemListByType(contextId, thumbnailId, "thmb");
+            // For now, return the first id
+            if (refs &amp;&amp; refs.length) {
+                return refs[0];
+            }
+        }
+        return null;
+    };
+
+    /** A convenience method to get thumbnail context id or null.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @return {number} Thumbnail contextID or null if no thumbanails are present. */
+    this.getThumbnailContextId = function (fileInfo) {
+        if (fileInfo.trackProperties &amp;&amp; fileInfo.trackProperties.length) {
+            for (var i in fileInfo.trackProperties) {
+                if (fileInfo.trackProperties[i].trackFeature.isThumbnailImageSequence === true) {
+                    return fileInfo.trackProperties[i].trackId;
+                }
+            }
+        }
+
+        if (fileInfo.rootLevelMetaBoxProperties) {
+            if (fileInfo.rootLevelMetaBoxProperties.metaBoxFeature.hasThumbnails === true) {
+                return fileInfo.rootLevelMetaBoxProperties.contextId;
+            }
+        }
+
+        return null;
+    };
+
+    /** A convenience method to get master context id or null.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @return {number} Master contextID or null if no master context is present. */
+    this.getMasterContextId = function (fileInfo) {
+        if (fileInfo.trackProperties &amp;&amp; fileInfo.trackProperties.length) {
+            for (var i in fileInfo.trackProperties) {
+                if (fileInfo.trackProperties[i].trackFeature.isMasterImageSequence === true) {
+                    return fileInfo.trackProperties[i].trackId;
+                }
+            }
+        }
+
+        if (fileInfo.rootLevelMetaBoxProperties) {
+            return fileInfo.rootLevelMetaBoxProperties.contextId;
+        }
+
+        return null;
+    };
+
+    /** A convenience function to get thumbnail id by item id.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @param {number} contextId Id of the context.
+     *  @param {number} itemId Id of the item.
+     *  @return {number} Id of the corresponding thumbnail or null if there is no thumbnail. */
+    this.getThumbnailIdByItemId = function (fileInfo, contextId, itemId) {
+        // In Trak thumbnails and master images are on separate tracks with corresponding ids.
+        if (fileInfo.trackProperties &amp;&amp; fileInfo.trackProperties.length) {
+            return itemId;
+        } else if (fileInfo.fileFeature.hasRootLevelMetaBox) {
+            var refs = self._heifReader.getReferencedToItemListByType(contextId, itemId, "thmb");
+            // For now, return the first id
+            if (refs &amp;&amp; refs.length) {
+                return refs[0];
+            }
+        }
+        return null;
+    };
+
+    /** A convenience function to get master ids.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @return {Array.&lt;number>} Array of master item IDs. */
+    this.getMasterIds = function (fileInfo) {
+        var ids = null;
+        var masterContextId = self.getMasterContextId(fileInfo);
+        if (fileInfo.trackProperties &amp;&amp; fileInfo.trackProperties.length) {
+            ids = [];
+            for (var i in fileInfo.trackProperties) {
+                if (fileInfo.trackProperties[i].trackId === masterContextId) {
+                    var sampleProperties = fileInfo.trackProperties[i].sampleProperties;
+                    for (var j in sampleProperties) {
+                        if (sampleProperties.hasOwnProperty(j)) {
+                            ids.push(parseInt(j));
+                        }
+                    }
+                }
+            }
+        } else if (fileInfo.fileFeature.hasRootLevelMetaBox) {
+            ids = [];
+            if (masterContextId === fileInfo.rootLevelMetaBoxProperties.contextId) {
+                var imageFeaturesMap = fileInfo.rootLevelMetaBoxProperties.imageFeaturesMap;
+                for (i in imageFeaturesMap) {
+                    if (imageFeaturesMap.hasOwnProperty(i) &amp;&amp; imageFeaturesMap[i].isMasterImage === true) {
+                        ids.push(parseInt(i));
+                    }
+                }
+            }
+        }
+        return ids;
+    };
+
+    /** A convenience function to get thumbnail ids.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @return {Array.&lt;number>} Array of thumbnail item IDs. */
+    this.getThumbnailIds = function (fileInfo) {
+        var ids = null;
+        var thumbnailContextId = self.getThumbnailContextId(fileInfo);
+        if (fileInfo.trackProperties &amp;&amp; fileInfo.trackProperties.length) {
+            ids = [];
+            for (var i in fileInfo.trackProperties) {
+                if (fileInfo.trackProperties[i].trackId === thumbnailContextId) {
+                    var sampleProperties = fileInfo.trackProperties[i].sampleProperties;
+                    for (var j in sampleProperties) {
+                        if (sampleProperties.hasOwnProperty(j)) {
+                            ids.push(parseInt(j));
+                        }
+                    }
+                }
+            }
+        } else if (fileInfo.fileFeature.hasRootLevelMetaBox) {
+            ids = [];
+            if (thumbnailContextId === fileInfo.rootLevelMetaBoxProperties.contextId) {
+                var imageFeaturesMap = fileInfo.rootLevelMetaBoxProperties.imageFeaturesMap;
+                for (i in imageFeaturesMap) {
+                    if (imageFeaturesMap.hasOwnProperty(i) &amp;&amp; imageFeaturesMap[i].isThumbnailImage === true) {
+                        ids.push(parseInt(i));
+                    }
+                }
+            }
+        }
+        return ids;
+    };
+
+    /** A convenience function to get meta box thumbnail ids.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @return {Array.&lt;number>} Array of thumbnail item IDs. */
+    this.getMetaBoxThumbnailIds = function (fileInfo) {
+        var ids = [];
+        if (fileInfo.fileFeature.hasRootLevelMetaBox) {
+            var imageFeaturesMap = fileInfo.rootLevelMetaBoxProperties.imageFeaturesMap;
+            for (var i in imageFeaturesMap) {
+                if (imageFeaturesMap.hasOwnProperty(i) &amp;&amp; imageFeaturesMap[i].isThumbnailImage === true) {
+                    ids.push(parseInt(i));
+                }
+            }
+        }
+        return ids;
+    };
+
+    /** A convenience function to get meta box master ids.
+     *  @param {HEIFReader~FileInfo} fileInfo FileInfo structure.
+     *  @return {Array.&lt;number>} Array of thumbnail item IDs. */
+    this.getMetaBoxMasterIds = function (fileInfo) {
+        var ids = [];
+        if (fileInfo.fileFeature.hasRootLevelMetaBox) {
+            var imageFeaturesMap = fileInfo.rootLevelMetaBoxProperties.imageFeaturesMap;
+            for (var i in imageFeaturesMap) {
+                if (imageFeaturesMap.hasOwnProperty(i) &amp;&amp; imageFeaturesMap[i].isMasterImage === true) {
+                    ids.push(parseInt(i));
+                }
+            }
+        }
+        return ids;
+    };
+
+    // **** PUBLIC API ENDS ****
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="HEIFReader.html">HEIFReader</a></li><li><a href="HEIFReader-FileInfo.html">FileInfo</a></li><li><a href="HevcDecoder.html">HevcDecoder</a></li><li><a href="ImageProvider.html">ImageProvider</a></li><li><a href="ImageProvider-Payload.html">Payload</a></li><li><a href="ImageProvider-RequestContext.html">RequestContext</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Thu Oct 15 2015 11:59:25 GMT+0300 (EEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: heif-reader.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: heif-reader.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use strict";
+
+/** HEIF file reader object.
+ *  @constructor
+ *  @param {string} url URL of the HEIF file for reading. */
+function HEIFReader (url) {
+
+    var self = this;
+
+    var _name = "HEIFReader";
+
+    this._url = url;
+    this._readerWrapper = null;
+    this._testModeUrl = "testMode";
+
+    // **** PUBLIC API BEGINS ****
+
+    /** Common file info structure for both meta and trak.
+     *  @constructor
+     *  @param fileFeature FileFeature structure.
+     *  @param trackProperties TrackProperties structure if present.
+     *  @param rootLevelMetaBoxProperties RootLevelMetaBoxProperties structure if present.
+     *  @param moovProperties MoovProperties structure if present.
+     *  @param fileFeature FileFeature structure.
+     *  @See requestFileInfo(). */
+    function FileInfo (
+        fileFeature,
+        trackProperties,
+        rootLevelMetaBoxProperties,
+        moovProperties) {
+
+        var self = this;
+
+        this.fileFeature = fileFeature;
+        this.trackProperties = trackProperties;
+        this.rootLevelMetaBoxProperties = rootLevelMetaBoxProperties;
+        this.moovProperties = moovProperties;
+
+        /** Convenience method to get the type of the given contextId. */
+        this.getContextType = function (contextId) {
+            if (trackProperties &amp;&amp; trackProperties.length) {
+                for (var i in trackProperties) {
+                    if (trackProperties[i].trackId === contextId) {
+                        return "trak";
+                    }
+                }
+            } else if (rootLevelMetaBoxProperties &amp;&amp; rootLevelMetaBoxProperties.contextId === contextId) {
+                return "meta";
+            } else if (moovProperties &amp;&amp; moovProperties.moovId === contextId) {
+                return "moov";
+            }
+
+            return null;
+        };
+    }
+
+    /** @return {string} The url. */
+    this.url = function () {
+        return self._url;
+    }
+
+    /** @return {FileInfo} FileInfo object as a callback parameter. */
+    this.requestFileInfo = function (callback) {
+
+        if (this._url !== this._testModeUrl) {
+            if (this._url.indexOf("http:") === -1 &amp;&amp;
+                this._url.indexOf("https:") === -1 &amp;&amp;
+                this._url[0] !== '/') {
+                this._url = "/" + this._url;
+            }
+
+            console.log(_name + ": REQUEST FILE INFO: " + this._url);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', this._url, true);
+            xhr.responseType = 'arraybuffer';
+
+            xhr.onload = function (e) {
+                self._buildFileInfoObject(new Uint8Array(this.response));
+                var payload = self._fileInfo;
+                payload.success = true;
+                callback(payload);
+            };
+
+            xhr.send();
+
+        } else {
+            console.log(_name + ": REQUEST TEST FILE INFO: " + this._url);
+            self._buildFileInfoObject(null);
+        }
+    };
+
+    /** @return {string} Major brand from the File Type Box */
+    this.getMajorBrand = function() {
+        return self._readerWrapper.getMajorBrand();
+    };
+
+    /** @return {Array.&lt;string>} Compatible brands list from the File Type Box */
+    this.getCompatibleBrands = function () {
+        return JSON.parse(self._readerWrapper.getCompatibleBrandsInJSON());
+    };
+
+    /** Get the ID of the primary frame of the frame source. This is the default frame to display.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @return {number} Item ID of the primary frame of the frame source. */
+    this.getCoverImageItemId = function (contextId) {
+        return self._readerWrapper.getCoverImageItemId(contextId);
+    };
+
+    /** Get VPS, SPS and PPS of given item concatenated as a sigle Uint8Array.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @param {number} itemId Item ID of the requested item.
+     *  @return {Uint8Array} Decoder parameter data. */
+    this.getDecoderParameters = function (contextId, itemId) {
+        return self._readerWrapper.getDecoderParameters(contextId, itemId);
+    };
+
+    /** Get maximum display width from track headers.
+     *  @param {number} contextId Context ID of a track.
+     *  @return {number} Maximum display width in pixels. */
+    this.getDisplayWidth = function (contextId) {
+        return self._readerWrapper.getDisplayWidth(contextId);
+    };
+
+    /** Get maximum display height from track headers.
+     *  @param {number} contextId Context ID of a track.
+     *  @return {number} Maximum display height in pixels. */
+    this.getDisplayHeight = function (contextId) {
+        return self._readerWrapper.getDisplayHeight(contextId);
+    };
+
+    /** @return {Uint8Array} Item data of given item.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @param {number} itemId ItemId can be any image item/sample in the metabox/track designated by the contextId. */
+    this.getItemData = function (contextId, itemId) {
+        return self._readerWrapper.getItemData(contextId, itemId);
+    };
+
+    /** @return {Uint8Array} Item data with decoder parameters of given item.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @param {number} itemId ItemId can be any image item/sample in the metabox/track designated by the contextId. */
+    this.getItemDataWithDecoderParameters = function (contextId, itemId) {
+        return self._readerWrapper.getItemDataWithDecoderParameters(contextId, itemId);
+    };
+
+    /** @return {Uint32Array} Decode dependencies of given item.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @param {number} itemId ItemId can be any image item/sample in the metabox/track designated by the contextId. */
+    this.getItemDecodeDependencies = function (contextId, itemId) {
+        return self._readerWrapper.getItemDecodeDependencies(contextId, itemId);
+    };
+
+    /** Get data for item of type Image grid for given (contextId, itemId) pair.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @param {number} itemId ItemId can be any image item/sample in the metabox/track designated by the contextId.
+     *  @see getItemIovl() */
+    this.getItemGrid = function (contextId, itemId) {
+        return JSON.parse(self._readerWrapper.getItemGridInJSON(contextId, itemId));
+    };
+
+    /** @return list of items in the container with the ID contextId having the requested itemType as Uint32Array.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @param {string} type  If contextId refers to a MetaBox then itemType can be the following:
+     *                  'master' , 'hidden', 'pre-computed', 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1'
+     *                  ('master' is ('hvc1' - iref('thmb') or iref('auxl')))
+     *                  If the contextId refers to a media track; then itemType can be the following:
+     *                  'out_ref' : output reference frames
+     *                  'out_non_ref' : output non-reference frames
+     *                  'non_out_ref' : non-output reference frame
+     *                  'display' : all frame samples in the track which are displayed and in display order
+     *                  'samples' : all samples in the track in track's entry order
+     *  @return          Found items. The order of the itemIds are as present in the file.
+     *                   An empty vector if no items are found. */
+    this.getItemListByType = function (contextId, type) {
+        return self._readerWrapper.getItemListByType(contextId, type);
+    };
+
+    /** Get data for item of type Image overlay for given (contextId, itemId) pair.
+     *  @param  {number} contextId  Meta box context id
+     *  @param  {number} itemId     Id of Image overlay item
+     *  @return IovlItem struct with requested data. */
+    this.getItemIovl = function (contextId, itemId) {
+        return JSON.parse(self._readerWrapper.getItemIovlInJSON(contextId, itemId));
+    };
+
+    /** @return {number} Height of the given item.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @param {number} itemId itemId can be any image item/sample in the metabox/track designated by the contextId. */
+    this.getItemHeight = function (contextId, itemId) {
+        return self._readerWrapper.getItemHeight(contextId, itemId);
+    };
+
+    /** @return {number} Width of the given item.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @param {number} itemId itemId can be any image item/sample in the metabox/track designated by the contextId. */
+    this.getItemWidth = function (contextId, itemId) {
+        return self._readerWrapper.getItemWidth(contextId, itemId);
+    };
+
+    /**
+     *  @typedef {object} HEIFReader~ItemTimestamp
+     *  @property {number} t - Timestamp in milliseconds.
+     *  @property {number} id - Id of the item. */
+
+    /** Get display timestamp for each item.
+     *  If the resource pointed by contextId is a media track, then timestamps are read from the track sample data.
+     *  If the resource is a metabox, a forced generation of timestamps can be done by defining a forced FPS and
+     *  a forced tickspersecond.
+     *  @param {number} contextId Context ID of a track.
+     *  @return {Array.&lt;HEIFReader~ItemTimestamp>} ItemTimestamp array sorted by timestamps. */
+    this.getItemTimestamps = function (contextId) {
+        return JSON.parse(self._readerWrapper.getItemTimestampsInJSON(contextId));
+    };
+
+    /** Get properties of an item
+     *  @param {number} contextId Context ID to operate in. Must be a meta box.
+     *  @param {number} itemId    Item ID which properties to get. */
+    this.getItemProperties = function(contextId, itemId) {
+        return JSON.parse(self._readerWrapper.getItemPropertiesInJSON(contextId, itemId));
+    };
+
+    /** Get items in decoding order.
+     *  If the resource pointed by contextId is a media track, then timestamp is read from the track with ID contextId
+     *  and sample with ID equal to itemId.
+     *  If the resource is a metabox, a forced generation of timestamps can be done by defining a forced FPS.
+     *  @param {number} contextId Track or metabox context id.
+     *  @return {Array.&lt;HEIFReader~ItemTimestamp>} ItemTimestamp array sorted in decoding order.
+     *          Also complete decoding dependencies are listed here. If an item ID is present
+     *          as a decoding dependency for a succeeding frame, its timestamp is set to 0xffffffff. */
+    this.getItemsInDecodingOrder = function (contextId) {
+        return JSON.parse(self._readerWrapper.getItemsInDecodingOrderInJSON(contextId));
+    };
+
+    /** Get itemType of the item pointed by (contextId, itemId) pair
+     *  The order of the itemIds are as present in the file
+     *  @param  {number} contextId Track or metabox context id.
+     *  @param  {number} itemId    Track or metabox sample/item id.
+     *  @return The itemType of the item pointed by (contextId, itemId) pair.
+     *          If the context is a metabox, can be the following:
+     *          'master' , 'hidden', 'pre-computed', 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1', 'iden'
+     *          ('master' is ('hvc1' - iref('thmb') or iref('auxl')))'
+     *          If the context is a media track sample description entry type is returned. */
+    this.getItemType = function(contextId, itemId) {
+        return self._readerWrapper.getItemType(contextId, itemId);
+    };
+
+    /** Get playback duration of image sequence or media track in seconds.
+     *  This considers also edit lists.
+     *  @param {number} contextId Context ID of a track.
+     *  @return {number} The playback duration of image sequence or media track in seconds.
+     *          Returns (# of displayable master images)/(forced framerate), if a forced sequential playback is
+     *          signaled by calling SetForcedTimedPlayback() for a metabox.
+     *          Returns 0 for an image collection or other items. */
+    this.getPlaybackDurationInSecs = function (contextId) {
+        return self._readerWrapper.getPlaybackDurationInSecs(contextId);
+    };
+
+    /** Get item property Auxiliary ('auxC')
+     *  @see getPropertyAuxc() */
+    this.getPropertyAuxc = function (contextId, index) {
+        return JSON.parse(self._readerWrapper.getPropertyAuxcInJSON(contextId, index));
+    };
+
+    /** Get item property Clean aperture ('clap')
+     *  @see getPropertyIrot() */
+    this.getPropertyClap = function (contextId, index) {
+        return JSON.parse(self._readerWrapper.getPropertyClapInJSON(contextId, index));
+    };
+
+    /** Get item property Image Rotation ('irot')
+     *  @param {number} contextId Meta box context id.
+     *  @param {number} index Index of the property. This value is given by getItemProperties(). */
+    this.getPropertyIrot = function (contextId, index) {
+        return JSON.parse(self._readerWrapper.getPropertyIrotInJSON(contextId, index));
+    };
+
+    /** Get item property Relative Location ('rloc')
+     *  @see getPropertyIrot() */
+    this.getPropertyRloc = function (contextId, index) {
+        return JSON.parse(self._readerWrapper.getPropertyRlocInJSON(contextId, index));
+    };
+
+    /** Get list of referenced items for item with (contextId, itemId) pair having the requested referenceType.
+     *  @param {number} contextId     The context id.
+     *  @param {number} fromItemId    Id of the item referenced from.
+     *  @param {string} referenceType Can be the following: 'thmb', 'cdcs', 'auxl', 'dimg', 'base'
+     *                                ('master' is ('hvc1' - iref('thmb') or iref('auxl')))
+     *  @return itemIds List of referenced items for item with (contextId, itemId) pair having the
+     *                  requested referenceType.
+     *                  The order of the itemIds are as present in the file.
+     *                  An empty vector if no items are found. */
+    this.getReferencedFromItemListByType = function (contextId, fromItemId, referenceType) {
+        var refs = JSON.parse(self._readerWrapper.getReferencedFromItemListByTypeInJSON(contextId, fromItemId, referenceType));
+        if (refs &amp;&amp; refs.constructor !== Array) {
+            return [refs];
+        }
+        return refs;
+    };
+
+    /** Get the list of referenced items for item with (contextId, itemId) pair having the requested referenceType.
+     *  @param {number} contextId     The context id.
+     *  @param {number} toItemId      Id of the item referenced to.
+     *  @param {string} referenceType Can be the following: 'thmb', 'cdcs', 'auxl', 'dimg', 'base'
+     *                                ('master' is ('hvc1' - iref('thmb') or iref('auxl')))
+     *  @param itemIds  Found items. The order of the itemIds are as present in the file.
+     *                  An empty vector if no items are found. */
+    this.getReferencedToItemListByType = function (contextId, toItemId, referenceType) {
+        var refs = JSON.parse(self._readerWrapper.getReferencedToItemListByTypeInJSON(contextId, toItemId, referenceType));
+        if (refs &amp;&amp; refs.constructor !== Array) {
+            return [refs];
+        }
+        return refs;
+    };
+
+    /** Get display timestamps for an item. An item may be displayed many times based on the edit list.
+     *  If the resource pointed by contextId is a media track, then timestamp is read from the track with ID contextId
+     *  and sample with ID equal to itemId.
+     *  If the resource is a metabox, a forced generation of timestamps can be done by defining a forced FPS and
+     *  a forced tickspersecond.
+     *  @param {number} contextId Context ID of a track / root-level metabox.
+     *  @param {number} itemId Id of the item. */
+    this.getTimestampsOfItem = function (contextId, itemId) {
+        return JSON.parse(self._readerWrapper.getTimestampsOfItemInJSON(contextId, itemId));
+    };
+
+    /** Set the forced loop playback mode for an image sequence/samples in metabox/track.
+     *  @param {number} contextId Context ID of a track.
+     *  @param {boolean} forceLoopPlayback True = set forced loop playback on, false = set forced loop playback off. */
+    this.setForcedLoopPlayback = function (contextId, forceLoopPlayback) {
+        self._readerWrapper.setForcedLoopPlayback(contextId, forceLoopPlayback);
+    };
+
+    /** Set the forced timed playback mode for an image sequence in metabox.
+     *  If the resource pointed by contextId is a media track, then the values are ignored.
+     *  If the resource is a metabox, a forced generation of timestamps can be done by defining a forced FPS.
+     *  @param {number} contextId Context ID of a track.
+     *  @param {number} forcedFps Frames per second. */
+    this.setForcedTimedPlayback = function (contextId, forcedFps) {
+        self._readerWrapper.setForcedTimedPlayback(contextId, forcedFps);
+    };
+
+    // **** PUBLIC API ENDS ****
+
+    this._buildFileInfoObject = function (uInt8Array) {
+
+        if (uInt8Array !== null) {
+            // Implement DataSourceIf. The "C++"-code calls DataSource.fetch() when
+            // readerWrapper.getFileProperties() is called.
+            var DataSource = new hevcReaderModule.DataSourceIf.extend("DataSourceIf", {
+                bytesRead: 0,
+                fetch: function(numBytes) {
+                    if (numBytes === -1) {
+                        return uInt8Array;
+                    } else {
+                        var data = uInt8Array.subarray(bytesRead, numBytes);
+                        bytesRead += data.length;
+                    }
+                }
+            });
+        } else {
+            DataSource = new hevcReaderModule.DataSourceIf.extend("DataSourceIf", {
+                bytesRead: 0,
+                fetch: function(numBytes) {
+                    return "";
+                }
+            });
+        }
+
+        var dataSource = new DataSource;
+
+        self._readerWrapper = new hevcReaderModule.ReaderWrapper(self._url === self._testModeUrl);
+        self._readerWrapper.setDataSource(dataSource);
+        var fileProperties = JSON.parse(self._readerWrapper.getFilePropertiesInJSON());
+        self._fileInfo = new FileInfo(
+            fileProperties.fileFeature,
+            fileProperties.trackProperties,
+            fileProperties.rootLevelMetaBoxProperties,
+            fileProperties.moovProperties);
+
+        console.log(self._fileInfo);
+        console.log("Major brand: " + self.getMajorBrand());
+        console.log("Compatible brands: " + self.getCompatibleBrands());
+    };
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="HEIFReader.html">HEIFReader</a></li><li><a href="HEIFReader-FileInfo.html">FileInfo</a></li><li><a href="HevcDecoder.html">HevcDecoder</a></li><li><a href="ImageProvider.html">ImageProvider</a></li><li><a href="ImageProvider-Payload.html">Payload</a></li><li><a href="ImageProvider-RequestContext.html">RequestContext</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Thu Oct 15 2015 11:59:25 GMT+0300 (EEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
