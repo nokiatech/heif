@@ -20,7 +20,10 @@
 #include "services.hpp"
 #include "writerconstants.hpp"
 #include <memory>
-#include <iostream>
+
+#define ANDROID_STOI_HACK
+#define ANDROID_TO_STRING_HACK
+#include "androidhacks.hpp"
 
 AuxiliaryImageWriter::AuxiliaryImageWriter(const IsoMediaFile::Auxiliary& config, const std::uint32_t contextId) :
     RootMetaImageWriter({""}, contextId),

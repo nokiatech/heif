@@ -25,9 +25,6 @@
 #include "timewriter.hpp"
 #include "writerconstants.hpp"
 
-#define ANDROID_TO_STRING_HACK
-#include "androidhacks.hpp"
-
 TrackWriter::TrackWriter(const std::uint32_t trackId, const IsoMediaFile::EditList& editList,
     const std::string& filename, const std::uint32_t tickRate) :
     mTrackBox(new TrackBox),

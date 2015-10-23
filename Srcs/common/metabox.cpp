@@ -211,13 +211,13 @@ void MetaBox::writeBox(BitStream& bitstr)
     mPrimaryItemBox.writeBox(bitstr);
     mDataInformationBox.writeBox(bitstr);
     mItemLocationBox.writeBox(bitstr);
+    mItemProtectionBox.writeBox(bitstr);
     mItemInfoBox.writeBox(bitstr);
+    // Not writing optional box IPMPControlBox
     mItemReferenceBox.writeBox(bitstr);
+    mItemDataBox.writeBox(bitstr);
     mItemPropertiesBox.writeBox(bitstr);
     mGroupsListBox.writeBox(bitstr);
-    mDataInformationBox.writeBox(bitstr);
-    mItemDataBox.writeBox(bitstr);
-    mItemProtectionBox.writeBox(bitstr);
 
     updateSize(bitstr);
 }

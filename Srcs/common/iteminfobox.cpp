@@ -63,7 +63,15 @@ void ItemInfoBox::writeBox(BitStream& bitstr)
 {
     writeFullBoxHeader(bitstr);
 
-    bitstr.write16Bits(mItemInfoList.size());
+    if (getVersion() == 0)
+    {
+        bitstr.write16Bits(mItemInfoList.size());
+    }
+    else
+    {
+        bitstr.write32Bits(mItemInfoList.size());
+    }
+
     for (auto& entry : mItemInfoList)
     {
         entry.writeBox(bitstr);
@@ -76,7 +84,17 @@ void ItemInfoBox::parseBox(BitStream& bitstr)
 {
     parseFullBoxHeader(bitstr);
 
-    const size_t entryCount = bitstr.read16Bits();
+    size_t entryCount = 0;
+
+    if (getVersion() == 0)
+    {
+        entryCount = bitstr.read16Bits();
+    }
+    else
+    {
+        entryCount = bitstr.read32Bits();
+    }
+
     for (size_t i = 0; i < entryCount; ++i)
     {
         ItemInfoEntry infoEntry;
