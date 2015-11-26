@@ -239,8 +239,8 @@ void TrackWriter::stsdWrite(const bool writeCcst)
     const std::uint32_t imageWidth = decConf.getPicWidth();
     const std::uint32_t imageHeight = decConf.getPicHeight();
 
-    // All samples are assumed to be in the same file hence the value 3
-    hevcSampleEntry->setDataReferenceIndex(3);
+    // All samples are assumed to be in the same file hence the value 1
+    hevcSampleEntry->setDataReferenceIndex(1);
     hevcSampleEntry->setWidth(imageWidth);
     hevcSampleEntry->setHeight(imageHeight);
 
