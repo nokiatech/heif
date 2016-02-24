@@ -28,10 +28,17 @@ std::uint32_t SampleToChunkBox::getSampleDescriptionIndex(std::uint32_t sampleIn
     return mDecodedEntries.at(sampleIndex).sampleDescriptionIndex;
 }
 
+std::uint32_t SampleToChunkBox::getSampleChunkIndex(std::uint32_t sampleIndex) const
+{
+    return mDecodedEntries.at(sampleIndex).chunkIndex;
+}
+
 void SampleToChunkBox::addChunkEntry(const ChunkEntry& chunkEntry)
 {
     mRunOfChunks.push_back(chunkEntry);
-    decodeEntries();
+    decodeEntries(mRunOfChunks.size());
+    /** @todo Recount decodeEntries when writing when total chunk entry count is know on upper level
+     * needs to be called from there. */
 }
 
 void SampleToChunkBox::writeBox(BitStream& bitstr)
@@ -63,15 +70,13 @@ void SampleToChunkBox::parseBox(BitStream& bitstr)
         chunkEntry.sampleDescriptionIndex = bitstr.read32Bits();
         mRunOfChunks.push_back(chunkEntry);
     }
-
-    decodeEntries();
 }
 
-void SampleToChunkBox::decodeEntries()
+void SampleToChunkBox::decodeEntries(const std::uint32_t chunkEntryCount)
 {
     mDecodedEntries.clear();
 
-    if (mRunOfChunks.size() == 0)
+    if (mRunOfChunks.size() == 0 || chunkEntryCount == 0)
     {
         throw runtime_error("A SampleToChunkBox without entries");
     }
@@ -96,6 +101,11 @@ void SampleToChunkBox::decodeEntries()
             }
 
             chunkRepetitions = mRunOfChunks.at(chunkEntryIndex + 1).firstChunk - firstChunk;
+        }
+        else if (chunkEntryIndex == mRunOfChunks.size() - 1)
+        {
+            // Handle last entry.
+            chunkRepetitions = chunkEntryCount - mRunOfChunks.at(chunkEntryIndex).firstChunk + 1;
         }
 
         DecodedEntry entry;

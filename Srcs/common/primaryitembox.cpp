@@ -18,12 +18,12 @@ PrimaryItemBox::PrimaryItemBox() :
 {
 }
 
-void PrimaryItemBox::setItemId(uint16_t itemId)
+void PrimaryItemBox::setItemId(uint32_t itemId)
 {
     mItemId = itemId;
 }
 
-uint16_t PrimaryItemBox::getItemId() const
+uint32_t PrimaryItemBox::getItemId() const
 {
     return mItemId;
 }
@@ -31,12 +31,26 @@ uint16_t PrimaryItemBox::getItemId() const
 void PrimaryItemBox::writeBox(BitStream& bitstr)
 {
     writeFullBoxHeader(bitstr);
-    bitstr.write16Bits(mItemId);
+    if (getVersion() == 0)
+    {
+        bitstr.write16Bits(mItemId);
+    }
+    else
+    {
+        bitstr.write32Bits(mItemId);
+    }
     updateSize(bitstr);
 }
 
 void PrimaryItemBox::parseBox(BitStream& bitstr)
 {
     parseFullBoxHeader(bitstr);
-    mItemId = bitstr.read16Bits();
+    if (getVersion() == 0)
+    {
+        mItemId = bitstr.read16Bits();
+    }
+    else
+    {
+        mItemId = bitstr.read32Bits();
+    }
 }

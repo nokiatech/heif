@@ -56,7 +56,7 @@ public:
      * Set Primary item identifier in the contained PrimaryItemBox
      * @param itemId Primary item identifier
      */
-    void setPrimaryItem(std::uint16_t itemId);
+    void setPrimaryItem(std::uint32_t itemId);
 
     /**
      * @return Reference to the contained ItemInfoBox (Item Information Box. If a parsed file did not contain
@@ -144,7 +144,7 @@ public:
      * @param length     Length of the data
      * @param baseOffset Base offset of the data. This can be used during dual-pass file writing, to give location of the MediaDataBox on the second pass.
      */
-    void addIloc(std::uint16_t itemId, std::uint32_t offset, std::uint32_t length, std::uint32_t baseOffset);
+    void addIloc(std::uint32_t itemId, std::uint32_t offset, std::uint32_t length, std::uint32_t baseOffset);
 
     /**
      * Add an ItemInfoEntry to the contained ItemInfoBox
@@ -154,7 +154,7 @@ public:
      * @param name   item_name field in ItemInfoEntry, a symbolic name of the item.
      * @param hidden True indicates that the item is hidden.
      */
-    void addItem(std::uint16_t itemId, const std::string& type, const std::string& name, bool hidden = false);
+    void addItem(std::uint32_t itemId, const std::string& type, const std::string& name, bool hidden = false);
 
     /**
      * Add an item reference to the contained ItemReferenceBox
@@ -162,7 +162,7 @@ public:
      * @param fromId ID of the item that refers to other item
      * @param toId   ID of the item referred to
      */
-    void addItemReference(const std::string& type, std::uint16_t fromId, std::uint16_t toId);
+    void addItemReference(const std::string& type, std::uint32_t fromId, std::uint32_t toId);
 
     /**
      * Add a new item data to the contained ItemDataBox. The ItemLocation and ItemInfoEntry are added.
@@ -171,7 +171,7 @@ public:
      * @param name   item_name field in ItemInfoEntry, a symbolic name of the item.
      * @param data   Data of the item which will be added to the contained ItemDataBox.
      */
-    void addIdatItem(std::uint16_t itemId, const std::string& type, const std::string& name,
+    void addIdatItem(std::uint32_t itemId, const std::string& type, const std::string& name,
         const std::vector<uint8_t>& data);
 
     /**
@@ -179,7 +179,7 @@ public:
      * @param itemId ID for which the ItemLocationExtent is added.
      * @param data   Data to ItemDataBox
      */
-    void addItemIdatExtent(std::uint16_t itemId, const std::vector<uint8_t>& data);
+    void addItemIdatExtent(std::uint32_t itemId, const std::vector<uint8_t>& data);
 
     /**
      * @brief Add ItemInfoEntry and ItemLocation entries for an item which is located in MediaDataBox.
@@ -191,7 +191,7 @@ public:
      * @param baseOffset Base offset of the data. This can be used during dual-pass file writing, to give location of
      *                   the MediaDataBox on the second pass.
      */
-    void addMdatItem(std::uint16_t itemId, const std::string& type, const std::string& name,
+    void addMdatItem(std::uint32_t itemId, const std::string& type, const std::string& name,
         std::uint32_t baseOffset);
 
     /**
@@ -200,7 +200,7 @@ public:
      * @param offset Offset of the data
      * @param length Length of the data
      */
-    void addItemExtent(std::uint16_t itemId, std::uint32_t offset, std::uint32_t length);
+    void addItemExtent(std::uint32_t itemId, std::uint32_t offset, std::uint32_t length);
 
     /**
      * @brief Serialize box data to the BitStream.

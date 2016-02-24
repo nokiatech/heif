@@ -36,7 +36,7 @@ void ImageThumbsWriter::write(MetaBox* metaBox)
     RootMetaImageWriter::ilocWrite(metaBox);
     RootMetaImageWriter::iinfWrite(metaBox);
     addThumbReferences(metaBox);
-    RootMetaImageWriter::iprpWrite(metaBox, mConfig.disp_xdim, mConfig.disp_ydim);
+    RootMetaImageWriter::iprpWrite(metaBox);
 }
 
 void ImageThumbsWriter::removeUnusedImages()

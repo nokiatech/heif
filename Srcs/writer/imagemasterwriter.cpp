@@ -32,6 +32,6 @@ void ImageMasterWriter::write(MetaBox* metaBox)
     RootMetaImageWriter::parseInputBitStream(mConfig.file_path);
     MetaWriter::hdlrWrite(metaBox);
     RootMetaImageWriter::ilocWrite(metaBox);
-    RootMetaImageWriter::iinfWrite(metaBox);
-    RootMetaImageWriter::iprpWrite(metaBox, mConfig.disp_xdim, mConfig.disp_ydim);
+    RootMetaImageWriter::iinfWrite(metaBox, mConfig.hidden);
+    RootMetaImageWriter::iprpWrite(metaBox);
 }

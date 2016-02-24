@@ -47,9 +47,9 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    VideoMediaHeaderBox mVideoMediaHeaderBox; /// Video media header box
-    DataInformationBox mDataInformationBox; /// Data information box
-    SampleTableBox mSampleTableBox; /// Sample Table box
+    VideoMediaHeaderBox mVideoMediaHeaderBox; ///< Video media header box
+    DataInformationBox mDataInformationBox; ///< Data information box
+    SampleTableBox mSampleTableBox; ///< Sample Table box
 };
 
 #endif /* end of include guard: MEDIAINFORMATIONBOX_HPP */

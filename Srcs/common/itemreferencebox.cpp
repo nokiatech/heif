@@ -14,30 +14,33 @@
 #include "bitstream.hpp"
 
 #include <algorithm>
+#include <limits>
+#include <stdexcept>
 
-SingleItemTypeReferenceBox::SingleItemTypeReferenceBox() :
-    SingleItemTypeReferenceBox("")
-{
-}
-
-SingleItemTypeReferenceBox::SingleItemTypeReferenceBox(const std::string& referenceType) :
-    Box(referenceType.c_str()),
+SingleItemTypeReferenceBox::SingleItemTypeReferenceBox(bool isLarge) :
+    Box(""),
     mFromItemId(0),
-    mToItemIds()
+    mIsLarge(isLarge)
 {
 }
 
-void SingleItemTypeReferenceBox::setFromItemID(const uint16_t itemID)
+void SingleItemTypeReferenceBox::setReferenceType(const std::string& referenceType)
+{
+    Box::setType(referenceType);
+}
+
+
+void SingleItemTypeReferenceBox::setFromItemID(const uint32_t itemID)
 {
     mFromItemId = itemID;
 }
 
-uint16_t SingleItemTypeReferenceBox::getFromItemID() const
+uint32_t SingleItemTypeReferenceBox::getFromItemID() const
 {
     return mFromItemId;
 }
 
-void SingleItemTypeReferenceBox::addToItemID(const uint16_t itemID)
+void SingleItemTypeReferenceBox::addToItemID(const uint32_t itemID)
 {
     mToItemIds.push_back(itemID);
 }
@@ -51,17 +54,32 @@ void SingleItemTypeReferenceBox::writeBox(BitStream& bitstr)
 {
     writeBoxHeader(bitstr);  // parent box
 
-    bitstr.write16Bits(mFromItemId);
+    if (mIsLarge)
+    {
+         bitstr.write32Bits(mFromItemId);
+    }
+    else
+    {
+        bitstr.write16Bits(mFromItemId);
+    }
+
     bitstr.write16Bits(mToItemIds.size());
     for (const auto i : mToItemIds)
     {
-        bitstr.write16Bits(i);
+        if (mIsLarge)
+        {
+             bitstr.write32Bits(i);
+        }
+        else
+        {
+            bitstr.write16Bits(i);
+        }
     }
 
     updateSize(bitstr);
 }
 
-std::vector<uint16_t> SingleItemTypeReferenceBox::getToItemIds() const
+std::vector<uint32_t> SingleItemTypeReferenceBox::getToItemIds() const
 {
     return mToItemIds;
 }
@@ -93,9 +111,11 @@ void ItemReferenceBox::parseBox(BitStream& bitstr)
 {
     parseFullBoxHeader(bitstr);
 
+    const bool largeIds = getVersion() ? true : false;
+
     while (bitstr.numBytesLeft() > 0)
     {
-        SingleItemTypeReferenceBox singleRef;
+        SingleItemTypeReferenceBox singleRef(largeIds);
         singleRef.parseBox(bitstr);
         addItemRef(singleRef);
     }
@@ -105,11 +125,25 @@ void SingleItemTypeReferenceBox::parseBox(BitStream& bitstr)
 {
     parseBoxHeader(bitstr);  // parent box
 
-    mFromItemId = bitstr.read16Bits();
+    if (mIsLarge)
+    {
+        mFromItemId = bitstr.read32Bits();
+    }
+    else
+    {
+        mFromItemId = bitstr.read16Bits();
+    }
     const uint16_t referenceCount = bitstr.read16Bits();
     for (unsigned int i = 0; i < referenceCount; ++i)
     {
-        mToItemIds.push_back(bitstr.read16Bits());
+        if (mIsLarge)
+        {
+            mToItemIds.push_back(bitstr.read32Bits());
+        }
+        else
+        {
+            mToItemIds.push_back(bitstr.read16Bits());
+        }
     }
 }
 
@@ -126,8 +160,15 @@ std::vector<SingleItemTypeReferenceBox> ItemReferenceBox::getReferencesOfType(co
     return std::move(references);
 }
 
-void ItemReferenceBox::add(const std::string& type, const std::uint16_t fromId, const std::uint16_t toId)
+void ItemReferenceBox::add(const std::string& type, const std::uint32_t fromId, const std::uint32_t toId)
 {
+    const bool largeIds = getVersion() ? true : false;
+    if (((fromId > std::numeric_limits<std::uint16_t>::max()) || 
+        (toId > std::numeric_limits<std::uint16_t>::max())) && not largeIds)
+    {
+        throw std::runtime_error("ItemReferenceBox::add can not add large item IDs to box version 0");
+    }
+    
     // Add to an existing entry if one exists for this type & fromId pair
     auto reference = std::find_if(mReferenceList.begin(), mReferenceList.end(),
         [&](const SingleItemTypeReferenceBox& entry)
@@ -141,7 +182,8 @@ void ItemReferenceBox::add(const std::string& type, const std::uint16_t fromId, 
     else
     {
         // Add a new entry
-        SingleItemTypeReferenceBox ref(type);
+        SingleItemTypeReferenceBox ref(largeIds);
+        ref.setType(type);
         ref.setFromItemID(fromId);
         ref.addToItemID(toId);
         mReferenceList.push_back(ref);

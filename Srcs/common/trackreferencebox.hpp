@@ -54,7 +54,7 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    std::vector<TrackReferenceTypeBox> mTrefTypeBoxes; /// vector of track reference type boxes present in the track reference box
+    std::vector<TrackReferenceTypeBox> mTrefTypeBoxes; ///< Vector of track reference type boxes present in the track reference box
 };
 
 #endif /* end of include guard: TRACKREFERENCEBOX_HPP */

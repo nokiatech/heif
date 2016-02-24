@@ -31,7 +31,12 @@ public:
      *  @returns sample description index */
     std::uint32_t getSampleDescriptionIndex(std::uint32_t sampleIndex) const;
 
-    /// chunk entry data structure
+    /** @brief Get the sample chunk index.
+     *  @param [in] sampleIndex Sample index value.
+     *  @returns Chunk index of the sample. The index is 1-based. */
+    std::uint32_t getSampleChunkIndex(std::uint32_t sampleIndex) const;
+
+    /// Chunk entry data structure
     struct ChunkEntry
     {
         std::uint32_t firstChunk;
@@ -51,10 +56,14 @@ public:
      *  @param [in]  bitstr Bitstream that contains the box data. */
     void parseBox(BitStream& bitstr);
 
-private:
-    std::vector<ChunkEntry> mRunOfChunks; /// vector that contains the chunk entries
+    /** @brief Decodes the representation of ChunkEntries. Each sample will have an own entry after this.
+     *  @param [in] chunkEntryCount number of total chunk entries from 'stco' */
+    void decodeEntries(std::uint32_t chunkEntryCount);
 
-    /// run-length decoded chunk entries
+private:
+    std::vector<ChunkEntry> mRunOfChunks; ///< Vector that contains the chunk entries
+
+    /// Run-length decoded chunk entries
     struct DecodedEntry
     {
         std::uint32_t chunkIndex;
@@ -64,12 +73,6 @@ private:
 
     /// A decoded representation of ChunkEntries. Each sample has an own entry here.
     std::vector<DecodedEntry> mDecodedEntries;
-
-    /** @brief Decodes the Chunk entries
-     *  @throws Run-time error if there are no chunk entries in the box.
-     *  @throws Run-time error if the first chunk entry run does not have a length of 1.
-     *  @throws Run-time error if the first chunk value of the next chunk entry is not bigger than the previous one.*/
-    void decodeEntries();
 };
 
 #endif /* end of include guard: SAMPLETOCHUNKBOX_HPP */

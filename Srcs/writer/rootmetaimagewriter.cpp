@@ -20,8 +20,8 @@
 #include "metabox.hpp"
 #include "services.hpp"
 #include "writerconstants.hpp"
-#include <algorithm>
 #include <memory>
+#include <stdexcept>
 
 #define ANDROID_TO_STRING_HACK
 #include "androidhacks.hpp"
@@ -29,7 +29,8 @@
 using namespace std;
 
 RootMetaImageWriter::RootMetaImageWriter(const vector<string>& handlerType, std::uint32_t contextId) :
-    MetaWriter(handlerType.at(0), contextId)
+    MetaWriter(handlerType.at(0), contextId),
+    mNextItemOffset(0)
 {
     /// @todo Second parameter of type string vector is codec type, currently discarded
 }
@@ -37,14 +38,17 @@ RootMetaImageWriter::RootMetaImageWriter(const vector<string>& handlerType, std:
 void RootMetaImageWriter::initWrite()
 {
     mMetaItems.clear(); // Clear because of dual-pass
+    mConfigs.clear();
+    mNextItemOffset = 0;
+
     MetaWriter::initWrite();
 }
 
-void RootMetaImageWriter::iinfWrite(MetaBox* metaBox) const
+void RootMetaImageWriter::iinfWrite(MetaBox* metaBox, const bool hidden) const
 {
     for (const auto& item : mMetaItems)
     {
-        metaBox->addItem(item.mId, item.mType, "HEVC image");
+        metaBox->addItem(item.mId, item.mType, "HEVC Image", hidden);
     }
 }
 
@@ -56,22 +60,19 @@ void RootMetaImageWriter::ilocWrite(MetaBox* metaBox) const
     }
 }
 
-void RootMetaImageWriter::iprpWrite(MetaBox* metaBox, const unsigned int width, const unsigned int height) const
+void RootMetaImageWriter::iprpWrite(MetaBox* metaBox) const
 {
-    std::vector<uint32_t> itemIds;
-    for (const auto& item : mMetaItems)
+    for (const auto& config : mConfigs)
     {
-        itemIds.push_back(item.mId);
+        std::shared_ptr<HevcConfigurationBox> configBox(new HevcConfigurationBox);
+        configBox->setConfiguration(config.decoderConfig);
+        metaBox->addProperty(configBox, config.itemIds, true);
+
+        std::shared_ptr<ImageSpatialExtentsProperty> isep(new ImageSpatialExtentsProperty);
+        isep->setDisplayWidth(config.decoderConfig.getPicWidth());
+        isep->setDisplayHeight(config.decoderConfig.getPicHeight());
+        metaBox->addProperty(isep, config.itemIds, true);
     }
-
-    std::shared_ptr<HevcConfigurationBox> configBox(new HevcConfigurationBox);
-    configBox->setConfiguration(mDecoderConfigRecord);
-    metaBox->addProperty(configBox, itemIds, true);
-
-    std::shared_ptr<ImageSpatialExtentsProperty> isep(new ImageSpatialExtentsProperty);
-    isep->setDisplayWidth(width);
-    isep->setDisplayHeight(height);
-    metaBox->addProperty(isep, itemIds, true);
 }
 
 unsigned int RootMetaImageWriter::getNalStartCodeSize(const vector<uint8_t>& nalU) const
@@ -93,62 +94,68 @@ unsigned int RootMetaImageWriter::getNalStartCodeSize(const vector<uint8_t>& nal
     return size;
 }
 
+void RootMetaImageWriter::addDecoderConfiguration(const ParserInterface::AccessUnit& au)
+{
+    Configuration config;
+    config.decoderConfig.makeConfigFromSPS(au.mSpsNalUnits.front(), 0.0);
+    config.decoderConfig.addNalUnit(au.mVpsNalUnits.front(), HevcNalUnitType::VPS, 0);
+    config.decoderConfig.addNalUnit(au.mSpsNalUnits.front(), HevcNalUnitType::SPS, 0);
+    config.decoderConfig.addNalUnit(au.mPpsNalUnits.front(), HevcNalUnitType::PPS, 0);
+    mConfigs.push_back(config);
+}
+
+uint32_t RootMetaImageWriter::getItemLength(const std::list<std::vector<std::uint8_t>>& nalUnits) const
+{
+    uint32_t length = 0;
+    for (const auto& nalU : nalUnits)
+    {
+        length += nalU.size() + 4 - getNalStartCodeSize(nalU);
+    }
+    return length;
+}
+
+void RootMetaImageWriter::addItem(const uint32_t lenght)
+{
+    MetaItem itemInfo;
+    itemInfo.mType = HVC1_ITEM_TYPE;
+    itemInfo.mId = IdSpace::getValue();
+    itemInfo.mLength = lenght;
+    itemInfo.mOffset = mNextItemOffset;
+    storeValue("item_indx", to_string(itemInfo.mId));
+    mConfigs.back().itemIds.push_back(itemInfo.mId);
+    mMetaItems.push_back(itemInfo);
+    mNextItemOffset += lenght;
+}
+
 void RootMetaImageWriter::parseInputBitStream(const std::string& filename)
 {
     H265Parser mediaParser;
+    ParserInterface::AccessUnit au;
+
     if (!mediaParser.openFile(filename.c_str()))
     {
         throw runtime_error("Not able to open H.265 bit stream file '" + filename + "'");
     }
 
-    ParserInterface::AccessUnit* accessUnit = new ParserInterface::AccessUnit { };
-
-    bool hasNalUnits = (accessUnit->mNalUnits.size() > 0) ? true : false;
-    bool hasMoreImages = (mediaParser.parseNextAU(*accessUnit));
-    bool hasSpsNalUnits = (accessUnit->mSpsNalUnits.size() > 0) ? true : false;
-    bool hasPpsNalUnits = (accessUnit->mPpsNalUnits.size() > 0) ? true : false;
-    bool isHevc = hasMoreImages || hasNalUnits || hasSpsNalUnits || hasPpsNalUnits;
-
-    if (isHevc)
+    bool moreAccessUnits = true;
+    while (moreAccessUnits)
     {
-        std::vector<uint8_t> vpsNals = accessUnit->mVpsNalUnits.front();
-        std::vector<uint8_t> spsNals = accessUnit->mSpsNalUnits.front();
-        std::vector<uint8_t> ppsNals = accessUnit->mPpsNalUnits.front();
+        moreAccessUnits = mediaParser.parseNextAU(au);
 
-        mDecoderConfigRecord.makeConfigFromSPS(spsNals, 0.0);
-        mDecoderConfigRecord.addNalUnit(vpsNals, HevcNalUnitType::VPS, 0);
-        mDecoderConfigRecord.addNalUnit(spsNals, HevcNalUnitType::SPS, 0);
-        mDecoderConfigRecord.addNalUnit(ppsNals, HevcNalUnitType::PPS, 0);
-
-        uint32_t itemOffset = 0;
-        int imageIndex = 0;
-        while (hasMoreImages)
+        if ((not au.mPpsNalUnits.empty()) || (not au.mSpsNalUnits.empty()) || (not au.mVpsNalUnits.empty()))
         {
-            if (accessUnit == nullptr)
-            {
-                accessUnit = new ParserInterface::AccessUnit { };
-                hasMoreImages = mediaParser.parseNextAU(*accessUnit);
-            }
-            if (hasMoreImages)
-            {
-                MetaItem itemInfo;
-                uint32_t itemLength = 0;
-                for (auto nalU : accessUnit->mNalUnits)
-                {
-                    itemLength += nalU.size() + 4 - getNalStartCodeSize(nalU);
-                }
+            addDecoderConfiguration(au);
+        }
 
-                itemInfo.mType = HVC1_ITEM_TYPE;
-                itemInfo.mId = IdSpace::getValue();
-                itemInfo.mLength = itemLength;
-                itemInfo.mOffset = itemOffset;
-                mMetaItems.push_back(itemInfo);
-                storeValue("item_indx", to_string(itemInfo.mId));
-                itemOffset = itemOffset + itemLength; // Offset for next image
-                ++imageIndex;
-            }
-            delete accessUnit;
-            accessUnit = nullptr;
+        if (not au.mNalUnits.empty())
+        {
+            const uint32_t length = getItemLength(au.mNalUnits);
+            addItem(length);
         }
     }
+}
+
+HevcDecoderConfigurationRecord RootMetaImageWriter::getFirstDecoderConfiguration() const
+{
+    return mConfigs.at(0).decoderConfig;
 }

@@ -75,16 +75,17 @@ public:
     unsigned int getNumberOfSamples() const;
 
 private:
-    std::string   mGroupingType; /// Grouping Type
-    std::uint32_t mEntryCount; /// Entry count value
-    std::uint32_t mGroupingTypeParameter; /// Grouping Type parameter as defined in the ISOBMFF specification
+    std::string   mGroupingType; ///< Grouping Type
+    std::uint32_t mEntryCount; ///< Entry count value
+    std::uint32_t mGroupingTypeParameter; ///< Grouping Type parameter as defined in the ISOBMFF specification
 
-    struct SampleRun  /// data structure of a run-length coded sample run
+    /// Data structure of a run-length coded sample run
+    struct SampleRun
     {
         std::uint32_t sampleCount;
         std::uint32_t groupDescriptionIndex;
     };
-    std::vector<SampleRun> mRunOfSamples;/// vector of sample IDs in the sample run
+    std::vector<SampleRun> mRunOfSamples; ///< Vector of sample IDs in the sample run
 
     /// Internal structure, flattened mRunOfSamples
     std::vector<std::uint32_t> mSampleToGroupIndex;

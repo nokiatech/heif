@@ -38,6 +38,10 @@ private:
     IsoMediaFile::Content readContent(const Json::Value& contentValues) const;
     IsoMediaFile::Auxiliary readAuxiliary(const Json::Value& auxValues) const;
     IsoMediaFile::Property readProperty(const Json::Value& propertyValues) const;
+
+    /** @return Coding Constraints Box values all_ref_pic_intra and intra_pred_used, for tracks */
+    IsoMediaFile::CodingConstraints readCodingConstraints(const Json::Value& ccstValues) const;
+
     void readEditList(const std::string& fileName, IsoMediaFile::Master& master) const;
     void readEditList(const std::string& fileName, IsoMediaFile::Thumbs& thumbs) const;
 

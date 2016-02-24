@@ -13,6 +13,7 @@
 #ifndef BITSTREAM_HPP
 #define BITSTREAM_HPP
 
+#include <cstdint>
 #include <string>
 #include <vector>
 

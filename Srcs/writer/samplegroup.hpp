@@ -40,7 +40,7 @@ public:
     virtual void fillSbgp(SampleToGroupBox& sbgp) = 0;
 
 protected:
-    std::string mGroupingType; /// Sample grouping type value
+    std::string mGroupingType; ///< Sample grouping type value
 };
 
 

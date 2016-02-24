@@ -93,6 +93,14 @@ public:
     };
 
     /**
+     * @brief Data for CodingConstraintsBox in sample entries */
+    struct CodingConstraints
+    {
+        bool allRefPicsIntra;
+        bool intraPredUsed;
+    };
+
+    /**
      * @brief Writer configuration for content master images.
      * @details There is one Master configuration in each Content. */
     struct Master
@@ -109,6 +117,9 @@ public:
         std::uint32_t disp_rate; ///< Display rate in frames per second (only for tracks)
         std::uint32_t tick_rate; ///< Tick rate (only for tracks)
         EditList edit_list;      ///< Edit list (only for tracks)
+        bool hidden;             ///< True if the image is not intended to be displayed
+        bool write_alternates;   ///< Write alternate_group fields to 'tkhd' (trak only)
+        CodingConstraints ccst;  ///< Coding constraints to be used in 'ccst' box (only for tracks)
     };
 
     /**
@@ -126,6 +137,7 @@ public:
         EditList edit_list;      ///< Edit list (only for tracks)
         std::uint32_t sync_rate; ///< Generate thumbnail for every sync_rate master image, alternate for sync_idxs
         std::vector<std::uint32_t> sync_idxs; ///< Running numbers of images to generate thumbnails for, alternate for sync_rate
+        CodingConstraints ccst;  ///< Coding constraints to be used in 'ccst' box (only for tracks)
     };
 
     /**
@@ -260,8 +272,6 @@ public:
         std::uint32_t uniq_bsid; ///< Unique identifier for this context, used for referencing from another sections
         std::string file_path;   ///< Bitstream input file
         std::string urn;         ///< URN to specify type of the auxiliary image. Format is "urn:mpeg:hevc:2015:auxid:xxx" where xxx comes from Table F.2 of ISO/IEC 23008-2.
-        std::uint32_t disp_xdim; ///< Display width in pixels
-        std::uint32_t disp_ydim; ///< Display height in pixels
         ReferenceList refs_list; ///< uniq_bsids of contexts referenced in idxs_list
         IndexList idxs_list;     ///< 1-based sequential numbers, one vector for each item in refs_list, to refer to master images from auxiliary images
         bool hidden;             ///< True if the image is not intended to be displayed

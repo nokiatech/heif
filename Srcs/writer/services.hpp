@@ -56,8 +56,8 @@ public:
     static std::vector<std::uint32_t> getStoreIds();
 
 private:
-    typedef std::map<std::uint32_t, std::shared_ptr<DataStore>> ServeMap; /// internal list of Data store - Id mappings
-    static ServeMap mServeMap; ///static ServeMap object
+    typedef std::map<std::uint32_t, std::shared_ptr<DataStore>> ServeMap; ///< Internal list of Data store - Id mappings
+    static ServeMap mServeMap; ///< Static ServeMap object
 };
 
 #endif /* end of include guard: SERVICES_HPP */

@@ -32,7 +32,7 @@ public:
     RefsGroup();
     virtual ~RefsGroup() = default;
 
-    typedef std::vector<std::vector<std::uint32_t>> RefsList; /// list of reference groups as a vector of vectors
+    typedef std::vector<std::vector<std::uint32_t>> RefsList; ///< List of reference groups as a vector of vectors
 
     /**
      * @brief Loads the reference in refsList into a local member variable.
@@ -55,15 +55,15 @@ public:
     void fillSbgp(SampleToGroupBox& sbgp);
 
 private:
-    typedef std::tuple<std::uint32_t, std::vector<std::uint32_t>> RefsEntry; /// internal storage of refs entries
+    typedef std::tuple<std::uint32_t, std::vector<std::uint32_t>> RefsEntry; ///< Internal storage of refs entries
     typedef std::set<RefsEntry>                     EntrySet;
     typedef std::vector<RefsEntry>                  IdxEntry;
     typedef std::map<std::uint32_t, std::uint32_t>  SampleId;
 
-    RefsList mRefsList; /// list of refs
-    SampleId mSampleId; /// sample id refs mapping
-    EntrySet mEntrySet; /// set of Refs entries
-    IdxEntry mIdxEntry; /// vector of Refs entries
+    RefsList mRefsList; ///< List of refs
+    SampleId mSampleId; ///< Sample id refs mapping
+    EntrySet mEntrySet; ///< Set of Refs entries
+    IdxEntry mIdxEntry; ///< Vector of Refs entries
 
     /**
      * @brief Tags a sample in the track with a unique number if the sample is

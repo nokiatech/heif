@@ -374,8 +374,14 @@ int BitStream::readSignedExpGolombCode()
 
 BitStream BitStream::readSubBoxBitStream(std::string& boxType)
 {
-    const uint32_t boxSize = read32Bits();
+    uint64_t boxSize = read32Bits();
     readStringWithLen(boxType, 4);
+
+    if (boxSize == 1) // Check if 'largesize' field is used
+    {
+        boxSize = read64Bits();
+        mByteOffset -= 8;
+    }
 
     mByteOffset -= 8;
 

@@ -14,6 +14,7 @@
 
 #include "auxiliarytypeproperty.hpp"
 #include "cleanaperture.hpp"
+#include "codingconstraintsbox.hpp"
 #include "commondefs.hpp"
 #include "hevcconfigurationbox.hpp"
 #include "hevcsampleentry.hpp"
@@ -394,7 +395,7 @@ void HevcImageFileReader::getReferencedFromItemListByType(const uint32_t context
     {
         if (reference.getFromItemID() == fromItemId)
         {
-            const vector<uint16_t> toIds = reference.getToItemIds();
+            const vector<uint32_t> toIds = reference.getToItemIds();
             itemIds.insert(itemIds.end(), toIds.begin(), toIds.end());
         }
     }
@@ -417,7 +418,7 @@ void HevcImageFileReader::getReferencedToItemListByType(const uint32_t contextId
     itemIds.clear();
     for (const auto& reference : references)
     {
-        vector<uint16_t> toIds = reference.getToItemIds();
+        vector<uint32_t> toIds = reference.getToItemIds();
         for (const auto id : toIds)
         {
             if (id == toItemId)
@@ -912,7 +913,7 @@ void HevcImageFileReader::readStream()
     while (mInputStream->peek() != EOF)
     {
         string boxType;
-        uint32_t boxSize = 0;
+        uint64_t boxSize = 0;
         BitStream bitstream;
         readBox(bitstream, boxType, boxSize);
         if (boxType == "ftyp")
@@ -1076,13 +1077,11 @@ void HevcImageFileReader::fillImageInfoMap(const ContextId contextId)
 HevcImageFileReader::ItemInfoMap HevcImageFileReader::extractItemInfoMap(const MetaBox& metaBox) const
 {
     ItemInfoMap itemInfoMap;
-
-    const uint32_t countNumberOfItems = metaBox.getItemInfoBox().getEntryCount();
-    for (unsigned int i = 0; i < countNumberOfItems; ++i)
+    const std::vector<uint32_t> itemIds = metaBox.getItemInfoBox().getItemIds();
+    for (const auto itemId : itemIds)
     {
-        const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemInfoEntry(i);
+        const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemById(itemId);
         const string type = item.getItemType();
-        const uint32_t itemId = item.getItemID();
         if (!isImageItemType(type))
         {
             ItemInfo itemInfo;
@@ -1137,21 +1136,27 @@ HevcImageFileReader::FileFeature HevcImageFileReader::getFileFeatures() const
     return fileFeature;
 }
 
-
-void HevcImageFileReader::readBox(BitStream& bitstream, std::string& boxType, uint32_t& boxSize)
+uint64_t HevcImageFileReader::readBytes(std::istream* stream, const unsigned int count)
 {
-    int startLocation = mInputStream->tellg();
-
-    // Read the 32 bit length field of the box
-    boxSize = 0;
-    for (auto i = 0; i < 4; ++i)
+    uint64_t value = 0;
+    for (unsigned int i = 0; i < count; ++i)
     {
-        boxSize = (boxSize << 8) | mInputStream->get();
-        if (not mInputStream->good())
+        value = (value << 8) | stream->get();
+        if (!mInputStream->good())
         {
             throw FileReaderException(FileReaderException::StatusCode::FILE_READ_ERROR);
         }
     }
+
+    return value;
+}
+
+void HevcImageFileReader::readBox(BitStream& bitstream, std::string& boxType, uint64_t& boxSize)
+{
+    int startLocation = mInputStream->tellg();
+
+    // Read the 32-bit length field of the box
+    boxSize = readBytes(mInputStream, 4);
 
     // Read the four character string for boxType
     static const size_t TYPE_LENGTH = 4;
@@ -1160,6 +1165,12 @@ void HevcImageFileReader::readBox(BitStream& bitstream, std::string& boxType, ui
     if (not mInputStream->good())
     {
         throw FileReaderException(FileReaderException::StatusCode::FILE_READ_ERROR);
+    }
+
+    // Check if 64-bit largesize field is used
+    if (boxSize == 1)
+    {
+        boxSize = readBytes(mInputStream, 8);
     }
 
     // Seek to box beginning and dump data to bitstream
@@ -1360,13 +1371,13 @@ ImageFileReaderInterface::GroupingMap HevcImageFileReader::extractMetaBoxEntityT
 ImageFileReaderInterface::ImageFeaturesMap HevcImageFileReader::extractMetaBoxImagePropertiesMap(const MetaBox& metaBox) const
 {
     ImageFeaturesMap imagePropertiesMap;
+    const std::vector<uint32_t> itemIds = metaBox.getItemInfoBox().getItemIds();
 
-    const uint32_t countNumberOfItems = metaBox.getItemInfoBox().getEntryCount();
-    for (unsigned int i = 0; i < countNumberOfItems; ++i)
+    for (const auto itemId : itemIds)
     {
-        const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemInfoEntry(i);
+        const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemById(itemId);
         const string type = item.getItemType();
-        const uint32_t itemId = item.getItemID();
+
         if (isImageItemType(type))
         {
             ImageFeature imageFeatures;
@@ -1447,13 +1458,12 @@ ImageFileReaderInterface::ImageFeaturesMap HevcImageFileReader::extractMetaBoxIm
 ImageFileReaderInterface::ItemFeaturesMap HevcImageFileReader::extractMetaBoxItemPropertiesMap(const MetaBox& metaBox) const
 {
     ItemFeaturesMap itemFeaturesMap;
+    const std::vector<uint32_t> itemIds = metaBox.getItemInfoBox().getItemIds();
 
-    const uint32_t countNumberOfItems = metaBox.getItemInfoBox().getEntryCount();
-    for (unsigned int i = 0; i < countNumberOfItems; ++i)
+    for (const auto itemId : itemIds)
     {
-        const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemInfoEntry(i);
+        const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemById(itemId);
         const string type = item.getItemType();
-        const uint32_t itemId = item.getItemID();
         if (type != "hvc1")
         {
             ItemFeature itemFeature;
@@ -1494,12 +1504,11 @@ HevcImageFileReader::Properties HevcImageFileReader::processItemProperties(const
     Properties propertyMap;
 
     const ItemPropertiesBox& iprp = mMetaBoxMap.at(contextId).getItemPropertiesBox();
-
-    const uint32_t itemCount = mMetaBoxMap.at(contextId).getItemInfoBox().getEntryCount();
-    for (unsigned int i = 0; i < itemCount; ++i)
+    const std::vector<uint32_t> itemIds = mMetaBoxMap.at(contextId).getItemInfoBox().getItemIds();
+    for (const auto itemId : itemIds)
     {
-        const ItemInfoEntry& item = mMetaBoxMap.at(contextId).getItemInfoBox().getItemInfoEntry(i);
-        const ItemId itemId = item.getItemID();
+        const ItemInfoEntry& item = mMetaBoxMap.at(contextId).getItemInfoBox().getItemById(itemId);
+
         ItemPropertiesBox::PropertyInfos propertyVector = iprp.getItemProperties(itemId);
 
         // The following loop copies item property information to interface. Data structures are essentially identical
@@ -1557,14 +1566,13 @@ void HevcImageFileReader::processHvccProperties(const ContextId contextId)
 HevcImageFileReader::MetaBoxInfo HevcImageFileReader::extractItems(const MetaBox& metaBox, const std::uint32_t contextId) const
 {
     MetaBoxInfo metaBoxInfo;
-    const uint32_t itemCount = metaBox.getItemInfoBox().getEntryCount();
-    for (unsigned int i = 0; i < itemCount; ++i)
+    const std::vector<uint32_t> itemIds = metaBox.getItemInfoBox().getItemIds();
+    for (const auto itemId : itemIds)
     {
-        const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemInfoEntry(i);
+        const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemById(itemId);
         const std::string type = item.getItemType();
         if (type == "grid" || type == "iovl")
         {
-            const uint32_t itemId = item.getItemID();
             if (isProtected(contextId, itemId))
             {
                 continue;
@@ -1708,6 +1716,7 @@ HevcImageFileReader::TrackPropertiesMap HevcImageFileReader::fillTrackProperties
 
         trackProperties.sampleProperties = makeSamplePropertiesMap(trackBox);
         trackInfo.samples = makeSampleInfoVector(trackBox, trackInfo.pMap);
+        mTrackInfo[trackProperties.trackId] = trackInfo;
 
         fillHevcSampleEntryMap(trackBox);
 
@@ -1718,7 +1727,6 @@ HevcImageFileReader::TrackPropertiesMap HevcImageFileReader::fillTrackProperties
         trackProperties.alternateGroupId = trackBox->getTrackHeaderBox().getAlternateGroup();
 
         trackPropertiesMap[trackProperties.trackId] = trackProperties;
-        mTrackInfo[trackProperties.trackId] = trackInfo;
 
         ContextInfo contextInfo;
         contextInfo.contextType = ContextType::TRACK;
@@ -1991,29 +1999,30 @@ HevcImageFileReader::SampleInfoVector HevcImageFileReader::makeSampleInfoVector(
     SampleSizeBox& stszBox = stblBox.getSampleSizeBox();
 
     const vector<uint32_t> sampleSizeEntries = stszBox.getEntrySize();
-    const vector<uint32_t> chunkOffsets = stcoBox.getChunkOffsets();
+    const vector<uint64_t> chunkOffsets = stcoBox.getChunkOffsets();
     const std::vector<SampleToGroupBox> sampleToGroupBoxes = stblBox.getSampleToGroupBoxes();
 
     const unsigned int sampleCount = stszBox.getSampleCount();
 
-    /** @todo Currently only one chunk offset is assumed to be present in the file.
-     *  code should be refactored in order to handle multiple chunk offests. **/
-
+    std::uint32_t previousChunkIndex = 0; // Index is 1-based so 0 will not be used.
     for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex)
     {
         SampleInfo sampleInfo;
 
         // Set basic sample information
         sampleInfo.decodingOrder = sampleIndex;
-        if (sampleIndex == 0)
+        sampleInfo.dataLength = sampleSizeEntries.at(sampleIndex);
+
+        const std::uint32_t chunkIndex = stscBox.getSampleChunkIndex(sampleIndex);
+        if (chunkIndex != previousChunkIndex)
         {
-            sampleInfo.dataOffset = chunkOffsets.at(0);
+            sampleInfo.dataOffset = chunkOffsets.at(chunkIndex - 1);
+            previousChunkIndex = chunkIndex;
         }
         else
         {
             sampleInfo.dataOffset = sampleInfoVector.back().dataOffset + sampleInfoVector.back().dataLength;
         }
-        sampleInfo.dataLength = sampleSizeEntries.at(sampleIndex);
 
         // Set dimensions
         const uint32_t sampleDescriptionIndex = stscBox.getSampleDescriptionIndex(sampleIndex);
@@ -2067,19 +2076,28 @@ HevcImageFileReader::SamplePropertiesMap HevcImageFileReader::makeSampleProperti
         SampleProperties sampleProperties;
         sampleProperties.sampleId = sampleIndex;
         sampleProperties.sampleDescriptionIndex = stscBox.getSampleDescriptionIndex(sampleIndex);
-        HevcSampleEntry* hevcSampleEntry = stsdBox.getSampleEntry<HevcSampleEntry>(sampleProperties.sampleDescriptionIndex);
-        sampleProperties.sampleEntryType = hevcSampleEntry->getType();
+        VisualSampleEntryBox* sampleEntry = stsdBox.getSampleEntry<VisualSampleEntryBox>(sampleProperties.sampleDescriptionIndex);
+        sampleProperties.sampleEntryType = sampleEntry->getType();
 
-        if (hevcSampleEntry->getCodingConstraintsBox().getAllRefPicsIntra() == true)
+        // Get CodingConstraintsBox from HEVC SampleEntryType boxes
+        CodingConstraintsBox* ccst = sampleEntry->getCodingConstraintsBox();
+
+        if (!ccst)
+        {
+            throw FileReaderException(FileReaderException::StatusCode::UNINITIALIZED, "Failed to read coding constraints from '" + sampleProperties.sampleEntryType + "' sample entry type box.");
+        }
+
+        // Store values from CodingConstraintsBox
+        if (ccst->getAllRefPicsIntra() == true)
         {
             sampleProperties.codingConstraints.setFeature(CodingConstraints::IsAllReferencePicturesIntra);
         }
-        if (hevcSampleEntry->getCodingConstraintsBox().getIntraPredUsed() == true)
+        if (ccst->getIntraPredUsed() == true)
         {
             sampleProperties.codingConstraints.setFeature(CodingConstraints::IsIntraPredictionUsed);
         }
 
-        sampleProperties.hasClap = hevcSampleEntry->getClap();
+        sampleProperties.hasClap = sampleEntry->getClap();
 
         // By default, set as output reference frame (groupings can change this later)
         // By definition, an output reference frame MAY be used as a reference for other samples.
@@ -2286,7 +2304,7 @@ bool doReferencesToItemIdExist(const MetaBox& metaBox, const uint32_t itemId, co
     const vector<SingleItemTypeReferenceBox> references = metaBox.getItemReferenceBox().getReferencesOfType(referenceType);
     for (const auto& singleItemTypeReferenceBox : references)
     {
-        const vector<uint16_t> toIds = singleItemTypeReferenceBox.getToItemIds();
+        const vector<uint32_t> toIds = singleItemTypeReferenceBox.getToItemIds();
         const auto id = find(toIds.cbegin(), toIds.cend(), itemId);
         if (id != toIds.cend())
         {

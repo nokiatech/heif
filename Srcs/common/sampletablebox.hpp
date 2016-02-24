@@ -138,20 +138,20 @@ public:
 
 private:
     // Mandatory Boxes
-    SampleDescriptionBox   mSampleDescriptionBox; /// sample description box (mandatory)
-    TimeToSampleBox        mTimeToSampleBox; /// time-to-sample box (mandatory)
-    SampleToChunkBox       mSampleToChunkBox; /// sample-to-chunk box (mandatory)
-    ChunkOffsetBox         mChunkOffsetBox; /// chunk offset box (mandatory)
-    SampleSizeBox          mSampleSizeBox; /// sample size box (mandatory)
+    SampleDescriptionBox   mSampleDescriptionBox; ///< Sample description box (mandatory)
+    TimeToSampleBox        mTimeToSampleBox; ///< Time-to-sample box (mandatory)
+    SampleToChunkBox       mSampleToChunkBox; ///< Sample-to-chunk box (mandatory)
+    ChunkOffsetBox         mChunkOffsetBox; ///< Chunk offset box (mandatory)
+    SampleSizeBox          mSampleSizeBox; ///< Sample size box (mandatory)
 
     // Non-Mandatory Boxes
-    std::shared_ptr<SyncSampleBox>           mSyncSampleBox; /// sync sample box (optional)
-    std::shared_ptr<CompositionOffsetBox>    mCompositionOffsetBox; /// composition offset box (optional)
-    std::shared_ptr<CompositionToDecodeBox>  mCompositionToDecodeBox; /// composition to decode box (optional)
-    std::shared_ptr<EditBox>                 mEditBox; /// edit box (optional)
+    std::shared_ptr<SyncSampleBox>           mSyncSampleBox; ///< Sync sample box (optional)
+    std::shared_ptr<CompositionOffsetBox>    mCompositionOffsetBox; ///< Composition offset box (optional)
+    std::shared_ptr<CompositionToDecodeBox>  mCompositionToDecodeBox; ///< Composition to decode box (optional)
+    std::shared_ptr<EditBox>                 mEditBox; ///< Edit box (optional)
 
-    std::unique_ptr<SampleGroupDescriptionBox> mSampleGroupDescriptionBox; /// pointer to the sample group description box
-    std::vector<SampleToGroupBox>            mSampleToGroupBox; /// vectory of sample-to-group boxes
+    std::unique_ptr<SampleGroupDescriptionBox> mSampleGroupDescriptionBox; ///< Pointer to the sample group description box
+    std::vector<SampleToGroupBox>            mSampleToGroupBox; ///< Vectory of sample-to-group boxes
 };
 
 #endif /* end of include guard: SAMPLETABLEBOX_HPP */

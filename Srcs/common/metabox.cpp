@@ -42,7 +42,7 @@ const PrimaryItemBox& MetaBox::getPrimaryItemBox() const
     return mPrimaryItemBox;
 }
 
-void MetaBox::setPrimaryItem(const std::uint16_t itemId)
+void MetaBox::setPrimaryItem(const std::uint32_t itemId)
 {
     mPrimaryItemBox.setItemId(itemId);
 
@@ -110,12 +110,12 @@ const DataInformationBox& MetaBox::getDataInformationBox() const
     return mDataInformationBox;
 }
 
-void MetaBox::addItemReference(const std::string& type, const std::uint16_t fromId, const std::uint16_t toId)
+void MetaBox::addItemReference(const std::string& type, const std::uint32_t fromId, const std::uint32_t toId)
 {
     mItemReferenceBox.add(type, fromId, toId);
 }
 
-void MetaBox::addIloc(const std::uint16_t itemId, const std::uint32_t offset, const std::uint32_t length,
+void MetaBox::addIloc(const std::uint32_t itemId, const std::uint32_t offset, const std::uint32_t length,
     const std::uint32_t baseOffset)
 {
     ItemLocationExtent locationExtent;
@@ -130,7 +130,7 @@ void MetaBox::addIloc(const std::uint16_t itemId, const std::uint32_t offset, co
     mItemLocationBox.addLocation(itemLocation);
 }
 
-void MetaBox::addItem(const std::uint16_t itemId, const std::string& type, const std::string& name, const bool hidden)
+void MetaBox::addItem(const std::uint32_t itemId, const std::string& type, const std::string& name, const bool hidden)
 {
     ItemInfoEntry infeBox;
     infeBox.setVersion(2);
@@ -147,7 +147,7 @@ void MetaBox::addItem(const std::uint16_t itemId, const std::string& type, const
     mItemInfoBox.addItemInfoEntry(infeBox);
 }
 
-void MetaBox::addMdatItem(const std::uint16_t itemId, const std::string& type, const std::string& name,
+void MetaBox::addMdatItem(const std::uint32_t itemId, const std::string& type, const std::string& name,
     const std::uint32_t baseOffset)
 {
     addItem(itemId, type, name);
@@ -159,7 +159,7 @@ void MetaBox::addMdatItem(const std::uint16_t itemId, const std::string& type, c
     mItemLocationBox.addLocation(itemLocation);
 }
 
-void MetaBox::addItemExtent(const std::uint16_t itemId, const std::uint32_t offset, const std::uint32_t length)
+void MetaBox::addItemExtent(const std::uint32_t itemId, const std::uint32_t offset, const std::uint32_t length)
 {
     ItemLocationExtent locationExtent;
     locationExtent.mExtentOffset = offset;
@@ -168,7 +168,7 @@ void MetaBox::addItemExtent(const std::uint16_t itemId, const std::uint32_t offs
 }
 
 
-void MetaBox::addIdatItem(const std::uint16_t itemId, const std::string& type, const std::string& name,
+void MetaBox::addIdatItem(const std::uint32_t itemId, const std::string& type, const std::string& name,
     const std::vector<uint8_t>& data)
 {
     const unsigned int offset = mItemDataBox.addData(data);
@@ -184,7 +184,7 @@ void MetaBox::addIdatItem(const std::uint16_t itemId, const std::string& type, c
     mItemLocationBox.addLocation(itemLocation);
 }
 
-void MetaBox::addItemIdatExtent(const std::uint16_t itemId, const std::vector<uint8_t>& data)
+void MetaBox::addItemIdatExtent(const std::uint32_t itemId, const std::vector<uint8_t>& data)
 {
     const unsigned int offset = mItemDataBox.addData(data);
     ItemLocationExtent locationExtent;

@@ -61,9 +61,9 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    std::uint32_t mSampleSize; /// default sample size. Non-zero if all samples have the same sample size.
-    std::uint32_t mSampleCount; /// number of samples to be listed
-    std::vector<std::uint32_t> mEntrySize; /// sample sizes of each sample.
+    std::uint32_t mSampleSize; ///< Default sample size. Non-zero if all samples have the same sample size.
+    std::uint32_t mSampleCount; ///< Number of samples to be listed
+    std::vector<std::uint32_t> mEntrySize; ///< Sample sizes of each sample.
 };
 
 #endif /* end of include guard: SAMPLESIZEBOX_HPP */

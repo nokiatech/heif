@@ -13,13 +13,13 @@
 #ifndef ITEMINFOBOX_HPP
 #define ITEMINFOBOX_HPP
 
-#include "bitstream.hpp"
 #include "fullbox.hpp"
-
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
+class BitStream;
 class ItemInfoEntry;
 class ItemInfoExtension;
 
@@ -38,7 +38,10 @@ public:
 
     /** @brief Get the number of entries in the Item Information List
      * @return number of entries in the Item Information List */
-    std::uint16_t getEntryCount() const;
+    std::uint32_t getEntryCount() const;
+
+    /** @return All Item IDs in this ItemInfoBox */
+    std::vector<std::uint32_t> getItemIds() const;
 
     /** @brief Add a new Item Information Entry to the Item Information List
      * @param [in] infoEntry ItemInfoEntry to be added. */
@@ -84,10 +87,10 @@ public:
      * @param [in] itemId ID of an Item
      * @return ItemInfoEntry with the desired itemId
      * @throws Runtime Exception if the requested ItemInfoEntry is not found. **/
-    ItemInfoEntry getItemById(uint16_t itemId) const;
+    ItemInfoEntry getItemById(uint32_t itemId) const;
 
 private:
-    std::vector<ItemInfoEntry> mItemInfoList; /// vector of the ItemInfoEntry Boxes
+    std::map<std::uint32_t, ItemInfoEntry> mItemInfos; ///< ItemInfoEntry Boxes
 };
 
 
@@ -104,11 +107,11 @@ public:
 
     /** @brief Set an item Id to the ItemInfoEntry
      * @param [in] id ID of an Item */
-    void setItemID(std::uint16_t id);
+    void setItemID(std::uint32_t id);
 
     /** @brief Get the ID of an item
      * @return ID of an Item */
-    std::uint16_t getItemID() const;
+    std::uint32_t getItemID() const;
 
     /** @brief Set the item protection index of the ItemInfoEntry
      * @param [in] idx the index of the item protection scheme as listed in the item protection box */
@@ -175,22 +178,22 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    // Version 0 & 1 & 2
-    std::uint16_t mItemID; /// ID of the item
-    std::uint16_t mItemProtectionIndex; /// item protection index
-    std::string mItemName; /// item name
-    std::string mContentType; /// content type
-    std::string mContentEncoding; /// content encoding
+    // Version 0, 1, 2, 3
+    std::uint32_t mItemID;              ///< ID of the item
+    std::uint16_t mItemProtectionIndex; ///< Item protection index
+    std::string mItemName;              ///< Item name
+    std::string mContentType;           ///< Content type
+    std::string mContentEncoding;       ///< Content encoding
 
     // Version 1
-    std::string mExtensionType; /// the extension type
+    std::string mExtensionType; ///< The extension type
 
     /** @todo Verify if default shallow copy is wanted/needed for ItemInfoExtension **/
-    ItemInfoExtension* mItemInfoExtension; /// item info extension
+    ItemInfoExtension* mItemInfoExtension; ///< Item info extension
 
     // Version 2
-    std::string mItemType; /// item type
-    std::string mItemUriType; /// item UIR type
+    std::string mItemType;    ///< Item type
+    std::string mItemUriType; ///< Item UIR type
 };
 
 
@@ -279,12 +282,12 @@ public:
     virtual void parse(BitStream& bitstr);
 
 private:
-    std::string mContentLocation; ///content location
-    std::string mContentMD5; /// MD5 value
-    uint64_t mContentLength; /// content length
-    uint64_t mTransferLength; /// transfer length
-    uint8_t mEntryCount; /// entry count
-    std::vector<uint32_t> mGroupID; /// vector of Group ID values
+    std::string mContentLocation;   ///< Content location
+    std::string mContentMD5;        ///< MD5 value
+    uint64_t mContentLength;        ///< Content length
+    uint64_t mTransferLength;       ///< Transfer length
+    uint8_t mEntryCount;            ///< Entry count
+    std::vector<uint32_t> mGroupID; ///< Vector of Group ID values
 };
 
 #endif /* end of include guard: ITEMINFOBOX_HPP */

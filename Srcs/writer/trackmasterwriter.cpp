@@ -29,7 +29,7 @@ std::unique_ptr<TrackBox> TrackMasterWriter::writeTrack()
     initWrite();                  // Initialize the writer
     bstrParse();                  // Parse the bitstream
     hdlrWrite(mConfig.hdlr_type); // Fill the HandlerBox
-    stsdWrite(true);              // Fill the SampleDescriptionBox
+    stsdWrite(mConfig.ccst); // Fill the SampleDescriptionBox
     sgrpWrite(); // Fill the linked SampleToGroupBox and SampleGroupDescriptionBox for every required grouping
     writeTrackCommon();
 

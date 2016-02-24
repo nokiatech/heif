@@ -22,7 +22,7 @@
 /** @brief Item Properties Box class.
  * @details 'iprp' box implementation as specified in the HEIF specification. Enum class PropertyType lists supported
  * Property types. */
-class ItemPropertiesBox : public FullBox
+class ItemPropertiesBox : public Box
 {
 public:
     ItemPropertiesBox();

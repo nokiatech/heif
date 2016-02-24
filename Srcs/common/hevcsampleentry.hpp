@@ -34,13 +34,12 @@ public:
      *  @return Reference to the HevcConfigurationBox **/
     HevcConfigurationBox& getHevcConfigurationBox();
 
-    /** @brief Gets the CodingConstraintsBox
-     *  @return Reference to the CodingConstraintsBox **/
-    CodingConstraintsBox& getCodingConstraintsBox();
+    /** @brief Create CodingConstraintsBox */
+    void createCodingConstraintsBox();
 
-    /** @brief Check if CodingConstraintsBox is present
-     *  @return TRUE if CodingConstraintsBox is present, FALSE otherwise **/
-    bool isCodingConstraintsBoxPresent() const;
+    /** @brief Gets the CodingConstraintsBox
+     *  @return Pointer to CodingConstraintsBox, if present. */
+    virtual CodingConstraintsBox* getCodingConstraintsBox() override;
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */

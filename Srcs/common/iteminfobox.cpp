@@ -23,40 +23,47 @@ ItemInfoBox::ItemInfoBox() :
 
 ItemInfoBox::ItemInfoBox(const uint8_t version) :
     FullBox("iinf", version, 0),
-    mItemInfoList()
+    mItemInfos()
 {
 }
 
-uint16_t ItemInfoBox::getEntryCount() const
+uint32_t ItemInfoBox::getEntryCount() const
 {
-    return mItemInfoList.size();
+    return mItemInfos.size();
+}
+
+std::vector<std::uint32_t> ItemInfoBox::getItemIds() const
+{
+    std::vector<std::uint32_t> itemIds;
+    for (const auto& entry : mItemInfos)
+    {
+        itemIds.push_back(entry.first);
+    }
+    return itemIds;
 }
 
 void ItemInfoBox::addItemInfoEntry(const ItemInfoEntry& infoEntry)
 {
-    mItemInfoList.push_back(infoEntry);
+    mItemInfos.insert(std::pair<std::uint32_t, ItemInfoEntry>(infoEntry.getItemID(), infoEntry));
 }
 
 const ItemInfoEntry& ItemInfoBox::getItemInfoEntry(const int idx) const
 {
-    return mItemInfoList.at(idx);
+    return mItemInfos.at(idx);
 }
 
-ItemInfoEntry ItemInfoBox::getItemById(const uint16_t itemId) const
+ItemInfoEntry ItemInfoBox::getItemById(const uint32_t itemId) const
 {
-    for (const auto& item : mItemInfoList)
+    if (mItemInfos.count(itemId) == 0)
     {
-        if (item.getItemID() == itemId)
-        {
-            return item;
-        }
+        throw runtime_error("Requested ItemInfoEntry not found.");
     }
-    throw runtime_error("Requested ItemInfoEntry not found.");
+    return mItemInfos.at(itemId);
 }
 
 void ItemInfoBox::clear()
 {
-    mItemInfoList.clear();
+    mItemInfos.clear();
 }
 
 void ItemInfoBox::writeBox(BitStream& bitstr)
@@ -65,16 +72,16 @@ void ItemInfoBox::writeBox(BitStream& bitstr)
 
     if (getVersion() == 0)
     {
-        bitstr.write16Bits(mItemInfoList.size());
+        bitstr.write16Bits(mItemInfos.size());
     }
     else
     {
-        bitstr.write32Bits(mItemInfoList.size());
+        bitstr.write32Bits(mItemInfos.size());
     }
 
-    for (auto& entry : mItemInfoList)
+    for (auto& entry : mItemInfos)
     {
-        entry.writeBox(bitstr);
+        entry.second.writeBox(bitstr);
     }
 
     updateSize(bitstr);
@@ -107,9 +114,9 @@ unsigned int ItemInfoBox::countNumberOfItems(const string& itemType)
 {
     unsigned int numberOfItems = 0;
 
-    for (const auto& entry : mItemInfoList)
+    for (const auto& entry : mItemInfos)
     {
-        if (entry.getItemType() == itemType)
+        if (entry.second.getItemType() == itemType)
         {
             ++numberOfItems;
         }
@@ -124,13 +131,13 @@ ItemInfoEntry* ItemInfoBox::findItemWithTypeAndID(const string& itemType, const 
     ItemInfoEntry* entry = nullptr;
     unsigned int currIndex = 0;
 
-    for (auto i = mItemInfoList.begin(); i != mItemInfoList.end(); ++i)
+    for (auto i = mItemInfos.begin(); i != mItemInfos.end(); ++i)
     {
-        if (i->getItemType() == itemType)
+        if (i->second.getItemType() == itemType)
         {
-            if (i->getItemID() == itemID)
+            if (i->second.getItemID() == itemID)
             {
-                entry = &(*i);
+                entry = &i->second;
                 index = currIndex;
                 break;
             }
@@ -163,12 +170,12 @@ ItemInfoEntry::~ItemInfoEntry()
     delete mItemInfoExtension;
 }
 
-void ItemInfoEntry::setItemID(const uint16_t id)
+void ItemInfoEntry::setItemID(const uint32_t id)
 {
     mItemID = id;
 }
 
-uint16_t ItemInfoEntry::getItemID() const
+uint32_t ItemInfoEntry::getItemID() const
 {
     return mItemID;
 }
@@ -258,9 +265,16 @@ void ItemInfoEntry::writeBox(BitStream& bitstr)
         bitstr.writeString(mExtensionType);
         mItemInfoExtension->write(bitstr);
     }
-    if (getVersion() == 2)
+    if (getVersion() >= 2)
     {
-        bitstr.write16Bits(mItemID);
+        if (getVersion() == 2)
+        {
+            bitstr.write16Bits(mItemID);
+        }
+        else if (getVersion() == 3)
+        {
+            bitstr.write32Bits(mItemID);
+        }
         bitstr.write16Bits(mItemProtectionIndex);
         bitstr.writeString(mItemType);
         bitstr.writeZeroTerminatedString(mItemName);
@@ -312,9 +326,16 @@ void ItemInfoEntry::parseBox(BitStream& bitstr)
         mItemInfoExtension = itemInfoExt;
         itemInfoExt->parse(bitstr);
     }
-    if (getVersion() == 2)
+    if (getVersion() >= 2)
     {
-        mItemID = bitstr.read16Bits();
+        if (getVersion() == 2)
+        {
+            mItemID = bitstr.read16Bits();
+        }
+        else if (getVersion() == 3)
+        {
+            mItemID = bitstr.read32Bits();
+        }
         mItemProtectionIndex = bitstr.read16Bits();
         bitstr.readStringWithLen(mItemType, 4);
         bitstr.readZeroTerminatedString(mItemName);
@@ -350,13 +371,13 @@ ItemInfoEntry* ItemInfoBox::findItemWithType(const string& itemType, const unsig
     ItemInfoEntry* entry = nullptr;
     unsigned int currIndex = 0;
 
-    for (auto i = mItemInfoList.begin(); i != mItemInfoList.end(); ++i)
+    for (auto i = mItemInfos.begin(); i != mItemInfos.end(); ++i)
     {
-        if (i->getItemType() == itemType)
+        if (i->second.getItemType() == itemType)
         {
             if (index == currIndex)
             {
-                entry = &(*i);
+                entry = &i->second;
                 break;
             }
             else
@@ -372,11 +393,11 @@ ItemInfoEntry* ItemInfoBox::findItemWithType(const string& itemType, const unsig
 vector<ItemInfoEntry> ItemInfoBox::getItemsByType(const std::string& itemType) const
 {
     vector<ItemInfoEntry> items;
-    for (const auto& i : mItemInfoList)
+    for (const auto& i : mItemInfos)
     {
-        if (i.getItemType() == itemType)
+        if (i.second.getItemType() == itemType)
         {
-            items.push_back(i);
+            items.push_back(i.second);
         }
     }
     return items;

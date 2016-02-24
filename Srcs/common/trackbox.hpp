@@ -58,10 +58,10 @@ public:
     void parseBox(BitStream& bitstr);
 
 private:
-    TrackHeaderBox mTrackHeaderBox; /// Track Header Box
-    MediaBox mMediaBox; /// Media Box related to this track
-    TrackReferenceBox mTrackReferenceBox; /// Track Reference Box
-    bool mHasTrackReferences; /// Flag that shows whether the track has references from other tracks
+    TrackHeaderBox mTrackHeaderBox; ///< Track Header Box
+    MediaBox mMediaBox; ///< Media Box related to this track
+    TrackReferenceBox mTrackReferenceBox; ///< Track Reference Box
+    bool mHasTrackReferences; ///< Flag that shows whether the track has references from other tracks
 };
 
 #endif /* end of include guard: TRACKBOX_HPP */

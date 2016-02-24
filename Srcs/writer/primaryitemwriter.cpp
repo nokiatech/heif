@@ -32,7 +32,7 @@ PrimaryItemWriter::PrimaryItemWriter(const uint32_t uniqBsid,
 
 void PrimaryItemWriter::write(MetaBox* metaBox)
 {
-    uint16_t itemId = 0;
+    uint32_t itemId = 0;
 
     const std::vector<std::uint32_t> storeIds = DataServe::getStoreIds();
 

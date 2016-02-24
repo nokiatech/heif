@@ -83,8 +83,8 @@ public:
     virtual void parseEntry(BitStream& bitstr);
 
 private:
-    std::uint32_t mSampleId; /// Sample Id whose referenced sample Id will be listed
-    std::vector<std::uint32_t> mDirectReferenceSampleIds; /// vector of direct reference sample Ids
+    std::uint32_t mSampleId; ///< Sample Id whose referenced sample Id will be listed
+    std::vector<std::uint32_t> mDirectReferenceSampleIds; ///< Vector of direct reference sample Ids
 };
 
 #endif /* end of include guard: SAMPLEGROUPENTRY_HPP */

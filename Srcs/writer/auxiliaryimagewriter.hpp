@@ -75,10 +75,9 @@ private:
     /**
      * @brief Add entries to the Item Properties Box
      * @param [in,out] metaBox      Pointer to the MetaBox where to add data.
-     * @param          width,height Image dimensions
      * @param          itemIds      Item IDs to write
      */
-    void iprpWrite(MetaBox* metaBox, unsigned int width, unsigned int height, const ItemSet& itemIds) const;
+    void iprpWrite(MetaBox* metaBox, const ItemSet& itemIds) const;
 
     /**
      * @brief Add 'auxl' type item references, based on writer input configuration

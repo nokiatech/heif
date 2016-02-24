@@ -140,3 +140,13 @@ void VisualSampleEntryBox::parseBox(BitStream& bitstr)
     }
 }
 
+CodingConstraintsBox* VisualSampleEntryBox::getCodingConstraintsBox()
+{
+    return nullptr;
+}
+
+bool VisualSampleEntryBox::isCodingConstraintsBoxPresent() const
+{
+    // Check if pointer to CodingConstraintsBox is valid, doesn't modify anything.
+    return const_cast<VisualSampleEntryBox*>(this)->getCodingConstraintsBox();
+}

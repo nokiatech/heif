@@ -15,6 +15,7 @@
 #include "datastore.hpp"
 #include "imagerelativelocationproperty.hpp"
 #include "imagerotation.hpp"
+#include "log.hpp"
 #include "metabox.hpp"
 #include "services.hpp"
 #include "writerconstants.hpp"

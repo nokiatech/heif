@@ -37,7 +37,7 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    std::vector<std::uint32_t> mSampleNumber; /// vector of sync sample Ids
+    std::vector<std::uint32_t> mSampleNumber; ///< Vector of sync sample Ids
 };
 
 

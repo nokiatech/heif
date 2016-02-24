@@ -26,17 +26,15 @@ HevcConfigurationBox& HevcSampleEntry::getHevcConfigurationBox()
     return mHevcConfigurationBox;
 }
 
-CodingConstraintsBox& HevcSampleEntry::getCodingConstraintsBox()
+void HevcSampleEntry::createCodingConstraintsBox()
 {
-    return mCodingConstraintsBox;
+    mIsCodingConstraintsPresent = true;
 }
 
-
-bool HevcSampleEntry::isCodingConstraintsBoxPresent() const
+CodingConstraintsBox* HevcSampleEntry::getCodingConstraintsBox()
 {
-    return mIsCodingConstraintsPresent;
+    return (mIsCodingConstraintsPresent ? &mCodingConstraintsBox : nullptr);
 }
-
 
 void HevcSampleEntry::writeBox(BitStream& bitstr)
 {
@@ -44,7 +42,10 @@ void HevcSampleEntry::writeBox(BitStream& bitstr)
 
     mHevcConfigurationBox.writeBox(bitstr);
 
-    mCodingConstraintsBox.writeBox(bitstr);
+    if (mIsCodingConstraintsPresent)
+    {
+        mCodingConstraintsBox.writeBox(bitstr);
+    }
 
     // Update the size of the movie box
     updateSize(bitstr);

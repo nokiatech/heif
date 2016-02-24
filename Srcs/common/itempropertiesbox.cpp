@@ -16,7 +16,7 @@
 #include "log.hpp"
 
 ItemPropertiesBox::ItemPropertiesBox() :
-    FullBox("iprp", 0, 0)
+    Box("iprp")
 {
 }
 
@@ -99,7 +99,7 @@ void ItemPropertiesBox::associateProperty(const unsigned int index, const std::v
 
 void ItemPropertiesBox::writeBox(BitStream& output)
 {
-    writeFullBoxHeader(output);
+    writeBoxHeader(output);
 
     mContainer.writeBox(output);
     mAssociations.writeBox(output);
@@ -110,7 +110,7 @@ void ItemPropertiesBox::writeBox(BitStream& output)
 
 void ItemPropertiesBox::parseBox(BitStream& input)
 {
-    parseFullBoxHeader(input);
+    parseBoxHeader(input);
 
     std::string subBoxType;
     BitStream subBitStream = input.readSubBoxBitStream(subBoxType);

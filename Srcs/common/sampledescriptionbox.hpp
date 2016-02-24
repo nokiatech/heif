@@ -50,7 +50,7 @@ public:
     void parseBox(BitStream& bitstr);
 
 private:
-    std::vector<std::unique_ptr<SampleEntryBox>> mIndex; /// vector of sample entries
+    std::vector<std::unique_ptr<SampleEntryBox>> mIndex; ///< Vector of sample entries
 };
 
 

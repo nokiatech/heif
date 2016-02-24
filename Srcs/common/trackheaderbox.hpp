@@ -93,13 +93,13 @@ public:
     void parseBox(BitStream& bitstr);
 
 private:
-    std::uint32_t mCreationTime; /// creation time
-    std::uint32_t mModificationTime; /// modificaiton time
-    std::uint32_t mTrackID; /// track ID
-    std::uint64_t mDuration; /// track's duration
-    std::uint32_t mWidth; /// track display width
-    std::uint32_t mHeight; /// track display height
-    std::uint16_t mAlternateGroup; /// alternate group Id of the track
+    std::uint32_t mCreationTime;     ///< Creation time
+    std::uint32_t mModificationTime; ///< Modificaiton time
+    std::uint32_t mTrackID;          ///< Track ID
+    std::uint64_t mDuration;         ///< Track's duration
+    std::uint32_t mWidth;            ///< Track display width
+    std::uint32_t mHeight;           ///<  Track display height
+    std::uint16_t mAlternateGroup;   ///< Alternate group Id of the track
 };
 
 #endif /* end of include guard: TRACKHEADERBOX_HPP_CWQQ8ZSB */

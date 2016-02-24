@@ -178,12 +178,18 @@ IsoMediaFile::Content WriterConfig::readContent(const Json::Value& contentValues
     const Json::Value& masterValues = contentValues["master"];
     newContent.master.uniq_bsid = readOptionalUint(masterValues["uniq_bsid"]);
     newContent.master.make_vide = readBool(masterValues["make_vide"], false);
+    newContent.master.write_alternates = readBool(masterValues["write_alternates"], true);
+    newContent.master.hidden = readBool(masterValues["hidden"], false);
     newContent.master.file_path = masterValues["file_path"].asString();
     newContent.master.hdlr_type = masterValues["hdlr_type"].asString();
     newContent.master.code_type = masterValues["code_type"].asString();
     newContent.master.encp_type = masterValues["encp_type"].asString();
-    newContent.master.disp_xdim = readUint32(masterValues, "disp_xdim");
-    newContent.master.disp_ydim = readUint32(masterValues, "disp_ydim");
+    if (newContent.master.encp_type == "trak")
+    {
+        newContent.master.disp_xdim = readUint32(masterValues, "disp_xdim");
+        newContent.master.disp_ydim = readUint32(masterValues, "disp_ydim");
+        newContent.master.ccst = readCodingConstraints(masterValues["ccst"]);
+    }
     newContent.master.disp_rate = readOptionalUint(masterValues["disp_rate"], 0);
     newContent.master.tick_rate = readOptionalUint(masterValues["tick_rate"], 90000);
 
@@ -202,8 +208,12 @@ IsoMediaFile::Content WriterConfig::readContent(const Json::Value& contentValues
         newThumb.file_path = thumb["file_path"].asString();
         newThumb.hdlr_type = thumb["hdlr_type"].asString();
         newThumb.code_type = thumb["code_type"].asString();
-        newThumb.disp_xdim = readUint32(thumb, "disp_xdim");
-        newThumb.disp_ydim = readUint32(thumb, "disp_ydim");
+        if (newContent.master.encp_type == "trak")
+        {
+            newThumb.disp_xdim = readUint32(thumb, "disp_xdim");
+            newThumb.disp_ydim = readUint32(thumb, "disp_ydim");
+            newThumb.ccst = readCodingConstraints(thumb["ccst"]);
+        }
         newThumb.tick_rate = readOptionalUint(thumb["tick_rate"], 90000);
         newThumb.sync_rate = readOptionalUint(thumb["sync_rate"], 0);
 
@@ -425,8 +435,6 @@ IsoMediaFile::Auxiliary WriterConfig::readAuxiliary(const Json::Value& auxValues
     aux.idxs_list = parseIndexList(auxValues["idxs_list"]);
     aux.refs_list = parseRefsList(auxValues["refs_list"]);
     aux.uniq_bsid = readOptionalUint(auxValues["uniq_bsid"]);
-    aux.disp_xdim = readUint32(auxValues, "disp_xdim");
-    aux.disp_ydim = readUint32(auxValues, "disp_ydim");
     aux.hidden = readBool(auxValues["hidden"], true);
 
     aux.urn = auxValues["urn"].asString();
@@ -573,4 +581,14 @@ IsoMediaFile::IndexList WriterConfig::parseIndexList(const Json::Value& indexLis
     }
 
     return result;
+}
+
+IsoMediaFile::CodingConstraints WriterConfig::readCodingConstraints(const Json::Value& ccstValues) const
+{
+    IsoMediaFile::CodingConstraints ccst;
+
+    ccst.allRefPicsIntra = readBool(ccstValues["all_ref_pics_intra"], true);
+    ccst.intraPredUsed = readBool(ccstValues["intra_pred_used"], false);
+
+    return ccst;
 }

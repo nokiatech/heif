@@ -79,10 +79,10 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    std::string mGroupingType; /// grouping type
-    std::uint32_t mDefaultLength; /// default byte size of the description
+    std::string mGroupingType; ///< Grouping type
+    std::uint32_t mDefaultLength; ///< Default byte size of the description
 
-    std::vector<std::unique_ptr<SampleGroupEntry>> mSampleGroupEntry; ///vector of sample group entries
+    std::vector<std::unique_ptr<SampleGroupEntry>> mSampleGroupEntry; ///< Vector of sample group entries
 };
 
 

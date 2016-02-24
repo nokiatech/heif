@@ -12,30 +12,29 @@
 
 #include "chunkoffsetbox.hpp"
 #include "bitstream.hpp"
+#include <algorithm>
+#include <limits>
 
 ChunkOffsetBox::ChunkOffsetBox() :
     FullBox("stco", 0, 0),
-    mEntryCount(0),
     mChunkOffsets()
 {
 }
 
-void ChunkOffsetBox::setEntryCount(uint32_t entry_count)
+void ChunkOffsetBox::setChunkOffsets(const std::vector<uint64_t>& chunkOffsets)
 {
-    mEntryCount = entry_count;
+    mChunkOffsets = chunkOffsets;
+    if (*std::max_element(mChunkOffsets.cbegin(), mChunkOffsets.cend()) > std::numeric_limits<std::uint32_t>::max())
+    {
+        setType("co64");
+    }
+    else
+    {
+        setType("stco");
+    }
 }
 
-uint32_t ChunkOffsetBox::getEntryCount()
-{
-    return mEntryCount;
-}
-
-void ChunkOffsetBox::setChunkOffsets(const std::vector<uint32_t>& chunk_offsets)
-{
-    mChunkOffsets = chunk_offsets;
-}
-
-std::vector<uint32_t> ChunkOffsetBox::getChunkOffsets()
+std::vector<uint64_t> ChunkOffsetBox::getChunkOffsets()
 {
     return mChunkOffsets;
 }
@@ -45,10 +44,21 @@ void ChunkOffsetBox::writeBox(BitStream& bitstr)
     // Write box headers
     writeFullBoxHeader(bitstr);
 
-    bitstr.write32Bits(mEntryCount);
-    for (uint32_t i = 0; i < mEntryCount; i++)
+    bitstr.write32Bits(mChunkOffsets.size());
+    if (getType() == "stco")
     {
-        bitstr.write32Bits(mChunkOffsets.at(i));
+        for (uint32_t i = 0; i < mChunkOffsets.size(); ++i)
+        {
+            bitstr.write32Bits(mChunkOffsets.at(i));
+        }
+    }
+    else
+    {
+        // This is a ChunkLargeOffsetBox 'co64' with unsigned int (64) chunk_offsets.
+        for (uint32_t i = 0; i < mChunkOffsets.size(); ++i)
+        {
+            bitstr.write64Bits(mChunkOffsets.at(i));
+        }
     }
 
     // Update the size of the movie box
@@ -62,9 +72,19 @@ void ChunkOffsetBox::parseBox(BitStream& bitstr)
     //  First parse the box header
     parseFullBoxHeader(bitstr);
 
-    mEntryCount = bitstr.read32Bits();
-    for (uint32_t i = 0; i < mEntryCount; i++)
+    const std::uint32_t entryCount = bitstr.read32Bits();
+    if (getType() == "stco")
     {
-        mChunkOffsets.push_back(bitstr.read32Bits());
+        for (uint32_t i = 0; i < entryCount; ++i)
+        {
+            mChunkOffsets.push_back(bitstr.read32Bits());
+        }
+    }
+    else // This is a ChunkLargeOffsetBox 'co64' with unsigned int (64) chunk_offsets.
+    {
+        for (uint32_t i = 0; i < entryCount; ++i)
+        {
+            mChunkOffsets.push_back(bitstr.read64Bits());
+        }
     }
 }

@@ -21,7 +21,7 @@
  * @brief Item Property Container class
  * @details 'ipco' box implementation as specified in the HEIF specification.
  * */
-class ItemPropertyContainer : public FullBox
+class ItemPropertyContainer : public Box
 {
 public:
     ItemPropertyContainer();

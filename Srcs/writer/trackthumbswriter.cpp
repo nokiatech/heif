@@ -35,7 +35,7 @@ std::unique_ptr<TrackBox> TrackThumbsWriter::writeTrack()
     initWrite();             // Initialize the writer
     bstrParse();             // Parse the bitstream
     hdlrWrite(mHandlerType); // Fill the HandlerBox
-    stsdWrite(true);         // Fill the SampleDescriptionBox
+    stsdWrite(mConfig.ccst); // Fill the SampleDescriptionBox
     sgrpWrite();             // Fill the linked SampleToGroupBox and SampleGroupDescriptionBox for every required grouping
     trefWrite();             // Fill the TrackReferenceBox (for atleast the "thmb" reference)
     writeTrackCommon();

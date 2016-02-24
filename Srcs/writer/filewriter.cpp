@@ -119,7 +119,7 @@ void FileWriter::createTrackWriters(const IsoMediaFile::Content& config)
     // This track writer is for the master
     // There must be at least one master per content. If there are thumb tracks
     // present then the master must be marked as an alternative.
-    const bool isAlter = (config.thumbs.size() || (config.master.make_vide == true));
+    const bool isAlter = (config.thumbs.size() || config.master.make_vide) && config.master.write_alternates;
     const ContextId masterId = createMasterTrackWriter(config.master, isAlter);
 
     // A track writer for each thumbs
@@ -328,7 +328,7 @@ void FileWriter::createDerivedImageWriters(const IsoMediaFile::Derived& config, 
 
 void FileWriter::createAuxiliaryImageWriter(const IsoMediaFile::Auxiliary& config, const ContextId masterId)
 {
-    const ContextId contextId = IdSpace::getValue();
+    const ContextId contextId = Context::getValue();
     std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path));
 
     std::unique_ptr<MetaWriter> auxiliaryImageWriter(new AuxiliaryImageWriter(config, contextId));

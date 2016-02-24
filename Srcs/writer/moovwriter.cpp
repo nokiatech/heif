@@ -28,9 +28,8 @@ void MoovWriter::addTrack(std::unique_ptr<TrackBox> trackBox, const unsigned int
         mTimeScale = mdhdBox.getTimeScale();
     }
 
-    std::vector<uint32_t> chunkOffsets;
+    std::vector<uint64_t> chunkOffsets;
     chunkOffsets.push_back(mdatOffset + 8);
-    stcoBox.setEntryCount(1);
     stcoBox.setChunkOffsets(chunkOffsets);
 
     mMoovBox.addTrackBox(std::move(trackBox));

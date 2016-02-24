@@ -197,9 +197,8 @@ void TrackWriter::stcoWrite()
     SampleTableBox& stbl = minf.getSampleTableBox();
     ChunkOffsetBox& stco = stbl.getChunkOffsetBox();
 
-    std::vector<std::uint32_t> chunk_offsets;
+    std::vector<std::uint64_t> chunk_offsets;
     chunk_offsets.push_back(8); // Eight bytes (size of mdat header) is the initial chunk offset
-    stco.setEntryCount(1); // Currently all samples are assumed to be in one chunk
     stco.setChunkOffsets(chunk_offsets);
 }
 
@@ -222,13 +221,32 @@ void TrackWriter::stssWrite()
     stbl.setSyncSampleBox(stss);
 }
 
-void TrackWriter::stsdWrite(const bool writeCcst)
+void TrackWriter::stsdWrite(const IsoMediaFile::CodingConstraints& ccst)
 {
     MediaBox& mediaBox = mTrackBox->getMediaBox();
     MediaInformationBox& minf = mediaBox.getMediaInformationBox();
     SampleTableBox& stbl = minf.getSampleTableBox();
     SampleDescriptionBox& stsd = stbl.getSampleDescriptionBox();
 
+    std::unique_ptr<SampleEntryBox> sampleEntryBox = getHevcSampleEntry(ccst);
+
+    stsd.addSampleEntry(std::move(sampleEntryBox));
+}
+
+void TrackWriter::stsdWrite()
+{
+    MediaBox& mediaBox = mTrackBox->getMediaBox();
+    MediaInformationBox& minf = mediaBox.getMediaInformationBox();
+    SampleTableBox& stbl = minf.getSampleTableBox();
+    SampleDescriptionBox& stsd = stbl.getSampleDescriptionBox();
+
+    std::unique_ptr<SampleEntryBox> sampleEntryBox = getHevcSampleEntry();
+
+    stsd.addSampleEntry(std::move(sampleEntryBox));
+}
+
+std::unique_ptr<HevcSampleEntry> TrackWriter::getHevcSampleEntry()
+{
     std::unique_ptr<HevcSampleEntry> hevcSampleEntry(new HevcSampleEntry);
     HevcDecoderConfigurationRecord decConf;
     decConf.makeConfigFromSPS(mSpsNals, mDisplayRate);
@@ -244,27 +262,44 @@ void TrackWriter::stsdWrite(const bool writeCcst)
     hevcSampleEntry->setWidth(imageWidth);
     hevcSampleEntry->setHeight(imageHeight);
 
-    // Add coding constraints box
-    if (writeCcst)
-    {
-        CodingConstraintsBox& ccst = hevcSampleEntry->getCodingConstraintsBox();
-        if (mHasPred == true)
-        {
-            std::uint8_t maxRefPicUsed = 0;
-            for (auto refPics : mRefsList)
-            {
-                if (refPics.size() > maxRefPicUsed)
-                {
-                    maxRefPicUsed = refPics.size();
-                }
-            }
-            ccst.setMaxRefPicUsed(maxRefPicUsed);
-        }
-        ccst.setAllRefPicsIntra(true);
-    }
-    stsd.addSampleEntry(std::move(hevcSampleEntry));
+    return std::move(hevcSampleEntry);
 }
 
+
+std::unique_ptr<SampleEntryBox> TrackWriter::getHevcSampleEntry(const IsoMediaFile::CodingConstraints& pCcst)
+{
+    std::unique_ptr<HevcSampleEntry> hevcSampleEntry = getHevcSampleEntry();
+
+    hevcSampleEntry->createCodingConstraintsBox();
+    CodingConstraintsBox* ccst = hevcSampleEntry->getCodingConstraintsBox();
+    if (!ccst)
+    {
+        throw std::runtime_error("Coding constraints not found from '" + hevcSampleEntry->getType() + "' box");
+    }
+
+    fillCcst(ccst, pCcst);
+
+    return std::move(hevcSampleEntry);
+}
+
+void TrackWriter::fillCcst(CodingConstraintsBox* ccst, const IsoMediaFile::CodingConstraints& pCcst)
+{
+    if (mHasPred)
+    {
+        std::uint8_t maxRefPicUsed = 0;
+        for (const auto& refPics : mRefsList)
+        {
+            if (refPics.size() > maxRefPicUsed)
+            {
+                maxRefPicUsed = refPics.size();
+            }
+        }
+        ccst->setMaxRefPicUsed(maxRefPicUsed);
+    }
+
+    ccst->setAllRefPicsIntra(pCcst.allRefPicsIntra);
+    ccst->setIntraPredUsed(pCcst.intraPredUsed);
+}
 
 void TrackWriter::timeWrite()
 {

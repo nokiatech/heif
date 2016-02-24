@@ -37,10 +37,10 @@ public:
     FileTypeBox& writeBox(BitStream& bstrm);
 
 private:
-    IsoMediaFile::Brands mBrandConf; /// major and compatible brands configuration
+    IsoMediaFile::Brands mBrandConf; ///< Major and compatible brands configuration
 
-    BitStream mFtypStr; /// 'ftyp' bow bitstream
-    FileTypeBox mFtypBox; /// 'ftyp' box data structure
+    BitStream mFtypStr;   ///< 'ftyp' box bitstream
+    FileTypeBox mFtypBox; ///< 'ftyp' box data structure
 };
 
 #endif /* end of include guard: FTYPWRITER_HPP */

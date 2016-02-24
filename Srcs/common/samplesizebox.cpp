@@ -77,8 +77,16 @@ void SampleSizeBox::parseBox(BitStream& bitstr)
 
     mSampleSize = bitstr.read32Bits();
     mSampleCount = bitstr.read32Bits();
+
     for (uint32_t i = 0; i < mSampleCount; i++)
     {
-        mEntrySize.push_back(bitstr.read32Bits());
+        if (mSampleSize == 0)
+        {
+            mEntrySize.push_back(bitstr.read32Bits());
+        }
+        else
+        {
+            mEntrySize.push_back(mSampleSize);
+        }
     }
 }

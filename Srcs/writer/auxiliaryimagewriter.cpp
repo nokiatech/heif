@@ -41,7 +41,7 @@ void AuxiliaryImageWriter::write(MetaBox* metaBox)
 
     ilocWrite(metaBox, itemIds);
     iinfWrite(metaBox, itemIds);
-    iprpWrite(metaBox, mConfig.disp_xdim, mConfig.disp_ydim, itemIds);
+    iprpWrite(metaBox, itemIds);
 }
 
 void AuxiliaryImageWriter::ilocWrite(MetaBox* metaBox, const ItemSet& itemIds) const
@@ -61,12 +61,12 @@ void AuxiliaryImageWriter::iinfWrite(MetaBox* metaBox, const ItemSet& itemIds) c
     {
         if (itemIds.count(item.mId))
         {
-            metaBox->addItem(item.mId, item.mType, "HEVC image", mConfig.hidden);
+            metaBox->addItem(item.mId, item.mType, "HEVC Image", mConfig.hidden);
         }
     }
 }
 
-void AuxiliaryImageWriter::iprpWrite(MetaBox* metaBox, const unsigned int width, const unsigned int height, const ItemSet& itemIds) const
+void AuxiliaryImageWriter::iprpWrite(MetaBox* metaBox, const ItemSet& itemIds) const
 {
     std::vector<std::uint32_t> itemIdVector;
     for (const auto id : itemIds)
@@ -75,7 +75,9 @@ void AuxiliaryImageWriter::iprpWrite(MetaBox* metaBox, const unsigned int width,
     }
 
     std::shared_ptr<HevcConfigurationBox> configBox(new HevcConfigurationBox);
-    configBox->setConfiguration(mDecoderConfigRecord);
+    const HevcDecoderConfigurationRecord decoderConfig = RootMetaImageWriter::getFirstDecoderConfiguration();
+
+    configBox->setConfiguration(decoderConfig);
     metaBox->addProperty(configBox, itemIdVector, true);
 
     auto auxBox = std::make_shared<AuxiliaryTypeProperty>();
@@ -83,8 +85,8 @@ void AuxiliaryImageWriter::iprpWrite(MetaBox* metaBox, const unsigned int width,
     metaBox->addProperty(auxBox, itemIdVector, true);
 
     auto ispe = std::make_shared<ImageSpatialExtentsProperty>();
-    ispe->setDisplayWidth(width);
-    ispe->setDisplayHeight(height);
+    ispe->setDisplayWidth(decoderConfig.getPicWidth());
+    ispe->setDisplayHeight(decoderConfig.getPicHeight());
     metaBox->addProperty(ispe, itemIdVector, true);
 }
 

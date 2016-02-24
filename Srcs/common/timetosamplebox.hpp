@@ -22,7 +22,7 @@
 class TimeToSampleBox : public FullBox
 {
 public:
-    /// entries in this box can be of typeversion 0 or version 1
+    /// Entries in this box can be of type version 0 or version 1
     struct EntryVersion0
     {
         std::uint32_t mSampleCount;
@@ -49,7 +49,7 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    std::vector<EntryVersion0> mEntryVersion0; /// vector of decode delta entries of type version 0
+    std::vector<EntryVersion0> mEntryVersion0; ///< Vector of decode delta entries of type version 0
 };
 
 

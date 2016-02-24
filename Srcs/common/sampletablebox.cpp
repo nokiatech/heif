@@ -213,7 +213,7 @@ void SampleTableBox::parseBox(BitStream& bitstr)
         {
             mSampleDescriptionBox.parseBox(subBitstr);
         }
-        else if (boxType == "stco")
+        else if (boxType == "stco" || boxType == "co64") // 'co64' is the 64-bit version
         {
             mChunkOffsetBox.parseBox(subBitstr);
         }
@@ -266,4 +266,7 @@ void SampleTableBox::parseBox(BitStream& bitstr)
             logWarning() << "Skipping unknown box of type '" << boxType << "' inside SampleTableBox" << endl;
         }
     }
+
+    // We need to update stsc decoded presentation of chunk entries.
+    mSampleToChunkBox.decodeEntries(mChunkOffsetBox.getChunkOffsets().size());
 }

@@ -31,7 +31,7 @@ std::unique_ptr<TrackBox> TrackAltrepWriter::writeTrack()
     initWrite();                  // Initialize the writer
     bstrParse();                  // Parse the bitstream
     hdlrWrite(mConfig.hdlr_type); // Fill the HandlerBox
-    stsdWrite(false);             // Fill the SampleDescriptionBox
+    stsdWrite();                  // Fill the SampleDescriptionBox
     writeTrackCommon();
 
     return finalizeWriting();

@@ -25,8 +25,8 @@ public:
     PrimaryItemBox();
     virtual ~PrimaryItemBox() = default;
 
-    void setItemId(std::uint16_t itemId);
-    std::uint16_t getItemId() const;
+    void setItemId(std::uint32_t itemId);
+    std::uint32_t getItemId() const;
 
     /**
      * @brief Serialize box data to the BitStream.
@@ -41,7 +41,7 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    std::uint16_t mItemId; ///< The identifier of the primary item
+    std::uint32_t mItemId; ///< The identifier of the primary item
 };
 
 #endif /* end of include guard: PRIMARYITEMBOX_HPP */

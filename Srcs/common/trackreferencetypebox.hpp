@@ -43,7 +43,7 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    std::vector<std::uint32_t> mTrackId; /// vector of referenced track Ids
+    std::vector<std::uint32_t> mTrackId; ///< Vector of referenced track Ids
 };
 
 #endif /* end of include guard: TRACKREFERENCETYPEBOX_HPP */

@@ -20,6 +20,7 @@
 #include <string>
 
 class CleanAperture;
+class CodingConstraintsBox;
 
 /** @brief VisualSampleEntryBox class. Extends from SampleEntryBox.
  *  @details This box contains information related to the visual samples of the track as defined in the ISOBMFF and HEIF standards.
@@ -52,6 +53,14 @@ public:
      *  @returns Sample's clean aperture data structure **/
     const CleanAperture* getClap() const;
 
+    /** @brief Gets the CodingConstraintsBox from the derived class instance
+     *  @return Pointer to CodingConstraintsBox if present, nullptr if not. */
+    virtual CodingConstraintsBox* getCodingConstraintsBox();
+
+    /** @brief Check if CodingConstraintsBox is present
+     *  @return TRUE if CodingConstraintsBox is present, FALSE otherwise */
+    bool isCodingConstraintsBoxPresent() const;
+
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
     virtual void writeBox(BitStream& bitstr);
@@ -61,10 +70,10 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    std::uint16_t mWidth; /// sample display width
-    std::uint16_t mHeight; /// sample display height
-    std::string mCompressorName; /// compressor name used. Currently only "HEVC Coding" is supported.
-    std::shared_ptr<CleanAperture> mClap; /// Clean Aperture data structure
+    std::uint16_t mWidth;        ///< Sample display width
+    std::uint16_t mHeight;       ///< Sample display height
+    std::string mCompressorName; ///< Compressor name used. Currently only "HEVC Coding" is supported.
+    std::shared_ptr<CleanAperture> mClap; ///< Clean Aperture data structure
 };
 
 #endif

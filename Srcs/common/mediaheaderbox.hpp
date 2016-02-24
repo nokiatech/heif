@@ -75,11 +75,11 @@ public:
     virtual void parseBox(BitStream& bitstr);
 
 private:
-    std::uint32_t mCreationTime; ///creation time
-    std::uint32_t mModificationTime; /// modification time
-    std::uint32_t mTimeScale; /// timescale
-    std::uint32_t mDuration; /// duration
-    std::uint16_t mLanguage; /// language
+    std::uint32_t mCreationTime; ///< Creation time
+    std::uint32_t mModificationTime; ///< Modification time
+    std::uint32_t mTimeScale; ///< Timescale
+    std::uint32_t mDuration; ///< Duration
+    std::uint16_t mLanguage; ///< Language
 };
 
 #endif /* end of include guard: MEDIAHEADERBOX_HPP */

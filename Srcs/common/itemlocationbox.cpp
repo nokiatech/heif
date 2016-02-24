@@ -26,12 +26,12 @@ ItemLocation::ItemLocation() :
 {
 }
 
-void ItemLocation::setItemID(const uint16_t itemID)
+void ItemLocation::setItemID(const uint32_t itemID)
 {
     mItemID = itemID;
 }
 
-uint16_t ItemLocation::getItemID() const
+uint32_t ItemLocation::getItemID() const
 {
     return mItemID;
 }
@@ -131,7 +131,7 @@ uint8_t ItemLocationBox::getIndexSize() const
     return mIndexSize;
 }
 
-uint16_t ItemLocationBox::getItemCount() const
+uint32_t ItemLocationBox::getItemCount() const
 {
     return mItemLocations.size();
 }
@@ -146,7 +146,7 @@ void ItemLocationBox::addLocation(const ItemLocation& itemLoc)
     mItemLocations.push_back(itemLoc);
 }
 
-void ItemLocationBox::addExtent(const std::uint16_t itemId, const ItemLocationExtent& extent)
+void ItemLocationBox::addExtent(const std::uint32_t itemId, const ItemLocationExtent& extent)
 {
     const auto iter = findItem(itemId);
     if (iter == mItemLocations.end())
@@ -162,7 +162,7 @@ ItemLocationVector& ItemLocationBox::getItemLocations()
     return mItemLocations;
 }
 
-bool ItemLocationBox::hasItemIdEntry(std::uint16_t itemId) const
+bool ItemLocationBox::hasItemIdEntry(std::uint32_t itemId) const
 {
     if (findItem(itemId) != mItemLocations.cend())
     {
@@ -171,7 +171,7 @@ bool ItemLocationBox::hasItemIdEntry(std::uint16_t itemId) const
     return false;
 }
 
-bool ItemLocationBox::setItemDataReferenceIndex(const std::uint16_t itemId, const std::uint16_t dataReferenceIndex)
+bool ItemLocationBox::setItemDataReferenceIndex(const std::uint32_t itemId, const std::uint16_t dataReferenceIndex)
 {
     const auto iter = findItem(itemId);
     if (iter != mItemLocations.end())
@@ -190,7 +190,7 @@ void ItemLocationBox::writeBox(BitStream& bitstr)
     bitstr.writeBits(mOffsetSize, 4);
     bitstr.writeBits(mLengthSize, 4);
     bitstr.writeBits(mBaseOffsetSize, 4);
-    if (getVersion() == 1)
+    if ((getVersion() == 1) || (getVersion() == 2))
     {
         bitstr.writeBits(mIndexSize, 4);
     }
@@ -198,12 +198,27 @@ void ItemLocationBox::writeBox(BitStream& bitstr)
     {
         bitstr.writeBits(0, 4); // reserved = 0
     }
-    bitstr.write16Bits(mItemLocations.size());
+    if (getVersion() < 2)
+    {
+        bitstr.write16Bits(mItemLocations.size());
+    }
+    else if (getVersion() == 2)
+    {
+        bitstr.write32Bits(mItemLocations.size());
+    }
 
     for (const auto& itemLoc : mItemLocations)
     {
-        bitstr.write16Bits(itemLoc.getItemID());
-        if (getVersion() == 1)
+        if (getVersion() < 2)
+        {
+            bitstr.write16Bits(itemLoc.getItemID());
+        }
+        else if (getVersion() == 2)
+        {
+            bitstr.write32Bits(itemLoc.getItemID());
+        }
+
+        if ((getVersion() == 1) || (getVersion() == 2))
         {
             bitstr.writeBits(0, 12); // reserved = 0
             bitstr.writeBits(static_cast<unsigned int>(itemLoc.getConstructionMethod()), 4);
@@ -215,7 +230,7 @@ void ItemLocationBox::writeBox(BitStream& bitstr)
         const ExtentList& extents = itemLoc.getExtentList();
         for (const auto& locExt : extents)
         {
-            if ((getVersion() == 1) && (mIndexSize > 0))
+            if (((getVersion() == 1) || (getVersion() == 2)) && (mIndexSize > 0))
             {
                 bitstr.writeBits(locExt.mExtentIndex, mIndexSize * 8);
             }
@@ -229,14 +244,14 @@ void ItemLocationBox::writeBox(BitStream& bitstr)
 
 void ItemLocationBox::parseBox(BitStream& bitstr)
 {
-    unsigned int itemCount;
+    unsigned int itemCount = 0;
 
     parseFullBoxHeader(bitstr);
 
     mOffsetSize = static_cast<uint8_t>(bitstr.readBits(4));
     mLengthSize = static_cast<uint8_t>(bitstr.readBits(4));
     mBaseOffsetSize = static_cast<uint8_t>(bitstr.readBits(4));
-    if (getVersion() == 1)
+    if ((getVersion() == 1) || (getVersion() == 2))
     {
         mIndexSize = static_cast<uint8_t>(bitstr.readBits(4));
     }
@@ -244,12 +259,29 @@ void ItemLocationBox::parseBox(BitStream& bitstr)
     {
         bitstr.readBits(4); // reserved = 0
     }
-    itemCount = bitstr.read16Bits();
+
+    if (getVersion() < 2)
+    {
+        itemCount = bitstr.read16Bits();
+    }
+    else if (getVersion() == 2)
+    {
+        itemCount = bitstr.read32Bits();
+    }
+
     for (unsigned int i = 0; i < itemCount; i++)
     {
         ItemLocation itemLoc;
-        itemLoc.setItemID(bitstr.read16Bits());
-        if (getVersion() == 1)
+        if (getVersion() < 2)
+        {
+            itemLoc.setItemID(bitstr.read16Bits());
+        }
+        else if (getVersion() == 2)
+        {
+            itemLoc.setItemID(bitstr.read32Bits());
+        }
+
+        if ((getVersion() == 1) || (getVersion() == 2))
         {
             bitstr.readBits(12); // reserved = 0
             itemLoc.setConstructionMethod(static_cast<ItemLocation::ConstructionMethod>(bitstr.readBits(4)));
@@ -260,7 +292,7 @@ void ItemLocationBox::parseBox(BitStream& bitstr)
         for (unsigned int j = 0; j < extentCount; j++)
         {
             ItemLocationExtent locExt;
-            if ((getVersion() == 1) && (mIndexSize > 0))
+            if (((getVersion() == 1) || (getVersion() == 2)) && (mIndexSize > 0))
             {
                 locExt.mExtentIndex = bitstr.readBits(mIndexSize * 8);
             }
@@ -295,7 +327,7 @@ const ItemLocationExtent& ItemLocation::getExtent(const unsigned int i) const
     }
 }
 
-ItemLocationVector::const_iterator ItemLocationBox::findItem(const std::uint16_t itemId) const
+ItemLocationVector::const_iterator ItemLocationBox::findItem(const std::uint32_t itemId) const
 {
     ItemLocationVector::const_iterator iter = std::find_if(mItemLocations.cbegin(), mItemLocations.cend(),
         [itemId](const ItemLocation& itemLocation)
@@ -305,7 +337,7 @@ ItemLocationVector::const_iterator ItemLocationBox::findItem(const std::uint16_t
     return iter;
 }
 
-ItemLocationVector::iterator ItemLocationBox::findItem(const std::uint16_t itemId)
+ItemLocationVector::iterator ItemLocationBox::findItem(const std::uint32_t itemId)
 {
     ItemLocationVector::iterator iter = std::find_if(mItemLocations.begin(), mItemLocations.end(),
         [itemId](const ItemLocation& itemLocation)

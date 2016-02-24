@@ -27,7 +27,7 @@ struct ItemLocationExtent
     std::uint64_t mExtentLength = 0;
 };
 
-typedef std::vector<ItemLocationExtent> ExtentList; /// vector of item location extents
+typedef std::vector<ItemLocationExtent> ExtentList; ///< Vector of item location extents
 
 /** @brief Item Location class.
  *  @details Item locations can be provided by an offset from the file, idat or item itself.
@@ -48,11 +48,11 @@ public:
 
     /** @brief Set the Item ID
      *  @param [in] itemID Item ID */
-    void setItemID(std::uint16_t itemID);
+    void setItemID(std::uint32_t itemID);
 
     /** @brief Get the Item ID
      *  @return Item ID */
-    std::uint16_t getItemID() const;
+    std::uint32_t getItemID() const;
 
     /** @brief Set the construction method
      *  @param [in] constructionMethod Enumerated Construction Method */
@@ -101,14 +101,14 @@ public:
     void write(BitStream& bitstr, unsigned int version);
 
 private:
-    std::uint16_t mItemID;  /// item ID
-    ConstructionMethod mConstructionMethod; /// construction method enumeration
-    std::uint16_t mDataReferenceIndex; /// data reference index
-    std::uint64_t mBaseOffset; /// base offset value
-    ExtentList mExtentList; /// list of extents
+    std::uint32_t mItemID;  ///< Item ID
+    ConstructionMethod mConstructionMethod; ///< Construction method enumeration
+    std::uint16_t mDataReferenceIndex; ///< Data reference index
+    std::uint64_t mBaseOffset; ///< Base offset value
+    ExtentList mExtentList; ///< List of extents
 };
 
-typedef std::vector<ItemLocation> ItemLocationVector; /// vector of Item Locations
+typedef std::vector<ItemLocation> ItemLocationVector; ///< Vector of Item Locations
 
 
 /** @brief Item Location Box class. Extends from FullBox.
@@ -152,13 +152,9 @@ public:
      *  @return Index size {0,4 or 8} */
     std::uint8_t getIndexSize() const;
 
-    /** @brief Set the number of items
-     *  @param [in] itemCount number of items to be listed. */
-    void setItemCount(std::uint16_t itemCount);
-
     /** @brief Get the number of items
-     *  @return Index size {0,4 or 8} */
-    std::uint16_t getItemCount() const;
+     *  @return Number of items. */
+    std::uint32_t getItemCount() const;
 
     /** @brief Add an item location entry
      *  @param [in] itemLoc ItemLocation data structure */
@@ -167,18 +163,18 @@ public:
     /** @brief Add an Extent
      *  @param [in] itemId Item ID to use
      *  @param [in] extent ItemLocationExtent data structure */
-    void addExtent(std::uint16_t itemId, const ItemLocationExtent& extent);
+    void addExtent(std::uint32_t itemId, const ItemLocationExtent& extent);
 
     /** @brief Check if an itemId alreadyhas an item location entry
      *  @param [in] itemId Item ID
      *  @return TRUE if present, FALSE if not present */
-    bool hasItemIdEntry(std::uint16_t itemId) const;
+    bool hasItemIdEntry(std::uint32_t itemId) const;
 
     /** @brief Set the item data reference index
      *  @param [in] itemId Item ID
      *  @param [in] dataReferenceIndex Data Reference Index
      *  @return TRUE if item with item ID is found and data refrence is set, FALSE if item with item Id not found */
-    bool setItemDataReferenceIndex(std::uint16_t itemId, std::uint16_t dataReferenceIndex);
+    bool setItemDataReferenceIndex(std::uint32_t itemId, std::uint16_t dataReferenceIndex);
 
     /** @brief Get the item location vector
      *  @return Item Location vector of Item Location entries */
@@ -199,14 +195,14 @@ public:
     const ItemLocation& getItemLocationForID(unsigned int itemID) const;
 
 private:
-    std::uint8_t mOffsetSize; /// offset size {0,4, or 8}
-    std::uint8_t mLengthSize; /// length size {0,4, or 8}
-    std::uint8_t mBaseOffsetSize; /// base offset size {0,4, or 8}
-    std::uint8_t mIndexSize; /// index size {0,4, or 8} and only if version == 1, otherwise reserved
-    ItemLocationVector mItemLocations;  /// vector of item location entries
+    std::uint8_t mOffsetSize;     ///< Offset size {0,4, or 8}
+    std::uint8_t mLengthSize;     ///< Length size {0,4, or 8}
+    std::uint8_t mBaseOffsetSize; ///< Base offset size {0,4, or 8}
+    std::uint8_t mIndexSize;      ///< Index size {0,4, or 8} and only if version == 1, otherwise reserved
+    ItemLocationVector mItemLocations;  ///< Vector of item location entries
 
-    ItemLocationVector::const_iterator findItem(std::uint16_t itemId) const; /// find an item with given itemId and return as a const
-    ItemLocationVector::iterator findItem(std::uint16_t itemId); /// find an item with given itemId and return
+    ItemLocationVector::const_iterator findItem(std::uint32_t itemId) const; ///< Find an item with given itemId and return as a const
+    ItemLocationVector::iterator findItem(std::uint32_t itemId); ///< Find an item with given itemId and return
 };
 
 #endif /* end of include guard: ITEMLOCATIONBOX_HPP */

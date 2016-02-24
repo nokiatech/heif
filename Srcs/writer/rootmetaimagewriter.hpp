@@ -15,6 +15,7 @@
 
 #include "hevcdecoderconfigrecord.hpp"
 #include "metawriter.hpp"
+#include "parserinterface.hpp"
 #include <string>
 
 class MetaBox;
@@ -53,14 +54,12 @@ protected:
     };
     std::vector<MetaItem> mMetaItems;
 
-    /** HEVC decoder configuration for this context / this bitstream */
-    HevcDecoderConfigurationRecord mDecoderConfigRecord;
-
     /**
      * @brief Add entries to the Item Information Box
      * @param [in,out] metaBox Pointer to the MetaBox where to add data.
+     * @param [in] hidden True if items should be marked as hidden.
      */
-    void iinfWrite(MetaBox* metaBox) const;
+    void iinfWrite(MetaBox* metaBox, bool hidden = false) const;
 
     /**
      * @brief Add entries to the Item Location Box
@@ -71,9 +70,8 @@ protected:
     /**
      * @brief Add 'ispe' and 'hvcC' properties to the Item Properties Box
      * @param [in,out] metaBox Pointer to the MetaBox where to add data.
-     * @param width, height Dimensions of the image.
      */
-    void iprpWrite(MetaBox* metaBox, unsigned int width, unsigned int height) const;
+    void iprpWrite(MetaBox* metaBox) const;
 
     /**
      * @brief Parse H.265 bit stream and fill mMetaItems with image information.
@@ -88,6 +86,38 @@ protected:
      * @return Size of the start code
      */
     unsigned int getNalStartCodeSize(const std::vector<std::uint8_t>& nalU) const;
+
+    HevcDecoderConfigurationRecord getFirstDecoderConfiguration() const;
+
+private:
+    /** HEVC decoder configurations for this bitstream */
+    struct Configuration
+    {
+        HevcDecoderConfigurationRecord decoderConfig; ///< HEVC decoder configuration record
+        std::vector<std::uint32_t> itemIds;           ///< Item IDs of images using this configuration
+    };
+    std::vector<Configuration> mConfigs; ///< Decoder configurations of this bitstream
+
+    uint32_t mNextItemOffset; ///< Offset of the next item
+
+    /**
+     * @brief Calculate image item length in bytes from NAL units.
+     * @param nalUnits NAL unit list containing the item
+     * @return Item length in bytes
+     */
+    uint32_t getItemLength(const std::list<std::vector<std::uint8_t>>& nalUnits) const;
+
+    /**
+     * @brief Create an HEVC decoder configuration from AccessUnit and store it.
+     * @param accessUnit AccessUnit containing VPS, SPS and PPS NAL units
+     */
+    void addDecoderConfiguration(const ParserInterface::AccessUnit& au);
+
+    /**
+     * @brief Create and add a new item info structure
+     * @param length Length of the item in bytes
+     */
+    void addItem(uint32_t length);
 };
 
 #endif /* end of include guard: ROOTMETAIMAGEWRITER_HPP */

@@ -202,7 +202,7 @@ private:
     void readStream();
 
     FileFeature getFileFeatures() const;
-    void readBox(BitStream& bitstream, std::string& boxType, std::uint32_t& boxSize);
+    void readBox(BitStream& bitstream, std::string& boxType, std::uint64_t& boxSize);
 
     /** Get dimensions for item
      * @param [in]  contextId Track or meta context id
@@ -365,7 +365,7 @@ private:
     {
         std::uint32_t decodingOrder  = 0;            ///< Decoding order/sequence number of the sample
         std::vector<std::uint32_t> compositionTimes; ///< Timestamps of the sample. Possible edit list is considered here.
-        std::uint32_t dataOffset = 0;                ///< File offset of sample data in bytes
+        std::uint64_t dataOffset = 0;                ///< File offset of sample data in bytes
         std::uint32_t dataLength = 0;                ///< Length of same in bytes
         std::uint32_t width = 0;                     ///< Width of the frame
         std::uint32_t height = 0;                    ///< Height of the frame
@@ -476,6 +476,14 @@ private:
      * @param trackInfo  TrackInfo containing the sample
      * @return Data of the frame */
     DataVector getTrackFrameData(unsigned int frameIndex, const TrackInfo& trackInfo) const;
+
+    /**
+     * @brief Read bytes from stream to an integer value.
+     * @param stream Stream to read bytes from.
+     * @param count  Number of bytes to read (0-8).
+     * @return Read value.
+     */
+    uint64_t readBytes(std::istream* stream, unsigned int count);
 };
 
 /* *********************************************************************** */

@@ -20,7 +20,7 @@
 #include "log.hpp"
 
 ItemPropertyContainer::ItemPropertyContainer() :
-    FullBox("ipco", 0, 0)
+    Box("ipco")
 {
 }
 
@@ -44,7 +44,7 @@ unsigned int ItemPropertyContainer::addProperty(std::shared_ptr<Box> box)
 
 void ItemPropertyContainer::writeBox(BitStream& bitstream)
 {
-    writeFullBoxHeader(bitstream);
+    writeBoxHeader(bitstream);
     for (auto& property : mProperties)
     {
         property->writeBox(bitstream);
@@ -56,7 +56,7 @@ void ItemPropertyContainer::writeBox(BitStream& bitstream)
 
 void ItemPropertyContainer::parseBox(BitStream& bitstream)
 {
-    parseFullBoxHeader(bitstream);
+    parseBoxHeader(bitstream);
     if (getType() != "ipco")
     {
         logError() << "Reading ipco, found '" << getType() << "' instead." << std::endl;

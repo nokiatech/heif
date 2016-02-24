@@ -23,30 +23,38 @@
 class BitStream;
 
 /** @brief Single Item Reference Box class. Extends from Box.
- *  @details The type related semantics (i.e. 4CC and meaning) of this box is defined by the standard being implemented. **/
-
+ *  @details The type related semantics (i.e. 4CC and meaning) of this box is defined by the standard being implemented.
+ *           Member variable mIsLarge determines if the object is parsed and written as a SingleItemTypeReferenceBox or
+ *           a SingleItemTypeReferenceBoxLarge. **/
 class SingleItemTypeReferenceBox : public Box
 {
 public:
-    SingleItemTypeReferenceBox();
-    SingleItemTypeReferenceBox(const std::string& referenceType);
+    /**
+     * @brief Constructor
+     * @param isLarge True if the box is parsed and serialized as a SingleItemTypeReferenceBoxLarge.
+     */
+    SingleItemTypeReferenceBox(bool isLarge = false);
     virtual ~SingleItemTypeReferenceBox() = default;
+
+    /** @brief Set 4CC reference type
+     *  @param Type of this reference */
+    void setReferenceType(const std::string& referenceType);
 
     /** @brief Set "from-item" item Id value
      *  @param [in] itemID Item Id value*/
-    void setFromItemID(std::uint16_t itemID);
+    void setFromItemID(std::uint32_t itemID);
 
     /** @brief Get "from-item" item Id value
      *  @return Item Id value*/
-    std::uint16_t getFromItemID() const;
+    std::uint32_t getFromItemID() const;
 
     /** @brief Adds a  "To-item" item Id value
      *  @param [in] itemID Item Id value to be added.*/
-    void addToItemID(std::uint16_t itemID);
+    void addToItemID(std::uint32_t itemID);
 
     /** @brief Gets the list of "To-item" item Ids
      *  @return Vector of Item Id values */
-    std::vector<std::uint16_t> getToItemIds() const;
+    std::vector<std::uint32_t> getToItemIds() const;
 
     /** @brief clears the list of "To-item" item Ids */
     void clearToItemIDs();
@@ -60,8 +68,9 @@ public:
     void parseBox(BitStream& bitstr);
 
 private:
-    std::uint16_t mFromItemId; /// "From-Item" item Id value
-    std::vector<std::uint16_t> mToItemIds; /// vector of "To-Item" item Id values
+    std::uint32_t mFromItemId; ///< "From-Item" item Id value
+    std::vector<std::uint32_t> mToItemIds; ///< Vector of "To-Item" item Id values
+    bool mIsLarge; ///< True if this is a SingleItemTypeReferenceBoxLarge
 };
 
 /** @brief Item Reference Box class. Extends from FullBox.
@@ -73,11 +82,11 @@ public:
     ItemReferenceBox();
     virtual ~ItemReferenceBox() = default;
 
-    /** @brief Adds an item reference of a perticular type, from-id and to-id values.
+    /** @brief Adds an item reference of a particular type, from-id and to-id values.
      *  @param [in] type Type of the item reference
      *  @param [in] fromId "From-Id" field value of the item reference data structure
      *  @param [in] toId "To-Id" field value of the item reference data structure */
-    void add(const std::string& type, std::uint16_t fromId, std::uint16_t toId);
+    void add(const std::string& type, std::uint32_t fromId, std::uint32_t toId);
 
     /** @brief Returns the vector of item references of a particular reference type.
      *  @param [in] type Type of the item reference
@@ -93,9 +102,9 @@ public:
     virtual void writeBox(BitStream& bitstr);
 
 private:
-    void addItemRef(const SingleItemTypeReferenceBox& ref); /// add an item reference to the ItemReferenceBox
+    void addItemRef(const SingleItemTypeReferenceBox& ref); ///< Add an item reference to the ItemReferenceBox
 
-    std::list<SingleItemTypeReferenceBox> mReferenceList; /// list of item references of SingleItemTypeReferenceBox data structure
+    std::list<SingleItemTypeReferenceBox> mReferenceList; ///< List of item references of SingleItemTypeReferenceBox data structure
 };
 
 #endif /* end of include guard: ITEMREFERENCEBOX_HPP */

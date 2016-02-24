@@ -13,6 +13,7 @@
 #ifndef TRACKWRITER_HPP
 #define TRACKWRITER_HPP
 
+#include "hevcsampleentry.hpp"
 #include "isomediafile.hpp"
 #include "trackbox.hpp"
 
@@ -20,6 +21,7 @@
 #include <memory>
 #include <string>
 
+class CodingConstraintsBox;
 class DataStore;
 
 /**
@@ -156,11 +158,33 @@ protected:
     void stscWrite();
 
     /**
-     * @brief This method fills in the fields of the SampleDescriptionBox.
-     * @param writeCcst A boolean flag which if set, indicates that the
-     *                  CodingConstraintsBox is to be written into the SampleDescriptionBox.
+     * @brief Fills in the fields of the SampleDescriptionBox.
      */
-    void stsdWrite(bool writeCcst);
+    void stsdWrite();
+
+    /**
+     * @brief Fills in the fields of the SampleDescriptionBox with a 'ccst' box.
+     * @param ccst CodingConstraintsBox to be written into the SampleDescriptionBox.
+     */
+    void stsdWrite(const IsoMediaFile::CodingConstraints& ccst);
+
+    /**
+     * @brief This method fills in the fields of the SampleDescriptionBox. Coding Constraints Box
+     *        will not be written.
+     * @param codeType Configured code_type
+     */
+    void stsdWrite(const std::string& codeType);
+
+    /**
+     * @brief Get HEVC SampleEntry box
+     */
+    std::unique_ptr<HevcSampleEntry> getHevcSampleEntry();
+
+    /**
+     * @brief Get HEVC SampleEntry box with a filled Coding Constraints Box
+     * @param ccst CodingConstraintsBox is to be written into the SampleDescriptionBox.
+     */
+    std::unique_ptr<SampleEntryBox> getHevcSampleEntry(const IsoMediaFile::CodingConstraints& ccst);
 
     /**
      * @brief This method fills in the fields of the SyncSampleTableBox.
@@ -295,6 +319,8 @@ private:
 
     std::string mFilename;                                  /** The filename of the bitstream that is encapsulated in this track */
     IsoMediaFile::EditList mEditlist;                       /** The edit list structure that is passed to the writer from the interface */
+
+    void fillCcst(CodingConstraintsBox* ccst, const IsoMediaFile::CodingConstraints& pCcst);
 };
 
 #endif /* end of include guard: TRACKWRITER_HPP */
