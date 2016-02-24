@@ -4,6 +4,11 @@ HEIF is a visual media container format standardized by the Moving Picture Exper
 Please follow this **[link](https://nokiatech.github.io/heif)** to access HEIF Web-Site. 
 You can also check the **[Wiki] (https://github.com/nokiatech/heif/wiki)** pages for more information.
 
+## News:
+[24.02.2016] HEIF source code and website is updated to reflect the latest HEIF specification changes and various fixes. Please note that backwards compatibility is not maintained during this update. 
+
+[24.02.2016] HEIF conformance test candidate files can be found **[here](https://github.com/nokiatech/heif_conformance)**
+
 ## Features:
 HEIF is a media container format. It is not an image or video encoder per se. Hence, the quality of the visual media depends highly on the proper usage of visual media encoder (e.g. HEVC). Current standard allows containing High Efficiency Video Codec (HEVC, H.265) encoded bitstreams. This can be easily extended to future visual media codecs. It has many powerful features which are currently not present in other image file formats. Some of these features are:
 * Media data is encoded according to the High Efficiency Video Coding (HEVC) standard.
