@@ -1706,7 +1706,7 @@ HevcImageFileReader::TrackPropertiesMap HevcImageFileReader::fillTrackProperties
     for (auto trackBox : trackBoxes)
     {
         TrackProperties trackProperties;
-        TrackInfo trackInfo = extractTrackInfo(trackBox);
+        TrackInfo trackInfo = extractTrackInfo(trackBox, moovBox);
 
         trackProperties.trackId = trackBox->getTrackHeaderBox().getTrackID();
 
@@ -1934,10 +1934,9 @@ HevcImageFileReader::TypeToIdsMap HevcImageFileReader::getSampleGroupIds(TrackBo
 }
 
 
-HevcImageFileReader::TrackInfo HevcImageFileReader::extractTrackInfo(TrackBox* trackBox) const
+HevcImageFileReader::TrackInfo HevcImageFileReader::extractTrackInfo(TrackBox* trackBox, MovieBox& moovBox) const
 {
     TrackInfo trackInfo;
-    MediaHeaderBox& mdhdBox = trackBox->getMediaBox().getMediaHeaderBox();
     SampleTableBox& stblBox = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
     TrackHeaderBox& trackHeaderBox = trackBox->getTrackHeaderBox();
     const TimeToSampleBox& timeToSampleBox = stblBox.getTimeToSampleBox();
@@ -1946,7 +1945,7 @@ HevcImageFileReader::TrackInfo HevcImageFileReader::extractTrackInfo(TrackBox* t
     trackInfo.width = trackHeaderBox.getWidth() >> 16;
     trackInfo.height = trackHeaderBox.getHeight() >> 16;
 
-    const uint32_t timescale = mdhdBox.getTimeScale(); // The number of time units that pass in a second
+    const uint32_t timescale = moovBox.getMovieHeaderBox().getTimeScale(); // Number of time units that pass in a second
     const uint32_t duration = trackHeaderBox.getDuration(); // Duration is in timescale units
 
     std::shared_ptr<const EditBox> editBox = stblBox.getEditBox();

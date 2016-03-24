@@ -447,8 +447,9 @@ private:
     /**
      * @brief Extract reader internal TrackInfo structure from TrackBox
      * @param [in] trackBox TrackBox to extract data from
+     * @param [in] moovBox  MovieBox containing the TrackBox
      * @return Filled TrackInfo struct */
-    TrackInfo extractTrackInfo(TrackBox* trackBox) const;
+    TrackInfo extractTrackInfo(TrackBox* trackBox, MovieBox& moovBox) const;
 
     /**
      * @brief Extract reader internal information about samples
