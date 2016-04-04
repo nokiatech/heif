@@ -107,9 +107,16 @@ void DecodePts::unravel()
     {
         mMoviePts = mMediaPts;
 
-        auto last = std::prev(mMoviePts.end(), 1);
-        auto prev = std::prev(last, 1);
-        mMovieOffset = last->first + (last->first - prev->first);
+        if (mMoviePts.size() > 1)
+        {
+            auto last = std::prev(mMoviePts.end(), 1);
+            auto prev = std::prev(last, 1);
+            mMovieOffset = last->first + (last->first - prev->first);
+        }
+        else
+        {
+            mMovieOffset = 0;
+        }
     }
 }
 
@@ -136,7 +143,12 @@ DecodePts::PMap DecodePts::getTime(const std::uint32_t timeScale, const std::uin
         {
             pMap.insert(std::make_pair(((entry.first * 1000) / timeScale) + endTime, entry.second));
         }
-        endTime = ((mMovieOffset * 1000)/timeScale) * repNumb;
+        if (mMovieOffset == 0)
+        {
+            // There is only 1 sample probably or unravel hasn't been called for some reason.
+            break;
+        }
+        endTime = ((mMovieOffset * 1000) / timeScale) * repNumb;
         repNumb = repNumb + 1;
         if (endTime >= trackDuration)
         {
