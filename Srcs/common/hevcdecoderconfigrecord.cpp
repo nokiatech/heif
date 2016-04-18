@@ -117,7 +117,7 @@ void HevcDecoderConfigurationRecord::makeConfigFromSPS(const std::vector<uint8_t
             {
                 bitstr.readBits(1);  // sub_layer_profile_compatibility_flag[i][j]
             }
-            for (int i = 0; i < 6; i++)
+            for (int j = 0; j < 6; j++)
             {
                 bitstr.readBits(8);  // Constraint flags
             }

@@ -218,7 +218,7 @@ public:
         };
         typedef std::set<Feature> FileFeatureSet;
 
-        bool hasFeature(Feature feature) const { return mFileFeatureSet.count(feature); }
+        bool hasFeature(Feature feature) const { return mFileFeatureSet.count(feature) > 0; }
         void setFeature(Feature feature) { mFileFeatureSet.insert(feature); }
         std::uint32_t getContextId() const { return mContextId; }
         void setContextId(std::uint32_t id) { mContextId = id; }
@@ -260,7 +260,7 @@ public:
         };
         typedef std::set<Feature> TrackFeatureSet;
 
-        bool hasFeature(Feature feature) const { return mTrackFeatureSet.count(feature); }
+        bool hasFeature(Feature feature) const { return mTrackFeatureSet.count(feature) > 0; }
         void setFeature(Feature feature) { mTrackFeatureSet.insert(feature); }
 
     private:
@@ -279,7 +279,7 @@ public:
         };
         typedef std::set<Feature> MoovFeatureSet;
 
-        bool hasFeature(Feature feature) const { return mMoovFeatureSet.count(feature); }
+        bool hasFeature(Feature feature) const { return mMoovFeatureSet.count(feature) > 0; }
         void setFeature(Feature feature) { mMoovFeatureSet.insert(feature); }
 
     private:
@@ -307,7 +307,7 @@ public:
         };
         typedef std::set<Feature> MetaBoxFeatureSet;
 
-        bool hasFeature(Feature feature) const { return mMetaBoxFeatureSet.count(feature); }
+        bool hasFeature(Feature feature) const { return mMetaBoxFeatureSet.count(feature) > 0; }
         void setFeature(Feature feature) { mMetaBoxFeatureSet.insert(feature); }
 
     private:
@@ -339,7 +339,7 @@ public:
         };
         typedef std::set<Feature> ImageFeatureSet;
 
-        bool hasFeature(Feature feature) const { return mImageFeatureSet.count(feature); }
+        bool hasFeature(Feature feature) const { return mImageFeatureSet.count(feature) > 0; }
         void setFeature(Feature feature) { mImageFeatureSet.insert(feature); }
 
     private:
@@ -360,7 +360,7 @@ public:
         };
         typedef std::set<Feature> ItemFeatureSet;
 
-        bool hasFeature(Feature feature) const { return mItemFeatureSet.count(feature); }
+        bool hasFeature(Feature feature) const { return mItemFeatureSet.count(feature) > 0; }
         void setFeature(Feature feature) { mItemFeatureSet.insert(feature); }
 
     private:
@@ -376,7 +376,7 @@ public:
         };
         typedef std::set<Feature> MetaDataFeatureSet;
 
-        bool hasFeature(Feature feature) const { return mMetaDataFeatureSet.count(feature); }
+        bool hasFeature(Feature feature) const { return mMetaDataFeatureSet.count(feature) > 0; }
         void setFeature(Feature feature) { mMetaDataFeatureSet.insert(feature); }
 
     private:
@@ -393,7 +393,7 @@ public:
         };
         typedef std::set<Feature> CodingConstraintsSet;
 
-        bool hasFeature(Feature feature) const { return mCodingConstraintsSet.count(feature); }
+        bool hasFeature(Feature feature) const { return mCodingConstraintsSet.count(feature) > 0; }
         void setFeature(Feature feature) { mCodingConstraintsSet.insert(feature); }
 
     private:

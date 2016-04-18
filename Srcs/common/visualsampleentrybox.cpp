@@ -72,8 +72,8 @@ void VisualSampleEntryBox::writeBox(BitStream& bitstr)
     bitstr.write16Bits(1); // frame_count = 1
 
     /* Compressor name is "\013HEVC Coding" (\013 is 11, the length of the string in bytes), padded to 32 bytes total. */
-    static const char* COMPRESSORNAME = "HEVC Coding";
-    const unsigned char COMPRESSORNAME_LENGTH = strlen(COMPRESSORNAME);
+    static const char COMPRESSORNAME[] = "HEVC Coding";
+    const unsigned char COMPRESSORNAME_LENGTH = sizeof(COMPRESSORNAME) / sizeof (COMPRESSORNAME[0]) - 1;
     bitstr.write8Bits(COMPRESSORNAME_LENGTH);
     bitstr.writeString(COMPRESSORNAME);
     for (unsigned int i = 0; i < COMPRESSORNAME_STRING_LENGTH - COMPRESSORNAME_LENGTH; ++i)
@@ -82,7 +82,7 @@ void VisualSampleEntryBox::writeBox(BitStream& bitstr)
     }
 
     bitstr.write16Bits(0x0018); // depth
-    bitstr.write16Bits(-1);     // pre_defined
+    bitstr.write16Bits(static_cast<unsigned>(-1)); // pre_defined
 
     // Update the size of the movie box
     updateSize(bitstr);
@@ -148,5 +148,5 @@ CodingConstraintsBox* VisualSampleEntryBox::getCodingConstraintsBox()
 bool VisualSampleEntryBox::isCodingConstraintsBoxPresent() const
 {
     // Check if pointer to CodingConstraintsBox is valid, doesn't modify anything.
-    return const_cast<VisualSampleEntryBox*>(this)->getCodingConstraintsBox();
+    return const_cast<VisualSampleEntryBox*>(this)->getCodingConstraintsBox() != nullptr;
 }

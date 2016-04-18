@@ -14,6 +14,12 @@
 #define LOG_HPP
 #include <ostream>
 
+#if defined(_MSC_VER)
+#define _MSVC_CDECL __cdecl
+#else
+#define _MSVC_CDECL
+#endif
+
 /** @brief Helper class for Logging information during execution.
  *  @details Log levels can be Error, Warning and Info **/
 class Log
@@ -62,7 +68,7 @@ public:
     }
 
     /// Overload for manipulators
-    Log const& operator<<(std::ostream& (*os)(std::ostream&)) const;
+    Log const& operator<<(std::ostream& (_MSVC_CDECL *os)(std::ostream&)) const;
 
 private:
     Log();
@@ -79,12 +85,12 @@ private:
 };
 
 /// Convenience function to get error logger singleton reference
-Log& logError();
+Log& _MSVC_CDECL logError();
 
 /// Convenience function to get warning logger singleton reference
-Log& logWarning();
+Log& _MSVC_CDECL logWarning();
 
 /// Convenience function to get info logger singleton reference
-Log& logInfo();
+Log& _MSVC_CDECL logInfo();
 
 #endif // LOG_HPP

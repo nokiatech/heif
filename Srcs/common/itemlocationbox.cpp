@@ -68,7 +68,7 @@ uint64_t ItemLocation::getBaseOffset() const
 
 uint16_t ItemLocation::getExtentCount() const
 {
-    return mExtentList.size();
+    return static_cast<uint16_t>(mExtentList.size());
 }
 
 void ItemLocation::addExtent(const ItemLocationExtent& extent)
@@ -224,7 +224,7 @@ void ItemLocationBox::writeBox(BitStream& bitstr)
             bitstr.writeBits(static_cast<unsigned int>(itemLoc.getConstructionMethod()), 4);
         }
         bitstr.write16Bits(itemLoc.getDataReferenceIndex());
-        bitstr.writeBits(itemLoc.getBaseOffset(), mBaseOffsetSize * 8);
+        bitstr.writeBits(static_cast<unsigned int>(itemLoc.getBaseOffset()), mBaseOffsetSize * 8);
         bitstr.write16Bits(itemLoc.getExtentCount());
 
         const ExtentList& extents = itemLoc.getExtentList();
@@ -232,10 +232,10 @@ void ItemLocationBox::writeBox(BitStream& bitstr)
         {
             if (((getVersion() == 1) || (getVersion() == 2)) && (mIndexSize > 0))
             {
-                bitstr.writeBits(locExt.mExtentIndex, mIndexSize * 8);
+                bitstr.writeBits(static_cast<unsigned int>(locExt.mExtentIndex), mIndexSize * 8);
             }
-            bitstr.writeBits(locExt.mExtentOffset, mOffsetSize * 8);
-            bitstr.writeBits(locExt.mExtentLength, mLengthSize * 8);
+            bitstr.writeBits(static_cast<unsigned int>(locExt.mExtentOffset), mOffsetSize * 8);
+            bitstr.writeBits(static_cast<unsigned int>(locExt.mExtentLength), mLengthSize * 8);
         }
     }
 

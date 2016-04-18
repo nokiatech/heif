@@ -386,8 +386,8 @@ BitStream BitStream::readSubBoxBitStream(std::string& boxType)
     mByteOffset -= 8;
 
     BitStream subBitstr;
-    extract(getPos(), getPos() + boxSize, subBitstr);
-    mByteOffset += boxSize;
+    extract(getPos(), static_cast<int>(getPos() + boxSize), subBitstr);
+    mByteOffset += static_cast<unsigned int>(boxSize);
 
     return subBitstr;
 }

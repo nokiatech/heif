@@ -98,6 +98,8 @@ license you like.
  * It is an internal header that must not be exposed.
  */
 
+#include <algorithm> // std::min
+
 namespace Json {
 
 /// Converts a unicode code-point to UTF-8.
@@ -3448,8 +3450,8 @@ bool Value::removeIndex(ArrayIndex index, Value* removed) {
   ArrayIndex oldSize = size();
   // shift left all items left, into the place of the "removed"
   for (ArrayIndex i = index; i < (oldSize - 1); ++i){
-    CZString key(i);
-    (*value_.map_)[key] = (*this)[i + 1];
+    CZString k(i);
+    (*value_.map_)[k] = (*this)[i + 1];
   }
   // erase the last one ("leftover")
   CZString keyLast(oldSize - 1);

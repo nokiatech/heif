@@ -176,7 +176,7 @@ float HevcImageFileReader::getPlaybackDurationInSecs(const uint32_t contextId) c
             break;
 
         case ContextType::TRACK:
-            duration = mTrackInfo.at(contextId).duration;
+            duration = static_cast<float>(mTrackInfo.at(contextId).duration);
             break;
 
         case ContextType::FILE:
@@ -708,7 +708,7 @@ void HevcImageFileReader::getItemTimestamps(const uint32_t contextId, TimestampM
                 {
                     if (imageInfo.second.type == "master")
                     {
-                        timestamps[imageInfo.second.displayTime] = imageInfo.first;
+                        timestamps[static_cast<const unsigned int>(imageInfo.second.displayTime)] = imageInfo.first;
                     }
                 }
             }
@@ -745,7 +745,7 @@ void HevcImageFileReader::getTimestampsOfItem(const uint32_t contextId, const ui
         {
             if (mMetaBoxInfo.at(contextId).isForcedFpsSet == true)
             {
-                timestamps.push_back(mMetaBoxInfo.at(contextId).imageInfoMap.at(itemId).displayTime);
+                timestamps.push_back(static_cast<const unsigned int>(mMetaBoxInfo.at(contextId).imageInfoMap.at(itemId).displayTime));
             }
             else
             {
@@ -795,7 +795,7 @@ void HevcImageFileReader::getItemsInDecodingOrder(const uint32_t contextId,
                 itemDecodingOrder.reserve(mMetaBoxInfo.at(contextId).imageInfoMap.size());
                 for (const auto& image : mMetaBoxInfo.at(contextId).imageInfoMap)
                 {
-                    itemDecodingOrder.push_back(std::pair<std::uint32_t, Timestamp>(image.first, image.second.displayTime));
+                    itemDecodingOrder.push_back(std::pair<std::uint32_t, Timestamp>(image.first, static_cast<Timestamp>(image.second.displayTime)));
                 }
             }
             else
@@ -1153,7 +1153,7 @@ uint64_t HevcImageFileReader::readBytes(std::istream* stream, const unsigned int
 
 void HevcImageFileReader::readBox(BitStream& bitstream, std::string& boxType, uint64_t& boxSize)
 {
-    int startLocation = mInputStream->tellg();
+    std::streamoff startLocation = mInputStream->tellg();
 
     // Read the 32-bit length field of the box
     boxSize = readBytes(mInputStream, 4);
@@ -1174,7 +1174,7 @@ void HevcImageFileReader::readBox(BitStream& bitstream, std::string& boxType, ui
     }
 
     // Seek to box beginning and dump data to bitstream
-    std::vector<uint8_t> data(boxSize);
+    std::vector<uint8_t> data(static_cast<unsigned int>(boxSize));
     mInputStream->seekg(startLocation);
     mInputStream->read(reinterpret_cast<char*>(data.data()), boxSize);
     if (not mInputStream->good())
@@ -1183,7 +1183,7 @@ void HevcImageFileReader::readBox(BitStream& bitstream, std::string& boxType, ui
     }
     bitstream.clear();
     bitstream.reset();
-    bitstream.write8BitsArray(data, boxSize);
+    bitstream.write8BitsArray(data, static_cast<unsigned int>(boxSize));
 }
 
 
@@ -1316,33 +1316,33 @@ ImageFileReaderInterface::MetaBoxFeature HevcImageFileReader::extractMetaBoxFeat
 
     for (const auto& i : imageFeatures)
     {
-        const ImageFeature imageFeatures = i.second;
+        const ImageFeature imageFeature = i.second;
 
-        if (imageFeatures.hasFeature(ImageFeature::IsMasterImage))
+        if (imageFeature.hasFeature(ImageFeature::IsMasterImage))
         {
             metaBoxFeature.setFeature(MetaBoxFeature::HasMasterImages);
         }
-        if (imageFeatures.hasFeature(ImageFeature::IsThumbnailImage))
+        if (imageFeature.hasFeature(ImageFeature::IsThumbnailImage))
         {
             metaBoxFeature.setFeature(MetaBoxFeature::HasThumbnails);
         }
-        if (imageFeatures.hasFeature(ImageFeature::IsCoverImage))
+        if (imageFeature.hasFeature(ImageFeature::IsCoverImage))
         {
             metaBoxFeature.setFeature(MetaBoxFeature::HasCoverImage);
         }
-        if (imageFeatures.hasFeature(ImageFeature::IsAuxiliaryImage))
+        if (imageFeature.hasFeature(ImageFeature::IsAuxiliaryImage))
         {
             metaBoxFeature.setFeature(MetaBoxFeature::HasAuxiliaryImages);
         }
-        if (imageFeatures.hasFeature(ImageFeature::IsDerivedImage))
+        if (imageFeature.hasFeature(ImageFeature::IsDerivedImage))
         {
             metaBoxFeature.setFeature(MetaBoxFeature::HasDerivedImages);
         }
-        if (imageFeatures.hasFeature(ImageFeature::IsPreComputedDerivedImage))
+        if (imageFeature.hasFeature(ImageFeature::IsPreComputedDerivedImage))
         {
             metaBoxFeature.setFeature(MetaBoxFeature::HasPreComputedDerivedImages);
         }
-        if (imageFeatures.hasFeature(ImageFeature::IsHiddenImage))
+        if (imageFeature.hasFeature(ImageFeature::IsHiddenImage))
         {
             metaBoxFeature.setFeature(MetaBoxFeature::HasHiddenImages);
         }
@@ -1507,7 +1507,7 @@ HevcImageFileReader::Properties HevcImageFileReader::processItemProperties(const
     const std::vector<uint32_t> itemIds = mMetaBoxMap.at(contextId).getItemInfoBox().getItemIds();
     for (const auto itemId : itemIds)
     {
-        const ItemInfoEntry& item = mMetaBoxMap.at(contextId).getItemInfoBox().getItemById(itemId);
+        // const ItemInfoEntry& item = mMetaBoxMap.at(contextId).getItemInfoBox().getItemById(itemId);
 
         ItemPropertiesBox::PropertyInfos propertyVector = iprp.getItemProperties(itemId);
 
@@ -1635,7 +1635,7 @@ void HevcImageFileReader::readItem(const MetaBox& metaBox, const ItemId itemId, 
     const ItemLocation& itemLocation = iloc.getItemLocationForID(itemId);
     const ItemLocation::ConstructionMethod constructionMethod = itemLocation.getConstructionMethod();
     const ExtentList& extentList = itemLocation.getExtentList();
-    const unsigned int baseOffset = itemLocation.getBaseOffset();
+    const unsigned int baseOffset = static_cast<unsigned int>(itemLocation.getBaseOffset());
     const unsigned int version = iloc.getVersion();
     unsigned int itemLength = 0;
 
@@ -1646,7 +1646,7 @@ void HevcImageFileReader::readItem(const MetaBox& metaBox, const ItemId itemId, 
 
     for (const auto& extent : extentList)
     {
-        itemLength += extent.mExtentLength;
+        itemLength += static_cast<unsigned int>(extent.mExtentLength);
     }
 
     if (version == 0 ||
@@ -1656,7 +1656,7 @@ void HevcImageFileReader::readItem(const MetaBox& metaBox, const ItemId itemId, 
         char* dataPtr = reinterpret_cast<char*>(data.data());
         for (const auto& extent : extentList)
         {
-            const unsigned int offset = baseOffset + extent.mExtentOffset;
+            const unsigned int offset = static_cast<unsigned int>(baseOffset + extent.mExtentOffset);
             mInputStream->seekg(offset);
             if (!mInputStream->good())
             {
@@ -1672,8 +1672,8 @@ void HevcImageFileReader::readItem(const MetaBox& metaBox, const ItemId itemId, 
         data.clear();
         for (const auto& extent : extentList)
         {
-            const size_t offset = baseOffset + extent.mExtentOffset;
-            metaBox.getItemDataBox().read(data, offset, extent.mExtentLength);
+            const size_t offset = static_cast<size_t>(baseOffset + extent.mExtentOffset);
+            metaBox.getItemDataBox().read(data, offset, static_cast<size_t>(extent.mExtentLength));
         }
     }
     else if (constructionMethod == ItemLocation::ConstructionMethod::ITEM_OFFSET)
@@ -1980,7 +1980,7 @@ HevcImageFileReader::TrackInfo HevcImageFileReader::extractTrackInfo(TrackBox* t
     else
     {
         trackInfo.duration = (duration / static_cast<double>(timescale));
-        trackInfo.pMap = decodePts.getTime(timescale, trackInfo.duration * 1000);
+        trackInfo.pMap = decodePts.getTime(timescale, static_cast<uint64_t>(trackInfo.duration * 1000));
     }
     return trackInfo;
 }
@@ -2051,7 +2051,7 @@ HevcImageFileReader::SampleInfoVector HevcImageFileReader::makeSampleInfoVector(
     // Set composition times from Pmap, which considers also edit lists
     for (const auto& pair : pMap)
     {
-        sampleInfoVector.at(pair.second).compositionTimes.push_back(pair.first);
+        sampleInfoVector.at(static_cast<unsigned int>(pair.second)).compositionTimes.push_back(static_cast<unsigned int>(pair.first));
     }
 
     return sampleInfoVector;
@@ -2096,7 +2096,7 @@ HevcImageFileReader::SamplePropertiesMap HevcImageFileReader::makeSampleProperti
             sampleProperties.codingConstraints.setFeature(CodingConstraints::IsIntraPredictionUsed);
         }
 
-        sampleProperties.hasClap = sampleEntry->getClap();
+        sampleProperties.hasClap = sampleEntry->getClap() != nullptr;
 
         // By default, set as output reference frame (groupings can change this later)
         // By definition, an output reference frame MAY be used as a reference for other samples.

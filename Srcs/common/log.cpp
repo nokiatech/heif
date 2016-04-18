@@ -22,7 +22,7 @@ Log::Log(LogLevel level) :
 {
 }
 
-Log const& Log::operator<<(std::ostream& (*os)(std::ostream&)) const
+Log const& Log::operator<<(std::ostream& (_MSVC_CDECL *os)(std::ostream&)) const
 {
     if (mLevel <= mLogLevel)
     {
@@ -37,17 +37,17 @@ void Log::setLevel(LogLevel level)
     mLogLevel = level;
 }
 
-Log& logError()
+Log& _MSVC_CDECL logError()
 {
     return Log::getErrorInstance();
 }
 
-Log& logWarning()
+Log& _MSVC_CDECL logWarning()
 {
     return Log::getWarningInstance();
 }
 
-Log& logInfo()
+Log& _MSVC_CDECL logInfo()
 {
     return Log::getInfoInstance();
 }
