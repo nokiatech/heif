@@ -339,15 +339,10 @@ void TrackWriter::editWrite()
 {
     if (mEditlist.edit_unit.size() > 0)
     {
-        MediaBox& mediaBox = mTrackBox->getMediaBox();
-        MediaInformationBox& mediaInformationBox = mediaBox.getMediaInformationBox();
-        SampleTableBox& sampleTableBox = mediaInformationBox.getSampleTableBox();
-
         EditWriter editWriter(mClockTicks, mEditlist);
-
         EditBox editBox;
         editWriter.editWrite(editBox);
-        sampleTableBox.setEditBox(editBox);
+        mTrackBox->setEditBox(editBox);
     }
 }
 
@@ -373,7 +368,7 @@ void TrackWriter::decodePts()
         decodePts.loadBox(compositionToDecodeBox);
     }
 
-    std::shared_ptr<const EditBox> editBox = sampleTableBox.getEditBox();
+    std::shared_ptr<const EditBox> editBox = mTrackBox->getEditBox();
     if (editBox)
     {
         const EditListBox* editListBox = editBox->getEditListBox();

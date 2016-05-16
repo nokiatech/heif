@@ -20,6 +20,7 @@ TrackBox::TrackBox() :
     mTrackHeaderBox(),
     mMediaBox(),
     mTrackReferenceBox(),
+    mEditBox(nullptr),
     mHasTrackReferences(false)
 {
 }
@@ -52,6 +53,23 @@ TrackReferenceBox& TrackBox::getTrackReferenceBox()
     return mTrackReferenceBox;
 }
 
+void TrackBox::setEditBox(const EditBox& editBox)
+{
+    if (mEditBox == nullptr)
+    {
+        mEditBox = std::make_shared<EditBox>(editBox);
+    }
+    else
+    {
+        *mEditBox = editBox;
+    }
+}
+
+std::shared_ptr<const EditBox> TrackBox::getEditBox() const
+{
+    return mEditBox;
+}
+
 void TrackBox::writeBox(BitStream& bitstr)
 {
     // Write box headers
@@ -64,6 +82,11 @@ void TrackBox::writeBox(BitStream& bitstr)
     if (mHasTrackReferences == true)
     {
         mTrackReferenceBox.writeBox(bitstr);
+    }
+
+    if (mEditBox != nullptr)
+    {
+        mEditBox->writeBox(bitstr);
     }
 
     // The MediaBox
@@ -101,6 +124,11 @@ void TrackBox::parseBox(BitStream& bitstr)
         {
             mTrackReferenceBox.parseBox(subBitstr);
             mHasTrackReferences = true;
+        }
+        else if (boxType == "edts")
+        {
+            mEditBox = std::make_shared<EditBox>();
+            mEditBox->parseBox(subBitstr);
         }
     }
 }

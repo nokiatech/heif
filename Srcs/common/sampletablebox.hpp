@@ -74,13 +74,6 @@ public:
      */
     void setCompositionToDecodeBox(const CompositionToDecodeBox& compositionToDecodeBox);
 
-    /** @brief Set EditBox
-     */
-    void setEditBox(const EditBox& EditBox);
-
-    /** @return shared_ptr to EditBox if set, or nullptr */
-    std::shared_ptr<const EditBox> getEditBox() const;
-
     /** @return shared_ptr to CompositionToDecodeBox if set, or nullptr */
     std::shared_ptr<const CompositionToDecodeBox> getCompositionToDecodeBox() const;
 
@@ -148,7 +141,6 @@ private:
     std::shared_ptr<SyncSampleBox>           mSyncSampleBox; ///< Sync sample box (optional)
     std::shared_ptr<CompositionOffsetBox>    mCompositionOffsetBox; ///< Composition offset box (optional)
     std::shared_ptr<CompositionToDecodeBox>  mCompositionToDecodeBox; ///< Composition to decode box (optional)
-    std::shared_ptr<EditBox>                 mEditBox; ///< Edit box (optional)
 
     std::unique_ptr<SampleGroupDescriptionBox> mSampleGroupDescriptionBox; ///< Pointer to the sample group description box
     std::vector<SampleToGroupBox>            mSampleToGroupBox; ///< Vectory of sample-to-group boxes

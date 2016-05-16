@@ -23,7 +23,6 @@ SampleTableBox::SampleTableBox() :
     mChunkOffsetBox(),
     mSampleSizeBox(),
     mCompositionToDecodeBox(nullptr),
-    mEditBox(nullptr),
     mSampleGroupDescriptionBox(nullptr)
 {
 }
@@ -70,23 +69,6 @@ void SampleTableBox::setCompositionToDecodeBox(const CompositionToDecodeBox& com
 std::shared_ptr<const CompositionToDecodeBox> SampleTableBox::getCompositionToDecodeBox() const
 {
     return mCompositionToDecodeBox;
-}
-
-void SampleTableBox::setEditBox(const EditBox& editBox)
-{
-    if (mEditBox == nullptr)
-    {
-        mEditBox = std::make_shared<EditBox>(editBox);
-    }
-    else
-    {
-        *mEditBox = editBox;
-    }
-}
-
-std::shared_ptr<const EditBox> SampleTableBox::getEditBox() const
-{
-    return mEditBox;
 }
 
 SampleToChunkBox& SampleTableBox::getSampleToChunkBox()
@@ -174,11 +156,6 @@ void SampleTableBox::writeBox(BitStream& bitstr)
         mCompositionToDecodeBox->writeBox(bitstr);
     }
 
-    if (mEditBox != nullptr)
-    {
-        mEditBox->writeBox(bitstr);
-    }
-
     if (mSampleGroupDescriptionBox)
     {
         mSampleGroupDescriptionBox->writeBox(bitstr);
@@ -255,11 +232,6 @@ void SampleTableBox::parseBox(BitStream& bitstr)
         {
             mCompositionOffsetBox = std::make_shared<CompositionOffsetBox>();
             mCompositionOffsetBox->parseBox(subBitstr);
-        }
-        else if (boxType == "edts")
-        {
-            mEditBox = std::make_shared<EditBox>();
-            mEditBox->parseBox(subBitstr);
         }
         else
         {

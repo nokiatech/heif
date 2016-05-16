@@ -1876,7 +1876,7 @@ HevcImageFileReader::TrackFeature HevcImageFileReader::getTrackFeatures(TrackBox
             trackFeature.setFeature(TrackFeature::HasSampleGroups);
         }
 
-        std::shared_ptr<const EditBox> editBox = stblBox.getEditBox();
+        std::shared_ptr<const EditBox> editBox = trackBox->getEditBox();
         if (editBox)
         {
             const EditListBox* editListBox = editBox->getEditListBox();
@@ -1948,7 +1948,7 @@ HevcImageFileReader::TrackInfo HevcImageFileReader::extractTrackInfo(TrackBox* t
     const uint32_t timescale = moovBox.getMovieHeaderBox().getTimeScale(); // Number of time units that pass in a second
     const uint32_t duration = trackHeaderBox.getDuration(); // Duration is in timescale units
 
-    std::shared_ptr<const EditBox> editBox = stblBox.getEditBox();
+    std::shared_ptr<const EditBox> editBox = trackBox->getEditBox();
     DecodePts decodePts;
     decodePts.loadBox(&timeToSampleBox);
     decodePts.loadBox(compositionOffsetBox.get());

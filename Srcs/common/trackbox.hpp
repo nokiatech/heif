@@ -49,6 +49,13 @@ public:
      *  @return Reference to the  Track Reference Box. **/
     TrackReferenceBox& getTrackReferenceBox();
 
+    /** @brief Set EditBox
+     */
+    void setEditBox(const EditBox& EditBox);
+
+    /** @return shared_ptr to EditBox if set, or nullptr */
+    std::shared_ptr<const EditBox> getEditBox() const;
+
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
     void writeBox(BitStream& bitstr);
@@ -61,6 +68,8 @@ private:
     TrackHeaderBox mTrackHeaderBox; ///< Track Header Box
     MediaBox mMediaBox; ///< Media Box related to this track
     TrackReferenceBox mTrackReferenceBox; ///< Track Reference Box
+    std::shared_ptr<EditBox> mEditBox; ///< Edit box (optional)
+
     bool mHasTrackReferences; ///< Flag that shows whether the track has references from other tracks
 };
 
