@@ -19,7 +19,7 @@ ItemProtectionBox::ItemProtectionBox() :
 
 std::uint16_t ItemProtectionBox::getSize() const
 {
-    return mProtectionInformation.size();
+    return static_cast<std::uint16_t>(mProtectionInformation.size());
 }
 
 const ProtectionSchemeInfoBox& ItemProtectionBox::getEntry(const std::uint16_t index) const
@@ -30,7 +30,7 @@ const ProtectionSchemeInfoBox& ItemProtectionBox::getEntry(const std::uint16_t i
 std::uint16_t ItemProtectionBox::addEntry(const ProtectionSchemeInfoBox& sinf)
 {
     mProtectionInformation.push_back(sinf);
-    return mProtectionInformation.size() - 1 ;
+    return static_cast<std::uint16_t>(mProtectionInformation.size() - 1);
 }
 
 void ItemProtectionBox::writeBox(BitStream& bitstream)

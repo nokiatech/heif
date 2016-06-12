@@ -49,7 +49,7 @@ void ChunkOffsetBox::writeBox(BitStream& bitstr)
     {
         for (uint32_t i = 0; i < mChunkOffsets.size(); ++i)
         {
-            bitstr.write32Bits(mChunkOffsets.at(i));
+            bitstr.write32Bits(static_cast<unsigned int>(mChunkOffsets.at(i)));
         }
     }
     else

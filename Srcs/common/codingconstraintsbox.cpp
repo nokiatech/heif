@@ -71,8 +71,8 @@ void CodingConstraintsBox::writeBox(BitStream& bitstr)
 void CodingConstraintsBox::parseBox(BitStream& bitstr)
 {
     parseFullBoxHeader(bitstr);
-    mAllRefPicsIntra = bitstr.readBits(1);
-    mIntraPredUsed = bitstr.readBits(1);
-    mMaxRefPicUsed = bitstr.readBits(4);
+    mAllRefPicsIntra = bitstr.readBits(1) != 0;
+    mIntraPredUsed = bitstr.readBits(1) != 0;
+    mMaxRefPicUsed = static_cast<uint8_t>(bitstr.readBits(4));
     bitstr.readBits(26); // discard reserved int(26)
 }

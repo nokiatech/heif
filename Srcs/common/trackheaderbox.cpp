@@ -62,7 +62,7 @@ void TrackHeaderBox::setDuration(const std::uint32_t duration)
 
 std::uint32_t TrackHeaderBox::getDuration() const
 {
-    return mDuration;
+    return static_cast<std::uint32_t>(mDuration);
 }
 
 void TrackHeaderBox::setWidth(const std::uint32_t width)
@@ -105,7 +105,7 @@ void TrackHeaderBox::writeBox(BitStream& bitstr)
     bitstr.write32Bits(mModificationTime);
     bitstr.write32Bits(mTrackID);
     bitstr.write32Bits(0);
-    bitstr.write32Bits(mDuration);
+    bitstr.write32Bits(static_cast<unsigned int>(mDuration));
 
     bitstr.write32Bits(0);                  //Reserved
     bitstr.write32Bits(0);

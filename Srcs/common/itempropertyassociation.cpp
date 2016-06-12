@@ -29,7 +29,7 @@ void ItemPropertyAssociation::addEntry(const std::uint32_t itemId, const std::ui
 {
     Entry entry;
     entry.essential = essential;
-    entry.index = index;
+    entry.index = static_cast<uint16_t>(index);
 
     mAssociations[itemId].push_back(entry);
 }
@@ -135,14 +135,14 @@ void ItemPropertyAssociation::parseBox(BitStream& bitstream)
         for (unsigned int i = 0; i < associationCount; ++i)
         {
             Entry propertyIndexEntry;
-            propertyIndexEntry.essential = bitstream.readBits(1);
+            propertyIndexEntry.essential = bitstream.readBits(1) != 0;
             if (getFlags() & 1)
             {
-                propertyIndexEntry.index = bitstream.readBits(PROPERTY_INDEX_WIDTH_LARGE);
+                propertyIndexEntry.index = static_cast<uint16_t>(bitstream.readBits(PROPERTY_INDEX_WIDTH_LARGE));
             }
             else
             {
-                propertyIndexEntry.index = bitstream.readBits(PROPERTY_INDEX_WIDTH_SMALL);
+                propertyIndexEntry.index = static_cast<uint16_t>(bitstream.readBits(PROPERTY_INDEX_WIDTH_SMALL));
             }
             propertyIndexVector.push_back(propertyIndexEntry);
         }

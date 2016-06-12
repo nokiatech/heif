@@ -132,7 +132,7 @@ void DecodePts::applyEdit(T& entry)
 template<typename T>
 void DecodePts::applyEmptyEdit(T& entry)
 {
-    mMovieOffset += entry.mSegmentDuration;
+    mMovieOffset += static_cast<uint32_t>(entry.mSegmentDuration);
 }
 
 template<typename T>
@@ -148,14 +148,14 @@ void DecodePts::applyDwellEdit(T& entry)
     if (bound.first->first == bound.second->first)
     {
         mMoviePts.insert(std::make_pair(mMovieOffset, std::prev(bound.first)->second));
-        mMovieOffset += entry.mSegmentDuration;
+        mMovieOffset += static_cast<uint32_t>(entry.mSegmentDuration);
     }
     // if the lower and upper bound points to different entries in the map then
     // the first iterator points to the sample that needs dwell.
     else
     {
         mMoviePts.insert(std::make_pair(mMovieOffset, bound.first->second));
-        mMovieOffset += entry.mSegmentDuration;
+        mMovieOffset += static_cast<uint32_t>(entry.mSegmentDuration);
     }
 }
 
@@ -179,7 +179,7 @@ void DecodePts::applyShiftEdit(T& entry)
                 it->first != static_cast<std::int64_t>(entry.mMediaTime))
             {
                 mMoviePts.insert(std::make_pair(mMovieOffset, std::prev(it)->second));
-                mMovieOffset += it->first - (std::prev(it)->first + (entry.mMediaTime - std::prev(it)->first));
+                mMovieOffset += static_cast<uint32_t>(it->first - (std::prev(it)->first + (entry.mMediaTime - std::prev(it)->first)));
             }
 
             // Insert the rest of the samples into the movie edit
@@ -191,12 +191,12 @@ void DecodePts::applyShiftEdit(T& entry)
                 std::next(it)->first <= segmentEndTime)
             {
                 // This is not the last sample that falls into the edit
-                mMovieOffset += std::next(it)->first - it->first;
+                mMovieOffset += static_cast<uint32_t>(std::next(it)->first - it->first);
             }
             else
             {
                 // This is the last sample, give it as much time as this edit segment lasts.
-                mMovieOffset += segmentEndTime - it->first;
+                mMovieOffset += static_cast<uint32_t>(segmentEndTime - it->first);
             }
         }
     }

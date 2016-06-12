@@ -297,12 +297,12 @@ void H265Parser::printPicStats(const Picture& /*pic*/)
     // cout << endl;
 }
 
-void H265Parser::getRefPicIndices(vector<unsigned int>& refPicIndices, const vector<Picture*>& mRefPicList0, const vector<Picture*>& mRefPicList1)
+void H265Parser::getRefPicIndices(vector<unsigned int>& refPicIndices, const vector<Picture*>& refPicList0, const vector<Picture*>& refPicList1)
 {
     refPicIndices.clear();
 
     // list0
-    for (const auto i : mRefPicList0)
+    for (const auto i : refPicList0)
     {
         if (isUniquePicIndex(refPicIndices, i->mIndex))
         {
@@ -311,7 +311,7 @@ void H265Parser::getRefPicIndices(vector<unsigned int>& refPicIndices, const vec
     }
 
     // list1
-    for (const auto i : mRefPicList1)
+    for (const auto i : refPicList1)
     {
         if (isUniquePicIndex(refPicIndices, i->mIndex))
         {
@@ -582,7 +582,7 @@ int H265Parser::parseProfileTierLevel(BitStream& bitstr, ProfileTierLevel& ptl, 
             ptl.mSubLayerProfileTierLevels[i].mSubLayerInterlacedSourceFlag = bitstr.readBits(1);
             ptl.mSubLayerProfileTierLevels[i].mSubLayerNonPackedConstraintFlag = bitstr.readBits(1);
             ptl.mSubLayerProfileTierLevels[i].mSubLayerFrameOnlyConstraintFlag = bitstr.readBits(1);
-            for (int i = 0; i < 2; ++i)  // sub_layer_reserved_zero_44bits
+            for (int j = 0; j < 2; ++j)  // sub_layer_reserved_zero_44bits
             {
                 bitstr.readBits(22);
             }
@@ -1870,7 +1870,7 @@ H265Parser::H265NalUnitType H265Parser::readNextNalUnit(vector<uint8_t>& nalUnit
     }
     nalUnit.push_back((uint8_t)nextChar);
 
-    const size_t startPos = mInFile.tellg();
+    const std::streamoff startPos = mInFile.tellg();
 
     // copy nal data to output vector while checking for the next start code
     unsigned int readBytes = 0;

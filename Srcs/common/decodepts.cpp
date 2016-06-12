@@ -16,6 +16,7 @@
 #include "editbox.hpp"
 #include "timetosamplebox.hpp"
 #include <algorithm>
+#include <iterator>
 
 DecodePts::DecodePts() :
     mEditListBox(nullptr),
@@ -111,7 +112,7 @@ void DecodePts::unravel()
         {
             auto last = std::prev(mMoviePts.end(), 1);
             auto prev = std::prev(last, 1);
-            mMovieOffset = last->first + (last->first - prev->first);
+            mMovieOffset = static_cast<uint32_t>(last->first + (last->first - prev->first));
         }
         else
         {

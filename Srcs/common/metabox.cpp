@@ -51,7 +51,7 @@ void MetaBox::setPrimaryItem(const std::uint32_t itemId)
         auto urlBox = std::make_shared<DataEntryUrlBox>();
         urlBox->setFlags(1); // Flag 0x01 tells the data is in this file. DataEntryUrlBox will write only its header.
         const unsigned int index = mDataInformationBox.addDataEntryBox(urlBox);
-        mItemLocationBox.setItemDataReferenceIndex(itemId, index);
+        mItemLocationBox.setItemDataReferenceIndex(itemId, static_cast<uint16_t>(index));
     }
 }
 
@@ -200,7 +200,7 @@ const ItemDataBox& MetaBox::getItemDataBox() const
 
 const ProtectionSchemeInfoBox& MetaBox::getProtectionSchemeInfoBox(size_t index) const
 {
-    return mItemProtectionBox.getEntry(index);
+    return mItemProtectionBox.getEntry(static_cast<uint16_t>(index));
 }
 
 void MetaBox::writeBox(BitStream& bitstr)
