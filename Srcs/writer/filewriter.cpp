@@ -346,7 +346,7 @@ BitStream FileWriter::writeFtyp(const IsoMediaFile::Brands& config)
 
     ftypBox = ftypWriter.writeBox(output);
     mBoxSizes.insert(std::make_pair(OffsetMapKeys::FTYP, ftypBox.getSize()));
-    return std::move(output);
+    return output;
 }
 
 BitStream FileWriter::writeMeta(const OffsetMap& offsets)
@@ -422,7 +422,7 @@ std::vector<MediaDataBox> FileWriter::writeMdat()
         mBoxSizes.insert(std::make_pair(mediaWriter.first, boxes.back().getSize()));
     }
 
-    return std::move(boxes);
+    return boxes;
 }
 
 FileWriter::OffsetMap FileWriter::makeOffsetMap(const SizesMap& boxSizes) const

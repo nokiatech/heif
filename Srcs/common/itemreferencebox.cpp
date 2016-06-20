@@ -157,7 +157,7 @@ std::vector<SingleItemTypeReferenceBox> ItemReferenceBox::getReferencesOfType(co
             references.push_back(reference);
         }
     }
-    return std::move(references);
+    return references;
 }
 
 void ItemReferenceBox::add(const std::string& type, const std::uint32_t fromId, const std::uint32_t toId)

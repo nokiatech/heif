@@ -43,12 +43,12 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(BitStream& bitstr);
+    virtual void writeBox(BitStream& bitstr) override;
 
     /** @brief Parses a HevcSampleEntry Box bitstream and fills in the necessary member variables
      *  @details If there is an unknown box present then a warning is logged
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(BitStream& bitstr);
+    virtual void parseBox(BitStream& bitstr) override;
 
 private:
     HevcConfigurationBox mHevcConfigurationBox;

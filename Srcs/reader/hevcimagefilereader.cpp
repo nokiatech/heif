@@ -1507,8 +1507,6 @@ HevcImageFileReader::Properties HevcImageFileReader::processItemProperties(const
     const std::vector<uint32_t> itemIds = mMetaBoxMap.at(contextId).getItemInfoBox().getItemIds();
     for (const auto itemId : itemIds)
     {
-        const ItemInfoEntry& item = mMetaBoxMap.at(contextId).getItemInfoBox().getItemById(itemId);
-
         ItemPropertiesBox::PropertyInfos propertyVector = iprp.getItemProperties(itemId);
 
         // The following loop copies item property information to interface. Data structures are essentially identical
@@ -1624,7 +1622,7 @@ std::vector<std::uint8_t> HevcImageFileReader::loadItemData(const MetaBox& metaB
     std::vector<uint8_t> data;
     readItem(metaBox, itemId, data);
     mInputStream->seekg(oldPosition);
-    return std::move(data);
+    return data;
 }
 
 /** @details Method can not handle items located in different files. Therefore also zero length items are not supported.

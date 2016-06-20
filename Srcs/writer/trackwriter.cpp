@@ -262,7 +262,7 @@ std::unique_ptr<HevcSampleEntry> TrackWriter::getHevcSampleEntry()
     hevcSampleEntry->setWidth(imageWidth);
     hevcSampleEntry->setHeight(imageHeight);
 
-    return std::move(hevcSampleEntry);
+    return hevcSampleEntry;
 }
 
 
