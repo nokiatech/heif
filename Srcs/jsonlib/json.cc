@@ -74,6 +74,7 @@ license you like.
 
 
 #include "json.hh"
+#include <algorithm>
 
 #ifndef JSON_IS_AMALGAMATION
 #error "Compile with -I PATH_TO_JSON_DIRECTORY"
@@ -3986,7 +3987,7 @@ std::string valueToString(double value) {
   len = sprintf_s(buffer, sizeof(buffer), "%.17g", value);
 #endif
 #else
-  if (isfinite(value)) {
+  if (std::isfinite(value)) {
     len = snprintf(buffer, sizeof(buffer), "%.17g", value);
   } else {
     // IEEE standard states that NaN values will not compare to themselves

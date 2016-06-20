@@ -16,6 +16,7 @@
 #include "editbox.hpp"
 #include "timetosamplebox.hpp"
 #include <algorithm>
+#include <iterator>
 
 DecodePts::DecodePts() :
     mEditListBox(nullptr),

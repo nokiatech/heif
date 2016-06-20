@@ -14,6 +14,7 @@
 #include "compositionoffsetbox.hpp"
 #include "compositiontodecodebox.hpp"
 #include <algorithm>
+#include <iterator>
 #include <tuple>
 
 TimeWriter::TimeWriter(std::uint32_t clockTicks) :

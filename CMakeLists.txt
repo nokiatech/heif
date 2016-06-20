@@ -68,6 +68,12 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${warnings}")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${warnings}")
 
+# Disable Visual Studio Microsoft language extensions
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Za")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} /Za")
+endif()
+
 # Add sub-directories that contain sources
 add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs)
 
