@@ -33,7 +33,7 @@ IsoMediaFile::Configuration WriterConfig::readJson(const std::string& filename)
     const bool parsingSuccess = jsonReader.parse(configFile, jsonValues, false);
     if (not parsingSuccess)
     {
-        throw std::runtime_error("Failed to parse input configuration: " + jsonReader.getFormatedErrorMessages());
+        throw std::runtime_error("Failed to parse input configuration: " + jsonReader.getFormattedErrorMessages());
     }
 
     // Read JSON values into local structures
@@ -71,7 +71,7 @@ void WriterConfig::readEditList(const std::string& filename, IsoMediaFile::Maste
     const bool parsingSuccess = jsonReader.parse(editListFile, edit, false);
     if (not parsingSuccess)
     {
-        throw std::runtime_error("Failed to parse edit list file: " + jsonReader.getFormatedErrorMessages());
+        throw std::runtime_error("Failed to parse edit list file: " + jsonReader.getFormattedErrorMessages());
     }
 
     master.edit_list.numb_rept = std::stoi(edit["numb_rept"].asString());
@@ -101,7 +101,7 @@ void WriterConfig::readEditList(const std::string& filename, IsoMediaFile::Thumb
     bool parsingSuccess = jsonReader.parse(editListFile, edit, false);
     if (not parsingSuccess)
     {
-        throw std::runtime_error("Failed to parse edit list file: " + jsonReader.getFormatedErrorMessages());
+        throw std::runtime_error("Failed to parse edit list file: " + jsonReader.getFormattedErrorMessages());
     }
 
     thumbs.edit_list.numb_rept = std::stoi(edit["numb_rept"].asString());
