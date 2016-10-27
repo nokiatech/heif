@@ -71,7 +71,7 @@ void RootMetaImageWriter::iprpWrite(MetaBox* metaBox) const
         std::shared_ptr<ImageSpatialExtentsProperty> isep(new ImageSpatialExtentsProperty);
         isep->setDisplayWidth(config.decoderConfig.getPicWidth());
         isep->setDisplayHeight(config.decoderConfig.getPicHeight());
-        metaBox->addProperty(isep, config.itemIds, true);
+        metaBox->addProperty(isep, config.itemIds, false);
     }
 }
 
