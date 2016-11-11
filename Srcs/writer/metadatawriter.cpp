@@ -72,7 +72,7 @@ std::uint32_t MetadataWriter::getMetadataLength() const
         static const std::uint32_t TIFF_HEADER_OFFSET_LENGTH = 4; // size of ExifDataBlock.exif_tiff_header_offset
         length += TIFF_HEADER_OFFSET_LENGTH;
     }
-    else
+    else if (mType != XML_ITEM_TYPE)
     {
         throw std::runtime_error("Unknown handler type '" + mType + "' while adding metadata.");
     }
