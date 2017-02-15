@@ -177,6 +177,13 @@ private:
         std::vector<std::vector<unsigned int>> mDimensionId;
         unsigned int mViewIdLen;
         std::vector<unsigned int> mViewIdVal;
+
+        std::vector<std::vector<unsigned int>> mScalabilityId;
+        std::vector<unsigned int> mDepthLayerFlag;
+        std::vector<unsigned int> mViewOrderIdx;
+        std::vector<unsigned int> mDependencyId;
+        std::vector<unsigned int> mAuxId;
+
         std::vector<std::vector<unsigned int>> mDirectDependencyFlag;
         unsigned int mNumAddLayerSets;
         std::vector<std::vector<unsigned int>> mHighestLayerIdxPlus1;

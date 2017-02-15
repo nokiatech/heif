@@ -144,7 +144,7 @@ void OperatingPointsInformation::parseHrd(BitStream& bitstr, Hrd& hrd, const uns
 }
 
 void OperatingPointsInformation::parsePtl(BitStream& bitstr, Ptl& ptl, const unsigned int maxNumSubLayersMinus1,
-                                         const unsigned int profilePresentFlag)
+                                          const unsigned int profilePresentFlag)
 {
     if (profilePresentFlag)
     {
@@ -331,7 +331,6 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
 
     unsigned int maxLayersMinus1 = std::min((unsigned int)62, vps.mMaxLayersMinus1);
     vpsExt.mLayerIdInNuh.resize(maxLayersMinus1 + 1);
-    vpsExt.mDimensionId.resize(maxLayersMinus1 + 1);
     for (unsigned int i = 1; i <= maxLayersMinus1; i++)
     {
         if (vpsExt.mVpsNuhLayerIdPresentFlag)
@@ -350,27 +349,94 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
                 unsigned int numBits = vpsExt.mDimensionIdLenMinus1.at(j) + 1;
                 dimensionId.at(j) = bitstr.readBits(numBits);
             }
+            if (vpsExt.mDimensionId.size() < i + 1)
+            {
+                vpsExt.mDimensionId.resize(i + 1);
+            }
             vpsExt.mDimensionId.at(i) = dimensionId;
         }
     }
 
     vpsExt.mViewIdLen = bitstr.readBits(4);
 
-    vpsExt.mLayerIdxInVps.resize(maxLayersMinus1 + 1);
+    unsigned int numViews = 1;
+    vpsExt.mScalabilityId.resize(maxLayersMinus1 + 1);
     for (unsigned int i = 0; i <= maxLayersMinus1; i++)
     {
-        vpsExt.mLayerIdxInVps.at(vpsExt.mLayerIdInNuh.at(i)) = i;
+        unsigned int lid = vpsExt.mLayerIdInNuh.at(i);
+        vpsExt.mScalabilityId.at(i).resize(16);
+        for (unsigned int smIdx = 0, j = 0; smIdx < 16; smIdx++)
+        {
+            if (vpsExt.mScalabilityMaskFlag.at(smIdx))
+            {
+                unsigned int dimId;
+                if (i == 0)
+                {
+                    dimId = 0;
+                }
+                else
+                {
+                    dimId = vpsExt.mDimensionId.at(i).at(j++);
+                }
+                vpsExt.mScalabilityId.at(i).at(smIdx) = dimId;
+            }
+            else
+            {
+                vpsExt.mScalabilityId.at(i).at(smIdx) = 0;
+            }
+
+            if (vpsExt.mDepthLayerFlag.size() < lid + 1)
+            {
+                vpsExt.mDepthLayerFlag.resize(lid + 1);
+            }
+            if (vpsExt.mViewOrderIdx.size() < lid + 1)
+            {
+                vpsExt.mViewOrderIdx.resize(lid + 1);
+            }
+            if (vpsExt.mDependencyId.size() < lid + 1)
+            {
+                vpsExt.mDependencyId.resize(lid + 1);
+            }
+            if (vpsExt.mAuxId.size() < lid + 1)
+            {
+                vpsExt.mAuxId.resize(lid + 1);
+            }
+            if (vpsExt.mViewOrderIdx.size() < lid + 1)
+            {
+                vpsExt.mViewOrderIdx.resize(lid + 1);
+            }
+
+            vpsExt.mDepthLayerFlag.at(lid) = vpsExt.mScalabilityId.at(i).at(0);
+            vpsExt.mViewOrderIdx.at(lid) = vpsExt.mScalabilityId.at(i).at(1);
+            vpsExt.mDependencyId.at(lid) = vpsExt.mScalabilityId.at(i).at(2);
+            vpsExt.mAuxId.at(lid) = vpsExt.mScalabilityId.at(i).at(3);
+            if (i > 0)
+            {
+                unsigned int newViewFlag = 1;
+                for (unsigned int j = 0; j < i; j++)
+                {
+                    if (vpsExt.mViewOrderIdx.at(lid) == vpsExt.mViewOrderIdx.at(vpsExt.mLayerIdInNuh.at(j)))
+                    {
+                        numViews += newViewFlag;
+                    }
+                }
+            }
+        }
     }
 
     if (vpsExt.mViewIdLen > 0)
     {
-        // NOTE numViews has to be calculated based on algo present in pg 387 of the
-        // standard. For now set it to one.
-        unsigned int numViews = 1;
-        for (unsigned int i = 1; i < numViews; i++)
+        for (unsigned int i = 0; i < numViews; i++)
         {
-            vpsExt.mViewIdVal.push_back(bitstr.readExpGolombCode());
+            unsigned int numBits = vpsExt.mViewIdLen;
+            vpsExt.mViewIdVal.push_back(bitstr.readBits(numBits));
         }
+    }
+
+    vpsExt.mLayerIdxInVps.resize(maxLayersMinus1 + 1);
+    for (unsigned int i = 0; i <= maxLayersMinus1; i++)
+    {
+        vpsExt.mLayerIdxInVps.at(vpsExt.mLayerIdInNuh.at(i)) = i;
     }
 
     // NOTE: This part is nasty. Refactor
@@ -379,7 +445,6 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
     {
         vpsExt.mDirectDependencyFlag.at(i).resize(maxLayersMinus1 + 1);
     }
-
     for (unsigned int i = 1; i <= maxLayersMinus1; i++)
     {
         for (unsigned int j = 0; j < i; j++)
@@ -388,11 +453,7 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
         }
     }
 
-    // Derivation for DependencyFlag, numDirectRefLayers, idDirectRefLayer,
-    // numRefLayers, idRefLayer, numPredictedLayers, and idPredictedLayer are
-    // done now
-    std::vector<std::vector<unsigned int>> dependencyFlag(maxLayersMinus1 + 1,
-        std::vector<unsigned int>(maxLayersMinus1 + 1));
+    std::vector<std::vector<unsigned int>> dependencyFlag(maxLayersMinus1 + 1, std::vector<unsigned int>(maxLayersMinus1 + 1));
     for (unsigned int i = 0; i <= maxLayersMinus1; i++)
     {
         for (unsigned int j = 0; j <= maxLayersMinus1; j++)
@@ -408,9 +469,9 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
         }
     }
 
-    std::vector<std::vector<unsigned int>> idDirectRefLayer(maxLayersMinus1 + 1);
-    std::vector<std::vector<unsigned int>> idRefLayer(maxLayersMinus1 + 1);
-    std::vector<std::vector<unsigned int>> idPredictedLayer(maxLayersMinus1 + 1);
+    std::vector<std::vector<unsigned int>> idDirectRefLayer(maxLayersMinus1 + 1, std::vector<unsigned int>(maxLayersMinus1 + 1));
+    std::vector<std::vector<unsigned int>> idRefLayer(maxLayersMinus1 + 1, std::vector<unsigned int>(maxLayersMinus1 + 1));
+    std::vector<std::vector<unsigned int>> idPredictedLayer(maxLayersMinus1 + 1, std::vector<unsigned int>(maxLayersMinus1 + 1));
 
     std::vector<unsigned int> numDirectRefLayers(maxLayersMinus1 + 1);
     std::vector<unsigned int> numRefLayer(maxLayersMinus1 + 1);
@@ -423,29 +484,25 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
         unsigned int p = 0;
         for (unsigned j = 0; j <= maxLayersMinus1; j++)
         {
-           unsigned int jNuhLid = vpsExt.mLayerIdInNuh.at(j);
-           if(vpsExt.mDirectDependencyFlag.at(i).at(j))
-           {
-               idDirectRefLayer.at(iNuhLId).push_back(jNuhLid);
-               d++;
-           }
-           if(dependencyFlag.at(i).at(j))
-           {
-               idRefLayer.at(iNuhLId).push_back(jNuhLid);
-               r++;
-           }
-           if(dependencyFlag.at(j).at(i))
-           {
-               idPredictedLayer.at(iNuhLId).push_back(jNuhLid);
-               p++;
-           }
+            unsigned int jNuhLid = vpsExt.mLayerIdInNuh.at(j);
+            if (vpsExt.mDirectDependencyFlag.at(i).at(j))
+            {
+                idDirectRefLayer.at(iNuhLId).at(d++) = jNuhLid;
+            }
+            if (dependencyFlag.at(i).at(j))
+            {
+                idRefLayer.at(iNuhLId).at(r++) = jNuhLid;
+            }
+            if (dependencyFlag.at(j).at(i))
+            {
+                idPredictedLayer.at(iNuhLId).at(p++) = jNuhLid;
+            }
         }
         numDirectRefLayers.at(iNuhLId) = d;
         numRefLayer.at(iNuhLId) = r;
         numPredictedLayer.at(iNuhLId) = p;
     }
 
-    // Note: this copying is horrible; refactor later.
     vpsExt.mIdDirectRefLayer = idDirectRefLayer;
     vpsExt.mIdRefLayer = idRefLayer;
     vpsExt.mIdPredictedLayer = idPredictedLayer;
@@ -453,8 +510,7 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
     vpsExt.mNumRefLayer = numRefLayer;
     vpsExt.mNumPredictedLayer = numPredictedLayer;
 
-    std::vector<std::vector<unsigned int>> treePartitionLayerIdList(maxLayersMinus1 + 1,
-        std::vector<unsigned int>(maxLayersMinus1 + 1));
+    std::vector<std::vector<unsigned int>> treePartitionLayerIdList(maxLayersMinus1 + 1, std::vector<unsigned int>(maxLayersMinus1 + 1));
     std::vector<unsigned int> numLayersInTreePartition(maxLayersMinus1 + 1);
     std::vector<unsigned int> layerIdInListFlag(63);
     unsigned int k = 0;
@@ -495,7 +551,7 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
         for (unsigned int j = 0; j < numIndependentLayers; j++)
         {
             unsigned int numBits = ceilLog2(numLayersInTreePartition.at(j) + 1);
-            highestLayerIdxPlus1.push_back(numBits);
+            highestLayerIdxPlus1.push_back(bitstr.readBits(numBits));
         }
         vpsExt.mHighestLayerIdxPlus1.push_back(highestLayerIdxPlus1);
     }
@@ -543,19 +599,19 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
         {
             vpsExt.mSubLayersVpsMaxMinus1.push_back(bitstr.readBits(3));
         }
-    }
 
-    // Derivation for maxSubLayersInLayerSetMinus1
-    std::vector<unsigned int> maxSubLayersInLayerSetMinus1(numLayerSets);
-    for (unsigned int i = 0; i < numLayerSets; i++)
-    {
-        unsigned int maxSlMinus1 = 0;
-        for (unsigned int k = 0; k < numLayersInIdList.at(i); k++)
+        // Derivation for maxSubLayersInLayerSetMinus1
+        std::vector<unsigned int> maxSubLayersInLayerSetMinus1(numLayerSets);
+        for (unsigned int i = 0; i < numLayerSets; i++)
         {
-            unsigned int lid = layerSetLayerIdList.at(i).at(k);
-            maxSlMinus1 = std::max(maxSlMinus1, vpsExt.mSubLayersVpsMaxMinus1.at(vpsExt.mLayerIdxInVps.at(lid)));
+            unsigned int maxSlMinus1 = 0;
+            for (unsigned int k = 0; k < numLayersInIdList.at(i); k++)
+            {
+                unsigned int lid = layerSetLayerIdList.at(i).at(k);
+                maxSlMinus1 = std::max(maxSlMinus1, vpsExt.mSubLayersVpsMaxMinus1.at(vpsExt.mLayerIdxInVps.at(lid)));
+            }
+            maxSubLayersInLayerSetMinus1.at(i) = maxSlMinus1;
         }
-        maxSubLayersInLayerSetMinus1.at(i) = maxSlMinus1;
     }
 
     vpsExt.mMaxTidRefPresentFlag = bitstr.readBits(1);
@@ -582,10 +638,13 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
 
     for (unsigned int i = (vps.mBaseLayerInternalFlag ? 2 : 1); i <= vpsExt.mVpsNumProfileTierLevelMinus1; i++)
     {
-        vpsExt.mVpsProfilePresentFlag.push_back(bitstr.readBits(1));
+        if (vpsExt.mVpsProfilePresentFlag.size() < i + 1)
+        {
+            vpsExt.mVpsProfilePresentFlag.resize(i + 1);
+        }
+        vpsExt.mVpsProfilePresentFlag.at(i) = bitstr.readBits(1);
         vpsExt.mProfileTierLevelArray.resize(vpsExt.mProfileTierLevelArray.size() + 1);
-        parsePtl(bitstr, vpsExt.mProfileTierLevelArray.back(), vps.mMaxSubLayersMinus1,
-            vpsExt.mVpsProfilePresentFlag.back());
+        parsePtl(bitstr, vpsExt.mProfileTierLevelArray.back(), vps.mMaxSubLayersMinus1, vpsExt.mVpsProfilePresentFlag.at(i));
     }
 
     // Note: Derive numLayerSets
@@ -596,157 +655,150 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
     }
 
     unsigned int numOutputLayerSets = vpsExt.mNumAddOlss + numLayerSets;
-    vpsExt.mLayerSetIdxForOlsMinus1.resize(numOutputLayerSets);
     for (unsigned int i = 1; i < numOutputLayerSets; i++)
     {
         unsigned int numBits = ceilLog2(numLayerSets - 1);
+        vpsExt.mLayerSetIdxForOlsMinus1.resize(numOutputLayerSets);
         if (numLayerSets > 2 && i >= numLayerSets)
         {
             vpsExt.mLayerSetIdxForOlsMinus1.at(i) = bitstr.readBits(numBits);
         }
-    }
 
-    // Derivation olsIdxToLsIdx
-    std::vector<unsigned int> olsIdxToLsIdx(numOutputLayerSets);
-    for (unsigned int i = 0; i < numOutputLayerSets; i++)
-    {
-        olsIdxToLsIdx.at(i) = (i < numLayerSets) ? i : (vpsExt.mLayerSetIdxForOlsMinus1.at(i) + 1);
-    }
+        // Derivation olsIdxToLsIdx
+        vpsExt.mOlsIdxToLsIdx.resize(numOutputLayerSets);
+        for (unsigned int j = 0; j <= numOutputLayerSets - 1; j++)
+        {
+            vpsExt.mOlsIdxToLsIdx.at(j) = (j < numLayerSets) ? j : (vpsExt.mLayerSetIdxForOlsMinus1.at(j) + 1);
+        }
 
-    vpsExt.mOlsIdxToLsIdx = olsIdxToLsIdx;
-
-    vpsExt.mOutputLayerFlag.resize(numOutputLayerSets);
-    for (unsigned int i = 1; i < numOutputLayerSets; i++)
-    {
-        // What is the size of outputLayerFlag??
-        // std::vector<unsigned int> outputLayerFlag(8);
-        // Should this be this?
-        std::vector<unsigned int> outputLayerFlag;
+        std::vector<unsigned int> oLayerFlag(1);
         if (i == 1)
         {
-            outputLayerFlag.resize(numLayersInIdList.at(olsIdxToLsIdx.at(0)));
-            outputLayerFlag.at(0) = 1;
-            vpsExt.mOutputLayerFlag.at(0) = outputLayerFlag;
+            oLayerFlag.at(0) = 1;
+            vpsExt.mOutputLayerFlag.push_back(oLayerFlag);
+            oLayerFlag.clear();
         }
         if ((i > vps.mNumLayerSetsMinus1) || (vpsExt.mDefaultOutputLayerIdc == 2))
         {
-            outputLayerFlag.resize(numLayersInIdList.at(olsIdxToLsIdx.at(i)));
-            for (unsigned int j = 0; j < numLayersInIdList[olsIdxToLsIdx[i]]; j++)
+            oLayerFlag.resize(numLayersInIdList.at(vpsExt.mOlsIdxToLsIdx.at(i)));
+            for (unsigned int j = 0; j < numLayersInIdList.at(vpsExt.mOlsIdxToLsIdx.at(i)); j++)
             {
-                outputLayerFlag.at(j) = bitstr.readBits(1);
+                oLayerFlag.at(j) = bitstr.readBits(1);
             }
-            vpsExt.mOutputLayerFlag.at(i) = outputLayerFlag;
-        }
-    }
-
-    // Note: The following part of deriving  outputLayerFlag requires some
-    // refactoring.
-    vpsExt.mOutputLayerFlagDerived.resize(numOutputLayerSets);
-    if ((vpsExt.mDefaultOutputLayerIdc == 0) || (vpsExt.mDefaultOutputLayerIdc == 1))
-    {
-        for (unsigned int i = 0; i <= vps.mNumLayerSetsMinus1; i++)
-        {
-            std::vector<unsigned int> outputLayerFlag(numLayersInIdList.at(olsIdxToLsIdx.at(i)));
-            unsigned int maxValInlayerSetLayerIdList = 0;
-            for (unsigned int j = 0; j < numLayersInIdList.at(olsIdxToLsIdx.at(i)); j++)
+            if (vpsExt.mOutputLayerFlag.size() < i + 1)
             {
-                if (layerSetLayerIdList.at(olsIdxToLsIdx.at(i)).at(j) > maxValInlayerSetLayerIdList)
+                vpsExt.mOutputLayerFlag.resize(i + 1);
+            }
+            vpsExt.mOutputLayerFlag.at(i) = oLayerFlag;
+        }
+
+        vpsExt.mOutputLayerFlagDerived.resize(numOutputLayerSets);
+        if ((vpsExt.mDefaultOutputLayerIdc == 0) || (vpsExt.mDefaultOutputLayerIdc == 1))
+        {
+            for (unsigned int k = 0; k <= vps.mNumLayerSetsMinus1; k++)
+            {
+                std::vector<unsigned int> outputLayerFlag(numLayersInIdList.at(vpsExt.mOlsIdxToLsIdx.at(k)));
+                unsigned int maxValInlayerSetLayerIdList = 0;
+                for (unsigned int j = 0; j < numLayersInIdList.at(vpsExt.mOlsIdxToLsIdx.at(k)); j++)
                 {
-                    maxValInlayerSetLayerIdList = layerSetLayerIdList.at(olsIdxToLsIdx.at(i)).at(j);
-                }
-            }
-            for (unsigned int j = 0; j <= numLayersInIdList.at(olsIdxToLsIdx.at(i)) - 1; j++)
-            {
-                if (layerSetLayerIdList.at(olsIdxToLsIdx.at(i)).at(j) == maxValInlayerSetLayerIdList)
-                {
-                    outputLayerFlag.at(j) = 1;
-                }
-            }
-            vpsExt.mOutputLayerFlagDerived.at(i) = outputLayerFlag;
-        }
-    }
-    for (unsigned int i = (vpsExt.mDefaultOutputLayerIdc == 2) ? 0 : (vps.mNumLayerSetsMinus1) + 1;
-        i < numOutputLayerSets - 1; i++)
-    {
-        std::vector<unsigned int> outputLayerFlag(numLayersInIdList.at(olsIdxToLsIdx.at(i)));
-        for (unsigned int j = 0; j <= (numLayersInIdList.at(olsIdxToLsIdx.at(i)) - 1); j++)
-        {
-            outputLayerFlag.at(j) = vpsExt.mOutputLayerFlag.at(i).at(j);
-        }
-        vpsExt.mOutputLayerFlagDerived.at(i) = outputLayerFlag;
-    }
-
-    // Derivation of numOutputLayersInOutputLayerSet
-    std::vector<unsigned int> numOutputLayersInOutputLayerSet(16);
-    std::vector<unsigned int> olsHighestOutputLayerId(2048);
-    for (unsigned int i = 1; i < numOutputLayerSets; i++)
-    {
-        for (unsigned int j = 0; j < numLayersInIdList.at(olsIdxToLsIdx.at(i)); j++)
-        {
-            numOutputLayersInOutputLayerSet.at(i) += vpsExt.mOutputLayerFlagDerived.at(i).at(j);
-            if (vpsExt.mOutputLayerFlagDerived.at(i).at(j))
-            {
-                olsHighestOutputLayerId.at(i) = layerSetLayerIdList.at(olsIdxToLsIdx.at(i)).at(j);
-            }
-        }
-    }
-
-    // Derivation of numNecessaryLayers and necessaryLayerFlag
-    // Note: Find exactly how much memory needs to be allocated.
-    std::vector<std::vector<unsigned int>> necessaryLayerFlag(2048, std::vector<unsigned int>(2048));
-    std::vector<unsigned int> numNecessaryLayers(1024);
-    for (unsigned int olsIdx = 0; olsIdx < numOutputLayerSets; olsIdx++)
-    {
-        unsigned int lsIdx = olsIdxToLsIdx.at(olsIdx);
-
-        for (unsigned int lsLayerIdx = 0; lsLayerIdx < numLayersInIdList.at(lsIdx); lsLayerIdx++)
-        {
-            necessaryLayerFlag.at(olsIdx).at(lsLayerIdx) = 0;
-        }
-        for (unsigned int lsLayerIdx = 0; lsLayerIdx < numLayersInIdList.at(lsIdx); lsLayerIdx++)
-        {
-            if (vpsExt.mOutputLayerFlagDerived.at(olsIdx).at(lsLayerIdx))
-            {
-                necessaryLayerFlag.at(olsIdx).at(lsLayerIdx) = 1;
-                unsigned int currLayerId = layerSetLayerIdList.at(lsIdx).at(lsLayerIdx);
-
-                for (unsigned int rLsLayerIdx = 0; rLsLayerIdx < lsLayerIdx; rLsLayerIdx++)
-                {
-                    unsigned int refLayerId = layerSetLayerIdList.at(lsIdx).at(rLsLayerIdx);
-                    if (dependencyFlag.at(vpsExt.mLayerIdxInVps.at(currLayerId)).at(
-                        vpsExt.mLayerIdxInVps.at(refLayerId)))
+                    if (layerSetLayerIdList.at(vpsExt.mOlsIdxToLsIdx.at(k)).at(j) > maxValInlayerSetLayerIdList)
                     {
-                        necessaryLayerFlag.at(olsIdx).at(rLsLayerIdx) = 1;
+                        maxValInlayerSetLayerIdList = layerSetLayerIdList.at(vpsExt.mOlsIdxToLsIdx.at(k)).at(j);
                     }
                 }
-            }
-
-            numNecessaryLayers.at(olsIdx) = 0;
-            for (unsigned int lsLayerIdx = 0; lsLayerIdx < numLayersInIdList.at(lsIdx); lsLayerIdx++)
-            {
-                numNecessaryLayers.at(olsIdx) += necessaryLayerFlag.at(olsIdx).at(lsLayerIdx);
+                for (unsigned int j = 0; j <= numLayersInIdList.at(vpsExt.mOlsIdxToLsIdx.at(k)) - 1; j++)
+                {
+                    if (vpsExt.mDefaultOutputLayerIdc == 0 || layerSetLayerIdList.at(vpsExt.mOlsIdxToLsIdx.at(k)).at(j) == maxValInlayerSetLayerIdList)
+                    {
+                        outputLayerFlag.at(j) = 1;
+                    }
+                    else
+                    {
+                        outputLayerFlag.at(j) = 0;
+                    }
+                }
+                vpsExt.mOutputLayerFlagDerived.at(k) = outputLayerFlag;
             }
         }
-    }
 
-    vpsExt.mProfileTierLevelIdx.resize(numOutputLayerSets);
-    vpsExt.mAltOutputLayerFlag.resize(numOutputLayerSets);
-    for (unsigned int i = 1; i < numOutputLayerSets; i++)
-    {
+        for (unsigned int k = (vpsExt.mDefaultOutputLayerIdc == 2) ? 0 : (vps.mNumLayerSetsMinus1) + 1; k < numOutputLayerSets - 1; k++)
+        {
+            std::vector<unsigned int> outputLayerFlag(numLayersInIdList.at(vpsExt.mOlsIdxToLsIdx.at(i)));
+            for (unsigned int j = 0; j <= (numLayersInIdList.at(vpsExt.mOlsIdxToLsIdx.at(i)) - 1); j++)
+            {
+                outputLayerFlag.at(j) = vpsExt.mOutputLayerFlag.at(k).at(j);
+            }
+            vpsExt.mOutputLayerFlagDerived.at(k) = outputLayerFlag;
+        }
+
+        // Derivation of numOutputLayersInOutputLayerSet
+        std::vector<unsigned int> numOutputLayersInOutputLayerSet(16);
+        std::vector<unsigned int> olsHighestOutputLayerId(2048);
+        for (unsigned k = 0; k <= i; k++)
+        {
+            for (unsigned int j = 0; j < numLayersInIdList.at(vpsExt.mOlsIdxToLsIdx.at(k)); j++)
+            {
+                numOutputLayersInOutputLayerSet.at(k) += vpsExt.mOutputLayerFlagDerived.at(k).at(j);
+                if (vpsExt.mOutputLayerFlagDerived.at(k).at(j))
+                {
+                    olsHighestOutputLayerId.at(k) = layerSetLayerIdList.at(vpsExt.mOlsIdxToLsIdx.at(k)).at(j);
+                }
+            }
+        }
+
+        std::vector<std::vector<unsigned int>> necessaryLayerFlag(2048, std::vector<unsigned int>(2048));
+        std::vector<unsigned int> numNecessaryLayers(1024);
+        for (unsigned int olsIdx = 0; olsIdx <= i; olsIdx++)
+        {
+            unsigned int lsIdx = vpsExt.mOlsIdxToLsIdx.at(olsIdx);
+
+            for (unsigned int lsLayerIdx = 0; lsLayerIdx < numLayersInIdList.at(lsIdx); lsLayerIdx++)
+            {
+                necessaryLayerFlag.at(olsIdx).at(lsLayerIdx) = 0;
+            }
+            for (unsigned int lsLayerIdx = 0; lsLayerIdx < numLayersInIdList.at(lsIdx); lsLayerIdx++)
+            {
+                if (vpsExt.mOutputLayerFlagDerived.at(olsIdx).at(lsLayerIdx))
+                {
+                    necessaryLayerFlag.at(olsIdx).at(lsLayerIdx) = 1;
+                    unsigned int currLayerId = layerSetLayerIdList.at(lsIdx).at(lsLayerIdx);
+
+                    for (unsigned int rLsLayerIdx = 0; rLsLayerIdx < lsLayerIdx; rLsLayerIdx++)
+                    {
+                        unsigned int refLayerId = layerSetLayerIdList.at(lsIdx).at(rLsLayerIdx);
+                        if (dependencyFlag.at(vpsExt.mLayerIdxInVps.at(currLayerId)).at(vpsExt.mLayerIdxInVps.at(refLayerId)))
+                        {
+                            necessaryLayerFlag.at(olsIdx).at(rLsLayerIdx) = 1;
+                        }
+                    }
+                }
+
+                numNecessaryLayers.at(olsIdx) = 0;
+                for (unsigned int lsLayerIdx = 0; lsLayerIdx < numLayersInIdList.at(lsIdx); lsLayerIdx++)
+                {
+                    numNecessaryLayers.at(olsIdx) += necessaryLayerFlag.at(olsIdx).at(lsLayerIdx);
+                }
+            }
+        }
+
+        vpsExt.mProfileTierLevelIdx.resize(numOutputLayerSets);
+        vpsExt.mAltOutputLayerFlag.resize(numOutputLayerSets);
         vpsExt.mProfileTierLevelIdx.at(i).resize(8);
-        for (unsigned int j = 0; j < numLayersInIdList[olsIdxToLsIdx[i]]; j++)
+        for (unsigned int j = 0; j < numLayersInIdList.at(vpsExt.mOlsIdxToLsIdx.at(i)); j++)
         {
             if (necessaryLayerFlag.at(i).at(j) && vpsExt.mVpsNumProfileTierLevelMinus1 > 0)
             {
                 unsigned int numBits = ceilLog2(vpsExt.mVpsNumProfileTierLevelMinus1 + 1);
                 vpsExt.mProfileTierLevelIdx.at(i).at(j) = bitstr.readBits(numBits);
             }
+
         }
-        if (numOutputLayersInOutputLayerSet[i] == 1 && numDirectRefLayers[olsHighestOutputLayerId[i]] > 0)
+        if (numOutputLayersInOutputLayerSet.at(i) == 1 && numDirectRefLayers.at(olsHighestOutputLayerId.at(i)) > 0)
         {
             vpsExt.mAltOutputLayerFlag.at(i) = bitstr.readBits(1);
         }
     }
+
     if (vps.mMaxLayersMinus1 > 0)
     {
         vpsExt.mProfileTierLevelIdx.at(0).push_back(1);
@@ -761,7 +813,6 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
     for (unsigned int i = 0; i <= vpsExt.mVpsNumRepFormatsMinus1; i++)
     {
         vpsExt.repFormat.resize(vpsExt.repFormat.size() + 1);
-        // Get representation formats
         parseRep(bitstr, vpsExt.repFormat.back());
     }
     if (vpsExt.mVpsNumRepFormatsMinus1 > 0)
@@ -783,7 +834,7 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
     }
     else
     {
-        for(unsigned int i = (vps.mBaseLayerInternalFlag ? 1 : 0); i <= maxLayersMinus1; i++)
+        for (unsigned int i = (vps.mBaseLayerInternalFlag ? 1 : 0); i <= maxLayersMinus1; i++)
         {
             vpsExt.mVpsRepFormatIdx.at(i) = std::min(i, vpsExt.mVpsNumRepFormatsMinus1);
         }
@@ -818,16 +869,15 @@ void OperatingPointsInformation::parseVpsExt(BitStream& bitstr, Vps& vps, VpsExt
             for (unsigned int j = (vps.mBaseLayerInternalFlag ? 0 : 1); j < i; j++)
             {
                 std::vector<unsigned int> directDependencyType;
-                // Note: derive directDependencyFlag
-                // Note: a matrix of the final size may be required to be initialized.
                 if (vpsExt.mDirectDependencyFlag.at(i).at(j))
                 {
-                    directDependencyType.push_back(bitstr.readExpGolombCode());
+                    directDependencyType.push_back(vpsExt.mDirectDepTypeLenMinus2 + 2);
                 }
                 vpsExt.mDirectDependencyType.push_back(directDependencyType);
             }
         }
     }
+
     vpsExt.mVpsNonVuiExtensionLength = bitstr.readExpGolombCode();
     for (unsigned int i = 1; i <= vpsExt.mVpsNonVuiExtensionLength; i++)
     {

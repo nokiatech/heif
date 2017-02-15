@@ -364,6 +364,13 @@ private:
         unsigned int mViewIdLen;
         std::vector<unsigned int> mViewIdVal;
 
+        std::vector<std::vector<unsigned int>> mScalabilityId;
+        std::vector<unsigned int> mDepthLayerFlag;
+        std::vector<unsigned int> mViewOrderIdx;
+        std::vector<unsigned int> mDependencyId;
+        std::vector<unsigned int> mAuxId;
+
+
         std::vector<std::vector<unsigned int>> mDirectDependencyFlag;
         unsigned int  mNumAddLayerSets;
 
@@ -409,7 +416,6 @@ private:
         unsigned int mVpsVuiAlignmentBitEqualToOne;
 
         std::vector<unsigned int> mLayerIdxInVps;
-
 
         std::vector<std::vector<unsigned int>> mIdDirectRefLayer;
         std::vector<std::vector<unsigned int>> mIdRefLayer;
