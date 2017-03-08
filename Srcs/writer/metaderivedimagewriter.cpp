@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -17,6 +17,7 @@
 #include "idspace.hpp"
 #include "imagegrid.hpp"
 #include "imageoverlay.hpp"
+#include "imagemirror.hpp"
 #include "imagerelativelocationproperty.hpp"
 #include "imagerotation.hpp"
 #include "imagespatialextentsproperty.hpp"
@@ -127,6 +128,15 @@ MetaDerivedImageWriter::DerivationMap MetaDerivedImageWriter::processIdenDerivat
 {
     DerivationMap derivationMap;
 
+    for (const auto& imir : mConfig.imirs)
+    {
+        DerivationInfo info;
+        info.indexList = imir.idxs_list;
+        info.refsList = imir.refs_list;
+        info.type = "iden";
+        info.uniqBsid = imir.uniq_bsid;
+        derivationMap.insert( { imir.uniq_bsid, info });
+    }
     for (const auto& irot : mConfig.irots)
     {
         DerivationInfo info;
@@ -260,7 +270,7 @@ void MetaDerivedImageWriter::iprpWrite(MetaBox* metaBox)
         auto ispe = std::make_shared<ImageSpatialExtentsProperty>();
         ispe->setDisplayWidth(grid.outputWidth);
         ispe->setDisplayHeight(grid.outputHeight);
-        metaBox->addProperty(ispe, mDerivations.at(grid.uniq_bsid).itemIds, true);
+        metaBox->addProperty(ispe, mDerivations.at(grid.uniq_bsid).itemIds, false);
     }
 
     for (const auto& iovl : mConfig.iovls)
@@ -272,6 +282,14 @@ void MetaDerivedImageWriter::iprpWrite(MetaBox* metaBox)
     }
 
     // Add properties for 'iden' items, and link existing ispes to 'iden' items
+    for (const auto& imir : mConfig.imirs)
+    {
+        linkIspeProperties(metaBox, mDerivations.at(imir.uniq_bsid).referenceItemIds, mDerivations.at(imir.uniq_bsid).itemIds);
+        auto mirrorProperty = std::make_shared<ImageMirror>();
+        mirrorProperty->setHorizontalAxis(imir.horizontalAxis);
+        metaBox->addProperty(mirrorProperty, mDerivations.at(imir.uniq_bsid).itemIds, true);
+    }
+
     for (const auto& irot : mConfig.irots)
     {
         linkIspeProperties(metaBox, mDerivations.at(irot.uniq_bsid).referenceItemIds, mDerivations.at(irot.uniq_bsid).itemIds);
@@ -427,6 +445,6 @@ void MetaDerivedImageWriter::linkIspeProperties(MetaBox* metaBox, const ItemIdVe
     for (unsigned int i = 0; i < fromItems.size(); ++i)
     {
         const std::uint32_t prpIndex = iprpBox.findPropertyIndex(ItemPropertiesBox::PropertyType::ISPE, fromItems.at(i));
-        metaBox->addProperty(prpIndex, { toItems.at(i) }, true);
+        metaBox->addProperty(prpIndex, { toItems.at(i) }, false);
     }
 }

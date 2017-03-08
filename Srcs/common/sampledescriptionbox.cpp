@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -11,6 +11,8 @@
  */
 
 #include "sampledescriptionbox.hpp"
+
+#include "avcsampleentry.hpp"
 #include "hevcsampleentry.hpp"
 #include "log.hpp"
 
@@ -31,7 +33,7 @@ void SampleDescriptionBox::writeBox(BitStream& bitstr)
     bitstr.write32Bits(mIndex.size());
     for (auto& entry : mIndex)
     {
-        if (not entry)
+        if (!entry)
         {
             throw std::runtime_error("SampleDescriptionBox::writeBox can not write file because an unknown sample entry type was present when the file was read.");
         }
@@ -48,7 +50,7 @@ void SampleDescriptionBox::parseBox(BitStream& bitstr)
     for (unsigned int i = 0; i < entryCount; ++i)
     {
         // Extract contained box bitstream and type
-        std::string boxType;
+        FourCCInt boxType;
         BitStream entryBitStream = bitstr.readSubBoxBitStream(boxType);
 
         /** @todo Add new sample entry types based on handler if necessary **/
@@ -57,6 +59,12 @@ void SampleDescriptionBox::parseBox(BitStream& bitstr)
             std::unique_ptr<HevcSampleEntry> hevcSampleEntry(new HevcSampleEntry);
             hevcSampleEntry->parseBox(entryBitStream);
             mIndex.push_back(std::move(hevcSampleEntry));
+        }
+        else if (boxType == "avc1")
+        {
+            std::unique_ptr<AvcSampleEntry> avcSampleEntry(new AvcSampleEntry);
+            avcSampleEntry->parseBox(entryBitStream);
+            mIndex.push_back(std::move(avcSampleEntry));
         }
         else
         {

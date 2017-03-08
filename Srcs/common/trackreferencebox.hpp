@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -43,7 +43,7 @@ public:
     /** @brief Check for the presence of a particular reference type.
      *  @param [in] type Track reference type to be checked.
      *  @returns TRUE if present, FALSE if not found. **/
-    bool isReferenceTypePresent(const std::string& type) const;
+    bool isReferenceTypePresent(FourCCInt type) const;
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */

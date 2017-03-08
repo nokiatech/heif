@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -13,6 +13,8 @@
 #ifndef BBOX_HPP
 #define BBOX_HPP
 
+#include "fourccint.hpp"
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -25,7 +27,7 @@ class BitStream;
 class Box
 {
 public:
-    Box(const char* boxType);
+    Box(FourCCInt boxType);
     virtual ~Box() = default;
 
     /** @brief Sets the size of the Box
@@ -37,10 +39,10 @@ public:
 
     /** @brief Sets the 4CC type of the Box
      *  @param [in] type 4CC type code of the Box as a string */
-    void setType(const std::string& type);
+    void setType(FourCCInt type);
 
     /** @return type 4CC type code of the Box as a string */
-    const std::string& getType() const;
+    FourCCInt getType() const;
 
     /** @brief Writes the Box structure as a bitstream.
      * This virtual method should be implemented by each class
@@ -79,17 +81,15 @@ protected:
      * @param [in] sizeIncrease the amount of byte-size increase to be applied. */
     void increaseSize(std::uint32_t sizeIncrease);
 
-
 private:
-    ///@brief size of the Box
-    std::uint32_t mSize;
-    ///@brief type of the Box
-    std::string mType;
-    ///@brief Large size of the Box
-    std::vector<std::uint32_t> mLargeSize;
-    ///@brief When the box type is "uuid", user defined type to be used as extended Type.
-    std::string mUserType;
-    ///@brief Internal variable to keep track of the byte position for bitstream operations.
+    std::uint32_t mSize;                   ///< Size of the Box.
+    FourCCInt mType;                       ///< Type of the Box.
+    std::vector<std::uint32_t> mLargeSize; ///< Large size of the Box
+
+    /// When the box type is "uuid", user defined type to be used as extended Type.
+    FourCCInt mUserType;
+
+    /// Internal variable to keep track of the byte position for bitstream operations.
     std::uint32_t mStartLocation;
 };
 

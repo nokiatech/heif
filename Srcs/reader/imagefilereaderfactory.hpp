@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -27,6 +27,6 @@ std::unique_ptr<ImageFileReaderInterface> getInstance(const std::string& fileNam
 /** @param [in] stream Image file stream.
  *  @return A pointer to a derived instance of ImageFileReaderInterface */
 std::unique_ptr<ImageFileReaderInterface> getInstance(std::istream& stream);
-};
+}
 
 #endif

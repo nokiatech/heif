@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -18,8 +18,8 @@ using std::endl;
 
 static const int RESERVED_BYTES = 6;
 
-SampleEntryBox::SampleEntryBox(const std::string& codingname) :
-    Box(codingname.c_str()),
+SampleEntryBox::SampleEntryBox(const FourCCInt codingname) :
+    Box(codingname),
     mDataReferenceIndex(0)
 {
 }

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -35,6 +35,23 @@ std::vector<std::uint32_t> DataServe::getStoreIds()
     }
 
     return storeIds;
+}
+
+std::shared_ptr<DataStore> DataServe::getStore(const std::string& key, const std::string& value)
+{
+    for (auto mapEntry : mServeMap)
+    {
+        std::vector<std::string> values = mapEntry.second->getValue(key);
+        for (const auto& i : values)
+        {
+            if (i == value)
+            {
+                return mapEntry.second;
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 void DataServe::clear()

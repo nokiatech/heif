@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -12,6 +12,7 @@
 
 #include "filewriter.hpp"
 #include "auxiliaryimagewriter.hpp"
+#include "buildinfo.hpp"
 #include "deriveditemmediawriter.hpp"
 #include "entitygroupwriter.hpp"
 #include "ftypwriter.hpp"
@@ -19,6 +20,8 @@
 #include "imagemasterwriter.hpp"
 #include "imagemediawriter.hpp"
 #include "imagethumbswriter.hpp"
+#include "layerimagewriter.hpp"
+#include "log.hpp"
 #include "metadatamediawriter.hpp"
 #include "metadatawriter.hpp"
 #include "metaderivedimagewriter.hpp"
@@ -57,15 +60,17 @@ void FileWriter::writeFile(const IsoMediaFile::Configuration& configuration)
     BitStream meta = writeMeta(offsets);
     BitStream moov = writeMoov(offsets);
 
+    mdatBoxes.push_back(createVersionMdat());
+
     writeStream(config.general.output_file, ftyp, meta, moov, mdatBoxes);
 }
 
 void FileWriter::createWriters(IsoMediaFile::Configuration& config)
 {
     // Fill an intermediate map of altr uniq_bsids
-    for (const auto& idxs : config.egroups.altr.idxs_lists)
+    for (const auto& idxs : config.egroups)
     {
-        for (const auto& id : idxs)
+        for (const auto& id : idxs.idxs_lists)
         {
             mAltrUniqBsids[mAlterId].insert(id.uniq_bsid);
         }
@@ -103,14 +108,12 @@ void FileWriter::createWriters(IsoMediaFile::Configuration& config)
     createEntityGroupWriters(config.egroups);
 }
 
-void FileWriter::createEntityGroupWriters(const IsoMediaFile::Egroups& config)
+void FileWriter::createEntityGroupWriters(const std::vector<IsoMediaFile::Egroup>& egroups)
 {
-    // Currently only grouping type 'altr' is specified and handled. Modify this
-    // method and EntityGroupWriter as needed to adapt possible new groups.
-    for (const auto& idxsList : config.altr.idxs_lists)
+    for (const auto& egroup : egroups)
     {
         mMetaWriterMap.insert(std::make_pair(Context::getValue(),
-            std::unique_ptr<EntityGroupWriter>(new EntityGroupWriter(idxsList))));
+            std::unique_ptr<EntityGroupWriter>(new EntityGroupWriter(egroup))));
     }
 }
 
@@ -156,6 +159,11 @@ void FileWriter::createImageWriters(const IsoMediaFile::Configuration& config, I
         createAuxiliaryImageWriter(auxiliary, masterId);
     }
 
+    for (const auto& layers : content.layers)
+    {
+        createLayerImageWriter(layers, masterId);
+    }
+
     content.property.contextId = Context::getValue();
     content.derived.contextId = Context::getValue();
 
@@ -190,7 +198,7 @@ ContextId FileWriter::createMasterTrackWriter(const IsoMediaFile::Master& config
 
     // Instantiate a track writer and a media writer for this track
     std::unique_ptr<TrackWriter> trackWriter(new TrackMasterWriter(contextId, config));
-    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path));
+    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path, config.code_type));
 
     // Initialization of this track writer
     if (isAlter == true || inAlterList == true)
@@ -256,11 +264,12 @@ ContextId FileWriter::createMasterImageWriter(const IsoMediaFile::Master& config
     const std::vector<std::string> type = { config.hdlr_type, config.code_type, config.encp_type };
 
     std::unique_ptr<MetaWriter> imageWriter(new ImageMasterWriter(config, type, contextId));
-    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path));
+    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path, config.code_type));
 
     // Store the track writer and media writer in their respective maps
     mMetaWriterMap.insert(std::make_pair(contextId, move(imageWriter)));
     mMediaWriterMap.insert(std::make_pair(contextId, move(mediaWriter)));
+    mMediaLinkerMap[contextId].insert(contextId);
 
     return contextId;
 }
@@ -271,7 +280,7 @@ void FileWriter::createThumbTrackWriter(const IsoMediaFile::Thumbs& config, cons
     const ContextId alterId = addToAlterLinkerMap(masterId, contextId);
 
     std::unique_ptr<TrackWriter> trackWriter(new TrackThumbsWriter(contextId, config, masterId));
-    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path));
+    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path, config.code_type));
 
     trackWriter->setPreviewTrack(true);
     trackWriter->setTrackAsAlter(alterId);
@@ -288,11 +297,12 @@ void FileWriter::createThumbImageWriter(const IsoMediaFile::Thumbs& config, cons
     const std::vector<std::string> type = { "pict", config.code_type, "meta" };
 
     std::unique_ptr<MetaWriter> imageWriter(new ImageThumbsWriter(config, type, contextId));
-    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path));
+    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path, config.code_type));
     imageWriter->linkMasterDataStore(masterId);
 
     mMetaWriterMap.insert(std::make_pair(contextId, move(imageWriter)));
     mMediaWriterMap.insert(std::make_pair(contextId, move(mediaWriter)));
+    mMediaLinkerMap[contextId].insert(contextId);
 }
 
 void FileWriter::createMetadataWriters(const IsoMediaFile::Metadata& config, const ContextId masterId)
@@ -305,6 +315,7 @@ void FileWriter::createMetadataWriters(const IsoMediaFile::Metadata& config, con
     const ContextId contextId = Context::getValue();
     mMetaWriterMap.insert(std::make_pair(contextId, move(metadataWriter)));
     mMediaWriterMap.insert(std::make_pair(contextId, move(mediaWriter)));
+    mMediaLinkerMap[contextId].insert(contextId);
 }
 
 void FileWriter::createPropertyWriters(const IsoMediaFile::Configuration& config, const IsoMediaFile::Content& content)
@@ -324,18 +335,43 @@ void FileWriter::createDerivedImageWriters(const IsoMediaFile::Derived& config, 
 
     mMetaWriterMap.insert(std::make_pair(derivedContextId, move(derivedImageWriter)));
     mMediaWriterMap.insert(std::make_pair(derivedContextId, move(mediaWriter)));
+    mMediaLinkerMap[derivedContextId].insert(derivedContextId);
 }
 
 void FileWriter::createAuxiliaryImageWriter(const IsoMediaFile::Auxiliary& config, const ContextId masterId)
 {
     const ContextId contextId = Context::getValue();
-    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path));
+
+    std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path, config.code_type));
 
     std::unique_ptr<MetaWriter> auxiliaryImageWriter(new AuxiliaryImageWriter(config, contextId));
     auxiliaryImageWriter->linkMasterDataStore(masterId);
 
     mMetaWriterMap.insert(std::make_pair(contextId, move(auxiliaryImageWriter)));
     mMediaWriterMap.insert(std::make_pair(contextId, move(mediaWriter)));
+    mMediaLinkerMap[contextId].insert(contextId);
+}
+
+void FileWriter::createLayerImageWriter(const IsoMediaFile::Layer& config, const ContextId masterId)
+{
+    const ContextId contextId = Context::getValue();
+
+    if (config.file_path == "")
+    {
+        // Use master context IDs 'mdat'
+        mMediaLinkerMap[masterId].insert(contextId);
+    }
+    else
+    {
+        std::unique_ptr<MediaWriter> mediaWriter(new ImageMediaWriter(config.file_path, config.code_type));
+        mMediaWriterMap.insert(std::make_pair(contextId, move(mediaWriter)));
+        mMediaLinkerMap[contextId].insert(contextId);
+    }
+
+    std::unique_ptr<MetaWriter> layerImageWriter(new LayerImageWriter(config, contextId));
+    layerImageWriter->linkMasterDataStore(masterId);
+
+    mMetaWriterMap.insert(std::make_pair(contextId, move(layerImageWriter)));
 }
 
 BitStream FileWriter::writeFtyp(const IsoMediaFile::Brands& config)
@@ -355,11 +391,7 @@ BitStream FileWriter::writeMeta(const OffsetMap& offsets)
     MetaBoxWriter writer;
     for (auto& imageWriter : mMetaWriterMap)
     {
-        unsigned int offset = 0;
-        if (offsets.count(imageWriter.first))
-        {
-            offset = offsets.at(imageWriter.first);
-        }
+        const Offset offset = getMdatOffset(offsets, imageWriter.first);
         writer.writeToMetaBox(imageWriter.second.get(), offset);
     }
 
@@ -372,7 +404,7 @@ BitStream FileWriter::writeMeta(const OffsetMap& offsets)
     return output;
 }
 
-FileWriter::Offset FileWriter::getTrackMediaOffset(const OffsetMap& offsets, const ContextId trackId) const
+FileWriter::Offset FileWriter::getMdatOffset(const OffsetMap& offsets, const ContextId contextId) const
 {
     if (offsets.size() == 0)
     {
@@ -381,13 +413,12 @@ FileWriter::Offset FileWriter::getTrackMediaOffset(const OffsetMap& offsets, con
 
     for (const auto& mapItr : mMediaLinkerMap)
     {
-        if (mapItr.second.count(trackId))
+        if (mapItr.second.count(contextId))
         {
             return offsets.at(mapItr.first);
         }
     }
-
-    throw std::runtime_error("FileWriter::getTrackMediasOffset() file offset map is not complete?");
+    return 0;
 }
 
 BitStream FileWriter::writeMoov(const OffsetMap& offsets)
@@ -398,7 +429,7 @@ BitStream FileWriter::writeMoov(const OffsetMap& offsets)
     for (auto& trackWriter : mTrackWriterMap)
     {
         const ContextId trackId = trackWriter.first;
-        const Offset offset = getTrackMediaOffset(offsets, trackId);
+        const Offset offset = getMdatOffset(offsets, trackId);
         moovWriter.addTrack(trackWriter.second->writeTrack(), offset);
     }
 
@@ -418,8 +449,18 @@ std::vector<MediaDataBox> FileWriter::writeMdat()
 
     for (auto& mediaWriter : mMediaWriterMap)
     {
-        boxes.push_back(mediaWriter.second->writeMedia());
-        mBoxSizes.insert(std::make_pair(mediaWriter.first, boxes.back().getSize()));
+        MediaDataBox newMdat = mediaWriter.second->writeMedia();
+
+        // Do not write unnecessary empty mdats.
+        if (newMdat.getSize() > 8)
+        {
+            boxes.push_back(newMdat);
+            mBoxSizes.insert(std::make_pair(mediaWriter.first, boxes.back().getSize()));
+        }
+        else
+        {
+            mBoxSizes.insert(std::make_pair(mediaWriter.first, 0));
+        }
     }
 
     return boxes;
@@ -472,4 +513,14 @@ void FileWriter::writeBitstream(BitStream& input, std::ofstream& output) const
 {
     const std::vector<uint8_t>& data = input.getStorage();
     output.write(reinterpret_cast<const char*>(data.data()), data.size());
+}
+
+MediaDataBox FileWriter::createVersionMdat() const
+{
+    MediaDataBox mdat;
+    const std::string version = std::string("NHW_") + BuildInfo::CompatibilityVersion;
+    const std::vector<uint8_t> data(version.cbegin(), version.cend());
+    mdat.addData(data);
+
+    return mdat;
 }

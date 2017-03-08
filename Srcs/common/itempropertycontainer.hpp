@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -37,8 +37,7 @@ public:
     /**
      * Add a Property or FullProperty
      * @param [in] box Pointer to the Box to add
-     * @return Amount of properties after the operation. The new property is added as the last one, so the 0-based
-     *         index of it is (return value - 1).
+     * @return 0-based index of the new item.
      */
     unsigned int addProperty(std::shared_ptr<Box> box);
 
@@ -51,6 +50,15 @@ public:
     virtual void parseBox(BitStream& bitstream);
 
 private:
+    /**
+     * Find the index of an equivalent property which is already in this ItemPropertyContainer.
+     * @todo Currently this method support just 'ispe'. Extending this to cover all property types might need
+     *       a different approach.
+     * @param [in] box Pointer to the property box to search equivalent for.
+     * @return 0-based index of a property if such exists. -1 if not found.
+     */
+    int getIndex(std::shared_ptr<Box> box) const;
+
     /**
      * Boxes derived from ItemProperty or ItemFullProperty
      * @todo Preferably unique_ptr should be used here.

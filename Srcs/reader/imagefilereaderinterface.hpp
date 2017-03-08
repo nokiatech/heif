@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -39,6 +39,7 @@ public:
             FILE_OPEN_ERROR = 0,
             FILE_HEADER_ERROR,
             FILE_READ_ERROR,
+            UNSUPPORTED_CODE_TYPE,
             INVALID_FUNCTION_PARAMETER,
             INVALID_CONTEXT_ID,
             INVALID_ITEM_ID,
@@ -72,6 +73,8 @@ public:
                     return "Error while reading file header.";
                 case StatusCode::FILE_READ_ERROR:
                     return "Error while reading file.";
+                case StatusCode::UNSUPPORTED_CODE_TYPE:
+                    return "Unsupported code type.";
                 case StatusCode::INVALID_FUNCTION_PARAMETER:
                     return "Invalid API method parameter.";
                 case StatusCode::INVALID_CONTEXT_ID:
@@ -111,11 +114,17 @@ public:
     {
         UNKNOWN, ///< An unknown property type
         AUXC, ///< Image properties for auxiliary images
+        AVCC, ///< AVC configuration
         CLAP, ///< Clean aperture (crop)
         HVCC, ///< HEVC configuration
+        IMIR, ///< Image mirror
         IROT, ///< Image rotation
         ISPE, ///< Image spatial extents
-        RLOC  ///< Relative location
+        LHVC, ///< Layered HEVC configuration
+        LSEL, ///< Layer selection
+        OINF, ///< Operating points info
+        RLOC, ///< Relative location
+        TOLS  ///< Target output layer set
     };
 
     /// Information about a single property associated to an image item
@@ -131,6 +140,12 @@ public:
     {
         std::string auxType;               ///< Type of the associated auxiliary image item
         std::vector<std::uint8_t> subType; ///< Aux subtype, semantics depends on the auxType value
+    };
+
+    /// Data of item property Image mirror
+    struct ImirProperty
+    {
+        bool horizontalAxis; ///< Mirror axis (\c true = horizontal, \c false = vertical)
     };
 
     /// Data of item property Image rotation
@@ -157,6 +172,18 @@ public:
         std::uint32_t horizontalOffsetD; ///< Denominator of the fractional number horizontal offset
         std::uint32_t verticalOffsetN;   ///< Numerator of the fractional number vertical offset
         std::uint32_t verticalOffsetD;   ///< Denominator of the fractional number vertical offset
+    };
+
+    /// Data of item property Target output layer set
+    struct TolsProperty
+    {
+        std::uint16_t targetOlsIndex; ///<  The output layer set index to be provided to the L-HEVC decoding process as the value of TargetOlsIdx
+    };
+
+    /// Data of item property Layer selector property
+    struct LselProperty
+    {
+        std::uint16_t layerId; ///< Layer identifier of the image among the reconstructed images.
     };
 
     // Non-image item type definitions
@@ -587,7 +614,7 @@ public:
      *  @param [in]  contextId Track or metabox context id.
      *  @param [in]  itemType  If contextId refers to a MetaBox then itemType can be the following:
      *                         'master' , 'hidden', 'pre-computed', 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1',
-     *                         'iden'
+     *                         'iden', 'lhv1'
      *                         ('master' is ('hvc1' - iref('thmb') or iref('auxl')))
      *                         If the contextId refers to a media track; then itemType can be the following:
      *                         'out_ref' : output reference frames
@@ -607,7 +634,7 @@ public:
      *  @param [in] itemId    Track or metabox sample/item id.
      *  @return The itemType of the item pointed by {contextId,itemId} pair.
      *          If the context is a metabox, can be the following:
-     *          'master' , 'hidden', 'pre-computed', 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1', 'iden'
+     *          'master' , 'hidden', 'pre-computed', 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1', 'iden', 'lhv1'
      *          ('master' is ('hvc1' - iref('thmb') or iref('auxl')))'
      *          If the context is a media track sample description entry type is returned.
      *  @pre initialize() has been called successfully.
@@ -650,7 +677,7 @@ public:
     /** Get item data for given {contextId, itemId} pair.
      *  Clear the itemData vector and fill it with the item data of the requested itemId.
      *  Item Data does not contain initialization or configuration data (i.e. decoder configuration records),
-     *  it is pure item data except for samples and 'hvc1' type items.
+     *  it is pure item data except for samples and 'hvc1'/'avc1'/'lhv1' type items.
      *  For protected items pure data is returned always. Information how to handle such data is available from
      *  getItemProtectionScheme() which returns related 'sinf' box as whole. Note that getItemData() is the only reader
      *  API method which can be used for requesting data of such items.
@@ -673,6 +700,13 @@ public:
      *  @see getItemIovl() */
     virtual GridItem getItemGrid(std::uint32_t contextId, std::uint32_t itemId) const = 0;
 
+    /** Get item property Image Mirror ('imir')
+     *  @param [in]  contextId     Meta box context id.
+     *  @param [in]  index Index of the property. This value is given by getItemProperties().
+     *  @pre initialize() has been called successfully.
+     *  @throws FileReaderException, StatusCode=[UNINITIALIZED, INVALID_CONTEXT_ID, INVALID_PROPERTY_INDEX] */
+    virtual ImirProperty getPropertyImir(std::uint32_t contextId, std::uint32_t index) const = 0;
+
     /** Get item property Image Rotation ('irot')
      *  @param [in]  contextId     Meta box context id.
      *  @param [in]  index Index of the property. This value is given by getItemProperties().
@@ -687,6 +721,14 @@ public:
     /** Get item property Relative Location ('rloc')
      *  @see getPropertyIrot() */
     virtual RlocProperty getPropertyRloc(std::uint32_t contextId, std::uint32_t index) const = 0;
+
+    /** Get data for Layer selector property ('lsel')
+     *  @see getPropertyIrot() */
+    virtual LselProperty getPropertyLsel(std::uint32_t contextId, std::uint32_t index) const = 0;
+
+    /** Get data for Target output layer set property ('tols')
+     *  @see getPropertyIrot() */
+    virtual TolsProperty getPropertyTols(std::uint32_t contextId, std::uint32_t index) const = 0;
 
     /** Get property Clean aperture ('clap')
      *  @param [in] contextId Meta box or track context id.
@@ -706,7 +748,7 @@ public:
 
     /** Create decodable item data for given {contextId, itemId} pair.
      *  This method can be used to feed the decoder with data.
-     *  This method shall not be used if the item is not of 'hvc1' or 'master' type. Use getItemData instead!
+     *  This method shall not be used if the item is not of 'hvc1', 'lhv1' or 'master' type. Use getItemData instead!
      *  @param [in] contextId                       Track or metabox context id.
      *  @param [in] itemId                          Track or metabox item id.
      *  @param [out] itemDataWithDecoderParameters  Decoder specific parameter initializations as part of the bitstream
@@ -770,6 +812,16 @@ public:
      *  @pre initialize() has been called successfully.
      *  @throws FileReaderException, StatusCode=[UNINITIALIZED, INVALID_CONTEXT_ID, INVALID_ITEM_ID] */
     virtual void getItemDecodeDependencies(std::uint32_t contextId, std::uint32_t itemId, IdVector& dependencies) const = 0;
+
+    /** Get decoder code type for image/sample
+     *  This method can be called by Player implementations that require a separate hardware decoder initialization
+     *  before the first frame data is fed (e.g. Android)
+     *  @param [in]  contextId     Track or metabox context id.
+     *  @param [in]  itemId        Unique identifier of an image item/sample
+     *  @return Decoder code type, e.g. "hvc1" or "avc1"
+     *  @pre initialize() has been called successfully.
+     *  @throws FileReaderException, StatusCode=[UNINITIALIZED, INVALID_CONTEXT_ID, INVALID_ITEM_ID] */
+    virtual std::string getDecoderCodeType(const uint32_t contextId, const uint32_t itemId) const = 0;
 
     /** Get decoder configuration record parameter sets.
      *  This method can be called by Player implementations that require a separate hardware decoder initialization

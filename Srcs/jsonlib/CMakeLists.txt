@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Nokia Technologies Ltd.
+# Copyright (c) 2015-2017, Nokia Technologies Ltd.
 # All rights reserved.
 #
 # Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -10,7 +10,7 @@
 # https://nokiatech.github.io/heif/license.txt
 
 set(JSON_SRCS
-	json.cc
+    jsoncpp.cpp
 	)
 
 add_library(json ${JSON_SRCS})

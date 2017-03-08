@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -28,7 +28,7 @@
 class DataEntryBox : public FullBox
 {
 public:
-    DataEntryBox(const char* boxType, std::uint8_t version, std::uint32_t flags);
+    DataEntryBox(const FourCCInt boxType, std::uint8_t version, std::uint32_t flags);
     virtual ~DataEntryBox() = default;
 
     /** @brief Set the location field as specificed in ISOBMFF specification.

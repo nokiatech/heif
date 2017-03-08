@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Nokia Technologies Ltd.
+# Copyright (c) 2015-2017, Nokia Technologies Ltd.
 # All rights reserved.
 #
 # Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -9,8 +9,11 @@
 # You may also obtain the License at:
 # https://nokiatech.github.io/heif/license.txt
 
+include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/Srcs/common)
 include_directories(${PROJECT_SOURCE_DIR}/Srcs/parser)
+include_directories(${PROJECT_SOURCE_DIR}/Srcs/parser/avcparser)
+include_directories(${PROJECT_SOURCE_DIR}/Srcs/parser/h265parser)
 
 set(WRITER_SRCS
     auxiliaryimagewriter.cpp
@@ -25,6 +28,7 @@ set(WRITER_SRCS
     imagemasterwriter.cpp
     imagemediawriter.cpp
     imagethumbswriter.cpp
+    layerimagewriter.cpp
     metaboxwriter.cpp
     metadatamediawriter.cpp
     metadatawriter.cpp

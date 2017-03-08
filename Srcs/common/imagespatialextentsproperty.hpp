@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -23,6 +23,7 @@ class ImageSpatialExtentsProperty : public FullBox
 {
 public:
     ImageSpatialExtentsProperty();
+    ImageSpatialExtentsProperty(std::uint32_t width, std::uint32_t height);
     virtual ~ImageSpatialExtentsProperty() = default;
 
     /** Set image width.

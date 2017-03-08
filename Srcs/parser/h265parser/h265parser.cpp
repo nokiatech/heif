@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -10,12 +10,14 @@
  * https://nokiatech.github.io/heif/license.txt
  */
 
-#include "bitstream.hpp"
 #include "h265parser.hpp"
+#include "bitstream.hpp"
 
 #include <algorithm>
 #include <array>
+#include <bitset>
 #include <cassert>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -33,14 +35,17 @@ H265Parser::~H265Parser()
 {
     mInFile.close();
 
-    // delete sps'es
     for (auto& i : mSpsList)
     {
         delete i;
     }
 
-    // delete pps'es
-    for (auto& i :  mPpsList)
+    for (auto& i : mPpsList)
+    {
+        delete i;
+    }
+
+    for (auto& i : mVpsList)
     {
         delete i;
     }
@@ -74,36 +79,26 @@ bool H265Parser::doOpenFile(const char* fileName)
     }
 }
 
-struct PicOrder
-{
-    unsigned int mDecodeIdx;
-    int mDisplayIdx;
-};
-
-bool compareDisplayOrder(const PicOrder& a, const PicOrder& b) { return a.mDisplayIdx < b.mDisplayIdx; }
-bool compareDecodeOrder(const PicOrder& a, const PicOrder& b) { return a.mDecodeIdx < b.mDecodeIdx; }
-
 bool H265Parser::initDisplayOrderArray(const char* fileName)
 {
-    H265Parser* parser = new H265Parser;
+    H265Parser parser;
     vector<PicOrder> picOrder;
     int displayNum = 0;
 
-    if (!parser->doOpenFile(fileName))
+    if (!parser.doOpenFile(fileName))
     {
         return false;
     }
 
-    bool hasMoreFrames = true;
-
     // Iterate through all access units
+    bool hasMoreFrames = true;
     while (hasMoreFrames)
     {
-        AccessUnit* au = new AccessUnit{};
-        hasMoreFrames = parser->parseNextAU(*au);
+        AccessUnit au = {};
+        hasMoreFrames = parser.parseNextAU(au);
 
         // Update display order array if last access unit was parsed or IDR picture was found
-        if (!hasMoreFrames || (hasMoreFrames && au->mIsIdr))
+        if (!hasMoreFrames || au.mIsIdr)
         {
             if (picOrder.size() > 0)
             {
@@ -132,15 +127,12 @@ bool H265Parser::initDisplayOrderArray(const char* fileName)
         {
             // Add current picture to the picture order array
             PicOrder po;
-            po.mDecodeIdx = au->mPicIndex;
-            po.mDisplayIdx = au->mPoc;
+            po.mDecodeIdx = au.mPicIndex;
+            po.mDisplayIdx = au.mPoc;
             picOrder.push_back(po);
         }
-
-        delete au;
     }
 
-    delete parser;
     return true;
 }
 
@@ -149,24 +141,34 @@ unsigned int H265Parser::getNumPictures()
     return mDisplayNumArray.size();
 }
 
+bool H265Parser::hasVpsExtension()
+{
+    bool hasExtension = false;
+    for (auto& vps : mVpsList)
+    {
+        if (vps->mExtensionFlag && hasExtension == false)
+        {
+            hasExtension = true;
+        }
+    }
+    return hasExtension;
+}
+
 bool H265Parser::parseNextAU(AccessUnit& accessUnit)
 {
-    bool isFirstNaluInAU;
-    bool firstVclNaluFound;
-    bool isAUBoundary;
-    //NalUnitHeader picNaluHeader;
+    bool isFirstNaluInAU = true;
+    bool firstVclNaluFound = false;
+    bool isAUBoundary = false;
+
     NalUnitHeader naluHeader;
-    int poc;
-    RefPicSet rps;
+    int poc = 0;
+
+    // Clear structures
+    RefPicSet rps = {};
     Picture pic = {};
+    accessUnit = {};
 
-    accessUnit = {};  // Make it empty
-
-    isFirstNaluInAU = true;
-    firstVclNaluFound = false;
-    isAUBoundary = false;
-
-    // parse NAL units until Access Unit boundary is reached
+    // Parse NAL units until Access Unit boundary is reached
     while (!isAUBoundary)
     {
         if (mCurrNalUnitData.size() == 0)
@@ -197,55 +199,103 @@ bool H265Parser::parseNextAU(AccessUnit& accessUnit)
                 break;
             }
 
-            // initialize picture if the NAL unit is the first slice of the picture
+            accessUnit.mIsScalable = hasVpsExtension();
+
+            // Initialize picture if the NAL unit is the first slice of the picture.
             if (isFirstVclNaluInPic(mCurrNalUnitData))
             {
                 SliceHeader& sliceHeader = *mSliceList[0];
                 firstVclNaluFound = true;
                 //picNaluHeader = naluHeader;
 
-                poc = decodePoc(sliceHeader, naluHeader);
-
-                mRefPicList0.clear();
-                mRefPicList1.clear();
-
-                // init reference picure set for non-IDR pictures
-                if (naluHeader.mH265NalUnitType != H265NalUnitType::CODED_SLICE_IDR_W_RADL && naluHeader.mH265NalUnitType != H265NalUnitType::CODED_SLICE_IDR_N_LP)
+                // Do this only if hevc-v0
+                if (!accessUnit.mIsScalable)
                 {
-                    decodeRefPicSet(sliceHeader, rps, poc);
-                    if (sliceHeader.mSliceType == SliceType::P || sliceHeader.mSliceType == SliceType::B)
+                    poc = decodePoc(sliceHeader, naluHeader);
+                    mRefPicList0.clear();
+                    mRefPicList1.clear();
+
+                    // init reference picure set for non-IDR pictures
+                    if (naluHeader.mH265NalUnitType != H265NalUnitType::CODED_SLICE_IDR_W_RADL
+                        && naluHeader.mH265NalUnitType != H265NalUnitType::CODED_SLICE_IDR_N_LP)
                     {
-                        generateRefPicLists(sliceHeader, rps);
+                        decodeRefPicSet(sliceHeader, rps, poc);
+                        if (sliceHeader.mSliceType == SliceType::P || sliceHeader.mSliceType == SliceType::B)
+                        {
+                            generateRefPicLists(sliceHeader, rps);
+                        }
                     }
+                    mRefPicList0.clear();
+                    mRefPicList1.clear();
+
+                    // init reference picure set for non-IDR pictures
+                    if (naluHeader.mH265NalUnitType != H265NalUnitType::CODED_SLICE_IDR_W_RADL
+                        && naluHeader.mH265NalUnitType != H265NalUnitType::CODED_SLICE_IDR_N_LP)
+                    {
+                        decodeRefPicSet(sliceHeader, rps, poc);
+                        if (sliceHeader.mSliceType == SliceType::P || sliceHeader.mSliceType == SliceType::B)
+                        {
+                            generateRefPicLists(sliceHeader, rps);
+                        }
+                    }
+
+                    // Initialize new picture
+                    pic.mH265NalUnitType     = naluHeader.mH265NalUnitType;
+                    pic.mIsReferecePic       = true;
+                    pic.mIsLongTermRefPic    = false;
+                    pic.mIndex               = mPicIndex;
+                    pic.mPoc                 = poc;
+                    pic.mWidth               = sliceHeader.mSps->mPicWidthInLumaSamples;
+                    pic.mHeight              = sliceHeader.mSps->mPicHeightInLumaSamples;
+                    pic.mSlicePicOrderCntLsb = sliceHeader.mSlicePicOrderCntLsb;
+                    pic.mPicOutputFlag       = (sliceHeader.mPicOutputFlag != 0) ? true : false;
+
+                    // Add picture to Decoded Picture Buffer
+                    mDecodedPicBuffer.push_back(pic);
+
+                    // Set Access Unit params
+                    accessUnit.mPicIndex      = pic.mIndex;
+                    accessUnit.mDisplayOrder  =
+                        (pic.mIndex < int(mDisplayNumArray.size())) ? mDisplayNumArray.at(pic.mIndex) : 0;
+                    accessUnit.mPoc           = pic.mPoc;
+                    accessUnit.mPicWidth      = pic.mWidth;
+                    accessUnit.mPicHeight     = pic.mHeight;
+                    accessUnit.mIsIdr         = pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_IDR_N_LP
+                        || pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_IDR_W_RADL;
+                    accessUnit.mIsCra         = pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_CRA;
+                    accessUnit.mIsBla         = pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_BLA_N_LP
+                        || pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_BLA_W_LP
+                        || pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_BLA_W_RADL;
+                    accessUnit.mPicOutputFlag = pic.mPicOutputFlag;
+                    getRefPicIndices(accessUnit.mRefPicIndices, mRefPicList0, mRefPicList1);
                 }
+                else
+                {
+                    pic.mH265NalUnitType     = naluHeader.mH265NalUnitType;
+                    pic.mIsReferecePic       = true;
+                    pic.mIsLongTermRefPic    = false;
+                    pic.mIndex               = mPicIndex;
+                    pic.mPoc                 = poc;
+                    pic.mWidth               = sliceHeader.mSps->mPicWidthInLumaSamples;
+                    pic.mHeight              = sliceHeader.mSps->mPicHeightInLumaSamples;
+                    pic.mSlicePicOrderCntLsb = sliceHeader.mSlicePicOrderCntLsb;
+                    pic.mPicOutputFlag       = (sliceHeader.mPicOutputFlag != 0) ? true : false;
 
-                // Initialize new picture
-                pic.mH265NalUnitType     = naluHeader.mH265NalUnitType;
-                pic.mIsReferecePic       = true;
-                pic.mIsLongTermRefPic    = false;
-                pic.mIndex               = mPicIndex;
-                pic.mPoc                 = poc;
-                pic.mWidth               = sliceHeader.mSps->mPicWidthInLumaSamples;
-                pic.mHeight              = sliceHeader.mSps->mPicHeightInLumaSamples;
-                pic.mSlicePicOrderCntLsb = sliceHeader.mSlicePicOrderCntLsb;
-                pic.mPicOutputFlag       = (sliceHeader.mPicOutputFlag != 0) ? true : false;
-
-                // Add picture to Decoded Picture Buffer
-                mDecodedPicBuffer.push_back(pic);
-
-                // Set Access Unit params
-                accessUnit.mPicIndex      = pic.mIndex;
-                accessUnit.mDisplayOrder  = (pic.mIndex < int(mDisplayNumArray.size())) ? mDisplayNumArray.at(pic.mIndex) : 0;
-                accessUnit.mPoc           = pic.mPoc;
-                accessUnit.mPicWidth      = pic.mWidth;
-                accessUnit.mPicHeight     = pic.mHeight;
-                accessUnit.mIsIdr         = pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_IDR_N_LP || pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_IDR_W_RADL;
-                accessUnit.mIsCra         = pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_CRA;
-                accessUnit.mIsBla         = pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_BLA_N_LP || pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_BLA_W_LP || pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_BLA_W_RADL;
-                accessUnit.mPicOutputFlag = pic.mPicOutputFlag;
-                getRefPicIndices(accessUnit.mRefPicIndices, mRefPicList0, mRefPicList1);
+                    // Set Access Unit params
+                    accessUnit.mPicIndex      = pic.mIndex;
+                    accessUnit.mDisplayOrder  = (pic.mIndex < int(mDisplayNumArray.size())) ? mDisplayNumArray.at(pic.mIndex) : 0;
+                    accessUnit.mPoc           = pic.mPoc;
+                    accessUnit.mPicWidth      = pic.mWidth;
+                    accessUnit.mPicHeight     = pic.mHeight;
+                    accessUnit.mIsIdr         = pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_IDR_N_LP
+                        || pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_IDR_W_RADL;
+                    accessUnit.mIsCra         = pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_CRA;
+                    accessUnit.mIsBla         = pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_BLA_N_LP
+                        || pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_BLA_W_LP
+                        || pic.mH265NalUnitType == H265NalUnitType::CODED_SLICE_BLA_W_RADL;
+                    accessUnit.mPicOutputFlag = pic.mPicOutputFlag;
+                }
             }
-
             mCurrNalUnitData.clear();
         }
 
@@ -253,12 +303,16 @@ bool H265Parser::parseNextAU(AccessUnit& accessUnit)
     }
 
     accessUnit.mIsIntra = true;
-    for (const auto i : mSliceList)
+    // Note:  Currently LHEVC processing supports only IDR images.
+    if (!accessUnit.mIsScalable)
     {
-        if (i->mSliceType != SliceType::I)
+        for (const auto i : mSliceList)
         {
-            accessUnit.mIsIntra = false;
-            break;
+            if (i->mSliceType != SliceType::I)
+            {
+                accessUnit.mIsIntra = false;
+                break;
+            }
         }
     }
 
@@ -272,7 +326,6 @@ bool H265Parser::parseNextAU(AccessUnit& accessUnit)
     if (accessUnit.mNalUnits.size() > 0)
     {
         mPicIndex++;
-        // printPicStats(pic);
         return true;
     }
     else
@@ -297,7 +350,8 @@ void H265Parser::printPicStats(const Picture& /*pic*/)
     // cout << endl;
 }
 
-void H265Parser::getRefPicIndices(vector<unsigned int>& refPicIndices, const vector<Picture*>& mRefPicList0, const vector<Picture*>& mRefPicList1)
+void H265Parser::getRefPicIndices(vector<unsigned int>& refPicIndices, const vector<Picture*>& mRefPicList0,
+                                  const vector<Picture*>& mRefPicList1)
 {
     refPicIndices.clear();
 
@@ -336,21 +390,26 @@ bool H265Parser::isUniquePicIndex(const vector<unsigned int>& refPicIndices, con
     return isUniqueIndex;
 }
 
-
 int H265Parser::parseNalUnit(const vector<uint8_t>& nalUnit, NalUnitHeader& naluHeader)
 {
     vector<uint8_t> nalUnitRBSP;
 
     convertByteStreamToRBSP(nalUnit, nalUnitRBSP);
-    // BitStream bitstr(&nalUnitRBSP);
     BitStream bitstr(nalUnitRBSP);
     parseNalUnitHeader(bitstr, naluHeader);
 
     // Only SPS, PPS and slice header are parsed
+    if (naluHeader.mH265NalUnitType == H265NalUnitType::VPS)
+    {
+        VideoParameterSet* vps = new VideoParameterSet;
+        parseVPS(bitstr, *vps);
+        removeVps(vps->mVpsId);
+        mVpsList.push_back(vps);
+    }
     if (naluHeader.mH265NalUnitType == H265NalUnitType::SPS)
     {
         SequenceParameterSet* sps = new SequenceParameterSet;
-        parseSPS(bitstr, *sps);
+        parseSPS(bitstr, *sps, naluHeader);
         removeSps(sps->mSpsId);
         mSpsList.push_back(sps);
     }
@@ -363,9 +422,19 @@ int H265Parser::parseNalUnit(const vector<uint8_t>& nalUnit, NalUnitHeader& nalu
     }
     else if (isVclNaluType(naluHeader.mH265NalUnitType))
     {
-        SliceHeader* sliceHeader = new SliceHeader;
-        parseSliceHeader(bitstr, *sliceHeader, naluHeader.mH265NalUnitType);
-        mSliceList.push_back(sliceHeader);
+        // Parse slice header only if the stream is version 1 hevc
+        if (!hasVpsExtension())
+        {
+            SliceHeader* sliceHeader = new SliceHeader;
+            parseSliceHeader(bitstr, *sliceHeader, naluHeader);
+            mSliceList.push_back(sliceHeader);
+        }
+        else
+        {
+            SliceHeader* sliceHeader = new SliceHeader;
+            parseLhvcSliceHeader(bitstr, *sliceHeader, naluHeader);
+            mSliceList.push_back(sliceHeader);
+        }
     }
 
     return 0;
@@ -403,6 +472,22 @@ H265Parser::PictureParameterSet* H265Parser::findPps(unsigned int ppsId)
     return pps;
 }
 
+H265Parser::VideoParameterSet* H265Parser::findVps(unsigned int vpsId)
+{
+    VideoParameterSet* vps = nullptr;
+
+    for (auto& i : mVpsList)
+    {
+        if (i->mVpsId == vpsId)
+        {
+            vps = i;
+            break;
+        }
+    }
+
+    return vps;
+}
+
 void H265Parser::removeSps(const unsigned int spsId)
 {
     auto i = mSpsList.begin();
@@ -413,6 +498,21 @@ void H265Parser::removeSps(const unsigned int spsId)
         {
             delete (*i);
             mSpsList.erase(i);
+            break;
+        }
+    }
+}
+
+void H265Parser::removeVps(const unsigned int vpsId)
+{
+    auto i = mVpsList.begin();
+
+    for (; i != mVpsList.end(); ++i)
+    {
+        if ((*i)->mVpsId == vpsId)
+        {
+            delete (*i);
+            mVpsList.erase(i);
             break;
         }
     }
@@ -444,11 +544,13 @@ int H265Parser::decodePoc(const SliceHeader& slice, NalUnitHeader& naluHeader)
     int picOrderCntVal;
     int maxPicOrderCnt = 1 << (slice.mSps->mLog2MaxPicOrderCntLsbMinus4 + 4);
 
-    if ((slice.mSlicePicOrderCntLsb < mPrevPicOrderCntLsb) && ((int(mPrevPicOrderCntLsb) - int(slice.mSlicePicOrderCntLsb)) >= (maxPicOrderCnt / 2)))
+    if ((slice.mSlicePicOrderCntLsb < mPrevPicOrderCntLsb)
+        && ((int(mPrevPicOrderCntLsb) - int(slice.mSlicePicOrderCntLsb)) >= (maxPicOrderCnt / 2)))
     {
         picOrderCntMsb = mPrevPicOrderCntMsb + maxPicOrderCnt;
     }
-    else if ((slice.mSlicePicOrderCntLsb > mPrevPicOrderCntLsb) && ((int(slice.mSlicePicOrderCntLsb) - int(mPrevPicOrderCntLsb)) > (maxPicOrderCnt / 2)))
+    else if ((slice.mSlicePicOrderCntLsb > mPrevPicOrderCntLsb)
+        && ((int(slice.mSlicePicOrderCntLsb) - int(mPrevPicOrderCntLsb)) > (maxPicOrderCnt / 2)))
     {
         picOrderCntMsb = mPrevPicOrderCntMsb - maxPicOrderCnt;
     }
@@ -460,8 +562,10 @@ int H265Parser::decodePoc(const SliceHeader& slice, NalUnitHeader& naluHeader)
     picOrderCntVal = picOrderCntMsb + slice.mSlicePicOrderCntLsb;
 
     if ((naluHeader.mNuhTemporalIdPlus1 - 1) == 0
-        && !(naluHeader.mH265NalUnitType >= H265NalUnitType::CODED_SLICE_RADL_N && naluHeader.mH265NalUnitType <= H265NalUnitType::CODED_SLICE_RASL_R)
-        && !(naluHeader.mH265NalUnitType <= H265NalUnitType::RESERVED_VCL_R15 && (int(naluHeader.mH265NalUnitType) & 1) == 0))
+        && !(naluHeader.mH265NalUnitType >= H265NalUnitType::CODED_SLICE_RADL_N
+            && naluHeader.mH265NalUnitType <= H265NalUnitType::CODED_SLICE_RASL_R)
+        && !(naluHeader.mH265NalUnitType <= H265NalUnitType::RESERVED_VCL_R15
+            && (int(naluHeader.mH265NalUnitType) & 1) == 0))
     {
         mPrevPicOrderCntLsb = slice.mSlicePicOrderCntLsb;
         mPrevPicOrderCntMsb = picOrderCntMsb;
@@ -470,7 +574,8 @@ int H265Parser::decodePoc(const SliceHeader& slice, NalUnitHeader& naluHeader)
     return picOrderCntVal;
 }
 
-bool H265Parser::checkAccessUnitBoundary(const vector<uint8_t>& nalUnit, const bool isFirstNaluInAU, const bool firstVclNaluFound)
+bool H265Parser::checkAccessUnitBoundary(const vector<uint8_t>& nalUnit, const bool isFirstNaluInAU,
+                                         const bool firstVclNaluFound)
 {
     H265NalUnitType naluType;
 
@@ -481,7 +586,7 @@ bool H265Parser::checkAccessUnitBoundary(const vector<uint8_t>& nalUnit, const b
 
     if (isFirstVclNaluInPic(nalUnit))
     {
-        if (firstVclNaluFound)
+        if (firstVclNaluFound && getLayerId(nalUnit) == 0)
         {
             // NALU is not the first vcl NALU of the current picture so it must be first NALU of the next picture
             return true;
@@ -499,14 +604,29 @@ bool H265Parser::checkAccessUnitBoundary(const vector<uint8_t>& nalUnit, const b
 
     naluType = getH265NalUnitType(nalUnit);
 
-    if (firstVclNaluFound &&
-        (naluType == H265NalUnitType::ACCESS_UNIT_DELIMITER
-        || naluType == H265NalUnitType::VPS || naluType == H265NalUnitType::SPS || naluType == H265NalUnitType::PPS
-        || naluType == H265NalUnitType::PREFIX_SEI
-        || (naluType >= H265NalUnitType::RESERVED_NVCL41 && naluType <= H265NalUnitType::RESERVED_NVCL44)
-        || (naluType >= H265NalUnitType::UNSPECIFIED_48 && naluType <= H265NalUnitType::UNSPECIFIED_55)))
+    if (hasVpsExtension())
     {
-        return true;
+        if (firstVclNaluFound &&
+            (naluType == H265NalUnitType::ACCESS_UNIT_DELIMITER
+             || naluType == H265NalUnitType::VPS || naluType == H265NalUnitType::SPS
+             || naluType == H265NalUnitType::PREFIX_SEI
+             || (naluType >= H265NalUnitType::RESERVED_NVCL41 && naluType <= H265NalUnitType::RESERVED_NVCL44)
+             || (naluType >= H265NalUnitType::UNSPECIFIED_48 && naluType <= H265NalUnitType::UNSPECIFIED_55)))
+        {
+            return true;
+        }
+    }
+    else
+    {
+        if (firstVclNaluFound &&
+            (naluType == H265NalUnitType::ACCESS_UNIT_DELIMITER
+             || naluType == H265NalUnitType::VPS || naluType == H265NalUnitType::SPS || naluType == H265NalUnitType::PPS
+             || naluType == H265NalUnitType::PREFIX_SEI
+             || (naluType >= H265NalUnitType::RESERVED_NVCL41 && naluType <= H265NalUnitType::RESERVED_NVCL44)
+             || (naluType >= H265NalUnitType::UNSPECIFIED_48 && naluType <= H265NalUnitType::UNSPECIFIED_55)))
+        {
+            return true;
+        }
     }
 
     return false;
@@ -534,23 +654,26 @@ int H265Parser::parseNalUnitHeader(BitStream& bitstr, NalUnitHeader& naluHeader)
     return 0;
 }
 
-
-int H265Parser::parseProfileTierLevel(BitStream& bitstr, ProfileTierLevel& ptl, const unsigned int maxNumSubLayersMinus1)
+int H265Parser::parseProfileTierLevel(BitStream& bitstr, ProfileTierLevel& ptl,
+                                      const unsigned int maxNumSubLayersMinus1, const unsigned int profilePresentFlag)
 {
-    ptl.mGeneralProfileSpace = bitstr.readBits(2);
-    ptl.mGeneralTierFlag = bitstr.readBits(1);
-    ptl.mGeneralProfileIdc = bitstr.readBits(5);
-    for (int i = 0; i < 32; ++i)
+    if (profilePresentFlag)
     {
-        ptl.mGeneralProfileCompatibilityFlag[i] = bitstr.readBits(1);
-    }
-    ptl.mGeneralProgressiveSourceFlag = bitstr.readBits(1);
-    ptl.mGeneralInterlacedSourceFlag = bitstr.readBits(1);
-    ptl.mGeneralNonPackedConstraintFlag = bitstr.readBits(1);
-    ptl.mGeneralFrameOnlyConstraintFlag = bitstr.readBits(1);
-    for (int i = 0; i < 2; ++i)  // general_reserved_zero_44bits
-    {
-        bitstr.readBits(22);
+        ptl.mGeneralProfileSpace = bitstr.readBits(2);
+        ptl.mGeneralTierFlag = bitstr.readBits(1);
+        ptl.mGeneralProfileIdc = bitstr.readBits(5);
+        for (int i = 0; i < 32; ++i)
+        {
+            ptl.mGeneralProfileCompatibilityFlag[i] = bitstr.readBits(1);
+        }
+        ptl.mGeneralProgressiveSourceFlag = bitstr.readBits(1);
+        ptl.mGeneralInterlacedSourceFlag = bitstr.readBits(1);
+        ptl.mGeneralNonPackedConstraintFlag = bitstr.readBits(1);
+        ptl.mGeneralFrameOnlyConstraintFlag = bitstr.readBits(1);
+        for (int i = 0; i < 2; ++i)  // general_reserved_zero_44bits
+        {
+            bitstr.readBits(22);
+        }
     }
     ptl.mGeneralLevelIdc = bitstr.readBits(8);
     for (unsigned int i = 0; i < maxNumSubLayersMinus1; ++i)
@@ -562,7 +685,7 @@ int H265Parser::parseProfileTierLevel(BitStream& bitstr, ProfileTierLevel& ptl, 
     {
         for (int i = maxNumSubLayersMinus1; i < 8; ++i)
         {
-            bitstr.readBits(2);  // reserved_zeor_2bits
+            bitstr.readBits(2);  // reserved_zero_2bits
         }
     }
     ptl.mSubLayerProfileTierLevels.resize(maxNumSubLayersMinus1);
@@ -596,7 +719,9 @@ int H265Parser::parseProfileTierLevel(BitStream& bitstr, ProfileTierLevel& ptl, 
     return 0;
 }
 
-int H265Parser::parseShortTermRefPicSet(BitStream& bitstr, const vector<ShortTermRefPicSetDerived>& rpsList, ShortTermRefPicSet& rps, const unsigned int stRpsIdx, const unsigned int numShortTermRefPicSets)
+int H265Parser::parseShortTermRefPicSet(BitStream& bitstr, const vector<ShortTermRefPicSetDerived>& rpsList,
+                                        ShortTermRefPicSet& rps, const unsigned int stRpsIdx,
+                                        const unsigned int numShortTermRefPicSets)
 {
     rps.mUsedByCurrPicFlag.clear();
     rps.mUseDeltaFlag.clear();
@@ -652,7 +777,8 @@ int H265Parser::parseShortTermRefPicSet(BitStream& bitstr, const vector<ShortTer
     return 0;
 }
 
-int H265Parser::deriveRefPicSetParams(const vector<ShortTermRefPicSetDerived>& rpsList, const ShortTermRefPicSet& rps, ShortTermRefPicSetDerived& rpsDerived, const unsigned int stRpsIdx)
+int H265Parser::deriveRefPicSetParams(const vector<ShortTermRefPicSetDerived>& rpsList, const ShortTermRefPicSet& rps,
+                                      ShortTermRefPicSetDerived& rpsDerived, const unsigned int stRpsIdx)
 {
     rpsDerived.mUsedByCurrPicS0.clear();
     rpsDerived.mUsedByCurrPicS1.clear();
@@ -760,7 +886,8 @@ int H265Parser::deriveRefPicSetParams(const vector<ShortTermRefPicSetDerived>& r
     return 0;
 }
 
-int H265Parser::parseRefPicListsModification(BitStream& bitstr, const SliceHeader& slice, RefPicListsModification& refPicListsMod)
+int H265Parser::parseRefPicListsModification(BitStream& bitstr, const SliceHeader& slice,
+                                             RefPicListsModification& refPicListsMod)
 {
     unsigned int entryLen = ceilLog2(slice.mNumPocTotalCurr);
 
@@ -1023,7 +1150,8 @@ int H265Parser::generateRefPicLists(SliceHeader& slice, RefPicSet& rps)
 
     if (slice.mSliceType == SliceType::B)
     {
-        const unsigned int numRpsCurrTempList1 = std::max<unsigned int>(slice.mNumRefIdxL1ActiveMinus1 + 1, slice.mNumPocTotalCurr);
+        const unsigned int numRpsCurrTempList1 = std::max<unsigned int>(slice.mNumRefIdxL1ActiveMinus1 + 1,
+            slice.mNumPocTotalCurr);
 
         rIdx = 0;
         while (rIdx < numRpsCurrTempList1)
@@ -1044,7 +1172,8 @@ int H265Parser::generateRefPicLists(SliceHeader& slice, RefPicSet& rps)
 
         for (rIdx = 0; rIdx <= slice.mNumRefIdxL1ActiveMinus1; rIdx++)
         {
-            if (slice.mPps->mListsModificationPresentFlag && slice.mRefPicListsModification.mRefPicListModificationFlagL1)
+            if (slice.mPps->mListsModificationPresentFlag
+                && slice.mRefPicListsModification.mRefPicListModificationFlagL1)
             {
                 mRefPicList1.push_back(refPicListTemp1[slice.mRefPicListsModification.mListEntryL1[rIdx]]);
             }
@@ -1100,12 +1229,11 @@ int H265Parser::parseScalingListData(BitStream& bitstr, ScalingListData& scaling
     return 0;
 }
 
-
 void H265Parser::setVuiDefaults(ProfileTierLevel& ptl, VuiParameters& vui)
 {
     vui = {};
 
-    // The following syntax elements have explicit default values in the spec 
+    // The following syntax elements have explicit default values in the spec
     vui.mAspectRatioIdc = 0;
     vui.mOverscanAppropriateFlag = 0;
     vui.mVideoFormat = 5;
@@ -1117,6 +1245,7 @@ void H265Parser::setVuiDefaults(ProfileTierLevel& ptl, VuiParameters& vui)
     vui.mChromaSampleLocTypeBottomField = 0;
     vui.mNeutralChromaIndicationFlag = 0;
     vui.mFieldSeqFlag = 0;
+    /* To check if this the bug has been fixed. */
     vui.mFrameFieldInfoPresentFlag = (ptl.mGeneralProgressiveSourceFlag && ptl.mGeneralInterlacedSourceFlag) ? 1 : 0;
     vui.mDefDispWinLeftOffset = 0;
     vui.mDefDispWinRightOffset = 0;
@@ -1170,7 +1299,9 @@ int H265Parser::parseVuiParameters(BitStream& bitstr, VuiParameters& vui)
     }
     vui.mNeutralChromaIndicationFlag = bitstr.readBits(1);
     vui.mFieldSeqFlag = bitstr.readBits(1);
+
     vui.mFrameFieldInfoPresentFlag = bitstr.readBits(1);
+
     vui.mDefaultDisplayWindowFlag = bitstr.readBits(1);
     if (vui.mDefaultDisplayWindowFlag)
     {
@@ -1211,7 +1342,8 @@ int H265Parser::parseVuiParameters(BitStream& bitstr, VuiParameters& vui)
     return 0;
 }
 
-int H265Parser::parseSubLayerHrd(BitStream& bitstr, SubLayerHrdParameters& hrd, const int cpbCnt, const unsigned int subPicHrdParamsPresentFlag)
+int H265Parser::parseSubLayerHrd(BitStream& bitstr, SubLayerHrdParameters& hrd, const int cpbCnt,
+                                 const unsigned int subPicHrdParamsPresentFlag)
 {
     hrd.mBitRateValueMinus1.clear();
     hrd.mCpbSizeValueMinus1.clear();
@@ -1234,7 +1366,8 @@ int H265Parser::parseSubLayerHrd(BitStream& bitstr, SubLayerHrdParameters& hrd, 
     return 0;
 }
 
-int H265Parser::parseHrdParameters(BitStream& bitstr, HrdParameters& hrd, const unsigned int commonInfPresentFlag, const unsigned int maxNumSubLayersMinus1)
+int H265Parser::parseHrdParameters(BitStream& bitstr, HrdParameters& hrd, const unsigned int commonInfPresentFlag,
+                                   const unsigned int maxNumSubLayersMinus1)
 {
     hrd.mSubPicHrdParamsPresentFlag = 0;
     if (commonInfPresentFlag)
@@ -1297,18 +1430,21 @@ int H265Parser::parseHrdParameters(BitStream& bitstr, HrdParameters& hrd, const 
         }
         if (hrd.mNalHrdParameterPresentFlag)
         {
-            parseSubLayerHrd(bitstr, hrd.mSubLayerNalHrdParams[i], hrd.mCpbCntMinus1[i], hrd.mSubPicHrdParamsPresentFlag);
+            parseSubLayerHrd(bitstr, hrd.mSubLayerNalHrdParams[i], hrd.mCpbCntMinus1[i],
+                hrd.mSubPicHrdParamsPresentFlag);
         }
         if (hrd.mVclHrdParametersPresentFlag)
         {
-            parseSubLayerHrd(bitstr, hrd.mSubLayerVclHrdParams[i], hrd.mCpbCntMinus1[i], hrd.mSubPicHrdParamsPresentFlag);
+            parseSubLayerHrd(bitstr, hrd.mSubLayerVclHrdParams[i], hrd.mCpbCntMinus1[i],
+                hrd.mSubPicHrdParamsPresentFlag);
         }
     }
 
     return 0;
 }
 
-int H265Parser::parsePredWeightTable(BitStream& bitstr, SequenceParameterSet& sps, SliceHeader& slice, PredWeightTable& pwTable)
+int H265Parser::parsePredWeightTable(BitStream& bitstr, SequenceParameterSet& sps, SliceHeader& slice,
+                                     PredWeightTable& pwTable)
 {
     array<int, 2> weights;
     array<int, 2> offsets;
@@ -1406,7 +1542,621 @@ int H265Parser::parsePredWeightTable(BitStream& bitstr, SequenceParameterSet& sp
     return 0;
 }
 
-int H265Parser::parseSPS(BitStream& bitstr, SequenceParameterSet& sps)
+H265Parser::RepFormat H265Parser::parseRepFormat(BitStream& bitstr) const
+{
+    RepFormat repFormat;
+
+    repFormat.mPicWidthVpsInLumaSamples = bitstr.readBits(16);
+    repFormat.mPicHeightVpsInLumaSamples = bitstr.readBits(16);
+    repFormat.mChromaAndBitDepthVpsPresentFlag = bitstr.readBits(1);
+
+    if (repFormat.mChromaAndBitDepthVpsPresentFlag)
+    {
+        repFormat.mChromaFormatVpsIdc = bitstr.readBits(2);
+        if (repFormat.mChromaFormatVpsIdc == 3)
+        {
+            repFormat.mSeparateColourPlaneVpsFlag = bitstr.readBits(1);
+        }
+        repFormat.mBitDepthVpsLumaMinus8 = bitstr.readBits(4);
+        repFormat.mBitDepthVpsChromaMinus8 = bitstr.readBits(4);
+    }
+
+    repFormat.mConformanceWindowVpsFlag = bitstr.readBits(1);
+
+    if (repFormat.mConformanceWindowVpsFlag)
+    {
+        repFormat.mConfWinVpsLeftOffset = bitstr.readExpGolombCode();
+        repFormat.mConfWinVpsRightOffset = bitstr.readExpGolombCode();
+        repFormat.mConfWinVpsTopOffset = bitstr.readExpGolombCode();
+        repFormat.mConfWinVpsBottomOffset = bitstr.readExpGolombCode();
+    }
+
+    return repFormat;
+}
+
+int H265Parser::dpbSize()
+{
+    return (1);
+}
+
+int H265Parser::vpsVui()
+{
+    return (1);
+}
+
+int H265Parser::parseVpsExtension(BitStream& bitstr, VideoParameterSet& vps, VpsExtension& vpsExt)
+{
+    if (vps.mMaxLayersMinus1 > 0 && vps.mBaseLayerInternalFlag)
+    {
+        parseProfileTierLevel(bitstr, vpsExt.mProfileTierLevel, vps.mMaxSubLayersMinus1, 0);
+    }
+    vpsExt.mSplittingFlag = bitstr.readBits(1);
+
+    vpsExt.mNumScalabilityTypes = 0;
+    for (unsigned int i = 0; i < 16; i++)
+    {
+        vpsExt.mScalabilityMaskFlag.push_back(bitstr.readBits(1));
+        vpsExt.mNumScalabilityTypes += vpsExt.mScalabilityMaskFlag.back();
+    }
+
+    for (unsigned int j = 0; j < (vpsExt.mNumScalabilityTypes - vpsExt.mSplittingFlag); j++)
+    {
+        vpsExt.mDimensionIdLenMinus1.push_back(bitstr.readBits(3));
+    }
+    vpsExt.mVpsNuhLayerIdPresentFlag = bitstr.readBits(1);
+
+    unsigned int maxLayersMinus1 = std::min((unsigned int)62, vps.mMaxLayersMinus1);
+    vpsExt.mLayerIdInNuh.resize(maxLayersMinus1 + 1);
+    for (unsigned int i = 1; i <= maxLayersMinus1; i++)
+    {
+        if (vpsExt.mVpsNuhLayerIdPresentFlag)
+        {
+            vpsExt.mLayerIdInNuh.at(i) = bitstr.readBits(6);
+        }
+        else
+        {
+            vpsExt.mLayerIdInNuh.at(i) = i;
+        }
+        if (!vpsExt.mSplittingFlag)
+        {
+            std::vector<unsigned int> dimensionId;
+            for (unsigned int j = 0; j < vpsExt.mNumScalabilityTypes; j++)
+            {
+                unsigned int numBits = vpsExt.mDimensionIdLenMinus1.at(j) + 1;
+                dimensionId.push_back(bitstr.readBits(numBits));
+            }
+            vpsExt.mDimensionId.push_back(dimensionId);
+        }
+    }
+
+    vpsExt.mViewIdLen = bitstr.readBits(4);
+
+    vpsExt.mLayerIdxInVps.resize(maxLayersMinus1 + 1);
+    for (unsigned int i = 0; i <= maxLayersMinus1; i++)
+    {
+        vpsExt.mLayerIdxInVps.at(vpsExt.mLayerIdInNuh.at(i)) = i;
+    }
+
+    if (vpsExt.mViewIdLen > 0)
+    {
+        // NOTE numViews has to be calculated based on algo present in pg 387 of the
+        // standard. For now set it to one.
+        unsigned int numViews = 1;
+        for (unsigned int i = 1; i < numViews; i++)
+        {
+            vpsExt.mViewIdVal.push_back(bitstr.readExpGolombCode());
+        }
+    }
+
+    vpsExt.mDirectDependencyFlag.resize(maxLayersMinus1 + 1);
+    for (unsigned int i = 0; i <= maxLayersMinus1; i++)
+    {
+        vpsExt.mDirectDependencyFlag.at(i).resize(maxLayersMinus1 + 1);
+    }
+
+    for (unsigned int i = 1; i <= maxLayersMinus1; i++)
+    {
+        for (unsigned int j = 0; j < i; j++)
+        {
+            vpsExt.mDirectDependencyFlag.at(i).at(j) = bitstr.readBits(1);
+        }
+    }
+
+    std::vector<std::vector<unsigned int>> dependencyFlag(maxLayersMinus1 + 1,
+        std::vector<unsigned int>(maxLayersMinus1 + 1));
+    for (unsigned int i = 0; i <= maxLayersMinus1; i++)
+    {
+        for (unsigned int j = 0; j <= maxLayersMinus1; j++)
+        {
+            dependencyFlag.at(i).at(j) = vpsExt.mDirectDependencyFlag.at(i).at(j);
+            for (unsigned int k = 0; k < i; k++)
+            {
+                if (vpsExt.mDirectDependencyFlag.at(i).at(k) && dependencyFlag.at(k).at(j))
+                {
+                    dependencyFlag.at(i).at(j) = 1;
+                }
+            }
+        }
+    }
+
+    std::vector<std::vector<unsigned int>> idDirectRefLayer(maxLayersMinus1 + 1,
+        std::vector<unsigned int>(maxLayersMinus1 + 1));
+    std::vector<std::vector<unsigned int>> idRefLayer(maxLayersMinus1 + 1,
+        std::vector<unsigned int>(maxLayersMinus1 + 1));
+    std::vector<std::vector<unsigned int>> idPredictedLayer(maxLayersMinus1 + 1,
+        std::vector<unsigned int>(maxLayersMinus1 + 1));
+    std::vector<unsigned int> numDirectRefLayers(maxLayersMinus1 + 1);
+    std::vector<unsigned int> numRefLayer(maxLayersMinus1 + 1);
+    std::vector<unsigned int> numPredictedLayer(maxLayersMinus1 + 1);
+    for (unsigned int i = 0; i <= maxLayersMinus1; i++)
+    {
+        unsigned int iNuhLId = vpsExt.mLayerIdInNuh.at(i);
+        unsigned int d = 0;
+        unsigned int r = 0;
+        unsigned int p = 0;
+        for (unsigned j = 0; j <= maxLayersMinus1; j++)
+        {
+            unsigned int jNuhLid = vpsExt.mLayerIdInNuh.at(j);
+            if (vpsExt.mDirectDependencyFlag.at(i).at(j))
+            {
+                idDirectRefLayer.at(iNuhLId).at(d++) = jNuhLid;
+            }
+            if (dependencyFlag.at(i).at(j))
+            {
+                idRefLayer.at(iNuhLId).at(r++) = jNuhLid;
+            }
+            if (dependencyFlag.at(i).at(j))
+            {
+                idPredictedLayer.at(iNuhLId).at(p++) = jNuhLid;
+            }
+        }
+        numDirectRefLayers.at(iNuhLId) = d;
+        numRefLayer.at(iNuhLId) = r;
+        numPredictedLayer.at(iNuhLId) = p;
+    }
+
+    vpsExt.mIdDirectRefLayer = idDirectRefLayer;
+    vpsExt.mIdRefLayer = idRefLayer;
+    vpsExt.mIdPredictedLayer = idPredictedLayer;
+    vpsExt.mNumDirectRefLayers = numDirectRefLayers;
+    vpsExt.mNumRefLayer = numRefLayer;
+    vpsExt.mNumPredictedLayer = numPredictedLayer;
+
+    std::vector<std::vector<unsigned int>> treePartitionLayerIdList(maxLayersMinus1 + 1,
+        std::vector<unsigned int>(maxLayersMinus1 + 1));
+    std::vector<unsigned int> numLayersInTreePartition(maxLayersMinus1 + 1);
+    std::vector<unsigned int> layerIdInListFlag(63);
+    unsigned int k = 0;
+    for (unsigned int i = 0; i <= maxLayersMinus1; i++)
+    {
+        unsigned int iNuhLId = vpsExt.mLayerIdInNuh.at(i);
+        if (numDirectRefLayers.at(iNuhLId))
+        {
+            treePartitionLayerIdList.at(k).at(0) = iNuhLId;
+            unsigned int h = 1;
+            for (unsigned int j = 0; j < numPredictedLayer.at(iNuhLId); j++)
+            {
+                unsigned int predLId = idPredictedLayer.at(iNuhLId).at(j);
+                if (!layerIdInListFlag.at(predLId))
+                {
+                    treePartitionLayerIdList.at(k).at(h++) = predLId;
+                    layerIdInListFlag.at(predLId) = 1;
+                }
+            }
+            numLayersInTreePartition.at(k++) = h;
+        }
+    }
+    unsigned int numIndependentLayers = k;
+
+    vpsExt.mNumAddLayerSets = 0;
+    if (numIndependentLayers > 1)
+    {
+        vpsExt.mNumAddLayerSets = bitstr.readExpGolombCode();
+    }
+
+    // derivation of numLayerSet
+    unsigned int numLayerSets = vps.mNumLayerSetsMinus1 + 1 + vpsExt.mNumAddLayerSets;
+
+    for (unsigned int i = 0; i < vpsExt.mNumAddLayerSets; i++)
+    {
+        std::vector<unsigned int> highestLayerIdxPlus1;
+        for (unsigned int j = 0; j < numIndependentLayers; j++)
+        {
+            unsigned int numBits = ceil(log2(numLayersInTreePartition.at(j) + 1));
+            highestLayerIdxPlus1.push_back(numBits);
+        }
+        vpsExt.mHighestLayerIdxPlus1.push_back(highestLayerIdxPlus1);
+    }
+
+    // derivation for numLayersInIdList
+    std::vector<std::vector<unsigned int>> layerSetLayerIdList(2048, std::vector<unsigned int>(8));
+    std::vector<unsigned int> numLayersInIdList(2048);
+    numLayersInIdList.at(0) = 1;
+    for (unsigned int i = 1; i <= vps.mNumLayerSetsMinus1; i++)
+    {
+        unsigned int n = 0;
+        for (unsigned int m = 0; m <= vps.mMaxLayerId; m++)
+        {
+            if (vps.mLayerIdIncludedFlag.at(i).at(m))
+            {
+                layerSetLayerIdList.at(i).at(n++) = m;
+            }
+        }
+        numLayersInIdList.at(i) = n;
+    }
+
+    unsigned int layerNum = 0;
+    unsigned int isIdx = 0;
+    for (unsigned int i = 0; i < vpsExt.mNumAddLayerSets; i++)
+    {
+        isIdx = vps.mNumLayerSetsMinus1 + 1 + i;
+        for (unsigned int treeIdx = 1; treeIdx < numIndependentLayers; treeIdx++)
+        {
+            std::vector<unsigned int> LayerSetLayerIdList;
+            for (unsigned int layerCnt = 0; layerCnt < vpsExt.mHighestLayerIdxPlus1.at(i).at(treeIdx); layerCnt++)
+            {
+                layerSetLayerIdList.at(isIdx).at(layerNum++) = treePartitionLayerIdList.at(treeIdx).at(layerCnt);
+            }
+        }
+        numLayersInIdList.at(isIdx) = layerNum;
+    }
+
+    vpsExt.mVpsSubLayersMaxMinus1PresentFlag = bitstr.readBits(1);
+    if (vpsExt.mVpsSubLayersMaxMinus1PresentFlag)
+    {
+        for (unsigned int i = 0; i <= maxLayersMinus1; i++)
+        {
+            vpsExt.mSubLayersVpsMaxMinus1.push_back(bitstr.readBits(3));
+        }
+    }
+
+    // Derivation for maxSubLayersInLayerSetMinus1
+    std::vector<unsigned int> maxSubLayersInLayerSetMinus1(numLayerSets);
+    for (unsigned int i = 0; i < numLayerSets; i++)
+    {
+        unsigned int maxSlMinus1 = 0;
+        for (unsigned int k = 0; k < numLayersInIdList.at(i); k++)
+        {
+            unsigned int lid = layerSetLayerIdList.at(i).at(k);
+            maxSlMinus1 = std::max(maxSlMinus1, vpsExt.mSubLayersVpsMaxMinus1.at(vpsExt.mLayerIdxInVps.at(lid)));
+        }
+        maxSubLayersInLayerSetMinus1.at(i) = maxSlMinus1;
+    }
+
+    vpsExt.mMaxTidRefPresentFlag = bitstr.readBits(1);
+
+    if (vpsExt.mMaxTidRefPresentFlag)
+    {
+        for (unsigned int i = 0; i < maxLayersMinus1; i++)
+        {
+            for (unsigned int j = i + 1; j <= maxLayersMinus1; j++)
+            {
+                std::vector<unsigned int> maxTidIlRefPicsPlus1;
+                if (vpsExt.mDirectDependencyFlag.at(j).at(i))
+                {
+                    maxTidIlRefPicsPlus1.push_back(bitstr.readBits(3));
+                }
+                vpsExt.mMaxTidIlRefPicsPlus1.push_back(maxTidIlRefPicsPlus1);
+            }
+        }
+    }
+
+    vpsExt.mDefaultRefLayersActiveFlag = bitstr.readBits(1);
+
+    vpsExt.mVpsNumProfileTierLevelMinus1 = bitstr.readExpGolombCode();
+
+    for (unsigned int i = vps.mBaseLayerInternalFlag ? 2 : 1; i <= vpsExt.mVpsNumProfileTierLevelMinus1; i++)
+    {
+        vpsExt.mVpsProfilePresentFlag.push_back(bitstr.readBits(1));
+        vpsExt.mProfileTierLevelArray.resize(vpsExt.mProfileTierLevelArray.size() + 1);
+        parseProfileTierLevel(bitstr, vpsExt.mProfileTierLevelArray.back(), vps.mMaxSubLayersMinus1,
+            vpsExt.mVpsProfilePresentFlag.back());
+    }
+
+    if (numLayerSets > 1)
+    {
+        vpsExt.mNumAddOlss = bitstr.readExpGolombCode();
+        vpsExt.mDefaultOutputLayerIdc = bitstr.readBits(2);
+    }
+
+    // unsigned int defaultOutputLayerIdc = std::min(vpsExt.mDefaultOutputLayerIdc, (unsigned int)2);
+
+    unsigned int numOutputLayerSets = vpsExt.mNumAddOlss + numLayerSets;
+    vpsExt.mLayerSetIdxForOlsMinus1.resize(numOutputLayerSets);
+    for (unsigned int i = 1; i < numOutputLayerSets; i++)
+    {
+        unsigned int numBits = ceil(log2(numLayerSets - 1));
+        if (numLayerSets > 2 && i >= numLayerSets)
+        {
+            vpsExt.mLayerSetIdxForOlsMinus1.at(i) = bitstr.readBits(numBits);
+        }
+    }
+
+    // Derivation olsIdxToLsIdx
+    std::vector<unsigned int> olsIdxToLsIdx(numOutputLayerSets);
+    for (unsigned int i = 0; i < numOutputLayerSets; i++)
+    {
+        olsIdxToLsIdx.at(i) = (i < numLayerSets) ? i : (vpsExt.mLayerSetIdxForOlsMinus1.at(i) + 1);
+    }
+
+    vpsExt.mOutputLayerFlag.resize(numOutputLayerSets);
+    for (unsigned int i = 1; i < numOutputLayerSets; i++)
+    {
+        std::vector<unsigned int> outputLayerFlag(8);
+        if (i == 1)
+        {
+            outputLayerFlag.at(0) = 1;
+        }
+        else if ((i > vps.mNumLayerSetsMinus1) || (vpsExt.mDefaultOutputLayerIdc == 2))
+        {
+            for (unsigned int j = 0; j < numLayersInIdList[olsIdxToLsIdx[i]]; j++)
+            {
+                outputLayerFlag.at(j) = bitstr.readBits(1);
+            }
+            vpsExt.mOutputLayerFlag.at(i) = outputLayerFlag;
+        }
+    }
+
+    std::vector<std::vector<unsigned int>> outputLayerFlag(numOutputLayerSets, std::vector<unsigned int>(8));
+    if (vpsExt.mDefaultOutputLayerIdc == 0 || vpsExt.mDefaultOutputLayerIdc == 1)
+    {
+        for (unsigned int i = 0; i <= vps.mNumLayerSetsMinus1; i++)
+        {
+            unsigned int maxValInlayerSetLayerIdList = 0;
+            for (unsigned int j = 0; j < numLayersInIdList.at(olsIdxToLsIdx.at(i)); j++)
+            {
+                if (layerSetLayerIdList.at(olsIdxToLsIdx.at(i)).at(j) > maxValInlayerSetLayerIdList)
+                {
+                    maxValInlayerSetLayerIdList = layerSetLayerIdList.at(olsIdxToLsIdx.at(i)).at(j);
+                }
+            }
+            for (unsigned int j = 0; j <= numLayersInIdList.at(olsIdxToLsIdx.at(i)) - 1; j++)
+            {
+                if (layerSetLayerIdList.at(olsIdxToLsIdx.at(i)).at(j) == maxValInlayerSetLayerIdList)
+                {
+                    outputLayerFlag.at(i).at(j) = 1;
+                }
+            }
+        }
+    }
+    for (unsigned int i = (vpsExt.mDefaultOutputLayerIdc == 2) ? 0 : (vps.mNumLayerSetsMinus1) + 1;
+        i < numOutputLayerSets - 1; i++)
+    {
+        for (unsigned int j = 0; j <= numLayersInIdList.at(olsIdxToLsIdx.at(i)) - 1; j++)
+        {
+            outputLayerFlag.at(i).at(j) = vpsExt.mOutputLayerFlag.at(i).at(j);
+        }
+    }
+
+    // Derivation of numOutputLayersInOutputLayerSet
+    std::vector<unsigned int> numOutputLayersInOutputLayerSet(16);
+    std::vector<unsigned int> olsHighestOutputLayerId(2048);
+    for (unsigned int i = 1; i < numOutputLayerSets; i++)
+    {
+        for (unsigned int j = 0; j < numLayersInIdList.at(olsIdxToLsIdx.at(i)); j++)
+        {
+            numOutputLayersInOutputLayerSet.at(i) += outputLayerFlag.at(i).at(j);
+            if (outputLayerFlag.at(i).at(j))
+            {
+                olsHighestOutputLayerId.at(i) = layerSetLayerIdList.at(olsIdxToLsIdx.at(i)).at(j);
+            }
+        }
+    }
+
+    // Derivation of numNecessaryLayers and necessaryLayerFlag
+    std::vector<std::vector<unsigned int>> necessaryLayerFlag(2048, std::vector<unsigned int>(2048));
+    std::vector<unsigned int> numNecessaryLayers(1024);
+    for (unsigned int olsIdx = 0; olsIdx < numOutputLayerSets; olsIdx++)
+    {
+        unsigned int lsIdx = olsIdxToLsIdx.at(olsIdx);
+
+        for (unsigned int lsLayerIdx = 0; lsLayerIdx < numLayersInIdList.at(lsIdx); lsLayerIdx++)
+        {
+            necessaryLayerFlag.at(olsIdx).at(lsLayerIdx) = 0;
+        }
+        for (unsigned int lsLayerIdx = 0; lsLayerIdx < numLayersInIdList.at(lsIdx); lsLayerIdx++)
+        {
+            if (outputLayerFlag.at(olsIdx).at(lsLayerIdx))
+            {
+                necessaryLayerFlag.at(olsIdx).at(lsLayerIdx) = 1;
+                unsigned int currLayerId = layerSetLayerIdList.at(lsIdx).at(lsLayerIdx);
+
+                for (unsigned int rLsLayerIdx = 0; rLsLayerIdx < lsLayerIdx; rLsLayerIdx++)
+                {
+                    unsigned int refLayerId = layerSetLayerIdList.at(lsIdx).at(rLsLayerIdx);
+                    if (dependencyFlag.at(vpsExt.mLayerIdxInVps.at(currLayerId)).at(
+                        vpsExt.mLayerIdxInVps.at(refLayerId)))
+                    {
+                        necessaryLayerFlag.at(olsIdx).at(rLsLayerIdx) = 1;
+                    }
+                }
+            }
+
+            numNecessaryLayers.at(olsIdx) = 0;
+            for (unsigned int lsLayerIdx = 0; lsLayerIdx < numLayersInIdList.at(lsIdx); lsLayerIdx++)
+            {
+                numNecessaryLayers.at(olsIdx) += necessaryLayerFlag.at(olsIdx).at(lsLayerIdx);
+            }
+        }
+    }
+
+    vpsExt.mProfileTierLevelIdx.resize(numOutputLayerSets);
+    vpsExt.mAltOutputLayerFlag.resize(2048);
+    for (unsigned int i = 1; i < numOutputLayerSets; i++)
+    {
+        vpsExt.mProfileTierLevelIdx.at(i).resize(8);
+        for (unsigned int j = 0; j < numLayersInIdList[olsIdxToLsIdx[i]]; j++)
+        {
+            if (necessaryLayerFlag.at(i).at(j) && vpsExt.mVpsNumProfileTierLevelMinus1 > 0)
+            {
+                unsigned int numBits = ceil(log2(vpsExt.mVpsNumProfileTierLevelMinus1 + 1));
+                vpsExt.mProfileTierLevelIdx.at(i).at(j) = bitstr.readBits(numBits);
+            }
+        }
+        if (numOutputLayersInOutputLayerSet[i] == 1 && numDirectRefLayers[olsHighestOutputLayerId[i]] > 0)
+        {
+            vpsExt.mAltOutputLayerFlag.at(i) = bitstr.readBits(1);
+        }
+    }
+
+    vpsExt.mVpsNumRepFormatsMinus1 = bitstr.readExpGolombCode();
+
+    for (unsigned int i = 0; i <= vpsExt.mVpsNumRepFormatsMinus1; i++)
+    {
+        // Get representation formats
+        vpsExt.repFormat.push_back(parseRepFormat(bitstr));
+    }
+
+    if (vpsExt.mVpsNumRepFormatsMinus1 > 0)
+    {
+        vpsExt.mRepFormatIdxPresentFlag = bitstr.readBits(1);
+    }
+    else
+    {
+        vpsExt.mRepFormatIdxPresentFlag = 0;
+    }
+
+    vpsExt.mVpsRepFormatIdx.resize(maxLayersMinus1 + 1);
+    if (vpsExt.mRepFormatIdxPresentFlag)
+    {
+        for (unsigned int i = vps.mBaseLayerInternalFlag ? 1 : 0; i <= maxLayersMinus1; i++)
+        {
+            vpsExt.mVpsRepFormatIdx.at(i) = bitstr.readBits(ceilLog2(vpsExt.mVpsNumRepFormatsMinus1 + 1));
+        }
+    }
+
+    vpsExt.mMaxOneActiveRefLayerFlag = bitstr.readBits(1);
+
+    vpsExt.mVpsPocLsbAlignedFlag = bitstr.readBits(1);
+
+    vpsExt.mPocLsbNotPresentFlag.resize(maxLayersMinus1 + 1);
+    for (unsigned int i = 1; i <= maxLayersMinus1; i++)
+    {
+        if (numDirectRefLayers.at(vpsExt.mLayerIdInNuh.at(i)) == 0)
+        {
+            vpsExt.mPocLsbNotPresentFlag.at(i) = bitstr.readBits(1);
+        }
+    }
+
+    dpbSize();
+    vpsExt.mDirectDepTypeLenMinus2 = bitstr.readExpGolombCode();
+    vpsExt.mDirectDependencyAllLayersFlag = bitstr.readBits(1);
+    if (vpsExt.mDirectDependencyAllLayersFlag)
+    {
+        vpsExt.mDirectDependencyAllLayersType = bitstr.readExpGolombCode();
+    }
+    else
+    {
+        for (unsigned int i = vps.mBaseLayerInternalFlag ? 1 : 2; i <= maxLayersMinus1; i++)
+        {
+            for (unsigned int j = vps.mBaseLayerInternalFlag ? 0 : 1; j < i; j++)
+            {
+                std::vector<unsigned int> directDependencyType;
+                if (vpsExt.mDirectDependencyFlag.at(i).at(j))
+                {
+                    directDependencyType.push_back(bitstr.readExpGolombCode());
+                }
+                vpsExt.mDirectDependencyType.push_back(directDependencyType);
+            }
+        }
+    }
+    vpsExt.mVpsNonVuiExtensionLength = bitstr.readExpGolombCode();
+    for (unsigned int i = 1; i <= vpsExt.mVpsNonVuiExtensionLength; i++)
+    {
+        vpsExt.mVpsNonVuiExtensionDataByte = bitstr.readBits(8);
+    }
+    vpsExt.mVpsVuiPresentFlag = bitstr.readBits(1);
+    if (vpsExt.mVpsVuiPresentFlag)
+    {
+        while (!bitstr.isByteAligned())
+        {
+            vpsExt.mVpsVuiAlignmentBitEqualToOne = bitstr.readBits(1);
+        }
+        vpsVui();
+    }
+    return 0;
+}
+
+int H265Parser::parseVPS(BitStream& bitstr, VideoParameterSet& vps)
+{
+    vps.mVpsId = bitstr.readBits(4);
+    vps.mBaseLayerInternalFlag = bitstr.readBits(1);
+    vps.mBaseLayerAvailableFlag = bitstr.readBits(1);
+    vps.mMaxLayersMinus1 = bitstr.readBits(6);
+    vps.mMaxSubLayersMinus1 = bitstr.readBits(3);
+    vps.mTemporalIdNestingFlag = bitstr.readBits(1);
+    vps.mReserved0xffff16Bits = bitstr.readBits(16);
+    parseProfileTierLevel(bitstr, vps.mProfileTierLevel, vps.mMaxSubLayersMinus1);
+    vps.mSubLayerOrderingInfoPresentFlag = bitstr.readBits(1);
+
+    for (unsigned int i = (vps.mSubLayerOrderingInfoPresentFlag ? 0 : vps.mMaxSubLayersMinus1);
+        i <= vps.mMaxSubLayersMinus1; i++)
+    {
+        vps.mMaxDecPicBufferingMinus1.push_back(bitstr.readExpGolombCode());
+        vps.mMaxNumReorderPics.push_back(bitstr.readExpGolombCode());
+        vps.mMaxLatencyIncreasePlus1.push_back(bitstr.readExpGolombCode());
+    }
+
+    vps.mMaxLayerId = bitstr.readBits(6);
+
+    vps.mNumLayerSetsMinus1 = bitstr.readExpGolombCode();
+
+    vps.mLayerIdIncludedFlag.resize(vps.mNumLayerSetsMinus1 + 1);
+    for (unsigned int i = 1; i <= vps.mNumLayerSetsMinus1; i++)
+    {
+        std::vector<unsigned int> layerIdIncludedFlag(vps.mMaxLayerId + 1);
+        for (unsigned int j = 0; j <= vps.mMaxLayerId; j++)
+        {
+            layerIdIncludedFlag.at(j) = bitstr.readBits(1);
+        }
+
+        vps.mLayerIdIncludedFlag.at(i) = layerIdIncludedFlag;
+    }
+
+    vps.mTimingInfoPresentFlag = bitstr.readBits(1);
+
+    if (vps.mTimingInfoPresentFlag)
+    {
+        vps.mNumUnitsInTick = bitstr.readBits(32);
+
+        vps.mTimeScale = bitstr.readBits(32);
+
+        vps.mPocProportionalToTimingFlag = bitstr.readBits(1);
+
+        if (vps.mPocProportionalToTimingFlag)
+        {
+            vps.mNumTicksPocDiffOneMinus1 = bitstr.readExpGolombCode();
+        }
+        vps.mNumHrdParameter = bitstr.readExpGolombCode();
+
+        for (unsigned int i = 0; i < vps.mNumHrdParameter; i++)
+        {
+            vps.mHrdLayerSetIdx.push_back(bitstr.readExpGolombCode());
+
+            if (i > 0)
+            {
+                vps.mCprmsPresentFlag.push_back(bitstr.readBits(1));
+            }
+
+            parseHrdParameters(bitstr, vps.mHrdParameters.back(), vps.mCprmsPresentFlag.at(i), vps.mMaxSubLayersMinus1);
+        }
+    }
+
+    vps.mExtensionFlag = bitstr.readBits(1);
+
+    if (vps.mExtensionFlag)
+    {
+        while (!bitstr.isByteAligned())
+        {
+            vps.mExtensionAlignmentBitEqualToOne.push_back(bitstr.readBits(1));
+        }
+
+        parseVpsExtension(bitstr, vps, vps.mExtension);
+    }
+    return 0;
+}
+
+int H265Parser::parseSPS(BitStream& bitstr, SequenceParameterSet& sps, const NalUnitHeader& naluHeader)
 {
     // Set default values
     sps.mSeparateColourPlaneFlag = 0;
@@ -1419,52 +2169,95 @@ int H265Parser::parseSPS(BitStream& bitstr, SequenceParameterSet& sps)
     sps.mNumLongTermRefPicsSps = 0;
 
     sps.mVpsId = bitstr.readBits(4);
-    sps.mSpsMaxSubLayersMinus1 = bitstr.readBits(3);
-    sps.mSpsTemporalIdNestingFlag = bitstr.readBits(1);
+    if (naluHeader.mNuhLayerId == 0)
+    {
+        sps.mSpsMaxSubLayersMinus1 = bitstr.readBits(3);
+    }
+    else
+    {
+        sps.mSpsExtOrMaxSubLayersMinus1 = bitstr.readBits(3);
+    }
 
-    parseProfileTierLevel(bitstr, sps.mProfileTierLevel, sps.mSpsMaxSubLayersMinus1);
+    bool multiLayerExtSpsFlag = (naluHeader.mNuhLayerId != 0 && sps.mSpsExtOrMaxSubLayersMinus1 == 7);
+
+    // Initialize the sps.mProfileTierLevel;
+    sps.mProfileTierLevel = {0};
+    if (!multiLayerExtSpsFlag)
+    {
+        sps.mSpsTemporalIdNestingFlag = bitstr.readBits(1);
+        parseProfileTierLevel(bitstr, sps.mProfileTierLevel, sps.mSpsMaxSubLayersMinus1);
+    }
 
     sps.mSpsId = bitstr.readExpGolombCode();
-    sps.mChromaFormatIdc = bitstr.readExpGolombCode();
-    if (sps.mChromaFormatIdc == 3)
+    if (multiLayerExtSpsFlag)
     {
-        sps.mSeparateColourPlaneFlag = bitstr.readBits(1);
+        sps.mUpdateRepFormatFlag = bitstr.readBits(1);
+        if (sps.mUpdateRepFormatFlag)
+        {
+            sps.mSpsRepFormatIdx = bitstr.readBits(8);
+        }
     }
-    sps.mPicWidthInLumaSamples = bitstr.readExpGolombCode();
-    sps.mPicHeightInLumaSamples = bitstr.readExpGolombCode();
-    sps.mConformanceWindowFlag = bitstr.readBits(1);
-    if (sps.mConformanceWindowFlag)
+    else
     {
-        sps.mConfWinLeftOffset = bitstr.readExpGolombCode();
-        sps.mConfWinRightOffset = bitstr.readExpGolombCode();
-        sps.mConfWinTopOffset = bitstr.readExpGolombCode();
-        sps.mConfWinBottomOffset = bitstr.readExpGolombCode();
+        sps.mChromaFormatIdc = bitstr.readExpGolombCode();
+        if (sps.mChromaFormatIdc == 3)
+        {
+            sps.mSeparateColourPlaneFlag = bitstr.readBits(1);
+        }
+        sps.mPicWidthInLumaSamples = bitstr.readExpGolombCode();
+        sps.mPicHeightInLumaSamples = bitstr.readExpGolombCode();
+        sps.mConformanceWindowFlag = bitstr.readBits(1);
+        if (sps.mConformanceWindowFlag)
+        {
+            sps.mConfWinLeftOffset = bitstr.readExpGolombCode();
+            sps.mConfWinRightOffset = bitstr.readExpGolombCode();
+            sps.mConfWinTopOffset = bitstr.readExpGolombCode();
+            sps.mConfWinBottomOffset = bitstr.readExpGolombCode();
+        }
+        sps.mBitDepthLumaMinus8 = bitstr.readExpGolombCode();
+        sps.mBitDepthChromaMinus8 = bitstr.readExpGolombCode();
     }
-    sps.mBitDepthLumaMinus8 = bitstr.readExpGolombCode();
-    sps.mBitDepthChromaMinus8 = bitstr.readExpGolombCode();
+
     sps.mLog2MaxPicOrderCntLsbMinus4 = bitstr.readExpGolombCode();
-    sps.mSpsSubLayerOrderingInfoPresentFlag = bitstr.readBits(1);
-    for (unsigned int i = (sps.mSpsSubLayerOrderingInfoPresentFlag ? 0 : sps.mSpsMaxSubLayersMinus1); i <= sps.mSpsMaxSubLayersMinus1; ++i)
+    if (!multiLayerExtSpsFlag)
     {
-        sps.mSpsMaxDecPicBufferingMinus1.push_back(bitstr.readExpGolombCode());
-        sps.mSpsMaxNumReorderPics.push_back(bitstr.readExpGolombCode());
-        sps.mSpsMaxLatencyIncreasePlus1.push_back(bitstr.readExpGolombCode());
+        sps.mSpsSubLayerOrderingInfoPresentFlag = bitstr.readBits(1);
+        for (unsigned int i = (sps.mSpsSubLayerOrderingInfoPresentFlag ? 0 : sps.mSpsMaxSubLayersMinus1);
+            i <= sps.mSpsMaxSubLayersMinus1; ++i)
+        {
+            sps.mSpsMaxDecPicBufferingMinus1.push_back(bitstr.readExpGolombCode());
+            sps.mSpsMaxNumReorderPics.push_back(bitstr.readExpGolombCode());
+            sps.mSpsMaxLatencyIncreasePlus1.push_back(bitstr.readExpGolombCode());
+        }
     }
+
     sps.mLog2MinLumaCodingBlockSizeMinus3 = bitstr.readExpGolombCode();
     sps.mLog2DiffMaxMinLumaCodingBlockSize = bitstr.readExpGolombCode();
     sps.mLog2MinTransformBlockSizeMinus2 = bitstr.readExpGolombCode();
     sps.mLog2DiffMaxMinTransformBlockSize = bitstr.readExpGolombCode();
     sps.mMaxTransformHierarchyDepthInter = bitstr.readExpGolombCode();
     sps.mMaxTransformHierarchyDepthIntra = bitstr.readExpGolombCode();
-    sps.mScalingListEenabledFlag = bitstr.readBits(1);
-    if (sps.mScalingListEenabledFlag)
+    sps.mScalingListEnabledFlag = bitstr.readBits(1);
+    if (sps.mScalingListEnabledFlag)
     {
-        sps.mSpsScalingListDataPresentFlag = bitstr.readBits(1);
-        if (sps.mSpsScalingListDataPresentFlag)
+        if (multiLayerExtSpsFlag)
         {
-            parseScalingListData(bitstr, sps.mScalingListData);
+            sps.mSpsInferScalingListFlag = bitstr.readBits(1);
+        }
+        if (sps.mSpsInferScalingListFlag)
+        {
+            sps.mSpsScalingListRefLayerId = bitstr.readBits(6);
+        }
+        else
+        {
+            sps.mSpsScalingListDataPresentFlag = bitstr.readBits(1);
+            if (sps.mSpsScalingListDataPresentFlag)
+            {
+                parseScalingListData(bitstr, sps.mScalingListData);
+            }
         }
     }
+
     sps.mAmpEnabledFlag = bitstr.readBits(1);
     sps.mSampleAdaptiveOffsetEnabledFlag = bitstr.readBits(1);
     sps.mPcmEnabledFlag = bitstr.readBits(1);
@@ -1481,8 +2274,10 @@ int H265Parser::parseSPS(BitStream& bitstr, SequenceParameterSet& sps)
     sps.mShortTermRefPicSetsDerived.resize(sps.mNumShortTermRefPicSets);
     for (unsigned int i = 0; i < sps.mNumShortTermRefPicSets; ++i)
     {
-        parseShortTermRefPicSet(bitstr, sps.mShortTermRefPicSetsDerived, sps.mShortTermRefPicSets[i], i, sps.mNumShortTermRefPicSets);
-        deriveRefPicSetParams(sps.mShortTermRefPicSetsDerived, sps.mShortTermRefPicSets[i], sps.mShortTermRefPicSetsDerived[i], i);
+        parseShortTermRefPicSet(bitstr, sps.mShortTermRefPicSetsDerived, sps.mShortTermRefPicSets[i], i,
+            sps.mNumShortTermRefPicSets);
+        deriveRefPicSetParams(sps.mShortTermRefPicSetsDerived, sps.mShortTermRefPicSets[i],
+            sps.mShortTermRefPicSetsDerived[i], i);
     }
     sps.mLongTermRefPicsPresentFlag = bitstr.readBits(1);
     if (sps.mLongTermRefPicsPresentFlag)
@@ -1588,8 +2383,34 @@ int H265Parser::parsePPS(BitStream& bitstr, PictureParameterSet& pps)
     return 0;
 }
 
-int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalUnitType naluType)
+int H265Parser::parseLhvcSliceHeader(BitStream& bitstr, SliceHeader& slice, NalUnitHeader nalUnitHeader)
 {
+    H265NalUnitType naluType = nalUnitHeader.mH265NalUnitType;
+
+    slice.mFirstSliceSegmentInPicFlag = bitstr.readBits(1);
+    if (naluType >= H265NalUnitType::CODED_SLICE_BLA_W_LP && naluType <= H265NalUnitType::RESERVED_IRAP_VCL23)
+    {
+        slice.mNoOutputOfPriorPicsFlag = bitstr.readBits(1);
+    }
+    slice.mPpsId = bitstr.readExpGolombCode();
+
+    // Find the parameter sets accessed by this slice.
+    slice.mPps = findPps(slice.mPpsId);
+    assert(slice.mPps != nullptr);
+    slice.mSps = findSps(slice.mPps->mSpsId);
+    assert(slice.mSps != nullptr);
+    slice.mVps = findVps(slice.mSps->mVpsId);
+    assert(slice.mVps != nullptr);
+
+    return 0;
+}
+
+int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, NalUnitHeader nalUnitHeader)
+{
+    H265NalUnitType naluType = nalUnitHeader.mH265NalUnitType;
+    unsigned int nuhLayerId = nalUnitHeader.mNuhLayerId;
+    unsigned int nuhTemporalIdPlus1 = nalUnitHeader.mNuhTemporalIdPlus1;
+
     slice.mNaluType = naluType;
     slice.mDependentSliceSegmentFlag = 0;
     slice.mSliceSegmentAddress = 0;
@@ -1607,7 +2428,6 @@ int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalU
     slice.mSliceCrQpOffset = 0;
     slice.mDeblockingFilterOverrideFlag = 0;
 
-
     slice.mFirstSliceSegmentInPicFlag = bitstr.readBits(1);
     if (naluType >= H265NalUnitType::CODED_SLICE_BLA_W_LP && naluType <= H265NalUnitType::RESERVED_IRAP_VCL23)
     {
@@ -1615,13 +2435,17 @@ int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalU
     }
     slice.mPpsId = bitstr.readExpGolombCode();
 
+    // Find the parameter sets accessed by this slice.
     slice.mPps = findPps(slice.mPpsId);
     assert(slice.mPps != nullptr);
     slice.mSps = findSps(slice.mPps->mSpsId);
     assert(slice.mSps != nullptr);
+    slice.mVps = findVps(slice.mSps->mVpsId);
+    assert(slice.mVps != nullptr);
 
     SequenceParameterSet& sps = *slice.mSps;
     PictureParameterSet& pps = *slice.mPps;
+    VideoParameterSet& vps = *slice.mVps;
 
     slice.mNumRefIdxL0ActiveMinus1 = pps.mNumRefIdxL0DefaultActiveMinus1;
     slice.mNumRefIdxL1ActiveMinus1 = pps.mNumRefIdxL1DefaultActiveMinus1;
@@ -1648,7 +2472,18 @@ int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalU
 
     if (!slice.mDependentSliceSegmentFlag)
     {
-        for (unsigned int i = 0; i < pps.mNumExtraSliceHeaderBits; ++i)
+        unsigned int i = 0;
+        if (pps.mNumExtraSliceHeaderBits > i)
+        {
+            i++;
+            slice.mDiscardableFlag = bitstr.readBits(1);
+        }
+        if (pps.mNumExtraSliceHeaderBits > i)
+        {
+            i++;
+            slice.mCrossLayerBlaFlag = bitstr.readBits(1);
+        }
+        for (; i < pps.mNumExtraSliceHeaderBits; i++)
         {
             bitstr.readBits(1);  // slice_reserved_flag[i]
         }
@@ -1661,22 +2496,35 @@ int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalU
         {
             slice.mColourPlaneId = bitstr.readBits(2);
         }
-        if (naluType != H265NalUnitType::CODED_SLICE_IDR_W_RADL && naluType != H265NalUnitType::CODED_SLICE_IDR_N_LP)
+
+        if ((nuhLayerId > 0 && !vps.mExtension.mPocLsbNotPresentFlag.at(vps.mExtension.mLayerIdxInVps.at(nuhLayerId)))
+            ||
+            (naluType != H265NalUnitType::CODED_SLICE_IDR_W_RADL && naluType != H265NalUnitType::CODED_SLICE_IDR_N_LP))
         {
             slice.mSlicePicOrderCntLsb = bitstr.readBits(sps.mLog2MaxPicOrderCntLsbMinus4 + 4);
+        }
+
+        if (naluType != H265NalUnitType::CODED_SLICE_IDR_W_RADL && naluType != H265NalUnitType::CODED_SLICE_IDR_N_LP)
+        {
             slice.mShortTermRefPicSetSpsFlag = bitstr.readBits(1);
             slice.mShortTermRefPicSetIdx = 0;
             if (!slice.mShortTermRefPicSetSpsFlag)
             {
-                parseShortTermRefPicSet(bitstr, sps.mShortTermRefPicSetsDerived, slice.mShortTermRefPicSet, sps.mNumShortTermRefPicSets, sps.mNumShortTermRefPicSets);
-                deriveRefPicSetParams(sps.mShortTermRefPicSetsDerived, slice.mShortTermRefPicSet, slice.mShortTermRefPicSetDerived, sps.mNumShortTermRefPicSets);
+                parseShortTermRefPicSet(bitstr, sps.mShortTermRefPicSetsDerived, slice.mShortTermRefPicSet,
+                    sps.mNumShortTermRefPicSets, sps.mNumShortTermRefPicSets);
+                deriveRefPicSetParams(sps.mShortTermRefPicSetsDerived, slice.mShortTermRefPicSet,
+                    slice.mShortTermRefPicSetDerived, sps.mNumShortTermRefPicSets);
             }
             else if (sps.mNumShortTermRefPicSets > 1)
             {
                 slice.mShortTermRefPicSetIdx = bitstr.readBits(ceilLog2(sps.mNumShortTermRefPicSets));
             }
-            const unsigned int currStRpsIdx = slice.mShortTermRefPicSetSpsFlag ? slice.mShortTermRefPicSetIdx : sps.mNumShortTermRefPicSets;
-            slice.mCurrStRps = (currStRpsIdx == sps.mNumShortTermRefPicSets) ? &slice.mShortTermRefPicSetDerived : &sps.mShortTermRefPicSetsDerived[currStRpsIdx];
+            const unsigned int currStRpsIdx =
+                slice.mShortTermRefPicSetSpsFlag ? slice.mShortTermRefPicSetIdx : sps.mNumShortTermRefPicSets;
+            slice.mCurrStRps =
+                (currStRpsIdx == sps.mNumShortTermRefPicSets) ?
+                    &slice.mShortTermRefPicSetDerived : &sps.mShortTermRefPicSetsDerived[currStRpsIdx];
+
             if (sps.mLongTermRefPicsPresentFlag)
             {
                 if (sps.mNumLongTermRefPicsSps > 0)
@@ -1727,6 +2575,71 @@ int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalU
                 slice.mSliceTemporalMvpEnabledFlag = bitstr.readBits(1);
             }
         }
+
+        if (nuhLayerId > 0 && !vps.mExtension.mDefaultRefLayersActiveFlag
+            && vps.mExtension.mNumDirectRefLayers.at(nuhLayerId) > 0)
+        {
+            slice.mInterLayerPredEnabledFlag = bitstr.readBits(1);
+            if (slice.mInterLayerPredEnabledFlag && vps.mExtension.mNumDirectRefLayers.at(nuhLayerId) > 1)
+            {
+                if (!vps.mExtension.mMaxOneActiveRefLayerFlag)
+                {
+                    slice.mNumInterLayerRefPicsMinus1 = bitstr.readBits(ceilLog2(sps.mNumLongTermRefPicsSps));
+                }
+                std::vector<unsigned int> refLayerPicIdc(64);
+                unsigned int numRefLayerPics = 0;
+                unsigned int temporalId = nuhTemporalIdPlus1 - 1;
+                unsigned int j = 0;
+                for (unsigned int i = 0; i < vps.mExtension.mNumDirectRefLayers.at(nuhLayerId); i++)
+                {
+                    unsigned int refLayerIdx = vps.mExtension.mLayerIdxInVps.at(
+                        vps.mExtension.mIdDirectRefLayer.at(nuhLayerId).at(i));
+                    if (vps.mExtension.mSubLayersVpsMaxMinus1.at(refLayerIdx) >= temporalId
+                        &&
+                        (temporalId == 0
+                            || vps.mExtension.mMaxTidIlRefPicsPlus1.at(refLayerIdx).at(
+                                vps.mExtension.mLayerIdxInVps.at(nuhLayerId)) > temporalId))
+                    {
+                        refLayerPicIdc.at(j++) = i;
+                    }
+                    numRefLayerPics = j;
+                }
+
+                unsigned int numActiveRefLayerPics = 0;
+                if (nuhLayerId == 0 || numRefLayerPics == 0)
+                {
+                    numActiveRefLayerPics = 0;
+                }
+                else if (vps.mExtension.mDefaultRefLayersActiveFlag)
+                {
+                    numActiveRefLayerPics = numRefLayerPics;
+                }
+                else if (!slice.mInterLayerPredEnabledFlag)
+                {
+                    numActiveRefLayerPics = 0;
+                }
+                else if (vps.mExtension.mMaxOneActiveRefLayerFlag
+                    || vps.mExtension.mNumDirectRefLayers.at(nuhLayerId) == 1)
+                {
+                    numActiveRefLayerPics = 1;
+                }
+                else
+                {
+                    numActiveRefLayerPics = slice.mNumInterLayerRefPicsMinus1 + 1;
+                }
+
+                slice.mInterLayerPredLayerIdc.resize(numActiveRefLayerPics);
+                if (numActiveRefLayerPics != vps.mExtension.mNumDirectRefLayers.at(nuhLayerId))
+                {
+                    for (unsigned int i = 0; i < numActiveRefLayerPics; i++)
+                    {
+                        slice.mInterLayerPredLayerIdc.at(i) = bitstr.readBits(
+                            ceilLog2(vps.mExtension.mNumDirectRefLayers.at(nuhLayerId)));
+                    }
+                }
+            }
+        }
+
         if (sps.mSampleAdaptiveOffsetEnabledFlag)
         {
             slice.mSliceSaoLumaFlag = bitstr.readBits(1);
@@ -1743,6 +2656,7 @@ int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalU
                     slice.mNumPocTotalCurr++;
                 }
             }
+
             for (unsigned int i = 0; i < slice.mCurrStRps->mNumPositivePics; ++i)
             {
                 if (slice.mCurrStRps->mUsedByCurrPicS1[i])
@@ -1750,6 +2664,7 @@ int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalU
                     slice.mNumPocTotalCurr++;
                 }
             }
+
             for (unsigned int i = 0; i < slice.mNumLongTermSps + slice.mNumLongTermPics; ++i)
             {
                 if (slice.mUsedByCurrPicLt[i])
@@ -1791,12 +2706,14 @@ int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalU
                     slice.mCollocatedRefIdx = bitstr.readExpGolombCode();
                 }
             }
-            if ((pps.mWeightedPredFlag && slice.mSliceType == SliceType::P) || (pps.mWeightedBipredFlag && slice.mSliceType == SliceType::B))
+            if ((pps.mWeightedPredFlag && slice.mSliceType == SliceType::P)
+                || (pps.mWeightedBipredFlag && slice.mSliceType == SliceType::B))
             {
                 parsePredWeightTable(bitstr, sps, slice, slice.mPredWeightTable);
             }
             slice.mFiveMinusMaxNumMergeCand = bitstr.readExpGolombCode();
         }
+
         slice.mSliceQpDelta = bitstr.readSignedExpGolombCode();
         if (pps.mPpsSliceChromaQpOffsetsPresentFlag)
         {
@@ -1816,7 +2733,8 @@ int H265Parser::parseSliceHeader(BitStream& bitstr, SliceHeader& slice, H265NalU
                 slice.mSliceTcOffsetDiv2 = bitstr.readSignedExpGolombCode();
             }
         }
-        if (pps.mPpsLoopFilterAcrossSicesEnabledFlag && (slice.mSliceSaoLumaFlag || slice.mSliceSaoChromaFlag || !slice.mSliceDeblockingFilterDisabledFlag))
+        if (pps.mPpsLoopFilterAcrossSicesEnabledFlag
+            && (slice.mSliceSaoLumaFlag || slice.mSliceSaoChromaFlag || !slice.mSliceDeblockingFilterDisabledFlag))
         {
             slice.mSliceLoopFilterAcrossSlicesEnabledFlag = bitstr.readBits(1);
         }
@@ -1922,9 +2840,7 @@ H265Parser::H265NalUnitType H265Parser::readNextNalUnit(vector<uint8_t>& nalUnit
 
 H265Parser::H265NalUnitType H265Parser::getH265NalUnitType(const vector<uint8_t>& nalUnit)
 {
-    int i;
-
-    i = 0;
+    int i = 0;
     // skip start code
     while (nalUnit[i] == 0)
     {
@@ -1936,13 +2852,29 @@ H265Parser::H265NalUnitType H265Parser::getH265NalUnitType(const vector<uint8_t>
     return H265NalUnitType((nalUnit[i] >> 1) & 0x3f);
 }
 
+unsigned int H265Parser::getLayerId(const vector<uint8_t>& nalUnit)
+{
+    int i = 0;
+    // skip start code
+    while (nalUnit[i] == 0)
+    {
+        ++i;
+    }
+    assert(nalUnit[i] == 0x01);
+    ++i;
+
+    unsigned int layerId = 0;
+    layerId = nalUnit[i] & 0x01;
+    layerId = (layerId << 5) | (nalUnit[i + 1] >> 3);
+    return layerId;
+}
+
 bool H265Parser::isFirstVclNaluInPic(const vector<uint8_t>& nalUnit)
 {
-    int i;
     H265NalUnitType naluType;
+    int i = 0;
 
-    i = 0;
-    // skip start code
+    // Skip start code
     while (nalUnit[i] == 0)
     {
         ++i;
@@ -1998,13 +2930,17 @@ void H265Parser::convertByteStreamToRBSP(const vector<uint8_t>& byteStr, vector<
         switch (state)
         {
         case State::COPY_DATA:
-            if (byte != 0) state = State::COPY_DATA;
-            else state = State::ONE_ZERO_FOUND;
+            if (byte != 0)
+                state = State::COPY_DATA;
+            else
+                state = State::ONE_ZERO_FOUND;
             break;
 
         case State::ONE_ZERO_FOUND:
-            if (byte != 0) state = State::COPY_DATA;
-            else state = State::TWO_ZEROS_FOUND;
+            if (byte != 0)
+                state = State::COPY_DATA;
+            else
+                state = State::TWO_ZEROS_FOUND;
             break;
 
         case State::TWO_ZEROS_FOUND:
@@ -2017,8 +2953,10 @@ void H265Parser::convertByteStreamToRBSP(const vector<uint8_t>& byteStr, vector<
                 // continue byte stream copying
                 state = State::COPY_DATA;
             }
-            else if (byte == 0) state = State::TWO_ZEROS_FOUND;
-            else state = State::COPY_DATA;
+            else if (byte == 0)
+                state = State::TWO_ZEROS_FOUND;
+            else
+                state = State::COPY_DATA;
             break;
         }
     }

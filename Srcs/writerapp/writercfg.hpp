@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -13,8 +13,8 @@
 #ifndef WRITERCONFIG_HPP
 #define WRITERCONFIG_HPP
 
-#include "json.hh"
 #include "isomediafile.hpp"
+#include "json/json-forwards.h"
 
 #include <limits>
 #include <string>
@@ -33,11 +33,11 @@ public:
 
 private:
     void confDump(const IsoMediaFile::Configuration& config, const Json::Value& jsonValues) const;
-    IsoMediaFile::General readGeneral(const Json::Value& generalValues) const;
-    IsoMediaFile::Egroups readEgroups(const Json::Value& egroupsValues) const;
-    IsoMediaFile::Content readContent(const Json::Value& contentValues) const;
-    IsoMediaFile::Auxiliary readAuxiliary(const Json::Value& auxValues) const;
-    IsoMediaFile::Property readProperty(const Json::Value& propertyValues) const;
+    IsoMediaFile::General readGeneral(const Json::Value& config) const;
+    std::vector<IsoMediaFile::Egroup> readEgroups(const Json::Value& config) const;
+    IsoMediaFile::Content readContent(const Json::Value& config) const;
+    IsoMediaFile::Auxiliary readAuxiliary(const Json::Value& config) const;
+    IsoMediaFile::Property readProperty(const Json::Value& config) const;
 
     /** @return Coding Constraints Box values all_ref_pic_intra and intra_pred_used, for tracks */
     IsoMediaFile::CodingConstraints readCodingConstraints(const Json::Value& ccstValues) const;
@@ -51,11 +51,25 @@ private:
 
     std::uint32_t readUint32(const Json::Value& value, const std::string& name) const;
 
-    /** @return True if "1", false if "0", 'defaultValue' if the value is not set */
-    bool readBool(const Json::Value& value, bool defaultValue) const;
+    template<class t> void readIntVector(const Json::Value& config, std::vector<t>& data) const;
 
-    IsoMediaFile::ReferenceList parseRefsList(const Json::Value& referenceList) const;
-    IsoMediaFile::IndexList parseIndexList(const Json::Value& indexList) const;
+    /** @return True if "1", false if "0", fail if the value is not set */
+    bool readBool(const Json::Value& value, const std::string& name) const;
+
+    /** @return True if "1", false if "0", 'defaultValue' if the value is not set */
+    bool readOptionalBool(const Json::Value& value, bool defaultValue) const;
+
+    IsoMediaFile::ReferenceList parseRefsList(const Json::Value& config) const;
+    IsoMediaFile::IndexList parseIndexList(const Json::Value& config) const;
+    IsoMediaFile::Iovl readIovl(const Json::Value& config) const;
+    IsoMediaFile::Grid readGrid(const Json::Value& config) const;
+    IsoMediaFile::Thumbs readThumbs(const Json::Value& config, const std::string& encapsulationType) const;
+    IsoMediaFile::Clap readClap(const Json::Value& config) const;
+    IsoMediaFile::Rloc readRloc(const Json::Value& config) const;
+    IsoMediaFile::Irot readIrot(const Json::Value& config) const;
+    IsoMediaFile::Imir readImir(const Json::Value& config) const;
+    IsoMediaFile::PreDerived readPrederived(const Json::Value& config) const;
+    IsoMediaFile::Layer readLayer(const Json::Value& config) const;
 };
 
 #endif /* end of include guard: WRITERCONFIG_HPP */

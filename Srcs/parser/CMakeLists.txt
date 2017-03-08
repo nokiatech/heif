@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Nokia Technologies Ltd.
+# Copyright (c) 2015-2017, Nokia Technologies Ltd.
 # All rights reserved.
 #
 # Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -9,10 +9,5 @@
 # You may also obtain the License at:
 # https://nokiatech.github.io/heif/license.txt
 
-include_directories(${PROJECT_SOURCE_DIR}/Srcs/common)
-set(PARSER_SRCS
-	h265parser.cpp
-	)
-
-add_library(h265parser ${PARSER_SRCS})
-target_link_libraries(h265parser common)
+add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/parser/avcparser)
+add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/parser/h265parser)

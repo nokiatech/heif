@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -15,7 +15,7 @@
 
 using namespace std;
 
-Box::Box(const char* boxType) :
+Box::Box(FourCCInt boxType) :
     mSize(8),
     mType(boxType),
     mLargeSize( { 0, 0 }),
@@ -34,12 +34,12 @@ uint32_t Box::getSize() const
     return mSize;
 }
 
-void Box::setType(const string& type)
+void Box::setType(const FourCCInt type)
 {
     mType = type;
 }
 
-const string& Box::getType() const
+FourCCInt Box::getType() const
 {
     return mType;
 }
@@ -77,7 +77,7 @@ void Box::writeBoxHeader(BitStream& bitstr)
     mStartLocation = bitstr.getSize();
 
     bitstr.write32Bits(mSize);
-    bitstr.writeString(mType);
+    bitstr.write32Bits(mType.getUInt32());
 
     if (mSize == 1)
     {
@@ -85,10 +85,10 @@ void Box::writeBoxHeader(BitStream& bitstr)
         bitstr.write32Bits(mLargeSize.at(1));
     }
 
-    ///@todo: Make sure that mUserType is properly set before writing...
+    /// @todo Make sure that mUserType is properly set before writing.
     if (mType == "uuid")
     {
-        bitstr.writeString(mUserType);
+        bitstr.write32Bits(mUserType.getUInt32());
     }
 }
 
@@ -96,7 +96,7 @@ void Box::updateSize(BitStream& bitstr)
 {
     mSize = bitstr.getSize() - mStartLocation;
 
-    bitstr.setByte(mStartLocation + 0, (mSize >> 24) & 0xff);  // write updated size to the bitstream
+    bitstr.setByte(mStartLocation + 0, (mSize >> 24) & 0xff); // Write updated size to the bitstream.
     bitstr.setByte(mStartLocation + 1, (mSize >> 16) & 0xff);
     bitstr.setByte(mStartLocation + 2, (mSize >> 8) & 0xff);
     bitstr.setByte(mStartLocation + 3, (mSize) & 0xff);
@@ -105,7 +105,7 @@ void Box::updateSize(BitStream& bitstr)
 void Box::parseBoxHeader(BitStream& bitstr)
 {
     mSize = bitstr.read32Bits();
-    bitstr.readStringWithLen(mType, 4);
+    mType = bitstr.read32Bits();
 
     if (mSize == 1)
     {
@@ -115,6 +115,6 @@ void Box::parseBoxHeader(BitStream& bitstr)
 
     if (mType == "uuid")
     {
-        bitstr.readStringWithLen(mUserType, 16);
+        mUserType = bitstr.read32Bits();
     }
 }

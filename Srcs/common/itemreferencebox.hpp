@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -38,7 +38,7 @@ public:
 
     /** @brief Set 4CC reference type
      *  @param Type of this reference */
-    void setReferenceType(const std::string& referenceType);
+    void setReferenceType(FourCCInt referenceType);
 
     /** @brief Set "from-item" item Id value
      *  @param [in] itemID Item Id value*/
@@ -86,18 +86,19 @@ public:
      *  @param [in] type Type of the item reference
      *  @param [in] fromId "From-Id" field value of the item reference data structure
      *  @param [in] toId "To-Id" field value of the item reference data structure */
-    void add(const std::string& type, std::uint32_t fromId, std::uint32_t toId);
+    void add(FourCCInt type, std::uint32_t fromId, std::uint32_t toId);
 
     /** @brief Returns the vector of item references of a particular reference type.
      *  @param [in] type Type of the item reference
      *  @return vector of item references with the requested reference type */
-    std::vector<SingleItemTypeReferenceBox> getReferencesOfType(const std::string& type) const;
+    std::vector<SingleItemTypeReferenceBox> getReferencesOfType(FourCCInt type) const;
 
     /** @brief Parses an ItemReferenceBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
     virtual void parseBox(BitStream& bitstr);
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
+     *  An empty box without any references is not written.
      *  @param [out] bitstr Bitstream that contains the box data. */
     virtual void writeBox(BitStream& bitstr);
 

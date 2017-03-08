@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -34,7 +34,8 @@ void TimeWriter::setDisplayRate(std::uint32_t displayRate)
 }
 
 
-void TimeWriter::loadOrder(const std::vector<uint32_t>& decodeOrder, const std::vector<uint32_t>& displayOrder)
+void TimeWriter::loadOrder(const std::vector<uint32_t>& decodeOrder, const std::vector<uint32_t>& displayOrder,
+    const bool nonOutput)
 {
     mDecodeOrder = decodeOrder;
     mDisplayOrder = displayOrder;
@@ -60,6 +61,12 @@ void TimeWriter::loadOrder(const std::vector<uint32_t>& decodeOrder, const std::
         {
             return (displayTime - decodeTime);
         });
+
+    if (nonOutput)
+    {
+        // Make the first sample a non-output sample by setting display offset to minimum value.
+        mDisplayOffset.at(0) = std::numeric_limits<std::int32_t>::min();
+    }
 
     bool allZeros = std::all_of(mDisplayOffset.begin(), mDisplayOffset.end(), [](std::int32_t offset)
     {
@@ -173,10 +180,21 @@ void TimeWriter::fillCompositionOffsetBox(CompositionOffsetBox& compositionOffse
 }
 
 
-void TimeWriter::fillCompositionToDecodeBox(CompositionToDecodeBox& compositionToDecodeBox)
+void TimeWriter::fillCompositionToDecodeBox(CompositionToDecodeBox& compositionToDecodeBox, const bool nonOutput)
 {
-    std::int32_t compositionToDtsShift = *std::min_element(mDisplayOffset.cbegin(), mDisplayOffset.cend());
-    std::int32_t leastDecodeToDisplayDelta = *std::min_element(mDisplayOffset.cbegin(), mDisplayOffset.cend());
+    std::int32_t leastDecodeToDisplayDelta;
+    if (nonOutput)
+    {
+        // Non-output sample hack is enabled for the first sample, so do not consider it when searching for the
+        // minimum display offset.
+        leastDecodeToDisplayDelta = *std::min_element(mDisplayOffset.cbegin()+1, mDisplayOffset.cend());
+    }
+    else
+    {
+        leastDecodeToDisplayDelta = *std::min_element(mDisplayOffset.cbegin(), mDisplayOffset.cend());
+    }
+    const std::int32_t compositionToDtsShift = leastDecodeToDisplayDelta;
+
     std::int32_t greatestDecodeToDisplayDelta = *std::max_element(mDisplayOffset.cbegin(), mDisplayOffset.cend());
     std::int32_t compositionEndTime = 0;
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -12,10 +12,12 @@
 
 #include "auxiliaryimagewriter.hpp"
 #include "auxiliarytypeproperty.hpp"
+#include "avcconfigurationbox.hpp"
 #include "datastore.hpp"
 #include "hevcconfigurationbox.hpp"
 #include "imagespatialextentsproperty.hpp"
 #include "itempropertiesbox.hpp"
+#include "mediatypedefs.hpp"
 #include "metabox.hpp"
 #include "services.hpp"
 #include "writerconstants.hpp"
@@ -36,7 +38,7 @@ void AuxiliaryImageWriter::write(MetaBox* metaBox)
     RootMetaImageWriter::initWrite();
     storeValue("uniq_bsid", std::to_string(mConfig.uniq_bsid));
     storeValue("capsulation", META_ENCAPSULATION);
-    RootMetaImageWriter::parseInputBitStream(mConfig.file_path);
+    RootMetaImageWriter::parseInputBitStream(mConfig.file_path, mConfig.code_type);
     ItemSet itemIds = addItemReferences(metaBox);
 
     ilocWrite(metaBox, itemIds);
@@ -61,7 +63,7 @@ void AuxiliaryImageWriter::iinfWrite(MetaBox* metaBox, const ItemSet& itemIds) c
     {
         if (itemIds.count(item.mId))
         {
-            metaBox->addItem(item.mId, item.mType, "HEVC Image", mConfig.hidden);
+            metaBox->addItem(item.mId, item.mType, item.mName, mConfig.hidden);
         }
     }
 }
@@ -74,20 +76,12 @@ void AuxiliaryImageWriter::iprpWrite(MetaBox* metaBox, const ItemSet& itemIds) c
         itemIdVector.push_back(id);
     }
 
-    std::shared_ptr<HevcConfigurationBox> configBox(new HevcConfigurationBox);
-    const HevcDecoderConfigurationRecord decoderConfig = RootMetaImageWriter::getFirstDecoderConfiguration();
+    RootMetaImageWriter::iprpWrite(metaBox);
 
-    configBox->setConfiguration(decoderConfig);
-    metaBox->addProperty(configBox, itemIdVector, true);
-
+    // Add 'auxC' property
     auto auxBox = std::make_shared<AuxiliaryTypeProperty>();
     auxBox->setAuxType(mConfig.urn);
     metaBox->addProperty(auxBox, itemIdVector, true);
-
-    auto ispe = std::make_shared<ImageSpatialExtentsProperty>();
-    ispe->setDisplayWidth(decoderConfig.getPicWidth());
-    ispe->setDisplayHeight(decoderConfig.getPicHeight());
-    metaBox->addProperty(ispe, itemIdVector, true);
 }
 
 AuxiliaryImageWriter::ItemSet AuxiliaryImageWriter::addItemReferences(MetaBox* metaBox) const

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -18,13 +18,13 @@
 #include <stdexcept>
 
 SingleItemTypeReferenceBox::SingleItemTypeReferenceBox(bool isLarge) :
-    Box(""),
+    Box(FourCCInt()),
     mFromItemId(0),
     mIsLarge(isLarge)
 {
 }
 
-void SingleItemTypeReferenceBox::setReferenceType(const std::string& referenceType)
+void SingleItemTypeReferenceBox::setReferenceType(const FourCCInt referenceType)
 {
     Box::setType(referenceType);
 }
@@ -97,6 +97,12 @@ void ItemReferenceBox::addItemRef(const SingleItemTypeReferenceBox& ref)
 
 void ItemReferenceBox::writeBox(BitStream& bitstr)
 {
+    // Do not write an empty box.
+    if (mReferenceList.size() == 0)
+    {
+        return;
+    }
+
     writeFullBoxHeader(bitstr);  // parent box
 
     for (auto& i : mReferenceList)
@@ -147,7 +153,7 @@ void SingleItemTypeReferenceBox::parseBox(BitStream& bitstr)
     }
 }
 
-std::vector<SingleItemTypeReferenceBox> ItemReferenceBox::getReferencesOfType(const std::string& type) const
+std::vector<SingleItemTypeReferenceBox> ItemReferenceBox::getReferencesOfType(const FourCCInt type) const
 {
     std::vector<SingleItemTypeReferenceBox> references;
     for (const auto& reference : mReferenceList)
@@ -160,15 +166,15 @@ std::vector<SingleItemTypeReferenceBox> ItemReferenceBox::getReferencesOfType(co
     return references;
 }
 
-void ItemReferenceBox::add(const std::string& type, const std::uint32_t fromId, const std::uint32_t toId)
+void ItemReferenceBox::add(const FourCCInt type, const std::uint32_t fromId, const std::uint32_t toId)
 {
     const bool largeIds = getVersion() ? true : false;
-    if (((fromId > std::numeric_limits<std::uint16_t>::max()) || 
+    if (((fromId > std::numeric_limits<std::uint16_t>::max()) ||
         (toId > std::numeric_limits<std::uint16_t>::max())) && not largeIds)
     {
         throw std::runtime_error("ItemReferenceBox::add can not add large item IDs to box version 0");
     }
-    
+
     // Add to an existing entry if one exists for this type & fromId pair
     auto reference = std::find_if(mReferenceList.begin(), mReferenceList.end(),
         [&](const SingleItemTypeReferenceBox& entry)

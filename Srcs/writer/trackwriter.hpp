@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -13,6 +13,7 @@
 #ifndef TRACKWRITER_HPP
 #define TRACKWRITER_HPP
 
+#include "avcsampleentry.hpp"
 #include "hevcsampleentry.hpp"
 #include "isomediafile.hpp"
 #include "trackbox.hpp"
@@ -106,8 +107,10 @@ protected:
      */
     std::unique_ptr<TrackBox> finalizeWriting();
 
-    /** @brief Fill TrackBox structures which are common for all TrackWriters. */
-    void writeTrackCommon();
+    /**
+     * @brief Fill TrackBox structures which are common for all TrackWriters.
+     * @param nonOutput Enable non-output sample hack for the first sample. */
+    void writeTrackCommon(bool nonOutput = false);
 
     /**
      * @brief This method is used to store a key-value pair in its internal store.
@@ -158,15 +161,11 @@ protected:
     void stscWrite();
 
     /**
-     * @brief Fills in the fields of the SampleDescriptionBox.
-     */
-    void stsdWrite();
-
-    /**
-     * @brief Fills in the fields of the SampleDescriptionBox with a 'ccst' box.
+     * @brief This method fills in the fields of the SampleDescriptionBox.
+     * @param codeType Configured code_type
      * @param ccst CodingConstraintsBox to be written into the SampleDescriptionBox.
      */
-    void stsdWrite(const IsoMediaFile::CodingConstraints& ccst);
+    void stsdWrite(const std::string& codeType, const IsoMediaFile::CodingConstraints& ccst);
 
     /**
      * @brief This method fills in the fields of the SampleDescriptionBox. Coding Constraints Box
@@ -187,6 +186,17 @@ protected:
     std::unique_ptr<SampleEntryBox> getHevcSampleEntry(const IsoMediaFile::CodingConstraints& ccst);
 
     /**
+     * @brief Get AVC SampleEntry box
+     */
+    std::unique_ptr<AvcSampleEntry> getAvcSampleEntry();
+
+    /**
+     * @brief Get AVC SampleEntry box
+     * @param ccst CodingConstraintsBox is to be written into the SampleDescriptionBox.
+     */
+    std::unique_ptr<SampleEntryBox> getAvcSampleEntry(const IsoMediaFile::CodingConstraints& ccst);
+
+    /**
      * @brief This method fills in the fields of the SyncSampleTableBox.
      */
     void stssWrite();
@@ -199,8 +209,9 @@ protected:
     /**
      * @brief This method handles the filling up of fields of all time related
      *        boxes (stss, ctts and cslg boxes).
+     * @param nonOutput Enable non-output sample hack for the first sample.
      */
-    void timeWrite();
+    void timeWrite(bool nonOutput);
 
     /**
      * @brief This method handles the writing of the editlist box.
@@ -227,9 +238,10 @@ protected:
 
     /**
      * @brief This method handles the parsing of the input bitstream to analyse
+     * @param codeType Configured code_type
      * the structure of access units.
      */
-    void bstrParse();
+    void bstrParse(const std::string& codeType);
 
     /**
      * @brief This method is used to set the display width of the visual samples described in this track.

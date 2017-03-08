@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -41,6 +41,15 @@ public:
      * @returns pointer to the requested DataStore
      */
     static std::shared_ptr<DataStore> getStore(std::uint32_t storeId);
+
+    /**
+     * @brief Get a DataStore where is a key "key" with value "value".
+     * @details If several DataStores match to search condition, only the first found will be returned.
+     * @param [in] key Searched key in the store.
+     * @param [in] value The value search from the key.
+     * @returns Pointer to the requested DataStore. A nullptr in case the value was not found in any DataStore.
+     */
+    static std::shared_ptr<DataStore> getStore(const std::string& key, const std::string& value);
 
     /**
      * @brief Register a Data Store with a particular store Id.

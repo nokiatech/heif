@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Nokia Technologies Ltd.
+# Copyright (c) 2015-2017, Nokia Technologies Ltd.
 # All rights reserved.
 #
 # Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -11,9 +11,14 @@
 
 include_directories(${PROJECT_SOURCE_DIR}/Srcs/common)
 include_directories(${PROJECT_SOURCE_DIR}/Srcs/parser)
+include_directories(${PROJECT_SOURCE_DIR}/Srcs/parser/avcparser)
+include_directories(${PROJECT_SOURCE_DIR}/Srcs/parser/h265parser)
 
 set(COMMON_SRCS
     auxiliarytypeproperty.cpp
+    avcconfigurationbox.cpp
+    avcdecoderconfigrecord.cpp
+    avcsampleentry.cpp
     bbox.cpp
     bitstream.cpp
     chunkoffsetbox.cpp
@@ -27,6 +32,7 @@ set(COMMON_SRCS
     editbox.cpp
     entitytogroupbox.cpp
     filetypebox.cpp
+    fourccint.cpp
     fullbox.cpp
     groupslistbox.cpp
     handlerbox.cpp
@@ -34,6 +40,7 @@ set(COMMON_SRCS
     hevcdecoderconfigrecord.cpp
     hevcsampleentry.cpp
     idspace.cpp
+    imagemirror.cpp
     imagespatialextentsproperty.cpp
     imagerotation.cpp
     imagerelativelocationproperty.cpp
@@ -47,6 +54,9 @@ set(COMMON_SRCS
     itempropertycontainer.cpp
     itemprotectionbox.cpp
     itemreferencebox.cpp
+    layeredhevcconfigurationitemproperty.cpp
+    layerselectorproperty.cpp
+    lhevcdecoderconfigrecord.cpp
     log.cpp
     mediabox.cpp
     mediadatabox.cpp
@@ -55,6 +65,7 @@ set(COMMON_SRCS
     metabox.cpp
     moviebox.cpp
     movieheaderbox.cpp
+    operatingpointsinformation.cpp
     primaryitembox.cpp
     protectionschemeinfobox.cpp
     sampledescriptionbox.cpp
@@ -66,6 +77,7 @@ set(COMMON_SRCS
     samplegroupdescriptionbox.cpp
     samplegroupentry.cpp
     syncsamplebox.cpp
+    targetolsproperty.cpp
     timetosamplebox.cpp
     trackbox.cpp
     trackheaderbox.cpp
@@ -74,5 +86,11 @@ set(COMMON_SRCS
     videomediaheaderbox.cpp
     visualsampleentrybox.cpp)
 
-add_library(common ${COMMON_SRCS})
-target_link_libraries(common h265parser)
+# Also show these standalone header files in the project tree
+set(COMMON_STANDALONE_HDRS
+    androidhacks.hpp
+    avccommondefs.hpp
+    hevccommondefs.hpp)
+
+add_library(common ${COMMON_SRCS} ${COMMON_STANDALONE_HDRS})
+target_link_libraries(common h265parser avcparser)

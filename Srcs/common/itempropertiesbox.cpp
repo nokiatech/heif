@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -26,28 +26,32 @@ std::uint32_t ItemPropertiesBox::findPropertyIndex(const PropertyType type, cons
     for (const auto& entry : propertyIndexVector)
     {
         const Box* property = mContainer.getProperty(entry.index - 1);
-        const std::string boxType = property->getType();
         if (getPropertyType(property) == type)
         {
             return entry.index;
         }
     }
-
     return 0;
 }
 
 ItemPropertiesBox::PropertyType ItemPropertiesBox::getPropertyType(const Box* property) const
 {
     PropertyType type = PropertyType::UNKNOWN;
-    const std::string boxType = property->getType();
-    static const std::map<std::string, PropertyType> NAME_TO_ENUM_MAP =
+    FourCCInt boxType = property->getType();
+    static const std::map<FourCCInt, PropertyType> NAME_TO_ENUM_MAP =
     {
         { "auxC", PropertyType::AUXC },
+        { "avcC", PropertyType::AVCC },
         { "clap", PropertyType::CLAP },
         { "hvcC", PropertyType::HVCC },
+        { "imir", PropertyType::IMIR },
         { "irot", PropertyType::IROT },
         { "ispe", PropertyType::ISPE },
-        { "rloc", PropertyType::RLOC }
+        { "lhvC", PropertyType::LHVC },
+        { "lsel", PropertyType::LSEL },
+        { "oinf", PropertyType::OINF },
+        { "rloc", PropertyType::RLOC },
+        { "tols", PropertyType::TOLS }
     };
 
     if (NAME_TO_ENUM_MAP.count(boxType))
@@ -80,7 +84,7 @@ ItemPropertiesBox::PropertyInfos ItemPropertiesBox::getItemProperties(const std:
 
 void ItemPropertiesBox::addProperty(std::shared_ptr<Box> box, const std::vector<std::uint32_t>& itemIds, const bool essential)
 {
-    const unsigned int propertyIndex = mContainer.addProperty(box);
+    const unsigned int propertyIndex = mContainer.addProperty(box) + 1;
     for (const auto itemId : itemIds)
     {
         mAssociations.addEntry(itemId, propertyIndex, essential);
@@ -112,7 +116,7 @@ void ItemPropertiesBox::parseBox(BitStream& input)
 {
     parseBoxHeader(input);
 
-    std::string subBoxType;
+    FourCCInt subBoxType;
     BitStream subBitStream = input.readSubBoxBitStream(subBoxType);
     mContainer.parseBox(subBitStream);
 

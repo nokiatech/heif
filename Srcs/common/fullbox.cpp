@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -14,7 +14,7 @@
 
 using namespace std;
 
-FullBox::FullBox(const char* boxType, uint8_t version, uint32_t flags) :
+FullBox::FullBox(const FourCCInt boxType, uint8_t version, uint32_t flags) :
     Box(boxType),
     mVersion(version),
     mFlags(flags)

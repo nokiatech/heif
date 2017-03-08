@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -11,12 +11,16 @@
  */
 
 #include "trackwriter.hpp"
+
+#include "avcsampleentry.hpp"
 #include "compositiontodecodebox.hpp"
 #include "datastore.hpp"
 #include "decodepts.hpp"
 #include "editwriter.hpp"
-#include "h265parser.hpp"
 #include "hevcsampleentry.hpp"
+#include "mediatypedefs.hpp"
+#include "parserfactory.hpp"
+#include "parserinterface.hpp"
 #include "refsgroup.hpp"
 #include "samplegroupdescriptionbox.hpp"
 #include "sampletogroupbox.hpp"
@@ -63,13 +67,13 @@ std::unique_ptr<TrackBox> TrackWriter::finalizeWriting()
 }
 
 
-void TrackWriter::writeTrackCommon()
+void TrackWriter::writeTrackCommon(bool nonOutput)
 {
     stszWrite();    // Fill the SampleSizeBox
     stscWrite();    // Fill the SampleToChunkBox
     stcoWrite();    // Fill the ChunkOffsetBox
     stssWrite();    // Fill the SyncSampleTableBox
-    timeWrite();    // Fill the TimeToSampleBox, and if needed the CompositionOffsetBox and the CompositionToDecodeBox
+    timeWrite(nonOutput);    // Fill the TimeToSampleBox, and if needed the CompositionOffsetBox and the CompositionToDecodeBox
     editWrite();    // Fill the EditBox and the contained EditListBoxes
 
     decodePts();    // Unravel the presentation time for each sample after edits are applied
@@ -221,26 +225,54 @@ void TrackWriter::stssWrite()
     stbl.setSyncSampleBox(stss);
 }
 
-void TrackWriter::stsdWrite(const IsoMediaFile::CodingConstraints& ccst)
+void TrackWriter::stsdWrite(const std::string& codeType, const IsoMediaFile::CodingConstraints& ccst)
 {
     MediaBox& mediaBox = mTrackBox->getMediaBox();
     MediaInformationBox& minf = mediaBox.getMediaInformationBox();
     SampleTableBox& stbl = minf.getSampleTableBox();
     SampleDescriptionBox& stsd = stbl.getSampleDescriptionBox();
 
-    std::unique_ptr<SampleEntryBox> sampleEntryBox = getHevcSampleEntry(ccst);
+    // Generate code type specific SampleEntryBox
+    std::unique_ptr<SampleEntryBox> sampleEntryBox = nullptr;
+
+    if (codeType == "hvc1")
+    {
+        sampleEntryBox = getHevcSampleEntry(ccst);
+    }
+    else if (codeType == "avc1")
+    {
+        sampleEntryBox = getAvcSampleEntry(ccst);
+    }
+    else
+    {
+        throw std::runtime_error("Cannot generate Track SampleEntryBox (unsupported code_type '" + codeType + "')");
+    }
 
     stsd.addSampleEntry(std::move(sampleEntryBox));
 }
 
-void TrackWriter::stsdWrite()
+void TrackWriter::stsdWrite(const std::string& codeType)
 {
     MediaBox& mediaBox = mTrackBox->getMediaBox();
     MediaInformationBox& minf = mediaBox.getMediaInformationBox();
     SampleTableBox& stbl = minf.getSampleTableBox();
     SampleDescriptionBox& stsd = stbl.getSampleDescriptionBox();
 
-    std::unique_ptr<SampleEntryBox> sampleEntryBox = getHevcSampleEntry();
+    // Generate code type specific SampleEntryBox
+    std::unique_ptr<SampleEntryBox> sampleEntryBox = nullptr;
+
+    if (codeType == "hvc1")
+    {
+        sampleEntryBox = getHevcSampleEntry();
+    }
+    else if (codeType == "avc1")
+    {
+        sampleEntryBox = getAvcSampleEntry();
+    }
+    else
+    {
+        throw std::runtime_error("Cannot generate Track SampleEntryBox (unsupported code_type '" + codeType + "')");
+    }
 
     stsd.addSampleEntry(std::move(sampleEntryBox));
 }
@@ -274,12 +306,31 @@ std::unique_ptr<SampleEntryBox> TrackWriter::getHevcSampleEntry(const IsoMediaFi
     CodingConstraintsBox* ccst = hevcSampleEntry->getCodingConstraintsBox();
     if (!ccst)
     {
-        throw std::runtime_error("Coding constraints not found from '" + hevcSampleEntry->getType() + "' box");
+        throw std::runtime_error("Coding constraints not found from '" + hevcSampleEntry->getType().getString() + "' box");
     }
 
     fillCcst(ccst, pCcst);
 
     return std::move(hevcSampleEntry);
+}
+
+std::unique_ptr<AvcSampleEntry> TrackWriter::getAvcSampleEntry()
+{
+    std::unique_ptr<AvcSampleEntry> avcSampleEntry(new AvcSampleEntry);
+    AvcDecoderConfigurationRecord decConf;
+    decConf.makeConfigFromSPS(mSpsNals);
+    decConf.addNalUnit(mSpsNals, AvcNalUnitType::SPS, 0);
+    decConf.addNalUnit(mPpsNals, AvcNalUnitType::PPS, 0);
+    avcSampleEntry->getAvcConfigurationBox().setConfiguration(decConf);
+    const std::uint32_t imageWidth = decConf.getPicWidth();
+    const std::uint32_t imageHeight = decConf.getPicHeight();
+
+    // All samples are assumed to be in the same file hence the value 1
+    avcSampleEntry->setDataReferenceIndex(1);
+    avcSampleEntry->setWidth(imageWidth);
+    avcSampleEntry->setHeight(imageHeight);
+
+    return avcSampleEntry;
 }
 
 void TrackWriter::fillCcst(CodingConstraintsBox* ccst, const IsoMediaFile::CodingConstraints& pCcst)
@@ -301,7 +352,23 @@ void TrackWriter::fillCcst(CodingConstraintsBox* ccst, const IsoMediaFile::Codin
     ccst->setIntraPredUsed(pCcst.intraPredUsed);
 }
 
-void TrackWriter::timeWrite()
+std::unique_ptr<SampleEntryBox> TrackWriter::getAvcSampleEntry(const IsoMediaFile::CodingConstraints& pCcst)
+{
+    std::unique_ptr<AvcSampleEntry> avcSampleEntry = getAvcSampleEntry();
+
+    avcSampleEntry->createCodingConstraintsBox();
+    CodingConstraintsBox* ccst = avcSampleEntry->getCodingConstraintsBox();
+    if (!ccst)
+    {
+        throw std::runtime_error("Coding constraints not found from '" + avcSampleEntry->getType().getString() + "' box");
+    }
+
+    fillCcst(ccst, pCcst);
+
+    return std::move(avcSampleEntry);
+}
+
+void TrackWriter::timeWrite(const bool nonOutput)
 {
     MediaBox& mediaBox = mTrackBox->getMediaBox();
     MediaInformationBox& mediaInformationBox = mediaBox.getMediaInformationBox();
@@ -314,7 +381,7 @@ void TrackWriter::timeWrite()
     {
         timeWriter.setDisplayRate(mDisplayRate);
     }
-    timeWriter.loadOrder(mDecodeOrder, mDisplayOrder);
+    timeWriter.loadOrder(mDecodeOrder, mDisplayOrder, nonOutput);
     timeWriter.fillTimeToSampleBox(timeToSampleBox);
 
     // If ctts box is to be written
@@ -329,7 +396,7 @@ void TrackWriter::timeWrite()
     if (timeWriter.isCompositionToDecodeBoxRequired() == true)
     {
         CompositionToDecodeBox compositionToDecodeBox;
-        timeWriter.fillCompositionToDecodeBox(compositionToDecodeBox);
+        timeWriter.fillCompositionToDecodeBox(compositionToDecodeBox, nonOutput);
         sampleTableBox.setCompositionToDecodeBox(compositionToDecodeBox);
     }
 }
@@ -417,26 +484,34 @@ uint8_t TrackWriter::getNalStartCodeSize(const std::vector<uint8_t>& nalU) const
     return size;
 }
 
-void TrackWriter::bstrParse()
+void TrackWriter::bstrParse(const std::string& codeType)
 {
-    H265Parser mediaParser;
-    bool isOpen = (mediaParser.openFile(mFilename.c_str())) ? true : false;
-    if (!isOpen)
+    // Create bitstream parser for this code type
+    MediaType mediaType = MediaTypeTool::getMediaTypeByCodeType(codeType, mFilename);
+    std::unique_ptr<ParserInterface> mediaParser = ParserFactory::getParser(mediaType);
+
+    if (!mediaParser->openFile(mFilename.c_str()))
     {
-        throw std::runtime_error("Not able to open H.265 bit stream file '" + mFilename + "'");
+        throw std::runtime_error("Not able to open " + MediaTypeTool::getBitStreamTypeName(mediaType) +
+                                 " bit stream file '" + mFilename + "'");
     }
 
     ParserInterface::AccessUnit* accessUnit = new ParserInterface::AccessUnit { };
 
     bool hasNalUnits = (accessUnit->mNalUnits.size() > 0) ? true : false;
-    bool hasMoreImages = (mediaParser.parseNextAU(*accessUnit));
+    bool hasMoreImages = (mediaParser->parseNextAU(*accessUnit));
     bool hasSpsNalUnits = (accessUnit->mSpsNalUnits.size() > 0) ? true : false;
     bool hasPpsNalUnits = (accessUnit->mPpsNalUnits.size() > 0) ? true : false;
-    bool isHevc = hasMoreImages || hasNalUnits || hasSpsNalUnits || hasPpsNalUnits;
 
-    if (isHevc)
+    bool hasMediaData = (hasMoreImages || hasNalUnits || hasSpsNalUnits || hasPpsNalUnits);
+
+    // Handle AVC & HEVC media data
+    if (hasMediaData && ((mediaType == MediaType::AVC) || (mediaType == MediaType::HEVC)))
     {
-        mVpsNals = accessUnit->mVpsNalUnits.front();
+        if (mediaType == MediaType::HEVC)
+        {
+            mVpsNals = accessUnit->mVpsNalUnits.front();
+        }
         mSpsNals = accessUnit->mSpsNalUnits.front();
         mPpsNals = accessUnit->mPpsNalUnits.front();
 
@@ -447,7 +522,7 @@ void TrackWriter::bstrParse()
             if (accessUnit == nullptr)
             {
                 accessUnit = new ParserInterface::AccessUnit { };
-                hasMoreImages = mediaParser.parseNextAU(*accessUnit);
+                hasMoreImages = mediaParser->parseNextAU(*accessUnit);
             }
             if (hasMoreImages)
             {

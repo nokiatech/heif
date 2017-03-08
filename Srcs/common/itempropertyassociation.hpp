@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -43,7 +43,7 @@ public:
 
     /** Add a property association for an item.
      * @param [in] itemId Item ID of the item.
-     * @param [in] index Index of the property to associate.
+     * @param [in] index 1-based index of the property to associate.
      * @param [in] essential True if the property is essential for the item (reader is required to process it).
      */
     void addEntry(std::uint32_t itemId, std::uint32_t index, bool essential);

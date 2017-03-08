@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -38,11 +38,17 @@ public:
     {
         UNKNOWN, ///< Not handled/recognized property which was read. Accessing it will cause failure.
         AUXC,    ///< Image properties for auxiliary images. @see AuxiliaryTypeProperty
+        AVCC,    ///< AVC configuration item property. @see AvcConfigurationBox
         CLAP,    ///< Clean aperture. @see ImageCleanAperture
         HVCC,    ///< HEVC configuration item property. @see HevcConfigurationBox
+        IMIR,    ///< Image mirror. @see ImageMirror
         IROT,    ///< Image rotation. @see ImageRotation
         ISPE,    ///< Image spatial extents. @see ImageSpatialExtentsProperty
-        RLOC     ///< Relative location. @see RelativeLocationProperty
+        LHVC,    ///< Layered HEVC configuration item property. @see LayeredHevcConfigurationItemProperty
+        LSEL,    ///< Layer selection. @see LayerSelectorProperty
+        OINF,    ///< Operating points info property. @see OperatingPointsInformationProperty
+        RLOC,    ///< Relative location. @see RelativeLocationProperty
+        TOLS     ///< Target output layer set property. @see TargetOlsProperty
     };
 
     /** Information about a property associated to an item. Information here comes from both contained boxes

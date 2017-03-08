@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -45,14 +45,6 @@ const PrimaryItemBox& MetaBox::getPrimaryItemBox() const
 void MetaBox::setPrimaryItem(const std::uint32_t itemId)
 {
     mPrimaryItemBox.setItemId(itemId);
-
-    if (mItemLocationBox.hasItemIdEntry(itemId))
-    {
-        auto urlBox = std::make_shared<DataEntryUrlBox>();
-        urlBox->setFlags(1); // Flag 0x01 tells the data is in this file. DataEntryUrlBox will write only its header.
-        const unsigned int index = mDataInformationBox.addDataEntryBox(urlBox);
-        mItemLocationBox.setItemDataReferenceIndex(itemId, index);
-    }
 }
 
 const ItemInfoBox& MetaBox::getItemInfoBox() const
@@ -98,9 +90,10 @@ const GroupsListBox& MetaBox::getGroupsListBox() const
     return mGroupsListBox;
 }
 
-void MetaBox::addAlternateGroup(const std::vector<std::uint32_t>& itemIds)
+void MetaBox::addEntityGrouping(const FourCCInt type, const std::vector<std::uint32_t>& itemIds)
 {
     EntityToGroupBox entityToGroupBox;
+    entityToGroupBox.setType(type);
     entityToGroupBox.setEntityIds(itemIds);
     mGroupsListBox.addEntityToGroupBox(entityToGroupBox);
 }
@@ -110,7 +103,7 @@ const DataInformationBox& MetaBox::getDataInformationBox() const
     return mDataInformationBox;
 }
 
-void MetaBox::addItemReference(const std::string& type, const std::uint32_t fromId, const std::uint32_t toId)
+void MetaBox::addItemReference(const FourCCInt type, const std::uint32_t fromId, const std::uint32_t toId)
 {
     mItemReferenceBox.add(type, fromId, toId);
 }
@@ -209,7 +202,8 @@ void MetaBox::writeBox(BitStream& bitstr)
 
     mHandlerBox.writeBox(bitstr);
     mPrimaryItemBox.writeBox(bitstr);
-    mDataInformationBox.writeBox(bitstr);
+    // The optional 'dinf' is currently not used, so it is not written:
+    //mDataInformationBox.writeBox(bitstr);
     mItemLocationBox.writeBox(bitstr);
     mItemProtectionBox.writeBox(bitstr);
     mItemInfoBox.writeBox(bitstr);
@@ -228,7 +222,7 @@ void MetaBox::parseBox(BitStream& bitstr)
 
     while (bitstr.numBytesLeft() > 0)
     {
-        std::string boxType;
+        FourCCInt boxType;
         BitStream subBitstr = bitstr.readSubBoxBitStream(boxType);
 
         if (boxType == "hdlr")

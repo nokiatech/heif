@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -13,6 +13,7 @@
 #include "metapropertywriter.hpp"
 #include "cleanaperture.hpp"
 #include "datastore.hpp"
+#include "imagemirror.hpp"
 #include "imagerelativelocationproperty.hpp"
 #include "imagerotation.hpp"
 #include "log.hpp"
@@ -40,9 +41,21 @@ void MetaPropertyWriter::write(MetaBox* metaBox)
 {
     MetaWriter::initWrite();
 
+    writeImir(metaBox);
     writeIrot(metaBox);
     writeRloc(metaBox);
     writeClap(metaBox);
+}
+
+void MetaPropertyWriter::writeImir(MetaBox* metaBox) const
+{
+    for (const IsoMediaFile::Imir& imir : mContentConfig.property.imirs)
+    {
+        const std::vector<uint32_t> itemIds = getReferenceItemIds(imir.refs_list, imir.idxs_list);
+        auto imirBox = std::make_shared<ImageMirror>();
+        imirBox->setHorizontalAxis(imir.horizontalAxis);
+        metaBox->addProperty(imirBox, itemIds, imir.essential);
+    }
 }
 
 void MetaPropertyWriter::writeIrot(MetaBox* metaBox) const

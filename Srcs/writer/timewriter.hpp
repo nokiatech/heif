@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -44,8 +44,10 @@ public:
      * @details Based on input the need for CompositionOffsetBox and CompositionToDecodeBox is decided.
      * @param decodeOrder  Sample decode order vector
      * @param displayOrder Sample display order vector
+     * @param nonOutput Make the first sample non-output sample by setting its display time to the minimum value.
      */
-    void loadOrder(const std::vector<std::uint32_t>& decodeOrder, const std::vector<std::uint32_t>& displayOrder);
+    void loadOrder(const std::vector<std::uint32_t>& decodeOrder, const std::vector<std::uint32_t>& displayOrder,
+        bool nonOutput);
 
     /**
      * @brief Write TimeToSampleBox content
@@ -62,8 +64,9 @@ public:
     /**
      * @brief Write CompositionToDecodeBox content
      * @param [out] compositionToDecodeBox CompositionToDecodeBox to write into
+     * @param [in] nonOput Ignore the first sample when searching the minimum display offset.
      */
-    void fillCompositionToDecodeBox(CompositionToDecodeBox& compositionToDecodeBox);
+    void fillCompositionToDecodeBox(CompositionToDecodeBox& compositionToDecodeBox, bool nonOutput);
 
     /**
      *  @pre Method loadOrder has been called

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -36,7 +36,7 @@ const std::vector<TrackReferenceTypeBox>& TrackReferenceBox::getTrefTypeBoxes() 
     return mTrefTypeBoxes;
 }
 
-bool TrackReferenceBox::isReferenceTypePresent(const std::string& type) const
+bool TrackReferenceBox::isReferenceTypePresent(const FourCCInt type) const
 {
     for (const auto& trackReferenceTypeBox : mTrefTypeBoxes)
     {
@@ -71,9 +71,9 @@ void TrackReferenceBox::parseBox(BitStream& bitstr)
     while (bitstr.numBytesLeft() > 0)
     {
         // Extract the bitstream content of this box
-        string boxType;
+        FourCCInt boxType;
         BitStream subBitstr = bitstr.readSubBoxBitStream(boxType);
-        TrackReferenceTypeBox trefTypeBox = TrackReferenceTypeBox(boxType.c_str());
+        TrackReferenceTypeBox trefTypeBox = TrackReferenceTypeBox(boxType);
         trefTypeBox.parseBox(subBitstr);
 
         mTrefTypeBoxes.push_back(trefTypeBox);

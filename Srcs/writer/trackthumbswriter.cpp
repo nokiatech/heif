@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -32,10 +32,10 @@ TrackThumbsWriter::TrackThumbsWriter(const std::uint32_t trackId, const IsoMedia
 
 std::unique_ptr<TrackBox> TrackThumbsWriter::writeTrack()
 {
-    initWrite();             // Initialize the writer
-    bstrParse();             // Parse the bitstream
-    hdlrWrite(mHandlerType); // Fill the HandlerBox
-    stsdWrite(mConfig.ccst); // Fill the SampleDescriptionBox
+    initWrite();                  // Initialize the writer
+    bstrParse(mConfig.code_type); // Parse the bitstream
+    hdlrWrite(mHandlerType);      // Fill the HandlerBox
+    stsdWrite(mConfig.code_type, mConfig.ccst); // Fill the SampleDescriptionBox
     sgrpWrite();             // Fill the linked SampleToGroupBox and SampleGroupDescriptionBox for every required grouping
     trefWrite();             // Fill the TrackReferenceBox (for atleast the "thmb" reference)
     writeTrackCommon();

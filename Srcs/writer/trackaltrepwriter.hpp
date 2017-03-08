@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -30,7 +30,7 @@ public:
     {
         std::string file_path;   ///< Input bitstream file name
         std::string hdlr_type;   ///< Handler type ('vide', 'pict')
-        std::string code_type;   ///< Coding type, should be here 'hvc1'
+        std::string code_type;   ///< Coding type, should be here 'hvc1' or 'avc1'
         std::string encp_type;   ///< Encapsulation type, should be he here 'trak'
         std::uint32_t disp_xdim; ///< Display width
         std::uint32_t disp_ydim; ///< Display height

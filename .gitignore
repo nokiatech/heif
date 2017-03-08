@@ -4,4 +4,12 @@ CMakeCache.txt
 CMakeFiles
 Makefile
 cmake_install.cmake
+
+# Linux
 *.a
+
+# Windows
+*.exe
+
+# IDE files
+*.user

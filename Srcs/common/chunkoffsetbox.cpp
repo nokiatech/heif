@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -67,8 +67,6 @@ void ChunkOffsetBox::writeBox(BitStream& bitstr)
 
 void ChunkOffsetBox::parseBox(BitStream& bitstr)
 {
-    BitStream subBitstr;
-
     //  First parse the box header
     parseFullBoxHeader(bitstr);
 

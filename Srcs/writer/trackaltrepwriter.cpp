@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -29,9 +29,9 @@ TrackAltrepWriter::TrackAltrepWriter(const std::uint32_t trackId, const Altrep& 
 std::unique_ptr<TrackBox> TrackAltrepWriter::writeTrack()
 {
     initWrite();                  // Initialize the writer
-    bstrParse();                  // Parse the bitstream
+    bstrParse(mConfig.code_type); // Parse the bitstream
     hdlrWrite(mConfig.hdlr_type); // Fill the HandlerBox
-    stsdWrite();                  // Fill the SampleDescriptionBox
+    stsdWrite(mConfig.code_type); // Fill the SampleDescriptionBox
     writeTrackCommon();
 
     return finalizeWriting();

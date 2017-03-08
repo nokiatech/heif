@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -14,27 +14,36 @@
 #define PARSER_INTERFACE_HPP
 
 #include <cstdint>
-#include <list>
 #include <string>
 #include <vector>
 
-/** Interface for video bitstream parsers */
+/// Interface for video bitstream parsers.
 class ParserInterface
 {
 public:
-    /** Information about a video bitstream AccessUnit */
+    struct PicOrder
+    {
+        unsigned int mDecodeIdx;
+        int mDisplayIdx;
+    };
+
+    static bool compareDisplayOrder(const PicOrder& a, const PicOrder& b) { return a.mDisplayIdx < b.mDisplayIdx; }
+    static bool compareDecodeOrder(const PicOrder& a, const PicOrder& b) { return a.mDecodeIdx < b.mDecodeIdx; }
+
+    /// Information about a video bitstream AccessUnit.
     struct AccessUnit
     {
-        std::list<std::vector<std::uint8_t>> mVpsNalUnits;
-        std::list<std::vector<std::uint8_t>> mSpsNalUnits;
-        std::list<std::vector<std::uint8_t>> mPpsNalUnits;
-        std::list<std::vector<std::uint8_t>> mNalUnits;     // Non-parameter set NAL units
+        std::vector<std::vector<std::uint8_t>> mVpsNalUnits;
+        std::vector<std::vector<std::uint8_t>> mSpsNalUnits;
+        std::vector<std::vector<std::uint8_t>> mPpsNalUnits;
+        std::vector<std::vector<std::uint8_t>> mNalUnits;     ///< Non-parameter set NAL units
         std::vector<unsigned int> mRefPicIndices;
-        unsigned int mPicIndex;      // Picture number in decoding order
-        unsigned int mDisplayOrder;  // Picture number in display order
-        int mPoc;                    // Picture Order Count
+        unsigned int mPicIndex;      ///< Picture number in decoding order
+        unsigned int mDisplayOrder;  ///< Picture number in display order
+        int mPoc;                    ///< Picture Order Count
         unsigned int mPicWidth;
         unsigned int mPicHeight;
+        bool mIsScalable;
         bool mIsIntra;
         bool mIsIdr;
         bool mIsCra;

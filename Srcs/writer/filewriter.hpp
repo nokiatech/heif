@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -124,8 +124,8 @@ private:
 
     /**
      * Create MetaWriter of type EntityGroupWriter
-     * @param config Input configuration. */
-    void createEntityGroupWriters(const IsoMediaFile::Egroups& config);
+     * @param egroups Input configuration. */
+    void createEntityGroupWriters(const std::vector<IsoMediaFile::Egroup>& egroups);
 
     /**
      * Create a MetaWriter and a corresponding MediaWriter for writing Exif and XML metadata.
@@ -162,6 +162,12 @@ private:
      * @param config   Input configuration.
      * @param masterId Context ID of the master context of this content. */
     void createVideTrackWriter(const IsoMediaFile::Master& config, ContextId masterId);
+
+    /**
+     * Create a MetaBox writer for writing multi-layer 'lhv1' image items.
+     * @param config   Input configuration.
+     * @param masterId Context ID of the master context of this content. */
+    void createLayerImageWriter(const IsoMediaFile::Layer& config, const ContextId masterId);
 
     /**
      * Create and serialize FileTypeBox
@@ -219,13 +225,14 @@ private:
     void writeBitstream(BitStream& input, std::ofstream& output) const;
 
     /**
-     * @brief Get file offset of the MediaDataBox related to track with context ID trackId.
-     * @details Several track writers with different context IDs might be referring to the same MediaDataBox.
+     * @brief Get file offset of the MediaDataBox referred from the context ID.
+     * @details Several writers with different context IDs might be referring to the same MediaDataBox.
      *          This method enables easily finding the correct offset.
      * @param offsets Box offset map
-     * @param trackId Context ID of a track
-     * @return MediaDataBox offset in the file in bytes. Zero if parameter offsets map is empty. */
-    Offset getTrackMediaOffset(const OffsetMap& offsets, ContextId trackId) const;
+     * @param contextId Context ID of a writer.
+     * @return MediaDataBox offset in the file in bytes. Zero if parameter offsets map is empty or
+     *         context ID was not found (the writer has no related 'mdat'). */
+    Offset getMdatOffset(const OffsetMap& offsets, ContextId contextId) const;
 
     /**
      * @brief Insert contextId to the mAlterLinkerMap entry where masterId exists.
@@ -235,6 +242,11 @@ private:
      * @return The alternative group ID of the group from where the masterId was found (the key of corresponding
      *         mAlterLinkerMap entry). 0 if masterId was not found. */
     ContextId addToAlterLinkerMap(ContextId masterId, ContextId contextId);
+
+    /**
+     * @return A MediaDataBox which includes HEIF writer compatibility version string.
+     */
+    MediaDataBox createVersionMdat() const;
 };
 
 #endif /* end of include guard: FILEWRITER_HPP */

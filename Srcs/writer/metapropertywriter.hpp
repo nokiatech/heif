@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -20,7 +20,7 @@ class MetaBox;
 
 /**
  * @brief MetaBox writer for writing properties, and adding references to items.
- * @details Currently only 'irot', 'rloc' and 'clap' are supported.
+ * @details Currently only 'imir', 'irot', 'rloc' and 'clap' are supported.
  * @todo Add support for other properties.
  */
 class MetaPropertyWriter : public MetaWriter
@@ -41,6 +41,12 @@ public:
     virtual void write(MetaBox* metaBox);
 
 private:
+    /**
+     * @brief Write imir properties and references to MetaBox
+     * @param [in,out] metaBox The MetaBox in which properties are added to.
+     */
+    void writeImir(MetaBox* metaBox) const;
+
     /**
      * @brief Write irot properties and references to MetaBox
      * @param [in,out] metaBox The MetaBox in which properties are added to.

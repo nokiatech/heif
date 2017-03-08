@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -17,6 +17,13 @@ ImageSpatialExtentsProperty::ImageSpatialExtentsProperty() :
     FullBox("ispe", 0, 0),
     mImageWidth(0),
     mImageHeight(0)
+{
+}
+
+ImageSpatialExtentsProperty::ImageSpatialExtentsProperty(const std::uint32_t width, const std::uint32_t height) :
+    FullBox("ispe", 0, 0),
+    mImageWidth(width),
+    mImageHeight(height)
 {
 }
 

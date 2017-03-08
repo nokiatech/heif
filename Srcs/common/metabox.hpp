@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -118,10 +118,11 @@ public:
     const GroupsListBox& getGroupsListBox() const;
 
     /**
-     * Add a new EntityToGroupBox of type 'altr' to the contained GroupsListBox.
+     * Add a new EntityToGroupBox of to the contained GroupsListBox.
+     * @param type    Grouping type identifier.
      * @param itemIds Item IDs in the group
      */
-    void addAlternateGroup(const std::vector<std::uint32_t>& itemIds);
+    void addEntityGrouping(FourCCInt type, const std::vector<std::uint32_t>& itemIds);
 
     /**
      * @return Reference to the contained DataInformationBox. If a parsed file did not contain
@@ -162,7 +163,7 @@ public:
      * @param fromId ID of the item that refers to other item
      * @param toId   ID of the item referred to
      */
-    void addItemReference(const std::string& type, std::uint32_t fromId, std::uint32_t toId);
+    void addItemReference(FourCCInt type, std::uint32_t fromId, std::uint32_t toId);
 
     /**
      * Add a new item data to the contained ItemDataBox. The ItemLocation and ItemInfoEntry are added.

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -22,7 +22,7 @@
 #define ANDROID_STOI_HACK
 #include "androidhacks.hpp"
 
-EntityGroupWriter::EntityGroupWriter(const IsoMediaFile::AltrIndexPairVector& config) :
+EntityGroupWriter::EntityGroupWriter(const IsoMediaFile::Egroup& config) :
     MetaWriter(),
     mConfig(config)
 {
@@ -33,11 +33,11 @@ void EntityGroupWriter::write(MetaBox* metaBox)
     const IdPairToEntityIdMap idPairToEntityIdMap = makeEntityMap();
 
     std::vector<EntityId> entityIds;
-    for (const auto& item : mConfig)
+    for (const auto& index : mConfig.idxs_lists)
     {
-        entityIds.push_back(idPairToEntityIdMap.at(std::make_pair(item.uniq_bsid, item.item_indx)));
+        entityIds.push_back(idPairToEntityIdMap.at(std::make_pair(index.uniq_bsid, index.item_indx)));
     }
-    metaBox->addAlternateGroup(entityIds);
+    metaBox->addEntityGrouping(FourCCInt(mConfig.type), entityIds);
 }
 
 EntityGroupWriter::IdPairToEntityIdMap EntityGroupWriter::makeEntityMap() const

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -24,13 +24,14 @@ class CodingConstraintsBox;
 
 /** @brief VisualSampleEntryBox class. Extends from SampleEntryBox.
  *  @details This box contains information related to the visual samples of the track as defined in the ISOBMFF and HEIF standards.
- *  @details there may be multiple visual sample entries which map to different samples in the track.
- *  @todo Refactoring option: Inherit to HevcSampleEntryBox, move mHevcConfigurationBox to there. **/
+ *  @details there may be multiple visual sample entries which map to different samples in the track. **/
 
 class VisualSampleEntryBox : public SampleEntryBox
 {
 public:
-    VisualSampleEntryBox(const std::string& codingname);
+    VisualSampleEntryBox(FourCCInt codingName,
+                         const std::string& compressorName);
+
     virtual ~VisualSampleEntryBox() = default;
 
     /** @brief Sets sample's display width as defined in ISOBMFF
@@ -55,11 +56,15 @@ public:
 
     /** @brief Gets the CodingConstraintsBox from the derived class instance
      *  @return Pointer to CodingConstraintsBox if present, nullptr if not. */
-    virtual CodingConstraintsBox* getCodingConstraintsBox();
+    virtual CodingConstraintsBox* getCodingConstraintsBox() { return nullptr; }
 
     /** @brief Check if CodingConstraintsBox is present
      *  @return TRUE if CodingConstraintsBox is present, FALSE otherwise */
-    bool isCodingConstraintsBoxPresent() const;
+    bool isCodingConstraintsBoxPresent() const
+    {
+        // Check if pointer to CodingConstraintsBox is valid, doesn't modify anything.
+        return const_cast<VisualSampleEntryBox*>(this)->getCodingConstraintsBox();
+    }
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
@@ -72,7 +77,7 @@ public:
 private:
     std::uint16_t mWidth;        ///< Sample display width
     std::uint16_t mHeight;       ///< Sample display height
-    std::string mCompressorName; ///< Compressor name used. Currently only "HEVC Coding" is supported.
+    std::string mCompressorName; ///< Compressor name used, e.g. "HEVC Coding"
     std::shared_ptr<CleanAperture> mClap; ///< Clean Aperture data structure
 };
 

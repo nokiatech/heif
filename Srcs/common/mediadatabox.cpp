@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -55,7 +55,7 @@ size_t MediaDataBox::addData(const vector<uint8_t>& srcData)
     return offset;
 }
 
-void MediaDataBox::addListOfNalData(const list<vector<uint8_t>>& srcData)
+void MediaDataBox::addNalData(const vector<vector<uint8_t>>& srcData)
 {
     unsigned int totalLen = 0;
 
@@ -112,11 +112,12 @@ unsigned int MediaDataBox::findStartCode(const vector<uint8_t>& srcData, const u
 
     while (i < srcDataSize && !startCodeFound)
     {
-        if (srcData.at(i) == 0)
+        const uint8_t byte = srcData[i];
+        if (byte == 0)
         {
             ++len;
         }
-        else if (len > 1 && srcData.at(i) == 1)
+        else if (len > 1 && byte == 1)
         {
             ++len;
             startCodeFound = true;

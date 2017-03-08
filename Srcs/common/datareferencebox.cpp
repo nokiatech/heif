@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -15,7 +15,7 @@
 
 #include <stdexcept>
 
-DataEntryBox::DataEntryBox(const char* boxType, const std::uint8_t version, const std::uint32_t flags) :
+DataEntryBox::DataEntryBox(const FourCCInt boxType, const std::uint8_t version, const std::uint32_t flags) :
     FullBox(boxType, version, flags),
     mLocation()
 {
@@ -42,7 +42,7 @@ void DataEntryUrlBox::writeBox(BitStream& bitstr)
 
     // If the self-contained flag is set, no string is present. The box terminates with the entry-flags field.
     // This form is supported only by DataEntryUrlBox, not DataEntryUrnBox.
-    if (not (getFlags() & 1))
+    if (!(getFlags() & 1))
     {
         bitstr.writeZeroTerminatedString(getLocation());
     }
@@ -55,7 +55,7 @@ void DataEntryUrlBox::parseBox(BitStream& bitstr)
     parseFullBoxHeader(bitstr);
 
     // See comment in DataEntryUrlBox::writeBox()
-    if (not (getFlags() & 1))
+    if (!(getFlags() & 1))
     {
         std::string location;
         bitstr.readZeroTerminatedString(location);
@@ -128,7 +128,7 @@ void DataReferenceBox::parseBox(BitStream& bitstr)
     const unsigned int entryCount = bitstr.read32Bits();
     for (unsigned int i = 0; i < entryCount; ++i)
     {
-        std::string boxType;
+        FourCCInt boxType;
         BitStream subBitStream = bitstr.readSubBoxBitStream(boxType);
 
         std::shared_ptr<DataEntryBox> dataEntryBox;

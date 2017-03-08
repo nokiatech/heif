@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -65,19 +65,19 @@ public:
     void parseBox(BitStream& bitstr);
 
 private:
-    ///@brief Composition to Dts shift value as specified in the ISOBMFF standard
+    /// @brief Composition to Dts shift value as specified in the ISOBMFF standard
     std::int32_t mCompositionToDtsShift;
 
-    ///@brief Least Decode to Display Time Delta value as specified in the ISOBMFF standard
+    /// @brief Least Decode to Display Time Delta value as specified in the ISOBMFF standard
     std::int32_t mLeastDecodeToDisplayDelta;
 
-    ///@brief Greatest Decode to Display Time Delta value as specified in the ISOBMFF standard
+    /// @brief Greatest Decode to Display Time Delta value as specified in the ISOBMFF standard
     std::int32_t mGreatestDecodeToDisplayDelta;
 
-    ///@brief Composition start time value as specified in the ISOBMFF standard
+    /// @brief Composition start time value as specified in the ISOBMFF standard
     std::int32_t mCompositionStartTime;
 
-    ///@brief Composition end time value as specified in the ISOBMFF standard
+    /// @brief Composition end time value as specified in the ISOBMFF standard
     std::int32_t mCompositionEndTime;
 };
 

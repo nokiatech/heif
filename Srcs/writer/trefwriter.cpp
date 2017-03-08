@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -22,7 +22,7 @@ void TrefWriter::trefWrite(TrackReferenceBox& trefBox)
 {
     for (auto& tref : mTrefMap)
     {
-        TrackReferenceTypeBox trefTypeBox = TrackReferenceTypeBox(tref.first.c_str());
+        TrackReferenceTypeBox trefTypeBox = TrackReferenceTypeBox(FourCCInt(tref.first));
         trefTypeBox.setTrackIds(tref.second);
         trefBox.addTrefTypeBox(trefTypeBox);
     }

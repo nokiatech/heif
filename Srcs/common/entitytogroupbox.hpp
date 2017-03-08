@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -17,11 +17,8 @@
 #include <vector>
 
 /**
- * @brief Entity to Group box of 'altr' type
- * @details Box implementation as specified in the HEIF specification.
- *
- * Note that currently only 'altr' type EntityToGroupBoxes are supported.
- */
+ * @brief Entity to Group box implementation as specified in the HEIF specification.
+  */
 class EntityToGroupBox : public FullBox
 {
 public:

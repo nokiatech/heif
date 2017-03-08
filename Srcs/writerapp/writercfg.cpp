@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -11,7 +11,7 @@
  */
 
 #include "writercfg.hpp"
-#include "json.hh"
+#include "json/json.h"
 #include "log.hpp"
 
 #include <fstream>
@@ -51,7 +51,11 @@ IsoMediaFile::Configuration WriterConfig::readJson(const std::string& filename)
         configuration.content.push_back(readContent(content));
     }
 
-    configuration.egroups = readEgroups(jsonValues["egroups"]);
+    for (const auto& egroup : jsonValues["egroups"])
+    {
+        const auto egroups = readEgroups(egroup);
+        configuration.egroups.insert(configuration.egroups.end(), egroups.cbegin(), egroups.cend());
+    }
 
     confDump(configuration, jsonValues);
     return configuration;
@@ -77,13 +81,13 @@ void WriterConfig::readEditList(const std::string& filename, IsoMediaFile::Maste
     master.edit_list.numb_rept = std::stoi(edit["numb_rept"].asString());
     for (unsigned int editIndex = 0; editIndex < edit["edit_unit"].size(); ++editIndex)
     {
-        IsoMediaFile::EditUnit newEditUnit;
+        IsoMediaFile::EditUnit editUnit;
 
-        newEditUnit.edit_type = edit["edit_unit"][editIndex]["edit_type"].asString();
-        newEditUnit.mdia_time = std::stoi(edit["edit_unit"][editIndex]["mdia_time"].asString());
-        newEditUnit.time_span = std::stoi(edit["edit_unit"][editIndex]["time_span"].asString());
+        editUnit.edit_type = edit["edit_unit"][editIndex]["edit_type"].asString();
+        editUnit.mdia_time = std::stoi(edit["edit_unit"][editIndex]["mdia_time"].asString());
+        editUnit.time_span = std::stoi(edit["edit_unit"][editIndex]["time_span"].asString());
 
-        master.edit_list.edit_unit.push_back(newEditUnit);
+        master.edit_list.edit_unit.push_back(editUnit);
     }
 }
 
@@ -117,327 +121,405 @@ void WriterConfig::readEditList(const std::string& filename, IsoMediaFile::Thumb
     }
 }
 
-IsoMediaFile::General WriterConfig::readGeneral(const Json::Value& generalValues) const
+IsoMediaFile::General WriterConfig::readGeneral(const Json::Value& config) const
 {
     IsoMediaFile::General general;
     // The General.Output parameters
-    if (generalValues["output"]["file_path"].isNull())
+    if (config["output"]["file_path"].isNull())
     {
         throw std::runtime_error("No output file path defined in input configuration");
     }
-    general.output_file = generalValues["output"]["file_path"].asString();
+    general.output_file = config["output"]["file_path"].asString();
 
     // The General.Brands parameters
-    if (generalValues["brands"]["major"].isNull())
+    if (config["brands"]["major"].isNull())
     {
         throw std::runtime_error("No general brands defined in input configuration");
     }
-    general.brands.major = generalValues["brands"]["major"].asString();
+    general.brands.major = config["brands"]["major"].asString();
 
-    Json::Value brandValues = generalValues["brands"]["other"];
+    Json::Value brandValues = config["brands"]["other"];
     for (const auto& brand : brandValues)
     {
         general.brands.other.push_back(brand.asString());
     }
 
     // Primary Item uniq_bsid and index
-    general.prim_refr = readOptionalUint(generalValues["prim_refr"]);
-    general.prim_indx = readOptionalUint(generalValues["prim_indx"]);
+    general.prim_refr = readOptionalUint(config["prim_refr"]);
+    general.prim_indx = readOptionalUint(config["prim_indx"]);
 
     return general;
 }
 
-IsoMediaFile::Egroups WriterConfig::readEgroups(const Json::Value& egroupsValues) const
+std::vector<IsoMediaFile::Egroup> WriterConfig::readEgroups(const Json::Value& config) const
 {
-    IsoMediaFile::Egroups egroups;
-    const Json::Value altrValues = egroupsValues[0]["altr"];
-    for (unsigned int i = 0; i < altrValues.size(); ++i)
+    std::vector<IsoMediaFile::Egroup> egroups;
+    for (const auto& member : config.getMemberNames())
     {
-        IsoMediaFile::AltrIndexPairVector altrIndexPairVector;
-        const Json::Value idxsListValues = altrValues[i]["idxs_list"];
-        for (unsigned int k = 0; k < idxsListValues.size(); ++k)
+        const Json::Value entryValues = config[member];
+        for (unsigned int i = 0; i < entryValues.size(); ++i)
         {
-            IsoMediaFile::AltrIndexPair altrIndexPair;
-            altrIndexPair.uniq_bsid = stoi(idxsListValues[k][0].asString());
-            altrIndexPair.item_indx = stoi(idxsListValues[k][1].asString());
-            altrIndexPairVector.push_back(altrIndexPair);
+            IsoMediaFile::Egroup egroup;
+            egroup.type = member;
+            const Json::Value idxsListValues = entryValues[i]["idxs_list"];
+            for (unsigned int k = 0; k < idxsListValues.size(); ++k)
+            {
+                IsoMediaFile::IndexPair indexPair;
+                indexPair.uniq_bsid = stoi(idxsListValues[k][0].asString());
+                indexPair.item_indx = stoi(idxsListValues[k][1].asString());
+                egroup.idxs_lists.push_back(indexPair);
+            }
+            egroups.push_back(egroup);
         }
-        egroups.altr.idxs_lists.push_back(altrIndexPairVector);
     }
-
     return egroups;
 }
 
-IsoMediaFile::Content WriterConfig::readContent(const Json::Value& contentValues) const
+IsoMediaFile::Iovl WriterConfig::readIovl(const Json::Value& config) const
 {
-    IsoMediaFile::Content newContent;
+    IsoMediaFile::Iovl iovl;
+    iovl.outputHeight = readUint32(config, "output_height");
+    iovl.outputWidth = readUint32(config, "output_width");
+    iovl.uniq_bsid = readUint32(config, "uniq_bsid");
+    for (const auto& canvasFill : config["canvas_fill"])
+    {
+        iovl.canvasFillValue.push_back(std::stoi(canvasFill.asString()));
+    }
+    if (iovl.canvasFillValue.size() != 4)
+    {
+        throw std::runtime_error("Invalid iovl canvas_fill");
+    }
+    for (const auto& reference : config["refs_list"])
+    {
+        iovl.refs_list.push_back(std::stoi(reference.asString()));
+    }
+    for (const auto& idxsList : config["idxs_list"])
+    {
+        std::vector<std::uint32_t> idxListEntries;
+        for (const auto& index : idxsList)
+        {
+            idxListEntries.push_back(std::stoi(index.asString()));
+        }
+        iovl.idxs_list.push_back(idxListEntries);
+    }
+    for (const auto& offset : config["offsets"])
+    {
+        IsoMediaFile::Iovl::Offset newOffset;
+        newOffset.horizontal = std::stoi(offset[0].asString()); ///< @todo Check that this is the intended order
+        newOffset.vertical = std::stoi(offset[1].asString()); ///< @todo Check that this is the intended order
+        iovl.offsets.push_back(newOffset);
+    }
+    return iovl;
+}
+
+IsoMediaFile::Grid WriterConfig::readGrid(const Json::Value& config) const
+{
+    IsoMediaFile::Grid grid;
+    grid.columns = readUint32(config, "columns");
+    grid.outputHeight = readUint32(config, "output_height");
+    grid.outputWidth = readUint32(config, "output_width");
+    grid.rows = readUint32(config, "rows");
+    grid.uniq_bsid = readUint32(config, "uniq_bsid");
+    for (const auto& reference : config["refs_list"])
+    {
+        grid.refs_list.push_back(std::stoi(reference.asString()));
+    }
+    for (const auto& idxsList : config["idxs_list"])
+    {
+        std::vector<std::uint32_t> idxListEntries;
+        for (const auto& index : idxsList)
+        {
+            idxListEntries.push_back(std::stoi(index.asString()));
+        }
+        grid.idxs_list.push_back(idxListEntries);
+    }
+    return grid;
+}
+
+IsoMediaFile::Thumbs WriterConfig::readThumbs(const Json::Value& config, const std::string& encapsulationType) const
+{
+    IsoMediaFile::Thumbs thumb;
+    thumb.uniq_bsid = readOptionalUint(config["uniq_bsid"]);
+    thumb.file_path = config["file_path"].asString();
+    thumb.hdlr_type = config["hdlr_type"].asString();
+    thumb.code_type = config["code_type"].asString();
+    if (encapsulationType == "trak")
+    {
+        thumb.disp_xdim = readUint32(config, "disp_xdim");
+        thumb.disp_ydim = readUint32(config, "disp_ydim");
+        thumb.ccst = readCodingConstraints(config["ccst"]);
+    }
+    thumb.tick_rate = readOptionalUint(config["tick_rate"], 90000);
+    thumb.sync_rate = readOptionalUint(config["sync_rate"], 0);
+
+    const Json::Value syncidxs_array = config["sync_idxs"];
+    for (const auto& synxIndex : syncidxs_array)
+    {
+        thumb.sync_idxs.push_back(std::stoi(synxIndex.asString()));
+    }
+
+    return thumb;
+}
+
+IsoMediaFile::Layer WriterConfig::readLayer(const Json::Value& config) const
+{
+    IsoMediaFile::Layer layer;
+    layer.uniq_bsid = readOptionalUint(config["uniq_bsid"]);
+    layer.base_refr = readOptionalUint(config["base_refr"]);
+    layer.file_path = config["file_path"].asString();
+    layer.hdlr_type = config["hdlr_type"].asString();
+    layer.code_type = config["code_type"].asString();
+    layer.hidden = readOptionalBool(config["hidden"], false);
+
+    layer.target_outputlayer = config["tols_value"].asUInt();
+    if (config["lsel_value"].empty())
+    {
+        layer.layer_selection = -1;
+    }
+    else
+    {
+        layer.layer_selection = config["lsel_value"].asInt();
+    }
+
+    return layer;
+}
+
+IsoMediaFile::PreDerived WriterConfig::readPrederived(const Json::Value& config) const
+{
+    IsoMediaFile::PreDerived preDerived;
+    preDerived.uniq_bsid = readUint32(config, "uniq_bsid");
+    preDerived.pre_refs_list = parseRefsList(config["pre_refs_list"]);
+    preDerived.pre_idxs_list = parseIndexList(config["pre_idxs_list"]);
+    preDerived.base_refs_list = parseRefsList(config["base_refs_list"]);
+    preDerived.base_idxs_list = parseIndexList(config["base_idxs_list"]);
+    return preDerived;
+}
+
+IsoMediaFile::Content WriterConfig::readContent(const Json::Value& config) const
+{
+    IsoMediaFile::Content content;
+    auto& master = content.master;
 
     /// @todo Throw an exception if a content does not have the master.
 
     // The Content.Master parameters
-    const Json::Value& masterValues = contentValues["master"];
-    newContent.master.uniq_bsid = readOptionalUint(masterValues["uniq_bsid"]);
-    newContent.master.make_vide = readBool(masterValues["make_vide"], false);
-    newContent.master.write_alternates = readBool(masterValues["write_alternates"], true);
-    newContent.master.hidden = readBool(masterValues["hidden"], false);
-    newContent.master.file_path = masterValues["file_path"].asString();
-    newContent.master.hdlr_type = masterValues["hdlr_type"].asString();
-    newContent.master.code_type = masterValues["code_type"].asString();
-    newContent.master.encp_type = masterValues["encp_type"].asString();
-    if (newContent.master.encp_type == "trak")
+    const Json::Value& masterValues = config["master"];
+    master.uniq_bsid = readOptionalUint(masterValues["uniq_bsid"]);
+    master.make_vide = readOptionalBool(masterValues["make_vide"], false);
+    master.write_alternates = readOptionalBool(masterValues["write_alternates"], true);
+    master.hidden = readOptionalBool(masterValues["hidden"], false);
+    master.file_path = masterValues["file_path"].asString();
+    master.hdlr_type = masterValues["hdlr_type"].asString();
+    master.code_type = masterValues["code_type"].asString();
+    master.encp_type = masterValues["encp_type"].asString();
+    if (master.encp_type == "trak")
     {
-        newContent.master.disp_xdim = readUint32(masterValues, "disp_xdim");
-        newContent.master.disp_ydim = readUint32(masterValues, "disp_ydim");
-        newContent.master.ccst = readCodingConstraints(masterValues["ccst"]);
+        master.disp_xdim = readUint32(masterValues, "disp_xdim");
+        master.disp_ydim = readUint32(masterValues, "disp_ydim");
+        master.ccst = readCodingConstraints(masterValues["ccst"]);
     }
-    newContent.master.disp_rate = readOptionalUint(masterValues["disp_rate"], 0);
-    newContent.master.tick_rate = readOptionalUint(masterValues["tick_rate"], 90000);
+    master.disp_rate = readOptionalUint(masterValues["disp_rate"], 0);
+    master.tick_rate = readOptionalUint(masterValues["tick_rate"], 90000);
+
+    // Check that tick_rate is divisible by disp_rate so no rounding errors occur in frame timing
+    if (master.disp_rate && (master.tick_rate % master.disp_rate))
+    {
+        logWarning() << "Frame timing inaccuracy will occur for master '"
+                     << master.file_path << "' because given tick_rate ("
+                     << master.tick_rate << ") is not divisible by given disp_rate ("
+                     << master.disp_rate << ")!" << std::endl;
+    }
 
     // If content master has an edit list file
     if (masterValues["edit_file"].asString() != "")
     {
-        readEditList(masterValues["edit_file"].asString(), newContent.master);
+        readEditList(masterValues["edit_file"].asString(), master);
     }
 
     // The Content.Thumb parameters
-    for (const auto& thumb : contentValues["thumbs"])
+    for (const auto& thumb : config["thumbs"])
     {
-        IsoMediaFile::Thumbs newThumb;
-
-        newThumb.uniq_bsid = readOptionalUint(thumb["uniq_bsid"]);
-        newThumb.file_path = thumb["file_path"].asString();
-        newThumb.hdlr_type = thumb["hdlr_type"].asString();
-        newThumb.code_type = thumb["code_type"].asString();
-        if (newContent.master.encp_type == "trak")
-        {
-            newThumb.disp_xdim = readUint32(thumb, "disp_xdim");
-            newThumb.disp_ydim = readUint32(thumb, "disp_ydim");
-            newThumb.ccst = readCodingConstraints(thumb["ccst"]);
-        }
-        newThumb.tick_rate = readOptionalUint(thumb["tick_rate"], 90000);
-        newThumb.sync_rate = readOptionalUint(thumb["sync_rate"], 0);
-
-        const Json::Value syncidxs_array = thumb["sync_idxs"];
-        for (const auto& synxIndex : syncidxs_array)
-        {
-            newThumb.sync_idxs.push_back(std::stoi(synxIndex.asString()));
-        }
-
+        IsoMediaFile::Thumbs newThumb = readThumbs(thumb, content.master.encp_type);
         // If this thumbs has an edit list file
         if (thumb["edit_file"].asString() != "")
         {
             readEditList(thumb["edit_file"].asString(), newThumb);
         }
 
-        newContent.thumbs.push_back(newThumb);
+        content.thumbs.push_back(newThumb);
     }
 
-    for (const auto& metadata : contentValues["metadata"])
+    for (const auto& layer : config["layers"])
+    {
+        content.layers.push_back(readLayer(layer));
+    }
+
+    for (const auto& metadata : config["metadata"])
     {
         IsoMediaFile::Metadata newMetadata;
 
         newMetadata.file_path = metadata["file_path"].asString();
         newMetadata.hdlr_type = metadata["hdlr_type"].asString();
 
-        newContent.metadata.push_back(newMetadata);
+        content.metadata.push_back(newMetadata);
     }
 
-    const Json::Value& derivedValues = contentValues["derived"];
+    const Json::Value& derivedValues = config["derived"];
     if (not derivedValues.isNull())
     {
         IsoMediaFile::Derived newDerived;
-        IsoMediaFile::Property newProperty;
+
+        for (const auto& imir : derivedValues["imir"])
+        {
+            IsoMediaFile::Imir newImir = readImir(imir);
+            newDerived.imirs.push_back(newImir);
+        }
 
         for (const auto& irot : derivedValues["irot"])
         {
-            IsoMediaFile::Irot newIrot;
-            newIrot.angle = readUint32(irot, "angle");
-            newIrot.uniq_bsid  = readOptionalUint(irot["uniq_bsid"]);
-            newIrot.refs_list = parseRefsList(irot["refs_list"]);
-            newIrot.idxs_list = parseIndexList(irot["idxs_list"]);
+            IsoMediaFile::Irot newIrot = readIrot(irot);
             newDerived.irots.push_back(newIrot);
         }
 
         for (const auto& rloc : derivedValues["rloc"])
         {
-            IsoMediaFile::Rloc newRloc;
-            newRloc.horizontal_offset =  readUint32(rloc, "horizontal_offset");
-            newRloc.vertical_offset =  readUint32(rloc, "vertical_offset");
-            newRloc.uniq_bsid = readOptionalUint(rloc["uniq_bsid"]);
-            newRloc.refs_list = parseRefsList(rloc["refs_list"]);
-            newRloc.idxs_list = parseIndexList(rloc["idxs_list"]);
+            IsoMediaFile::Rloc newRloc = readRloc(rloc);
             newDerived.rlocs.push_back(newRloc);
         }
 
         for (const auto& clap : derivedValues["clap"])
         {
-            IsoMediaFile::Clap newClap;
-            newClap.clapWidthN = readUint32(clap, "clapWidthN");
-            newClap.clapWidthD = readUint32(clap, "clapWidthD");
-            newClap.clapHeightN = readUint32(clap, "clapHeightN");
-            newClap.clapHeightD = readUint32(clap, "clapHeightD");
-            newClap.horizOffN = readUint32(clap, "horizOffN");
-            newClap.horizOffD = readUint32(clap, "horizOffD");
-            newClap.vertOffN = readUint32(clap, "vertOffN");
-            newClap.vertOffD = readUint32(clap, "vertOffD");
-            newClap.uniq_bsid = readUint32(clap, "uniq_bsid");
-            newClap.refs_list = parseRefsList(clap["refs_list"]);
-            newClap.idxs_list = parseIndexList(clap["idxs_list"]);
+            IsoMediaFile::Clap newClap = readClap(clap);
             newDerived.claps.push_back(newClap);
         }
 
         for (const auto& prederived : derivedValues["pre-derived"])
         {
-            IsoMediaFile::PreDerived newPreDerived;
-            newPreDerived.uniq_bsid = readUint32(prederived, "uniq_bsid");
-
-            newPreDerived.pre_refs_list = parseRefsList(prederived["pre_refs_list"]);
-            newPreDerived.pre_idxs_list = parseIndexList(prederived["pre_idxs_list"]);
-            newPreDerived.base_refs_list = parseRefsList(prederived["base_refs_list"]);
-            newPreDerived.base_idxs_list = parseIndexList(prederived["base_idxs_list"]);
+            IsoMediaFile::PreDerived newPreDerived = readPrederived(prederived);
             newDerived.prederiveds.push_back(newPreDerived);
         }
 
         for (const auto& grid : derivedValues["grid"])
         {
-            IsoMediaFile::Grid newGrid;
-            newGrid.columns = readUint32(grid, "columns");
-            newGrid.outputHeight = readUint32(grid, "output_height");
-            newGrid.outputWidth = readUint32(grid, "output_width");
-            newGrid.rows = readUint32(grid, "rows");
-            newGrid.uniq_bsid = readUint32(grid, "uniq_bsid");
-
-            for (const auto& reference : grid["refs_list"])
-            {
-                newGrid.refs_list.push_back(std::stoi(reference.asString()));
-            }
-
-            for (const auto& idxsList : grid["idxs_list"])
-            {
-                std::vector<std::uint32_t> idxListEntries;
-                for (const auto& index : idxsList)
-                {
-                    idxListEntries.push_back(std::stoi(index.asString()));
-                }
-                newGrid.idxs_list.push_back(idxListEntries);
-            }
+            IsoMediaFile::Grid newGrid = readGrid(grid);
             newDerived.grids.push_back(newGrid);
         }
 
         for (const auto& iovl : derivedValues["iovl"])
         {
-            IsoMediaFile::Iovl newIovl;
-            newIovl.outputHeight = readUint32(iovl, "output_height");
-            newIovl.outputWidth = readUint32(iovl, "output_width");
-            newIovl.uniq_bsid = readUint32(iovl, "uniq_bsid");
-
-            for (const auto& canvasFill : iovl["canvas_fill"])
-            {
-                newIovl.canvasFillValue.push_back(std::stoi(canvasFill.asString()));
-            }
-            if (newIovl.canvasFillValue.size() != 4)
-            {
-                throw std::runtime_error("Invalid iovl canvas_fill");
-            }
-
-            for (const auto& reference : iovl["refs_list"])
-            {
-                newIovl.refs_list.push_back(std::stoi(reference.asString()));
-            }
-
-            for (const auto& idxsList : iovl["idxs_list"])
-            {
-                std::vector<std::uint32_t> idxListEntries;
-                for (const auto& index : idxsList)
-                {
-                    idxListEntries.push_back(std::stoi(index.asString()));
-                }
-                newIovl.idxs_list.push_back(idxListEntries);
-            }
-
-            for (const auto& offset : iovl["offsets"])
-            {
-                IsoMediaFile::Iovl::Offset newOffset;
-                newOffset.horizontal = std::stoi(offset[0].asString()); ///< @todo Check that this is the intended order
-                newOffset.vertical = std::stoi(offset[1].asString()); ///< @todo Check that this is the intended order
-                newIovl.offsets.push_back(newOffset);
-            }
+            IsoMediaFile::Iovl newIovl = readIovl(iovl);
             newDerived.iovls.push_back(newIovl);
         }
 
         /// @todo Add other derived image types as well.
 
-        newContent.derived = newDerived;
+        content.derived = newDerived;
     }
 
-    newContent.property = readProperty(contentValues["property"]);
+    content.property = readProperty(config["property"]);
 
-    for (const auto& auxiliary : contentValues["auxiliary"])
+    for (const auto& auxiliary : config["auxiliary"])
     {
-        newContent.auxiliary.push_back(readAuxiliary(auxiliary));
+        content.auxiliary.push_back(readAuxiliary(auxiliary));
     }
 
-    return newContent;
+    return content;
 }
 
-IsoMediaFile::Property WriterConfig::readProperty(const Json::Value& propertyValues) const
+IsoMediaFile::Clap WriterConfig::readClap(const Json::Value& clap) const
 {
-    IsoMediaFile::Property newProperty;
-
-    for (const auto& irot : propertyValues["irot"])
-    {
-        IsoMediaFile::Irot newIrot;
-        newIrot.essential = readBool(irot["essential"], true);
-        newIrot.angle =  readUint32(irot, "angle");
-        newIrot.uniq_bsid = readOptionalUint(irot["uniq_bsid"]);
-        newIrot.refs_list = parseRefsList(irot["refs_list"]);
-        newIrot.idxs_list = parseIndexList(irot["idxs_list"]);
-        newProperty.irots.push_back(newIrot);
-    }
-
-    for (const auto& rloc : propertyValues["rloc"])
-    {
-        IsoMediaFile::Rloc newRloc;
-        newRloc.essential = readBool(rloc["essential"], true);
-        newRloc.horizontal_offset =  readUint32(rloc, "horizontal_offset");
-        newRloc.vertical_offset =  readUint32(rloc, "vertical_offset");
-        newRloc.uniq_bsid = readOptionalUint(rloc["uniq_bsid"]);
-        newRloc.refs_list = parseRefsList(rloc["refs_list"]);
-        newRloc.idxs_list = parseIndexList(rloc["idxs_list"]);
-        newProperty.rlocs.push_back(newRloc);
-    }
-
-    for (const auto& clap : propertyValues["clap"])
-    {
-        IsoMediaFile::Clap newClap;
-        newClap.essential = readBool(clap["essential"], true);
-        newClap.clapWidthN = readUint32(clap, "clapWidthN");
-        newClap.clapWidthD = readUint32(clap, "clapWidthD");
-        newClap.clapHeightN = readUint32(clap, "clapHeightN");
-        newClap.clapHeightD = readUint32( clap, "clapHeightD");
-        newClap.horizOffN = readUint32(clap, "horizOffN");
-        newClap.horizOffD = readUint32(clap, "horizOffD");
-        newClap.vertOffN = readUint32(clap, "vertOffN");
-        newClap.vertOffD = readUint32(clap, "vertOffD");
-        newClap.uniq_bsid = readOptionalUint(clap["uniq_bsid"]);
-        newClap.refs_list = parseRefsList(clap["refs_list"]);
-        newClap.idxs_list = parseIndexList(clap["idxs_list"]);
-        newProperty.claps.push_back(newClap);
-    }
-
-    return newProperty;
+    IsoMediaFile::Clap newClap;
+    newClap.essential = readOptionalBool(clap["essential"], true);
+    newClap.clapWidthN = readUint32(clap, "clapWidthN");
+    newClap.clapWidthD = readUint32(clap, "clapWidthD");
+    newClap.clapHeightN = readUint32(clap, "clapHeightN");
+    newClap.clapHeightD = readUint32(clap, "clapHeightD");
+    newClap.horizOffN = readUint32(clap, "horizOffN");
+    newClap.horizOffD = readUint32(clap, "horizOffD");
+    newClap.vertOffN = readUint32(clap, "vertOffN");
+    newClap.vertOffD = readUint32(clap, "vertOffD");
+    newClap.uniq_bsid = readOptionalUint(clap["uniq_bsid"]);
+    newClap.refs_list = parseRefsList(clap["refs_list"]);
+    newClap.idxs_list = parseIndexList(clap["idxs_list"]);
+    return newClap;
 }
 
-IsoMediaFile::Auxiliary WriterConfig::readAuxiliary(const Json::Value& auxValues) const
+IsoMediaFile::Rloc WriterConfig::readRloc(const Json::Value& config) const
+{
+    IsoMediaFile::Rloc rloc;
+    rloc.essential = readOptionalBool(config["essential"], true);
+    rloc.horizontal_offset = readUint32(config, "horizontal_offset");
+    rloc.vertical_offset = readUint32(config, "vertical_offset");
+    rloc.uniq_bsid = readOptionalUint(config["uniq_bsid"]);
+    rloc.refs_list = parseRefsList(config["refs_list"]);
+    rloc.idxs_list = parseIndexList(config["idxs_list"]);
+    return rloc;
+}
+
+IsoMediaFile::Irot WriterConfig::readIrot(const Json::Value& config) const
+{
+    IsoMediaFile::Irot irot;
+    irot.essential = readOptionalBool(config["essential"], true);
+    irot.angle = readUint32(config, "angle");
+    irot.uniq_bsid = readOptionalUint(config["uniq_bsid"]);
+    irot.refs_list = parseRefsList(config["refs_list"]);
+    irot.idxs_list = parseIndexList(config["idxs_list"]);
+    return irot;
+}
+
+IsoMediaFile::Imir WriterConfig::readImir(const Json::Value& config) const
+{
+    IsoMediaFile::Imir imir;
+    imir.essential = readOptionalBool(config["essential"], true);
+    imir.horizontalAxis = readBool(config, "horiz_axis");
+    imir.uniq_bsid = readOptionalUint(config["uniq_bsid"]);
+    imir.refs_list = parseRefsList(config["refs_list"]);
+    imir.idxs_list = parseIndexList(config["idxs_list"]);
+    return imir;
+}
+
+IsoMediaFile::Property WriterConfig::readProperty(const Json::Value& config) const
+{
+    IsoMediaFile::Property property;
+
+    for (const auto& imir : config["imir"])
+    {
+        IsoMediaFile::Imir newImir = readImir(imir);
+        property.imirs.push_back(newImir);
+    }
+
+    for (const auto& irot : config["irot"])
+    {
+        IsoMediaFile::Irot newIrot = readIrot(irot);
+        property.irots.push_back(newIrot);
+    }
+
+    for (const auto& rloc : config["rloc"])
+    {
+        IsoMediaFile::Rloc newRloc = readRloc(rloc);
+        property.rlocs.push_back(newRloc);
+    }
+
+    for (const auto& clap : config["clap"])
+    {
+        IsoMediaFile::Clap newClap = readClap(clap);
+        property.claps.push_back(newClap);
+    }
+
+    return property;
+}
+
+IsoMediaFile::Auxiliary WriterConfig::readAuxiliary(const Json::Value& config) const
 {
     IsoMediaFile::Auxiliary aux;
-    aux.file_path = auxValues["file_path"].asString();
-    aux.idxs_list = parseIndexList(auxValues["idxs_list"]);
-    aux.refs_list = parseRefsList(auxValues["refs_list"]);
-    aux.uniq_bsid = readOptionalUint(auxValues["uniq_bsid"]);
-    aux.hidden = readBool(auxValues["hidden"], true);
+    aux.file_path = config["file_path"].asString();
+    aux.idxs_list = parseIndexList(config["idxs_list"]);
+    aux.refs_list = parseRefsList(config["refs_list"]);
+    aux.uniq_bsid = readOptionalUint(config["uniq_bsid"]);
+    aux.hidden = readOptionalBool(config["hidden"], true);
 
-    aux.urn = auxValues["urn"].asString();
+    aux.urn = config["urn"].asString();
+    aux.code_type = config["code_type"].asString();
 
     return aux;
 }
@@ -455,63 +537,80 @@ void WriterConfig::confDump(const IsoMediaFile::Configuration& configValues, con
 
     for (unsigned int i = 0; i < configValues.content.size(); ++i)
     {
-        logInfo() << "config.content[" << i << "].master.uniq_bsid: " << configValues.content[i].master.uniq_bsid << std::endl;
-        logInfo() << "config.content[" << i << "].master.file_path: " << configValues.content[i].master.file_path << std::endl;
-        logInfo() << "config.content[" << i << "].master.code_type: " << configValues.content[i].master.code_type << std::endl;
-        logInfo() << "config.content[" << i << "].master.encp_type: " << configValues.content[i].master.encp_type << std::endl;
-        logInfo() << "config.content[" << i << "].master.disp_xdim: " << configValues.content[i].master.disp_xdim << std::endl;
-        logInfo() << "config.content[" << i << "].master.disp_ydim: " << configValues.content[i].master.disp_ydim << std::endl;
-        logInfo() << "config.content[" << i << "].master.disp_rate: " << configValues.content[i].master.disp_rate << std::endl;
-        logInfo() << "config.content[" << i << "].master.tick_rate: " << configValues.content[i].master.tick_rate << std::endl;
+        const std::string contentStr = "config.content[" + std::to_string(i) + "].";
+        const std::string masterStr = contentStr + "master.";
+        const auto& content = configValues.content[i];
+        const auto& master = content.master;
+        logInfo() << masterStr << "uniq_bsid: " << master.uniq_bsid << std::endl;
+        logInfo() << masterStr << "file_path: " << master.file_path << std::endl;
+        logInfo() << masterStr << "code_type: " << master.code_type << std::endl;
+        logInfo() << masterStr << "encp_type: " << master.encp_type << std::endl;
+        if (master.encp_type == "trak")
+        {
+            logInfo() << masterStr << "tick_rate: " << master.tick_rate << std::endl;
+            logInfo() << masterStr << "disp_rate: " << master.disp_rate << std::endl;
+            logInfo() << masterStr << "disp_xdim: " << master.disp_xdim << std::endl;
+            logInfo() << masterStr << "disp_ydim: " << master.disp_ydim << std::endl;
+        }
 
         if (jsonValues["content"][i]["master"]["edit_file"].asString() != "")
         {
-            logInfo() << "config.content[" << i << "].master.edit_list.loop_flag: " << configValues.content[i].master.edit_list.numb_rept << std::endl;
+            const std::string editListStr = masterStr + "edit_list.";
+            logInfo() << editListStr << "loop_flag: " << master.edit_list.numb_rept << std::endl;
             for (unsigned int j = 0; j < configValues.content[i].master.edit_list.edit_unit.size(); j++)
             {
-                logInfo() << "config.content[" << i << "].master.edit_list.edit_unit[" << j << "].edit_type: " << configValues.content[i].master.edit_list.edit_unit[j].edit_type << std::endl;
-                logInfo() << "config.content[" << i << "].master.edit_list.edit_unit[" << j << "].mdia_time: " << configValues.content[i].master.edit_list.edit_unit[j].mdia_time << std::endl;
-                logInfo() << "config.content[" << i << "].master.edit_list.edit_unit[" << j << "].time_span: " << configValues.content[i].master.edit_list.edit_unit[j].time_span << std::endl;
+                const std::string editUnitStr = editListStr + "edit_unit[" + std::to_string(j) + "].";
+                const auto& editUnit = master.edit_list.edit_unit[j];
+                logInfo() << editUnitStr << "edit_type: " << editUnit.edit_type << std::endl;
+                logInfo() << editUnitStr << "mdia_time: " << editUnit.mdia_time << std::endl;
+                logInfo() << editUnitStr << "time_span: " << editUnit.time_span << std::endl;
             }
         }
 
         for (unsigned int j = 0; j < configValues.content[i].thumbs.size(); ++j)
         {
-            logInfo() << "config.content[" << i << "].thumbs[" << j << "].uniq_bsid: " << configValues.content[i].thumbs[j].uniq_bsid << std::endl;
-            logInfo() << "config.content[" << i << "].thumbs[" << j << "].file_path: " << configValues.content[i].thumbs[j].file_path << std::endl;
-            logInfo() << "config.content[" << i << "].thumbs[" << j << "].code_type: " << configValues.content[i].thumbs[j].code_type << std::endl;
-            logInfo() << "config.content[" << i << "].thumbs[" << j << "].disp_xdim: " << configValues.content[i].thumbs[j].disp_xdim << std::endl;
-            logInfo() << "config.content[" << i << "].thumbs[" << j << "].disp_ydim: " << configValues.content[i].thumbs[j].disp_ydim << std::endl;
-            logInfo() << "config.content[" << i << "].thumbs[" << j << "].tick_rate: " << configValues.content[i].thumbs[j].tick_rate << std::endl;
-            logInfo() << "config.content[" << i << "].thumbs[" << j << "].sync_rate: " << configValues.content[i].thumbs[j].sync_rate << std::endl;
+            const std::string thumbsStr = contentStr + "thumbs[" + std::to_string(j) + "].";
+            const auto& thumbs = configValues.content[i].thumbs[j];
+            logInfo() << thumbsStr << "uniq_bsid: " << thumbs.uniq_bsid << std::endl;
+            logInfo() << thumbsStr << "file_path: " << thumbs.file_path << std::endl;
+            logInfo() << thumbsStr << "code_type: " << thumbs.code_type << std::endl;
+            logInfo() << thumbsStr << "disp_xdim: " << thumbs.disp_xdim << std::endl;
+            logInfo() << thumbsStr << "disp_ydim: " << thumbs.disp_ydim << std::endl;
+            logInfo() << thumbsStr << "tick_rate: " << thumbs.tick_rate << std::endl;
+            logInfo() << thumbsStr << "sync_rate: " << thumbs.sync_rate << std::endl;
 
             if (jsonValues["content"][i]["thumbs"][j]["edit_file"].asString() != "")
             {
-                logInfo() << "config.content[" << i << "].thumbs[" << j << "].edit_list.loop_flag: " << configValues.content[i].master.edit_list.numb_rept << std::endl;
+                const std::string editListStr = thumbsStr + "edit_list.";
+                const auto& editList = thumbs.edit_list;
+                logInfo() << editListStr << "loop_flag: " << editList.numb_rept << std::endl;
                 for (unsigned int k = 0; k < configValues.content[i].thumbs[j].edit_list.edit_unit.size(); k++)
                 {
-                    logInfo() << "config.content[" << i << "].thumbs[" << j << "].edit_list.edit_unit[" << k << "].edit_type: " << configValues.content[i].master.edit_list.edit_unit[j].edit_type
-                        << std::endl;
-                    logInfo() << "config.content[" << i << "].thumbs[" << j << "].edit_list.edit_unit[" << k << "].mdia_time: " << configValues.content[i].master.edit_list.edit_unit[j].mdia_time
-                        << std::endl;
-                    logInfo() << "config.content[" << i << "].thumbs[" << j << "].edit_list.edit_unit[" << k << "].time_span: " << configValues.content[i].master.edit_list.edit_unit[j].time_span
-                        << std::endl;
+                    const std::string editUnitStr = editListStr + "edit_unit[" + std::to_string(k) + "].";
+                    const auto& editUnit = editList.edit_unit[k];
+                    logInfo() << editUnitStr << "edit_type: " << editUnit.edit_type << std::endl;
+                    logInfo() << editUnitStr << "mdia_time: " << editUnit.mdia_time << std::endl;
+                    logInfo() << editUnitStr << "time_span: " << editUnit.time_span << std::endl;
                 }
             }
 
             for (unsigned int k = 0; k < configValues.content[i].thumbs[j].sync_idxs.size(); ++k)
             {
-                logInfo() << "config.content[" << i << "].thumbs[" << j << "].sync_idxs[" << k << "]: " << configValues.content[i].thumbs[j].sync_idxs[k] << std::endl;
+                logInfo() << thumbsStr << "sync_idxs[" << k << "]: " << thumbs.sync_idxs[k] << std::endl;
             }
         }
     }
 
-    for (unsigned int i = 0; i < configValues.egroups.altr.idxs_lists.size(); ++i)
+    for (unsigned int i = 0; i < configValues.egroups.size(); ++i)
     {
-        for (unsigned int j = 0; j < configValues.egroups.altr.idxs_lists.at(i).size(); ++j)
+        const std::string egroupStr = "config.egroups[" + std::to_string(i) + "].";
+        const auto& idxList = configValues.egroups.at(i);
+        logInfo() << egroupStr << "type: " << idxList.type << std::endl;
+        for (unsigned int j = 0; j < idxList.idxs_lists.size(); ++j)
         {
-            logInfo() << "config.egroups.altr.idxs_lists[" << i << "][" << j << "].uniq_bsid:" << configValues.egroups.altr.idxs_lists.at(i).at(j).uniq_bsid << std::endl;
-            logInfo() << "config.egroups.altr.idxs_lists[" << i << "][" << j << "].item_id:" << configValues.egroups.altr.idxs_lists.at(i).at(j).item_indx << std::endl;
+            const std::string indxStr = "idxs_lists[" + std::to_string(j) + "].";
+            logInfo() << egroupStr << indxStr << "uniq_bsid: " << idxList.idxs_lists.at(j).uniq_bsid << std::endl;
+            logInfo() << egroupStr << indxStr << "item_id: " << idxList.idxs_lists.at(j).item_indx << std::endl;
         }
     }
 }
@@ -538,7 +637,27 @@ std::uint32_t WriterConfig::readUint32(const Json::Value& value, const std::stri
     throw std::runtime_error("Configuration missing a mandatory value for option '" + name + "'");
 }
 
-bool WriterConfig::readBool(const Json::Value& value, const bool defaultValue) const
+template<class t> void WriterConfig::readIntVector(const Json::Value& config, std::vector<t>& data) const
+{
+    for (const auto& value : config)
+    {
+        data.push_back(std::stoi(value.asString()));
+    }
+}
+
+bool WriterConfig::readBool(const Json::Value& value, const std::string& name) const
+{
+    // Check that value exists
+    if (value[name].asString() == "")
+    {
+        throw std::runtime_error("Configuration missing a mandatory value for option '" + name + "'");
+    }
+
+    // Continue with the common handling
+    return readOptionalBool(value[name], false); // Default value never used because config value exists
+}
+
+bool WriterConfig::readOptionalBool(const Json::Value& value, const bool defaultValue) const
 {
     const std::string valueString = value.asString();
     if (valueString == "")
@@ -557,20 +676,20 @@ bool WriterConfig::readBool(const Json::Value& value, const bool defaultValue) c
     throw std::runtime_error("Invalid boolean value in configuration. Must be \"1\" or \"0\"");
 }
 
-IsoMediaFile::ReferenceList WriterConfig::parseRefsList(const Json::Value& referenceList) const
+IsoMediaFile::ReferenceList WriterConfig::parseRefsList(const Json::Value& config) const
 {
     IsoMediaFile::ReferenceList result;
-    for (const auto& reference : referenceList)
+    for (const auto& reference : config)
     {
         result.push_back(std::stoi(reference.asString()));
     }
     return result;
 }
 
-IsoMediaFile::IndexList WriterConfig::parseIndexList(const Json::Value& indexList) const
+IsoMediaFile::IndexList WriterConfig::parseIndexList(const Json::Value& config) const
 {
     IsoMediaFile::IndexList result;
-    for (const auto& index_array : indexList)
+    for (const auto& index_array : config)
     {
         std::vector<std::uint32_t> idx_list_entries;
         for (const auto& index : index_array)
@@ -583,12 +702,10 @@ IsoMediaFile::IndexList WriterConfig::parseIndexList(const Json::Value& indexLis
     return result;
 }
 
-IsoMediaFile::CodingConstraints WriterConfig::readCodingConstraints(const Json::Value& ccstValues) const
+IsoMediaFile::CodingConstraints WriterConfig::readCodingConstraints(const Json::Value& config) const
 {
     IsoMediaFile::CodingConstraints ccst;
-
-    ccst.allRefPicsIntra = readBool(ccstValues["all_ref_pics_intra"], true);
-    ccst.intraPredUsed = readBool(ccstValues["intra_pred_used"], false);
-
+    ccst.allRefPicsIntra = readOptionalBool(config["all_ref_pics_intra"], true);
+    ccst.intraPredUsed = readOptionalBool(config["intra_pred_used"], false);
     return ccst;
 }

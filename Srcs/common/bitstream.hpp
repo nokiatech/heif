@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -13,6 +13,7 @@
 #ifndef BITSTREAM_HPP
 #define BITSTREAM_HPP
 
+#include "fourccint.hpp"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -44,10 +45,10 @@ public:
     /// @return Reference to the stored data inside the bitstream
     const std::vector<std::uint8_t>& getStorage() const;
 
-    ///@brief Reset any bit and byte offsets used in the bitstream access
+    /// @brief Reset any bit and byte offsets used in the bitstream access
     void reset();
 
-    ///@brief Clear the stored data in the bitstream
+    /// @brief Clear the stored data in the bitstream
     void clear();
 
     /** @brief Increments the byte offset pointer
@@ -90,10 +91,10 @@ public:
      *  @param [in] srcOffset offset location to start reading 8 bit elements in the bits vector */
     void write8BitsArray(const std::vector<std::uint8_t>& bits, unsigned int len, unsigned int srcOffset = 0);
 
-    ///@brief Writes a non-zero-terminated string to the bitstream data storage
+    /// @brief Writes a non-zero-terminated string to the bitstream data storage
     void writeString(const std::string& srcString);
 
-    ///@brief Writes a zero-terminated string to the bitstream data storage
+    /// @brief Writes a zero-terminated string to the bitstream data storage
     void writeZeroTerminatedString(const std::string& srcString);
 
     /** @brief Get a byte value from the bitstream data storage
@@ -153,9 +154,9 @@ public:
      * Read pointer of BitStream is incremented by size.
      * @param boxType [out] Type of the read sub-box
      * @return Sub-box BitStream */
-    BitStream readSubBoxBitStream(std::string& boxType);
+    BitStream readSubBoxBitStream(FourCCInt& boxType);
 
-    ///@return Number of bytes left to process in the current bitstream data storage
+    /// @return Number of bytes left to process in the current bitstream data storage
     unsigned int numBytesLeft() const;
 
     /**
@@ -166,20 +167,23 @@ public:
      * @param [out] dest Destination BitStream. */
     void extract(int begin, int end, BitStream& dest) const;
 
+    /// @return True if current bit offset location inside a byte is zero, false otherwise.
+    bool isByteAligned() const;
+
 private:
-    ///@brief Bitstream data storage as a vector of unsigned integers
+    /// @brief Bitstream data storage as a vector of unsigned integers.
     std::vector<std::uint8_t> mStorage;
 
-    ///@brief the value of the current processed byte
+    /// @brief The value of the current processed byte.
     unsigned int mCurrByte;
 
-    ///@brief cursor that points to the current byte location of the bitstream data storage
+    /// @brief Cursor that points to the current byte location of the bitstream data storage.
     unsigned int mByteOffset;
 
-    ///@brief cursor that points to the current bit location of the current processed byte
+    /// @brief Cursor that points to the current bit location of the current processed byte.
     unsigned int mBitOffset;
 
-    ///@brief Indicates whether data storage byte vector is provided during construction (FALSE) or not (TRUE)
+    /// @brief Indicates whether data storage byte vector is provided during construction (FALSE) or not (TRUE).
     bool mStorageAllocated;
 };
 

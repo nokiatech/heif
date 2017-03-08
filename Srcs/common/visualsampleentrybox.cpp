@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -14,6 +14,7 @@
 #include "cleanaperture.hpp"
 #include "log.hpp"
 
+#include <cassert>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -21,12 +22,11 @@
 /// Length of compressorname string in VisualSampleEntry class
 static const unsigned int COMPRESSORNAME_STRING_LENGTH = 31;
 
-/// @todo This has to be refactored if other compressor names are to be supported.
-VisualSampleEntryBox::VisualSampleEntryBox(const std::string& codingname) :
-    SampleEntryBox(codingname),
+VisualSampleEntryBox::VisualSampleEntryBox(const FourCCInt codingName, const std::string& compressorName) :
+    SampleEntryBox(codingName),
     mWidth(0),
     mHeight(0),
-    mCompressorName(),
+    mCompressorName(compressorName),
     mClap(nullptr)
 {
 }
@@ -71,15 +71,12 @@ void VisualSampleEntryBox::writeBox(BitStream& bitstr)
     bitstr.write32Bits(0); // reserved = 0
     bitstr.write16Bits(1); // frame_count = 1
 
-    /* Compressor name is "\013HEVC Coding" (\013 is 11, the length of the string in bytes), padded to 32 bytes total. */
-    static const char* COMPRESSORNAME = "HEVC Coding";
-    const unsigned char COMPRESSORNAME_LENGTH = strlen(COMPRESSORNAME);
-    bitstr.write8Bits(COMPRESSORNAME_LENGTH);
-    bitstr.writeString(COMPRESSORNAME);
-    for (unsigned int i = 0; i < COMPRESSORNAME_STRING_LENGTH - COMPRESSORNAME_LENGTH; ++i)
-    {
-        bitstr.write8Bits(0);
-    }
+    assert(mCompressorName.length() <= COMPRESSORNAME_STRING_LENGTH);
+
+    // Length-byte prefixed compressor name padded to 32 bytes total.
+    bitstr.write8Bits(mCompressorName.length());
+    mCompressorName.resize(COMPRESSORNAME_STRING_LENGTH, '\0'); // Make fixed length
+    bitstr.writeString(mCompressorName); // Write entire string buffer, including padding zeros
 
     bitstr.write16Bits(0x0018); // depth
     bitstr.write16Bits(-1);     // pre_defined
@@ -123,7 +120,7 @@ void VisualSampleEntryBox::parseBox(BitStream& bitstr)
     if (bitstr.numBytesLeft() > 0)
     {
         const unsigned int startOffset = bitstr.getPos();
-        std::string boxType;
+        FourCCInt boxType;
         BitStream subBitStream = bitstr.readSubBoxBitStream(boxType);
         if (boxType == "clap")
         {
@@ -140,13 +137,3 @@ void VisualSampleEntryBox::parseBox(BitStream& bitstr)
     }
 }
 
-CodingConstraintsBox* VisualSampleEntryBox::getCodingConstraintsBox()
-{
-    return nullptr;
-}
-
-bool VisualSampleEntryBox::isCodingConstraintsBoxPresent() const
-{
-    // Check if pointer to CodingConstraintsBox is valid, doesn't modify anything.
-    return const_cast<VisualSampleEntryBox*>(this)->getCodingConstraintsBox();
-}

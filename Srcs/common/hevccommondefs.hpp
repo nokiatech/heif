@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -10,8 +10,8 @@
  * https://nokiatech.github.io/heif/license.txt
  */
 
-#ifndef COMMONDEFS_HPP
-#define COMMONDEFS_HPP
+#ifndef HEVCCOMMONDEFS_HPP
+#define HEVCCOMMONDEFS_HPP
 
 #include <cstdint>
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -29,7 +29,8 @@ void ImageMasterWriter::write(MetaBox* metaBox)
     RootMetaImageWriter::initWrite();
     storeValue("uniq_bsid", std::to_string(mConfig.uniq_bsid));
     storeValue("capsulation", META_ENCAPSULATION);
-    RootMetaImageWriter::parseInputBitStream(mConfig.file_path);
+    storeValue("bitstream", mConfig.file_path);
+    RootMetaImageWriter::parseInputBitStream(mConfig.file_path, mConfig.code_type);
     MetaWriter::hdlrWrite(metaBox);
     RootMetaImageWriter::ilocWrite(metaBox);
     RootMetaImageWriter::iinfWrite(metaBox, mConfig.hidden);

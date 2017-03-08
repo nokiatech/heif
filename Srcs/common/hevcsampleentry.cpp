@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -14,7 +14,7 @@
 #include "log.hpp"
 
 HevcSampleEntry::HevcSampleEntry() :
-    VisualSampleEntryBox("hvc1"),
+    VisualSampleEntryBox("hvc1", "HEVC Coding"),
     mHevcConfigurationBox(),
     mCodingConstraintsBox(),
     mIsCodingConstraintsPresent(false)
@@ -59,7 +59,7 @@ void HevcSampleEntry::parseBox(BitStream& bitstr)
     while (bitstr.numBytesLeft() > 0)
     {
         // Extract contained box bitstream and type
-        std::string boxType;
+        FourCCInt boxType;
         BitStream subBitStream = bitstr.readSubBoxBitStream(boxType);
 
         // Handle this box based on the type

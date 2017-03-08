@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -36,9 +36,9 @@ public:
 
     /** @brief Add a vector of NAL data to the media data container.
      *  @details Multiple NAL units can be written to the media data box at once by using this method.
-     *  @details the data is inserted to the mData private member but not serialized until writeBox() is called.
+     *           The data is inserted to the mData private member but not serialized until writeBox() is called.
      *  @param [in] srcData vector of NAL unit data **/
-    void addListOfNalData(const std::list<std::vector<std::uint8_t>>& srcData);
+    void addNalData(const std::vector<std::vector<std::uint8_t>>& srcData);
 
     /** @brief Add a single NAL unit data to the media data container.
      *  @details the data is inserted to the mData private member but not serialized until writeBox() is called.

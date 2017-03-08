@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -26,7 +26,7 @@ class MetaBox;
 class EntityGroupWriter : public MetaWriter
 {
 public:
-    EntityGroupWriter(const IsoMediaFile::AltrIndexPairVector& config);
+    EntityGroupWriter(const IsoMediaFile::Egroup& config);
     virtual ~EntityGroupWriter() = default;
 
     /**
@@ -48,7 +48,7 @@ private:
      */
     IdPairToEntityIdMap makeEntityMap() const;
 
-    IsoMediaFile::AltrIndexPairVector mConfig; ///< Input configuration of the writer
+    IsoMediaFile::Egroup mConfig; ///< Input configuration of the writer
 };
 
 #endif /* end of include guard: ENTITYGROUPWRITER_HPP */

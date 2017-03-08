@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -13,20 +13,30 @@
 #include "hevcimagefilereader.hpp"
 
 #include "auxiliarytypeproperty.hpp"
+#include "avcconfigurationbox.hpp"
+#include "avcdecoderconfigrecord.hpp"
+#include "avcsampleentry.hpp"
+#include "buildinfo.hpp"
 #include "cleanaperture.hpp"
 #include "codingconstraintsbox.hpp"
-#include "commondefs.hpp"
+#include "hevccommondefs.hpp"
 #include "hevcconfigurationbox.hpp"
+#include "hevcdecoderconfigrecord.hpp"
 #include "hevcsampleentry.hpp"
 #include "idspace.hpp"
 #include "imagegrid.hpp"
+#include "imagemirror.hpp"
 #include "imageoverlay.hpp"
 #include "imagerelativelocationproperty.hpp"
 #include "imagerotation.hpp"
+#include "layeredhevcconfigurationitemproperty.hpp"
+#include "layerselectorproperty.hpp"
+#include "lhevcdecoderconfigrecord.hpp"
 #include "log.hpp"
 #include "mediadatabox.hpp"
 #include "metabox.hpp"
 #include "moviebox.hpp"
+#include "targetolsproperty.hpp"
 
 #include <algorithm>
 #include <bitset>
@@ -388,7 +398,7 @@ void HevcImageFileReader::getReferencedFromItemListByType(const uint32_t context
     }
 
     const ItemReferenceBox& itemReferenceBox = mMetaBoxMap.at(contextId).getItemReferenceBox();
-    const vector<SingleItemTypeReferenceBox> references = itemReferenceBox.getReferencesOfType(referenceType);
+    const vector<SingleItemTypeReferenceBox> references = itemReferenceBox.getReferencesOfType(FourCCInt(referenceType));
 
     itemIds.clear();
     for (const auto& reference : references)
@@ -413,7 +423,7 @@ void HevcImageFileReader::getReferencedToItemListByType(const uint32_t contextId
     }
 
     const ItemReferenceBox& itemReferenceBox = mMetaBoxMap.at(contextId).getItemReferenceBox();
-    const vector<SingleItemTypeReferenceBox> references = itemReferenceBox.getReferencesOfType(referenceType);
+    const vector<SingleItemTypeReferenceBox> references = itemReferenceBox.getReferencesOfType(FourCCInt(referenceType));
 
     itemIds.clear();
     for (const auto& reference : references)
@@ -463,8 +473,9 @@ void HevcImageFileReader::getItemData(const uint32_t contextId, const uint32_t i
         case ContextType::META:
         {
             readItem(mMetaBoxMap.at(contextId), itemId, rawItemData);
-            const std::string type = getItemType(contextId, itemId);
-            if ((not isProtected(contextId, itemId)) && getRawItemType(mMetaBoxMap.at(contextId), itemId) == "hvc1")
+            const std::string rawType = getRawItemType(mMetaBoxMap.at(contextId), itemId);
+            if ((not isProtected(contextId, itemId)) &&
+                ((rawType == "hvc1") || (rawType == "avc1") || (rawType == "lhv1")))
             {
                 processData = true;
             }
@@ -482,27 +493,24 @@ void HevcImageFileReader::getItemData(const uint32_t contextId, const uint32_t i
 
     if (processData)
     {
-        BitStream bitstream(rawItemData);
-        while (bitstream.numBytesLeft() > 0)
+        // Process bitstream by codec
+        std::string codeType = getDecoderCodeType(contextId, itemId);
+
+        if (codeType == "avc1")
         {
-            const unsigned int nalLength = bitstream.read32Bits();
-            const uint8_t firstByte = bitstream.read8Bits();
-            HevcNalUnitType naluType = HevcNalUnitType((firstByte >> 1) & 0x3f);
+            // Get item data from AVC bitstream
+            getAvcItemData(rawItemData, itemData);
 
-            // Add start code before each NAL unit
-            if (itemData.size() == 0 ||
-                naluType == HevcNalUnitType::VPS ||
-                naluType == HevcNalUnitType::SPS ||
-                naluType == HevcNalUnitType::PPS)
-            {
-                itemData.push_back(0); // Additional zero_byte required before parameter sets and the first NAL unit of the frame
-            }
-            itemData.push_back(0);
-            itemData.push_back(0);
-            itemData.push_back(1);
-
-            itemData.push_back(firstByte);
-            bitstream.read8BitsArray(itemData, nalLength - 1);
+        }
+        else if (codeType == "hvc1" || codeType == "lhv1")
+        {
+            // Get item data from HEVC bitstream
+            getHevcItemData(rawItemData, itemData);
+        }
+        else
+        {
+            // Code type not supported
+            throw FileReaderException(FileReaderException::StatusCode::UNSUPPORTED_CODE_TYPE);
         }
     }
     else
@@ -568,6 +576,26 @@ HevcImageFileReader::AuxProperty HevcImageFileReader::getPropertyAuxc(const std:
     auxc.auxType = auxcPtr->getAuxType();
     auxc.subType = auxcPtr->getAuxSubType();
     return auxc;
+}
+
+
+HevcImageFileReader::ImirProperty HevcImageFileReader::getPropertyImir(const std::uint32_t contextId, const std::uint32_t index) const
+{
+    isInitialized();
+    if (mMetaBoxInfo.count(contextId) == 0)
+    {
+        throw FileReaderException(FileReaderException::StatusCode::INVALID_CONTEXT_ID);
+    }
+
+    const auto imirBox = mMetaBoxMap.at(contextId).getItemPropertiesBox().getPropertyByIndex<ImageMirror>(index);
+    if (not imirBox)
+    {
+        throw FileReaderException(FileReaderException::StatusCode::INVALID_PROPERTY_INDEX);
+    }
+
+    ImirProperty imir;
+    imir.horizontalAxis = imirBox->getHorizontalAxis();
+    return imir;
 }
 
 
@@ -640,6 +668,48 @@ ImageFileReaderInterface::ClapProperty HevcImageFileReader::getPropertyClap(cons
 }
 
 
+ImageFileReaderInterface::LselProperty HevcImageFileReader::getPropertyLsel(const std::uint32_t contextId, const std::uint32_t index) const
+{
+    isInitialized();
+
+    if (getContextType(contextId) !=  ContextType::META)
+    {
+        throw FileReaderException(FileReaderException::StatusCode::INVALID_CONTEXT_ID);
+    }
+
+    const auto lselPtr = mMetaBoxMap.at(contextId).getItemPropertiesBox().getPropertyByIndex<LayerSelectorProperty>(index);
+    if (not lselPtr)
+    {
+        throw FileReaderException(FileReaderException::StatusCode::INVALID_PROPERTY_INDEX);
+    }
+
+    LselProperty lsel;
+    lsel.layerId = lselPtr->getLayerId();
+    return lsel;
+}
+
+
+ImageFileReaderInterface::TolsProperty HevcImageFileReader::getPropertyTols(const std::uint32_t contextId, const std::uint32_t index) const
+{
+    isInitialized();
+
+    if (getContextType(contextId) !=  ContextType::META)
+    {
+        throw FileReaderException(FileReaderException::StatusCode::INVALID_CONTEXT_ID);
+    }
+
+    const auto tolsPtr = mMetaBoxMap.at(contextId).getItemPropertiesBox().getPropertyByIndex<TargetOlsProperty>(index);
+    if (not tolsPtr)
+    {
+        throw FileReaderException(FileReaderException::StatusCode::INVALID_PROPERTY_INDEX);
+    }
+
+    TolsProperty tols;
+    tols.targetOlsIndex = tolsPtr->getTargetOlsIndex();
+    return tols;
+}
+
+
 ImageFileReaderInterface::PropertyTypeVector HevcImageFileReader::getItemProperties(const std::uint32_t contextId, const std::uint32_t itemId) const
 {
     isInitialized();
@@ -669,10 +739,27 @@ void HevcImageFileReader::getItemDataWithDecoderParameters(const uint32_t contex
     itemDataWithDecoderParameters.clear();
 
     ImageFileReaderInterface::ParameterSetMap parameterSet;
+
+    std::string codeType = getDecoderCodeType(contextId, itemId);
     getDecoderParameterSets(contextId, itemId, parameterSet);
-    itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("VPS").begin(), parameterSet.at("VPS").end());
-    itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("SPS").begin(), parameterSet.at("SPS").end());
-    itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("PPS").begin(), parameterSet.at("PPS").end());
+
+    if ((codeType == "hvc1") || (codeType == "lhv1"))
+    {
+        // VPS (HEVC specific)
+        itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("VPS").begin(), parameterSet.at("VPS").end());
+    }
+
+    if ((codeType == "avc1") || (codeType == "hvc1") || (codeType == "lhv1"))
+    {
+        // SPS and PPS
+        itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("SPS").begin(), parameterSet.at("SPS").end());
+        itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("PPS").begin(), parameterSet.at("PPS").end());
+    }
+    else
+    {
+        // No other code types supported
+        throw FileReaderException(FileReaderException::StatusCode::UNSUPPORTED_CODE_TYPE);
+    }
 
     DataVector itemData;
     getItemData(contextId, itemId, itemData);
@@ -838,6 +925,23 @@ void HevcImageFileReader::getItemDecodeDependencies(const uint32_t contextId, co
     }
 }
 
+std::string HevcImageFileReader::getDecoderCodeType(const uint32_t contextId, const uint32_t itemId) const
+{
+    isInitialized();
+
+    if (!mContextInfoMap.count(contextId))
+    {
+        throw FileReaderException(FileReaderException::StatusCode::INVALID_CONTEXT_ID);
+    }
+
+    const auto iter = mDecoderCodeTypeMap.find(Id(contextId, itemId));
+    if (iter != mDecoderCodeTypeMap.end())
+    {
+        return iter->second;
+    }
+
+    throw FileReaderException(FileReaderException::StatusCode::INVALID_ITEM_ID);
+}
 
 void HevcImageFileReader::getDecoderParameterSets(const uint32_t contextId, const uint32_t itemId,
     ParameterSetMap& parameterSets) const
@@ -910,15 +1014,29 @@ void HevcImageFileReader::readStream()
     bool metaFound = false;
     bool moovFound = false;
 
+    const int compatibilityVersion = readCompatibilityVersion();
+    if (compatibilityVersion == 0)
+    {
+        logInfo() << "NHW compatibility version not found." << std::endl;
+    }
+    else
+    {
+        logInfo() << "NHW compatibility version " << compatibilityVersion << " found." << std::endl;
+        if (compatibilityVersion > std::stoi(BuildInfo::CompatibilityVersion))
+        {
+            logWarning() << "Warning: Unknown writer version ("
+                << compatibilityVersion << " > " << std::stoi(BuildInfo::CompatibilityVersion)
+                << "). Backwards compatibility is not guaranteed." << std::endl;
+        }
+    }
+
     while (mInputStream->peek() != EOF)
     {
         string boxType;
-        uint64_t boxSize = 0;
         BitStream bitstream;
-        readBox(bitstream, boxType, boxSize);
+        readBox(bitstream, boxType);
         if (boxType == "ftyp")
         {
-            bool supportedBrandsFound = false;
             if (ftypFound == true)
             {
                 throw FileReaderException(FileReaderException::StatusCode::FILE_READ_ERROR, "Multiple ftyp boxes");
@@ -927,19 +1045,61 @@ void HevcImageFileReader::readStream()
             FileTypeBox ftyp;
             ftyp.parseBox(bitstream);
 
-            if (ftyp.checkCompatibleBrand("msf1") && ftyp.checkCompatibleBrand("hevc"))
+            // Check supported brands
+            std::set<std::string> supportedBrands;
+
+            if (ftyp.checkCompatibleBrand("msf1"))
             {
-                logInfo() << "This is a track based file." << std::endl;
-                supportedBrandsFound = true;
+                if (ftyp.checkCompatibleBrand("hevc"))
+                {
+                    supportedBrands.insert("[msf1/hevc] HEVC image sequence");
+                }
+                if (ftyp.checkCompatibleBrand("hevm"))
+                {
+                    supportedBrands.insert("[msf1/hevm] L-HEVC image sequence");
+                }
+                if (ftyp.checkCompatibleBrand("hevs"))
+                {
+                    supportedBrands.insert("[msf1/hevs] L-HEVC image sequence");
+                }
+                if (ftyp.checkCompatibleBrand("avcs"))
+                {
+                    supportedBrands.insert("[msf1/avcs] AVC image sequence");
+                }
             }
-            if (ftyp.checkCompatibleBrand("mif1") && ftyp.checkCompatibleBrand("heic"))
+            if (ftyp.checkCompatibleBrand("mif1"))
             {
-                logInfo() << "This is a meta based file." << std::endl;
-                supportedBrandsFound = true;
+                if (ftyp.checkCompatibleBrand("heic"))
+                {
+                    supportedBrands.insert("[mif1/heic] HEVC image and image collection");
+                }
+                if (ftyp.checkCompatibleBrand("heix"))
+                {
+                    supportedBrands.insert("[mif1/heix] HEVC image and image collection");
+                }
+                if (ftyp.checkCompatibleBrand("heim"))
+                {
+                    supportedBrands.insert("[mif1/heim] L-HEVC image and image collection");
+                }
+                if (ftyp.checkCompatibleBrand("heis"))
+                {
+                    supportedBrands.insert("[mif1/heis] L-HEVC image and image collection");
+                }
+                if (ftyp.checkCompatibleBrand("avic"))
+                {
+                    supportedBrands.insert("[mif1/avic] AVC image and image collection");
+                }
             }
-            if (not supportedBrandsFound)
+
+            if (supportedBrands.empty())
             {
                 throw FileReaderException(FileReaderException::StatusCode::FILE_READ_ERROR, "No compatible brands in file");
+            }
+
+            logInfo() << "Compatible brands found:" << endl;
+            for (auto brand: supportedBrands)
+            {
+                logInfo() << " " << brand << endl;
             }
 
             mFtyp = ftyp;
@@ -961,7 +1121,7 @@ void HevcImageFileReader::readStream()
             mFileProperties.rootLevelMetaBoxProperties.contextId = contextId;
             mContextInfoMap[contextId] = createContextInfo(mFileProperties.rootLevelMetaBoxProperties);
             mMetaBoxInfo[contextId] = extractItems(metaBox, contextId);
-            processHvccProperties(contextId);
+            processDecoderConfigProperties(contextId);
             fillImageInfoMap(contextId);
         }
         else if (boxType == "moov")
@@ -977,9 +1137,9 @@ void HevcImageFileReader::readStream()
             mFileProperties.trackProperties = fillTrackProperties(moov);
             mMatrix = moov.getMovieHeaderBox().getMatrix();
         }
-        else if (boxType == "mdat")
+        else if (boxType == "mdat" || boxType == "free")
         {
-            // Do nothing, 'mdat' content is handled elsewhere as needed
+            // Do nothing. 'mdat' content is handled elsewhere as needed and 'free' can be skipped.
         }
         else
         {
@@ -1001,6 +1161,48 @@ void HevcImageFileReader::readStream()
     mState = State::READY;
 }
 
+int HevcImageFileReader::readCompatibilityVersion()
+{
+    while (mInputStream->peek() != EOF)
+    {
+        string boxType;
+        BitStream bitstream;
+        readBox(bitstream, boxType);
+        if (boxType != "mdat")
+        {
+            continue;
+        }
+        constexpr auto MDAT_HEADER_SIZE = 4 + 4; // box size field + 'mdat'
+        constexpr auto COMPATIBILITY_MDAT_SIZE = MDAT_HEADER_SIZE + 8; // box header + compatibility identifier
+        if (bitstream.getSize() >= COMPATIBILITY_MDAT_SIZE)
+        {
+            bitstream.skipBytes(MDAT_HEADER_SIZE);
+            std::string identifier;
+            bitstream.readStringWithLen(identifier, 4);
+            // Check the compatibility version identifier.
+            if (identifier.compare("NHW_") == 0)
+            {
+                std::string versionString;
+                bitstream.readStringWithLen(versionString, 4);
+                mInputStream->seekg(0);
+                unsigned int version = 0;
+                try
+                {
+                    version = std::stoi(versionString);
+                }
+                catch (...)
+                {
+                    logWarning() << "Ignoring incomprehensible assumed compatibility version found in 'mdat'." << std::endl;
+                }
+                return version;
+            }
+        }
+    }
+
+    mInputStream->seekg(0);
+
+    return 0;
+}
 
 HevcImageFileReader::ContextInfo HevcImageFileReader::createContextInfo(const ImageFileReaderInterface::MetaBoxProperties& metaBoxProperties) const
 {
@@ -1033,7 +1235,7 @@ void HevcImageFileReader::fillImageInfoMap(const ContextId contextId)
 
         const string rawType = itemInfoBox.getItemById(itemId).getItemType();
         imageInfo.type = rawType;
-        if (rawType == "hvc1")
+        if ((rawType == "avc1") || (rawType == "hvc1") || (rawType == "lhv1"))
         {
             // Override raw image type in some cases
             if (!doReferencesFromItemIdExist(mMetaBoxMap.at(contextId), itemId, "auxl") &&
@@ -1054,7 +1256,7 @@ void HevcImageFileReader::fillImageInfoMap(const ContextId contextId)
         // Set dimensions
         const ItemPropertiesBox& iprp = mMetaBoxMap.at(contextId).getItemPropertiesBox();
         const std::uint32_t ispeIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::ISPE, itemId);
-        if (ispeIndex != 0)
+        if (ispeIndex)
         {
             const auto imageSpatialExtentsProperties = iprp.getPropertyByIndex<ImageSpatialExtentsProperty>(ispeIndex - 1);
             imageInfo.height = imageSpatialExtentsProperties->getDisplayHeight();
@@ -1151,12 +1353,12 @@ uint64_t HevcImageFileReader::readBytes(std::istream* stream, const unsigned int
     return value;
 }
 
-void HevcImageFileReader::readBox(BitStream& bitstream, std::string& boxType, uint64_t& boxSize)
+void HevcImageFileReader::readBox(BitStream& bitstream, std::string& boxType)
 {
     int startLocation = mInputStream->tellg();
 
     // Read the 32-bit length field of the box
-    boxSize = readBytes(mInputStream, 4);
+    std::uint64_t boxSize = readBytes(mInputStream, 4);
 
     // Read the four character string for boxType
     static const size_t TYPE_LENGTH = 4;
@@ -1173,16 +1375,35 @@ void HevcImageFileReader::readBox(BitStream& bitstream, std::string& boxType, ui
         boxSize = readBytes(mInputStream, 8);
     }
 
-    // Seek to box beginning and dump data to bitstream
-    std::vector<uint8_t> data(boxSize);
+    // Seek to box beginning and dump data to bitstream, unless it is a Media Data Box which will be parsed
+    // later, on demand.
+    bitstream.clear();
+    bitstream.reset();
     mInputStream->seekg(startLocation);
+    if (boxType == "mdat")
+    {
+        constexpr auto COMPATIBILITY_MDAT_LENGTH = 4 + 4 + 8; // box size, 'mdat', compatibility identifier
+        if (boxSize >= COMPATIBILITY_MDAT_LENGTH)
+        {
+            std::vector<uint8_t> data(COMPATIBILITY_MDAT_LENGTH);
+            mInputStream->read(reinterpret_cast<char*>(data.data()), COMPATIBILITY_MDAT_LENGTH);
+            if (not mInputStream->good())
+            {
+               throw FileReaderException(FileReaderException::StatusCode::FILE_READ_ERROR);
+            }
+            bitstream.write8BitsArray(data, COMPATIBILITY_MDAT_LENGTH);
+        }
+
+        mInputStream->seekg(startLocation + boxSize);
+        return;
+    }
+    std::vector<uint8_t> data(boxSize);
     mInputStream->read(reinterpret_cast<char*>(data.data()), boxSize);
     if (not mInputStream->good())
     {
        throw FileReaderException(FileReaderException::StatusCode::FILE_READ_ERROR);
     }
-    bitstream.clear();
-    bitstream.reset();
+
     bitstream.write8BitsArray(data, boxSize);
 }
 
@@ -1208,6 +1429,21 @@ void HevcImageFileReader::getImageDimensions(const uint32_t contextId, const uin
 }
 
 
+HevcImageFileReader::ParameterSetMap HevcImageFileReader::makeDecoderParameterSetMap(const AvcDecoderConfigurationRecord& record) const
+{
+    vector<uint8_t> sps;
+    vector<uint8_t> pps;
+    record.getOneParameterSet(sps, AvcNalUnitType::SPS);
+    record.getOneParameterSet(pps, AvcNalUnitType::PPS);
+
+    ParameterSetMap parameterSetMap;
+    parameterSetMap.insert(pair<string, DataVector>("SPS", move(sps)));
+    parameterSetMap.insert(pair<string, DataVector>("PPS", move(pps)));
+
+    return parameterSetMap;
+}
+
+
 HevcImageFileReader::ParameterSetMap HevcImageFileReader::makeDecoderParameterSetMap(const HevcDecoderConfigurationRecord& record) const
 {
     vector<uint8_t> sps;
@@ -1216,6 +1452,24 @@ HevcImageFileReader::ParameterSetMap HevcImageFileReader::makeDecoderParameterSe
     record.getOneParameterSet(sps, HevcNalUnitType::SPS);
     record.getOneParameterSet(pps, HevcNalUnitType::PPS);
     record.getOneParameterSet(vps, HevcNalUnitType::VPS);
+
+    ParameterSetMap parameterSetMap;
+    parameterSetMap.insert(pair<string, DataVector>("SPS", move(sps)));
+    parameterSetMap.insert(pair<string, DataVector>("PPS", move(pps)));
+    parameterSetMap.insert(pair<string, DataVector>("VPS", move(vps)));
+
+    return parameterSetMap;
+}
+
+
+HevcImageFileReader::ParameterSetMap HevcImageFileReader::makeDecoderParameterSetMap(const LHevcDecoderConfigurationRecord& record) const
+{
+    vector<uint8_t> sps;
+    vector<uint8_t> pps;
+    vector<uint8_t> vps;
+    record.getParameterSet(sps, HevcNalUnitType::SPS);
+    record.getParameterSet(pps, HevcNalUnitType::PPS);
+    record.getParameterSet(vps, HevcNalUnitType::VPS);
 
     ParameterSetMap parameterSetMap;
     parameterSetMap.insert(pair<string, DataVector>("SPS", move(sps)));
@@ -1251,6 +1505,7 @@ HevcImageFileReader::IdVector HevcImageFileReader::getContextItems(ContextId con
     return items;
 }
 
+
 bool HevcImageFileReader::isProtected(const std::uint32_t contextId, const std::uint32_t itemId) const
 {
     ItemInfoEntry entry;
@@ -1275,6 +1530,60 @@ bool HevcImageFileReader::isProtected(const std::uint32_t contextId, const std::
     }
     return false;
 }
+
+
+void HevcImageFileReader::getAvcItemData(const DataVector& rawItemData, DataVector& itemData)
+{
+    BitStream bitstream(rawItemData);
+    while (bitstream.numBytesLeft() > 0)
+    {
+        const unsigned int nalLength = bitstream.read32Bits();
+        const uint8_t firstByte = bitstream.read8Bits();
+        const AvcNalUnitType naluType = AvcNalUnitType(firstByte & 0x1f);
+
+        // Add start code before each NAL unit
+        if (itemData.size() == 0 ||
+            naluType == AvcNalUnitType::SPS ||
+            naluType == AvcNalUnitType::PPS)
+        {
+            itemData.push_back(0); // Additional zero_byte required before parameter sets and the first NAL unit of the frame
+        }
+        itemData.push_back(0);
+        itemData.push_back(0);
+        itemData.push_back(1);
+
+        itemData.push_back(firstByte);
+        bitstream.read8BitsArray(itemData, nalLength - 1);
+    }
+}
+
+
+void HevcImageFileReader::getHevcItemData(const DataVector& rawItemData, DataVector& itemData)
+{
+    BitStream bitstream(rawItemData);
+    while (bitstream.numBytesLeft() > 0)
+    {
+        const unsigned int nalLength = bitstream.read32Bits();
+        const uint8_t firstByte = bitstream.read8Bits();
+        HevcNalUnitType naluType = HevcNalUnitType((firstByte >> 1) & 0x3f);
+
+        // Add start code before each NAL unit
+        if (itemData.size() == 0 ||
+            naluType == HevcNalUnitType::VPS ||
+            naluType == HevcNalUnitType::SPS ||
+            naluType == HevcNalUnitType::PPS)
+        {
+            itemData.push_back(0); // Additional zero_byte required before parameter sets and the first NAL unit of the frame
+        }
+        itemData.push_back(0);
+        itemData.push_back(0);
+        itemData.push_back(1);
+
+        itemData.push_back(firstByte);
+        bitstream.read8BitsArray(itemData, nalLength - 1);
+    }
+}
+
 
 /* ********************************************************************** */
 /* *********************** Meta-specific methods  *********************** */
@@ -1359,7 +1668,7 @@ ImageFileReaderInterface::GroupingMap HevcImageFileReader::extractMetaBoxEntityT
     const std::vector<EntityToGroupBox>& entityToGroupBoxes = metaBox.getGroupsListBox().getEntityToGroupsBoxes();
     for (const auto& box : entityToGroupBoxes)
     {
-        const std::string type = box.getType();
+        const std::string type = box.getType().getString();
         const IdVector ids = box.getEntityIds();
         groupingMap[type].push_back(ids);
     }
@@ -1464,7 +1773,8 @@ ImageFileReaderInterface::ItemFeaturesMap HevcImageFileReader::extractMetaBoxIte
     {
         const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemById(itemId);
         const string type = item.getItemType();
-        if (type != "hvc1")
+
+        if ((type != "avc1") && (type != "hvc1") && (type != "lhv1"))
         {
             ItemFeature itemFeature;
 
@@ -1519,11 +1829,17 @@ HevcImageFileReader::Properties HevcImageFileReader::processItemProperties(const
             {
                 { ItemPropertiesBox::PropertyType::UNKNOWN, ImageFileReaderInterface::ItemPropertyType::UNKNOWN },
                 { ItemPropertiesBox::PropertyType::AUXC, ImageFileReaderInterface::ItemPropertyType::AUXC },
+                { ItemPropertiesBox::PropertyType::AVCC, ImageFileReaderInterface::ItemPropertyType::AVCC },
                 { ItemPropertiesBox::PropertyType::CLAP, ImageFileReaderInterface::ItemPropertyType::CLAP },
                 { ItemPropertiesBox::PropertyType::HVCC, ImageFileReaderInterface::ItemPropertyType::HVCC },
+                { ItemPropertiesBox::PropertyType::IMIR, ImageFileReaderInterface::ItemPropertyType::IMIR },
                 { ItemPropertiesBox::PropertyType::IROT, ImageFileReaderInterface::ItemPropertyType::IROT },
                 { ItemPropertiesBox::PropertyType::ISPE, ImageFileReaderInterface::ItemPropertyType::ISPE },
-                { ItemPropertiesBox::PropertyType::RLOC, ImageFileReaderInterface::ItemPropertyType::RLOC }
+                { ItemPropertiesBox::PropertyType::LHVC, ImageFileReaderInterface::ItemPropertyType::LHVC },
+                { ItemPropertiesBox::PropertyType::LSEL, ImageFileReaderInterface::ItemPropertyType::LSEL },
+                { ItemPropertiesBox::PropertyType::OINF, ImageFileReaderInterface::ItemPropertyType::OINF },
+                { ItemPropertiesBox::PropertyType::RLOC, ImageFileReaderInterface::ItemPropertyType::RLOC },
+                { ItemPropertiesBox::PropertyType::TOLS, ImageFileReaderInterface::ItemPropertyType::TOLS }
             };
 
             ItemPropertyInfo info;
@@ -1538,7 +1854,7 @@ HevcImageFileReader::Properties HevcImageFileReader::processItemProperties(const
     return propertyMap;
 }
 
-void HevcImageFileReader::processHvccProperties(const ContextId contextId)
+void HevcImageFileReader::processDecoderConfigProperties(const ContextId contextId)
 {
     // Decoder configuration gets special handling because that information is accessed by the reader
     // implementation itself.
@@ -1548,18 +1864,43 @@ void HevcImageFileReader::processHvccProperties(const ContextId contextId)
     for (const auto& imageProperties : mFileProperties.rootLevelMetaBoxProperties.imageFeaturesMap)
     {
         const ItemId imageId = imageProperties.first;
+        const Id id(contextId, imageId);
         const std::uint32_t hvccIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::HVCC, imageId);
-        if (hvccIndex != 0)
+        const std::uint32_t lhvcIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::LHVC, imageId);
+        const std::uint32_t avccIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::AVCC, imageId);
+
+        string type = "not supported";
+        Id configIndex;
+        if (hvccIndex)
         {
-            mImageToParameterSetMap[Id(contextId, imageId)] = Id(contextId, hvccIndex);
+            configIndex = Id(contextId, hvccIndex);
+            type = "hvc1";
             const HevcDecoderConfigurationRecord record =
                 iprp.getPropertyByIndex<HevcConfigurationBox>(hvccIndex - 1)->getConfiguration();
-            const ParameterSetMap parameterSetMap = makeDecoderParameterSetMap(record);
-            mParameterSetMap[Id(contextId, hvccIndex)] = parameterSetMap;
+            mParameterSetMap[configIndex] = makeDecoderParameterSetMap(record);
+            mImageToParameterSetMap[id] = configIndex;
         }
+        else if (lhvcIndex)
+        {
+            configIndex = Id(contextId, lhvcIndex);
+            type = "lhv1";
+            const LHevcDecoderConfigurationRecord record =
+                iprp.getPropertyByIndex<LayeredHevcConfigurationItemProperty>(lhvcIndex - 1)->getConfiguration();
+            mParameterSetMap[configIndex] = makeDecoderParameterSetMap(record);
+            mImageToParameterSetMap[id] = configIndex;
+        }
+        else if (avccIndex)
+        {
+            configIndex = Id(contextId, avccIndex);
+            type = "avc1";
+            const AvcDecoderConfigurationRecord record =
+                iprp.getPropertyByIndex<AvcConfigurationBox>(avccIndex - 1)->getConfiguration();
+            mParameterSetMap[configIndex] = makeDecoderParameterSetMap(record);
+            mImageToParameterSetMap[id] = configIndex;
+        }
+        mDecoderCodeTypeMap[id] = type;
     }
 }
-
 
 HevcImageFileReader::MetaBoxInfo HevcImageFileReader::extractItems(const MetaBox& metaBox, const std::uint32_t contextId) const
 {
@@ -1625,8 +1966,7 @@ std::vector<std::uint8_t> HevcImageFileReader::loadItemData(const MetaBox& metaB
     return data;
 }
 
-/** @details Method can not handle items located in different files. Therefore also zero length items are not supported.
- *  @todo Add support for item_offset construction method. */
+/** @details Method can not handle items located in different files. Therefore also zero length items are not supported. */
 void HevcImageFileReader::readItem(const MetaBox& metaBox, const ItemId itemId, std::vector<std::uint8_t>& data) const
 {
     const ItemLocationBox& iloc = metaBox.getItemLocationBox();
@@ -1642,6 +1982,7 @@ void HevcImageFileReader::readItem(const MetaBox& metaBox, const ItemId itemId, 
         throw FileReaderException(FileReaderException::StatusCode::FILE_READ_ERROR, "No extents given for an item.");
     }
 
+    // The size of the item is the sum of the extent lengths.
     for (const auto& extent : extentList)
     {
         itemLength += extent.mExtentLength;
@@ -1676,8 +2017,40 @@ void HevcImageFileReader::readItem(const MetaBox& metaBox, const ItemId itemId, 
     }
     else if (constructionMethod == ItemLocation::ConstructionMethod::ITEM_OFFSET)
     {
-        throw FileReaderException(FileReaderException::StatusCode::NOT_APPLICABLE,
-            "Item construction_method item_offset is not currently supported.");
+        data.clear();
+        // Request list of 'iloc' type item references, and assemble the data of the item recursively.
+        const auto allIlocReferences = metaBox.getItemReferenceBox().getReferencesOfType("iloc");
+        auto isWantedItemId = [itemId](const SingleItemTypeReferenceBox& item) {
+            return item.getFromItemID() == itemId;
+        };
+        const auto ilocReference = std::find_if(allIlocReferences.cbegin(), allIlocReferences.cend(), isWantedItemId);
+        const auto toItemIds = ilocReference->getToItemIds();
+
+        /// @todo check toItemIds was retrieved and valid
+
+        // Iterate extents
+        for (const auto& extent : extentList)
+        {
+            std::vector<std::uint8_t> partialData;
+
+            //  If index_size is 0, then the value 1 of 'iloc' type reference index is implied.
+            uint32_t extentSourceItemIndex = 1;
+            if (iloc.getIndexSize() != 0)
+            {
+                extentSourceItemIndex = extent.mExtentIndex;
+            }
+
+            readItem(metaBox, toItemIds.at(extentSourceItemIndex - 1), partialData);
+
+            // If extent_length value = 0, length is the length of the entire item.
+            auto end = partialData.cend();
+            if (extent.mExtentLength != 0)
+            {
+                end = partialData.cbegin() + extent.mExtentOffset + extent.mExtentLength;
+            }
+
+            data.insert(data.end(), partialData.cbegin() + extent.mExtentOffset, end);
+        }
     }
     else
     {
@@ -1716,7 +2089,7 @@ HevcImageFileReader::TrackPropertiesMap HevcImageFileReader::fillTrackProperties
         trackInfo.samples = makeSampleInfoVector(trackBox, trackInfo.pMap);
         mTrackInfo[trackProperties.trackId] = trackInfo;
 
-        fillHevcSampleEntryMap(trackBox);
+        fillSampleEntryMap(trackBox);
 
         trackProperties.trackFeature = getTrackFeatures(trackBox);
         trackProperties.referenceTrackIds = getReferenceTrackIds(trackBox);
@@ -1783,12 +2156,10 @@ bool HevcImageFileReader::isAnyLinkedToWithType(const TrackPropertiesMap& trackP
     {
         for (const auto& reference : trackProperties.second.referenceTrackIds)
         {
-            if (reference.first == referenceType)
+            if ((reference.first == referenceType) &&
+                (std::find(reference.second.begin(), reference.second.end(), trackId) != reference.second.end()))
             {
-                if (std::find(reference.second.begin(), reference.second.end(), trackId) != reference.second.end())
-                {
-                    return true;
-                }
+                return true;
             }
         }
     }
@@ -1857,8 +2228,8 @@ HevcImageFileReader::TrackFeature HevcImageFileReader::getTrackFeatures(TrackBox
             }
         }
 
-        // hasCodingConstraints - from Coding Constraints Box in HevcSampleEntry
-        const std::vector<HevcSampleEntry*> sampleEntries = stsdBox.getSampleEntries<HevcSampleEntry>();
+        // hasCodingConstraints - from Coding Constraints Box in AvcSampleEntry/HevcSampleEntry
+        const std::vector<VisualSampleEntryBox*> sampleEntries = stsdBox.getSampleEntries<VisualSampleEntryBox>();
         for (const auto& sampleEntry : sampleEntries)
         {
             if (sampleEntry->isCodingConstraintsBoxPresent() == true)
@@ -1901,7 +2272,7 @@ HevcImageFileReader::TypeToIdsMap HevcImageFileReader::getReferenceTrackIds(Trac
     const std::vector<TrackReferenceTypeBox>& trackReferenceTypeBoxes = trackBox->getTrackReferenceBox().getTrefTypeBoxes();
     for (const auto& trackReferenceTypeBox : trackReferenceTypeBoxes)
     {
-        trackReferenceMap[trackReferenceTypeBox.getType()] = trackReferenceTypeBox.getTrackIds();
+        trackReferenceMap[trackReferenceTypeBox.getType().getString()] = trackReferenceTypeBox.getTrackIds();
     }
 
     return trackReferenceMap;
@@ -2011,21 +2382,21 @@ HevcImageFileReader::SampleInfoVector HevcImageFileReader::makeSampleInfoVector(
         sampleInfo.dataLength = sampleSizeEntries.at(sampleIndex);
 
         const std::uint32_t chunkIndex = stscBox.getSampleChunkIndex(sampleIndex);
-        if (chunkIndex != previousChunkIndex)
+        if (chunkIndex == previousChunkIndex)
+        {
+            sampleInfo.dataOffset = sampleInfoVector.back().dataOffset + sampleInfoVector.back().dataLength;
+        }
+        else
         {
             sampleInfo.dataOffset = chunkOffsets.at(chunkIndex - 1);
             previousChunkIndex = chunkIndex;
         }
-        else
-        {
-            sampleInfo.dataOffset = sampleInfoVector.back().dataOffset + sampleInfoVector.back().dataLength;
-        }
 
         // Set dimensions
         const uint32_t sampleDescriptionIndex = stscBox.getSampleDescriptionIndex(sampleIndex);
-        const HevcSampleEntry* hevcSampleEntry = stsdBox.getSampleEntry<HevcSampleEntry>(sampleDescriptionIndex);
-        sampleInfo.width = hevcSampleEntry->getWidth();
-        sampleInfo.height = hevcSampleEntry->getHeight();
+        const VisualSampleEntryBox* sampleEntry = stsdBox.getSampleEntry<VisualSampleEntryBox>(sampleDescriptionIndex);
+        sampleInfo.width = sampleEntry->getWidth();
+        sampleInfo.height = sampleEntry->getHeight();
 
         // Figure out decode dependencies
         for (const auto& sampleToGroupBox : sampleToGroupBoxes)
@@ -2074,9 +2445,9 @@ HevcImageFileReader::SamplePropertiesMap HevcImageFileReader::makeSampleProperti
         sampleProperties.sampleId = sampleIndex;
         sampleProperties.sampleDescriptionIndex = stscBox.getSampleDescriptionIndex(sampleIndex);
         VisualSampleEntryBox* sampleEntry = stsdBox.getSampleEntry<VisualSampleEntryBox>(sampleProperties.sampleDescriptionIndex);
-        sampleProperties.sampleEntryType = sampleEntry->getType();
+        sampleProperties.sampleEntryType = sampleEntry->getType().getString();
 
-        // Get CodingConstraintsBox from HEVC SampleEntryType boxes
+        // Get CodingConstraintsBox from HEVC and AVC SampleEntryType boxes
         CodingConstraintsBox* ccst = sampleEntry->getCodingConstraintsBox();
 
         if (!ccst)
@@ -2129,6 +2500,7 @@ HevcImageFileReader::SamplePropertiesMap HevcImageFileReader::makeSampleProperti
         samplePropertiesMap[sampleIndex] = sampleProperties;
 
         const uint32_t trackId = trackBox->getTrackHeaderBox().getTrackID();
+        mDecoderCodeTypeMap[Id(trackId, sampleIndex)] = sampleProperties.sampleEntryType; // Store decoder type for track data decoding
         mImageToParameterSetMap[Id(trackId, sampleIndex)] = Id(trackId, sampleProperties.sampleDescriptionIndex);
     }
 
@@ -2193,25 +2565,47 @@ HevcImageFileReader::DataVector HevcImageFileReader::getTrackFrameData(const uns
 }
 
 
-void HevcImageFileReader::fillHevcSampleEntryMap(TrackBox* trackBox)
+void HevcImageFileReader::fillSampleEntryMap(TrackBox* trackBox)
 {
     const uint32_t trackId = trackBox->getTrackHeaderBox().getTrackID();
     SampleDescriptionBox& stsdBox = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox().getSampleDescriptionBox();
 
-    const std::vector<HevcSampleEntry*> sampleEntries = stsdBox.getSampleEntries<HevcSampleEntry>();
-    unsigned int index = 1;
-    for (auto& entry : sampleEntries)
+    // Process HevcSampleEntries
     {
-        ParameterSetMap parameterSetMap =
-            makeDecoderParameterSetMap(entry->getHevcConfigurationBox().getConfiguration());
-        mParameterSetMap[Id(trackId, index)] = parameterSetMap;
-
-        const CleanAperture* clapBox = entry->getClap();
-        if (clapBox != nullptr)
+        const std::vector<HevcSampleEntry*> sampleEntries = stsdBox.getSampleEntries<HevcSampleEntry>();
+        unsigned int index = 1;
+        for (auto& entry : sampleEntries)
         {
-            mTrackInfo.at(trackId).clapProperties.insert(std::make_pair(index, makeClap(clapBox)));
+            ParameterSetMap parameterSetMap =
+                makeDecoderParameterSetMap(entry->getHevcConfigurationBox().getConfiguration());
+            mParameterSetMap[Id(trackId, index)] = parameterSetMap;
+
+            const CleanAperture* clapBox = entry->getClap();
+            if (clapBox != nullptr)
+            {
+                mTrackInfo.at(trackId).clapProperties.insert(std::make_pair(index, makeClap(clapBox)));
+            }
+            ++index;
         }
-        ++index;
+    }
+
+    // Process AvcSampleEntries
+    {
+        const std::vector<AvcSampleEntry*> sampleEntries = stsdBox.getSampleEntries<AvcSampleEntry>();
+        unsigned int index = 1;
+        for (auto& entry : sampleEntries)
+        {
+            ParameterSetMap parameterSetMap =
+                makeDecoderParameterSetMap(entry->getAvcConfigurationBox().getConfiguration());
+            mParameterSetMap[Id(trackId, index)] = parameterSetMap;
+
+            const CleanAperture* clapBox = entry->getClap();
+            if (clapBox != nullptr)
+            {
+                mTrackInfo.at(trackId).clapProperties.insert(std::make_pair(index, makeClap(clapBox)));
+            }
+            ++index;
+        }
     }
 }
 
@@ -2274,17 +2668,16 @@ bool isImageItemType(const std::string& type)
 {
     static const std::set<std::string> IMAGE_TYPES =
     {
-        "hvc1", "grid", "iovl", "iden"
+        "avc1", "hvc1", "grid", "iovl", "iden", "lhv1"
     };
 
-    return (IMAGE_TYPES.find(type) != IMAGE_TYPES.end());
+    return IMAGE_TYPES.find(type) != IMAGE_TYPES.end();
 }
-
 
 
 bool doReferencesFromItemIdExist(const MetaBox& metaBox, const uint32_t itemId, const string& referenceType)
 {
-    const vector<SingleItemTypeReferenceBox> references = metaBox.getItemReferenceBox().getReferencesOfType(referenceType);
+    const vector<SingleItemTypeReferenceBox> references = metaBox.getItemReferenceBox().getReferencesOfType(FourCCInt(referenceType));
     for (const auto& singleItemTypeReferenceBox : references)
     {
         if (singleItemTypeReferenceBox.getFromItemID() == itemId)
@@ -2298,7 +2691,7 @@ bool doReferencesFromItemIdExist(const MetaBox& metaBox, const uint32_t itemId, 
 
 bool doReferencesToItemIdExist(const MetaBox& metaBox, const uint32_t itemId, const string& referenceType)
 {
-    const vector<SingleItemTypeReferenceBox> references = metaBox.getItemReferenceBox().getReferencesOfType(referenceType);
+    const vector<SingleItemTypeReferenceBox> references = metaBox.getItemReferenceBox().getReferencesOfType(FourCCInt(referenceType));
     for (const auto& singleItemTypeReferenceBox : references)
     {
         const vector<uint32_t> toIds = singleItemTypeReferenceBox.getToItemIds();

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -44,6 +44,11 @@ BitStream::~BitStream()
 uint32_t BitStream::getPos() const
 {
     return mByteOffset;
+}
+
+bool BitStream::isByteAligned() const
+{
+    return mBitOffset ? false : true;
 }
 
 void BitStream::setPosition(const unsigned int position)
@@ -372,10 +377,10 @@ int BitStream::readSignedExpGolombCode()
     return signedVal;
 }
 
-BitStream BitStream::readSubBoxBitStream(std::string& boxType)
+BitStream BitStream::readSubBoxBitStream(FourCCInt& boxType)
 {
     uint64_t boxSize = read32Bits();
-    readStringWithLen(boxType, 4);
+    boxType = read32Bits();
 
     if (boxSize == 1) // Check if 'largesize' field is used
     {

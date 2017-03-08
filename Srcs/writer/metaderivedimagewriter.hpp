@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -127,7 +127,7 @@ private:
     /**
      * Create internal data structure from 'iden' identity derivation type derived images in content configuration.
      * Item IDs are assigned here.
-     * @return Entries for each 'irot', 'rloc' and 'clap' in input configuration.
+     * @return Entries for each 'imir', 'irot', 'rloc' and 'clap' in input configuration.
      */
     DerivationMap processIdenDerivations() const;
 

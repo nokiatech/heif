@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -77,19 +77,20 @@ public:
     };
 
     /**
-     * @brief Identify a track or image item. */
-    struct AltrIndexPair
+     * @brief Identify a track or an image item. */
+    struct IndexPair
     {
         unsigned int uniq_bsid; ///< Uniq_bsid of the context
         unsigned int item_indx; ///< 1-based index of image, or 0 if referring to a track context
     };
-    typedef std::vector<AltrIndexPair> AltrIndexPairVector; ///< Convenience type for vector of alternatives
+    typedef std::vector<IndexPair> IndexPairVector; ///< Convenience type for vector of identifiers
 
     /**
-     * @brief Writer configuration for track and item alternatives */
-    struct Altr
+     * @brief Writer configuration for track and item entity groupings. */
+    struct Egroup
     {
-        std::vector<AltrIndexPairVector> idxs_lists; ///< Alternative groups
+        std::string type;           ///< FourCC identifier of the group.
+        IndexPairVector idxs_lists; ///< Indexes to grouped entities.
     };
 
     /**
@@ -141,6 +142,21 @@ public:
     };
 
     /**
+     * @brief Writer configuration for multi-layered 'lhv1' images.
+     * @details There can be 0 or many Layer configurations in each Content. */
+    struct Layer
+    {
+        std::uint32_t uniq_bsid; ///< Unique identifier for this context, used for referencing from another sections
+        std::uint32_t base_refr; ///< Unique identifier of the base layer. Its bitstream will be used if file_path is not set.
+        std::string file_path;   ///< Bitstream input file
+        std::string hdlr_type;   ///< Handler type
+        std::string code_type;   ///< Codec type
+        bool hidden;             ///< True if the image is not intended to be displayed
+        std::uint16_t target_outputlayer; ///< Output layer set index, for L-HEVC bitstreams 'tols'
+        std::int32_t layer_selection; ///< Output layer selection 'lsel', -1 if not generated
+    };
+
+    /**
      * @brief Writer configuration for metadata */
     struct Metadata
     {
@@ -149,10 +165,14 @@ public:
     };
 
     /**
-     * @brief Writer configuration for entity groupings */
-    struct Egroups
+     * @brief Writer configuration for Image mirror Transformative item property */
+    struct Imir
     {
-        Altr altr; ///< Alternative ('altr') type groupings
+        std::uint32_t uniq_bsid; ///< Unique identifier for this context, used for referencing from another sections
+        bool essential;          ///< True if the property is essential to item. A reader is required to process essential properties.
+        ReferenceList refs_list; ///< uniq_bsids of contexts referenced in idxs_list
+        IndexList idxs_list;     ///< 1-based sequential numbers, one vector for each item in refs_list, to associate this property to
+        bool horizontalAxis;     ///< Mirror axis (\c true = horizontal, \c false = vertical)
     };
 
     /**
@@ -245,6 +265,7 @@ public:
     struct Derived
     {
         std::uint32_t contextId;             ///< @todo This Context ID should be refactored away from configuration.
+        std::vector<Imir> imirs;             ///< Property configurations used to generate derived image items by identity transformation
         std::vector<Irot> irots;             ///< Property configurations used to generate derived image items by identity transformation
         std::vector<Rloc> rlocs;             ///< Property configurations used to generate derived image items by identity transformation
         std::vector<Clap> claps;             ///< Property configurations used to generate derived image items by identity transformation
@@ -260,6 +281,7 @@ public:
     struct Property
     {
         std::uint32_t contextId; ///< @todo This Context ID should be refactored away from configuration.
+        std::vector<Imir> imirs; ///< Image mirror property configurations
         std::vector<Irot> irots; ///< Image rotation property configurations
         std::vector<Rloc> rlocs; ///< Relative location property configurations
         std::vector<Clap> claps; ///< Clean aperture property configurations
@@ -272,6 +294,7 @@ public:
         std::uint32_t uniq_bsid; ///< Unique identifier for this context, used for referencing from another sections
         std::string file_path;   ///< Bitstream input file
         std::string urn;         ///< URN to specify type of the auxiliary image. Format is "urn:mpeg:hevc:2015:auxid:xxx" where xxx comes from Table F.2 of ISO/IEC 23008-2.
+        std::string code_type;   ///< Codec type
         ReferenceList refs_list; ///< uniq_bsids of contexts referenced in idxs_list
         IndexList idxs_list;     ///< 1-based sequential numbers, one vector for each item in refs_list, to refer to master images from auxiliary images
         bool hidden;             ///< True if the image is not intended to be displayed
@@ -285,6 +308,7 @@ public:
         std::vector<Thumbs> thumbs;       ///< Configurations for thumbnail images
         std::vector<Metadata> metadata;   ///< Configurations for metadata (xml, Exif)
         std::vector<Auxiliary> auxiliary; ///< Configurations for auxiliary images
+        std::vector<Layer> layers;        ///< Configurations for multi-layer images
         Derived derived;                  ///< Configurations for derived images
         Property property;                ///< Configurations for properties
     };
@@ -295,7 +319,7 @@ public:
     {
         General general;              ///< Global configuration
         std::vector<Content> content; ///< Content configuration, 1 or more. Each has own Master configuration.
-        Egroups egroups;              ///< Entity grouping configuration
+        std::vector<Egroup> egroups;  ///< Entity grouping configuration
     };
 };
 

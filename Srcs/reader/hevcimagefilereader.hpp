@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Nokia Technologies Ltd.
+/* Copyright (c) 2015-2017, Nokia Technologies Ltd.
  * All rights reserved.
  *
  * Licensed under the Nokia High-Efficiency Image File Format (HEIF) License (the "License").
@@ -15,7 +15,6 @@
 
 #include "decodepts.hpp"
 #include "filetypebox.hpp"
-#include "hevcdecoderconfigrecord.hpp"
 #include "imagefilereaderinterface.hpp"
 #include "imagespatialextentsproperty.hpp"
 #include "metabox.hpp"
@@ -26,8 +25,11 @@
 #include <memory>
 
 class CleanAperture;
+class AvcDecoderConfigurationRecord;
+class HevcDecoderConfigurationRecord;
+class LHevcDecoderConfigurationRecord;
 
-/** @brief Interface for reading an Image File (e.g. HEVC Image File) from the filesystem. */
+/** @brief Interface for reading an Image File (e.g. HEIF Image File) from the filesystem. */
 class HevcImageFileReader : public ImageFileReaderInterface
 {
 public:
@@ -105,6 +107,9 @@ public:
     /// @see ImageFileReaderInterface::getPropertyAuxc()
     virtual AuxProperty getPropertyAuxc(std::uint32_t contextId, std::uint32_t index) const;
 
+    /// @see ImageFileReaderInterface::getPropertyImir()
+    virtual ImirProperty getPropertyImir(std::uint32_t contextId, std::uint32_t index) const;
+
     /// @see ImageFileReaderInterface::getPropertyIrot()
     virtual IrotProperty getPropertyIrot(std::uint32_t contextId, std::uint32_t index) const;
 
@@ -113,6 +118,12 @@ public:
 
     // @see ImageFileReaderInterface::getPropertyClap()
     virtual ClapProperty getPropertyClap(std::uint32_t contextId, std::uint32_t index) const;
+
+    /// @see ImageFileReaderInterface::getPropertyLsel()
+    virtual LselProperty getPropertyLsel(std::uint32_t contextId, std::uint32_t index) const;
+
+    /// @see ImageFileReaderInterface::getPropertyTols()
+    virtual TolsProperty getPropertyTols(std::uint32_t contextId, std::uint32_t index) const;
 
     /// @see ImageFileReaderInterface::getItemProperties()
     virtual PropertyTypeVector getItemProperties(std::uint32_t contextId, std::uint32_t itemId) const;
@@ -135,6 +146,9 @@ public:
 
     /// @see ImageFileReaderInterface::getItemDecodeDependencies()
     virtual void getItemDecodeDependencies(std::uint32_t contextId, std::uint32_t itemId, IdVector& dependencies) const;
+
+    /// @see ImageFileReaderInterface::getDecoderCodeType()
+    virtual std::string getDecoderCodeType(const uint32_t contextId, const uint32_t itemId) const;
 
     /// @see ImageFileReaderInterface::getDecoderParameterSets()
     virtual void getDecoderParameterSets(std::uint32_t contextId, std::uint32_t itemId,
@@ -164,7 +178,8 @@ private:
     typedef std::pair<ContextId, ItemId> Id;                  ///< Convenience type combining context and item IDs
     typedef std::pair<ItemId, Timestamp> ItemIdTimestampPair; ///< Pair of Item/sample ID and timestamp
 
-    std::map<Id, ParameterSetMap> mParameterSetMap; ///< Extracted parameter sets
+    std::map<Id, std::string> mDecoderCodeTypeMap;  ///< Extracted decoder code types for each sample and image
+    std::map<Id, ParameterSetMap> mParameterSetMap; ///< Extracted decoder parameter sets
     std::map<Id, Id> mImageToParameterSetMap;       ///< Map from every sample and image item to parameter set map entry
 
     /// Context type classification
@@ -192,6 +207,13 @@ private:
     void isInitialized() const;
 
     /**
+     * Return compatibility version of the file by trying to locate 'mdat' which has data beginning with
+     * bytes 'NHW_'.
+     * @return Compatibility version number if it was found, otherwise zero.
+     */
+    int readCompatibilityVersion();
+
+    /**
      * Identify context by context id.
      * @param [in] id Context ID
      * @throws FileReaderException, StatusCode=[UNINITIALIZED, INVALID_CONTEXT_ID]
@@ -202,7 +224,7 @@ private:
     void readStream();
 
     FileFeature getFileFeatures() const;
-    void readBox(BitStream& bitstream, std::string& boxType, std::uint64_t& boxSize);
+    void readBox(BitStream& bitstream, std::string& boxType);
 
     /** Get dimensions for item
      * @param [in]  contextId Track or meta context id
@@ -211,7 +233,20 @@ private:
      * @param [out] height    Height if the item in pixels */
     void getImageDimensions(ContextId contextId, ItemId itemId, std::uint32_t& width, std::uint32_t& height) const;
 
+    /** Move decoder configuration parameter data to ParamSetMap
+     * @param record AVC decoder configuration
+     * @return Decoder parameters */
+    ParameterSetMap makeDecoderParameterSetMap(const AvcDecoderConfigurationRecord& record) const;
+
+    /** Move decoder configuration parameter data to ParamSetMap
+     * @param record HEVC decoder configuration
+     * @return Decoder parameters */
     ParameterSetMap makeDecoderParameterSetMap(const HevcDecoderConfigurationRecord& record) const;
+
+    /** Move decoder configuration parameter data to ParamSetMap
+     * @param record LHEVC decoder configuration
+     * @return Decoder parameters */
+    ParameterSetMap makeDecoderParameterSetMap(const LHevcDecoderConfigurationRecord& record) const;
 
     /** @return Ids of all items of a context */
     IdVector getContextItems(ContextId contextId) const;
@@ -224,6 +259,18 @@ private:
      * @todo Add support for protected track content if needed. */
     bool isProtected(std::uint32_t contextId, std::uint32_t itemId) const;
 
+    /** Get item data from AVC bitstream
+     *  @param [in]  rawItemData Raw AVC bitstream data
+     *  @param [out] itemData    Retrieved item data.
+     *  @pre initialize() has been called successfully. */
+    void getAvcItemData(const DataVector& rawItemData, DataVector& itemData);
+
+    /** Get item data from HEVC bitstream
+     *  @param [in]  rawItemData Raw HEVC bitstream data
+     *  @param [out] itemData    Retrieved item data.
+     *  @pre initialize() has been called successfully. */
+    void getHevcItemData(const DataVector& rawItemData, DataVector& itemData);
+
     /* ********************************************************************** */
     /* *********************** Meta-specific section  *********************** */
     /* ********************************************************************** */
@@ -235,7 +282,7 @@ private:
     /// Reader internal information about each image item
     struct ImageInfo
     {
-        std::string type = "invalid"; ///< Image item type, should be "master", "hidden", "pre-computed", or "hvc1"
+        std::string type = "invalid"; ///< Image item type, should be "master", "hidden", "pre-computed", "hvc1" or "lhv1"
         std::uint32_t width = 0;      ///< Width of the image from ispe property
         std::uint32_t height = 0;     ///< Height of the image from ispe property
         double displayTime = 0;       ///< Display timestamp generated by the reader
@@ -326,7 +373,7 @@ private:
      * @param contextId Meta context ID
      * @pre Filled mMetaBoxMap, filled mFileProperties.rootLevelMetaBoxProperties.imageFeaturesMap
      * @todo To support multiple MetaBoxes, ImageFeaturesMap should be a parameter (not use one from root meta). */
-    void processHvccProperties(const ContextId contextId);
+    void processDecoderConfigProperties(const ContextId contextId);
 
     /**
      * @brief Extract MetaBoxInfo struct for reader internal use
@@ -399,7 +446,7 @@ private:
     /**
      * @brief Fill mParameterSetMap and mTrackInfo clapProperties entries for a a TrackBox
      * @param [in] trackBox TrackBox to extract data from */
-    void fillHevcSampleEntryMap(TrackBox* trackBox);
+    void fillSampleEntryMap(TrackBox* trackBox);
 
     /**
      * @brief Find if there is certain type reference or references from tracks to a track.
@@ -505,7 +552,7 @@ std::string getRawItemType(const MetaBox& metaBox, uint32_t itemId);
 ImageFileReaderInterface::ClapProperty makeClap(const CleanAperture* clapBox);
 
 /**
- * @brief Recognize image item types ("hvc1", "grid", "iovl", "iden")
+ * @brief Recognize image item types ("hvc1", "lhv1", "grid", "iovl", "iden")
  * @param type 4CC Item type from Item Info Entry
  * @return True if the 4CC is an image type */
 bool isImageItemType(const std::string& type);
