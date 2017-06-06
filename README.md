@@ -33,12 +33,12 @@ This repository contains the following items:
 * HEIF Web Site Content
 * HEIF Reader JavaScript Implementation
 
-##License:
+## License:
 Please see **[LICENSE.TXT](https://github.com/nokiatech/heif/blob/master/LICENSE.TXT)** file for the terms of use of the contents of this repository.
 
 All the example media files (*.heic, *.png, *.jpg, *.gif) in this repository are under copyright © Nokia Technologies 2015-2017.
 
 For more information/questions/source code related issues, please contact: <heif@nokia.com>
 
-###**Copyright (c) 2015-2017, Nokia Technologies Ltd.**
-###**All rights reserved.**
+### **Copyright (c) 2015-2017, Nokia Technologies Ltd.**
+### **All rights reserved.**
