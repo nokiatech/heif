@@ -15,16 +15,12 @@ int main(int argc, char *argv[])
 
     cout << "converting " << input_file_name << " to " << output_file_name;
 
-    printf("A\n");
     HevcImageFileReader reader;
     ImageFileReaderInterface::DataVector data;
     ImageFileReaderInterface::IdVector itemIds;
 
-    printf("B\n");
     reader.initialize(input_file_name);
-    printf("C\n");
     const auto& properties = reader.getFileProperties();
-    printf("D\n");
 
     // Verify that the file has one or several images in the MetaBox
     if (not (properties.fileFeature.hasFeature(ImageFileReaderInterface::FileFeature::HasSingleImage) ||
@@ -34,13 +30,14 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    printf("E\n");
 
     // Find the item ID of the first master image
     const uint32_t contextId = properties.rootLevelMetaBoxProperties.contextId;
+    cout << "A"
     reader.getItemListByType(contextId, "master", itemIds);
-    printf("F\n");
+    cout << "B"
     const uint32_t masterId = itemIds.at(0);
+    cout << "C"
 
     const auto& metaBoxFeatures = properties.rootLevelMetaBoxProperties.metaBoxFeature; // For convenience
     if (metaBoxFeatures.hasFeature(ImageFileReaderInterface::MetaBoxFeature::HasThumbnails))
