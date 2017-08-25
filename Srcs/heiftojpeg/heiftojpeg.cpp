@@ -3,15 +3,25 @@
 
 using namespace std;
 
-int main()
+int main(int argc, char *argv[])
 {
+    if ( argc != 3 ) {
+        cout << "usage: heiftojpeg <input_file_name> <output_file_name>";
+        return 1;
+    }
+
+    char *input_file_name = argv[1];
+    char *output_file_name = argv[2];
+
+    cout << "converting " << input_file_name << " to " << output_file_name;
+
     printf("A\n");
     HevcImageFileReader reader;
     ImageFileReaderInterface::DataVector data;
     ImageFileReaderInterface::IdVector itemIds;
 
     printf("B\n");
-    reader.initialize("fixtures/test_001.heic");
+    reader.initialize(input_file_name);
     printf("C\n");
     const auto& properties = reader.getFileProperties();
     printf("D\n");
