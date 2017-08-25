@@ -33,11 +33,11 @@ int main(int argc, char *argv[])
 
     // Find the item ID of the first master image
     const uint32_t contextId = properties.rootLevelMetaBoxProperties.contextId;
-    cout << "A"
+    cout << "A";
     reader.getItemListByType(contextId, "master", itemIds);
-    cout << "B"
+    cout << "B";
     const uint32_t masterId = itemIds.at(0);
-    cout << "C"
+    cout << "C";
 
     const auto& metaBoxFeatures = properties.rootLevelMetaBoxProperties.metaBoxFeature; // For convenience
     if (metaBoxFeatures.hasFeature(ImageFileReaderInterface::MetaBoxFeature::HasThumbnails))
