@@ -15,11 +15,8 @@ int main(int argc, char *argv[])
 
     cout << "Converting HEIF image " << input_file_name << " to JPEG " << output_file_name << "\n";
 
-    HevcImageFileReader reader;
-    ImageFileReaderInterface::DataVector data;
-    ImageFileReaderInterface::IdVector itemIds;
-
     cout << "reading " << input_file_name << "...\n";
+    HevcImageFileReader reader;
     reader.initialize(input_file_name);
     const auto& properties = reader.getFileProperties();
 
@@ -34,10 +31,12 @@ int main(int argc, char *argv[])
 
     cout << "getting master image id...\n";
     const uint32_t contextId = properties.rootLevelMetaBoxProperties.contextId;
+    ImageFileReaderInterface::IdVector itemIds;
     reader.getItemListByType(contextId, "master", itemIds);
     const uint32_t masterId = itemIds.at(0);
 
     cout << "master image found with id " << masterId << ", getting image data...\n";
+    ImageFileReaderInterface::DataVector data;
     reader.getItemDataWithDecoderParameters(contextId, masterId, data);
 
     cout << "item data received with size " << data.size() << "\n";
