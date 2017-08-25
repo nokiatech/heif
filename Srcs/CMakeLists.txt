@@ -15,6 +15,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/parser)
 add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/reader)
 add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/writer)
 add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/writerapp)
+add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/heiftojpeg)
 
 # Do not build reader API usage examples by default
 #add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/examples)
