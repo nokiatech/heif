@@ -13,12 +13,13 @@ int main(int argc, char *argv[])
     char *input_file_name = argv[1];
     char *output_file_name = argv[2];
 
-    cout << "converting " << input_file_name << " to " << output_file_name << "\n";
+    cout << "Converting HEIF image " << input_file_name << " to JPEG " << output_file_name << "\n";
 
     HevcImageFileReader reader;
     ImageFileReaderInterface::DataVector data;
     ImageFileReaderInterface::IdVector itemIds;
 
+    cout << "reading " << input_file_name << "...\n"
     reader.initialize(input_file_name);
     const auto& properties = reader.getFileProperties();
 
@@ -26,24 +27,20 @@ int main(int argc, char *argv[])
     if (not (properties.fileFeature.hasFeature(ImageFileReaderInterface::FileFeature::HasSingleImage) ||
         properties.fileFeature.hasFeature(ImageFileReaderInterface::FileFeature::HasImageCollection)))
     {
-        cout << "Input has no image\n";
+        cout << "No image property found.\n";
         return 1;
     }
 
 
-    // Find the item ID of the first master image
+    cout << "getting master image id...\n"
     const uint32_t contextId = properties.rootLevelMetaBoxProperties.contextId;
-    cout << "A\n";
     reader.getItemListByType(contextId, "master", itemIds);
-    cout << "B\n";
     const uint32_t masterId = itemIds.at(0);
-    cout << "C\n";
 
+    cout << "master image found with id " << masterId << ", getting image data...\n"
     reader.getItemDataWithDecoderParameters(contextId, masterId, data);
-    cout << "J\n";
-    // ...decode and display...
 
-    cout << "FIN\n";
+    cout << "item data received with size " << data.size() << "\n"
 
     return 0;
 }
