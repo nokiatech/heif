@@ -11,7 +11,7 @@ int main()
     ImageFileReaderInterface::IdVector itemIds;
 
     printf("B\n");
-    reader.initialize("test_002.heic");
+    reader.initialize("test_001.heic");
     printf("C\n");
     const auto& properties = reader.getFileProperties();
     printf("D\n");
