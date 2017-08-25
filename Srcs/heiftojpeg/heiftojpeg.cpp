@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     ImageFileReaderInterface::DataVector data;
     ImageFileReaderInterface::IdVector itemIds;
 
-    cout << "reading " << input_file_name << "...\n"
+    cout << "reading " << input_file_name << "...\n";
     reader.initialize(input_file_name);
     const auto& properties = reader.getFileProperties();
 
