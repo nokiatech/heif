@@ -39,8 +39,6 @@ int main(int argc, char *argv[])
     const uint32_t masterId = itemIds.at(0);
     cout << "C\n";
 
-    const auto& metaBoxFeatures = properties.rootLevelMetaBoxProperties.metaBoxFeature; // For convenience
-    cout << "D\n";
     reader.getItemDataWithDecoderParameters(contextId, masterId, data);
     cout << "J\n";
     // ...decode and display...
