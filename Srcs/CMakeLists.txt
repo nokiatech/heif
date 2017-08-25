@@ -11,7 +11,7 @@
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/common)
 #add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/jsonlib)
-#add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/parser)
+add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/parser)
 add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/reader)
 #add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/writer)
 #add_subdirectory(${PROJECT_SOURCE_DIR}/Srcs/writerapp)
