@@ -41,27 +41,9 @@ int main(int argc, char *argv[])
 
     const auto& metaBoxFeatures = properties.rootLevelMetaBoxProperties.metaBoxFeature; // For convenience
     cout << "D\n";
-    if (metaBoxFeatures.hasFeature(ImageFileReaderInterface::MetaBoxFeature::HasThumbnails))
-    {
-        cout << "E\n";
-        // Thumbnail references ('thmb') are from the thumbnail image to the master image
-        reader.getReferencedToItemListByType(contextId, masterId, "thmb", itemIds);
-        cout << "F\n";
-        const uint32_t thumbnailId = itemIds.at(0);
-        cout << "G\n";
-
-        reader.getItemDataWithDecoderParameters(contextId, thumbnailId, data);
-        cout << "H\n";
-        // ...decode data and display the image, show master image later
-    }
-    else
-    {
-        cout << "I\n";
-        // There was no thumbnail, show just the master image
-        reader.getItemDataWithDecoderParameters(contextId, masterId, data);
-        cout << "J\n";
-        // ...decode and display...
-    }
+    reader.getItemDataWithDecoderParameters(contextId, masterId, data);
+    cout << "J\n";
+    // ...decode and display...
 
     cout << "FIN\n";
 
