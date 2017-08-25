@@ -32,15 +32,15 @@ int main(int argc, char *argv[])
     }
 
 
-    cout << "getting master image id...\n"
+    cout << "getting master image id...\n";
     const uint32_t contextId = properties.rootLevelMetaBoxProperties.contextId;
     reader.getItemListByType(contextId, "master", itemIds);
     const uint32_t masterId = itemIds.at(0);
 
-    cout << "master image found with id " << masterId << ", getting image data...\n"
+    cout << "master image found with id " << masterId << ", getting image data...\n";
     reader.getItemDataWithDecoderParameters(contextId, masterId, data);
 
-    cout << "item data received with size " << data.size() << "\n"
+    cout << "item data received with size " << data.size() << "\n";
 
     return 0;
 }
