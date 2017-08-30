@@ -4,6 +4,7 @@ include_directories(${ImageMagick_INCLUDE_DIRS})
 
 include(CheckIncludeFiles)
 check_include_files(libavcodec/avcodec.h HAVE_AVCODEC_H)
+check_include_files(libavutil/avutil.h HAVE_AVCODEC_H)
 
 include_directories(${PROJECT_SOURCE_DIR}/Srcs/common)
 include_directories(${PROJECT_SOURCE_DIR}/Srcs/reader)
