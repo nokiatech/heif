@@ -231,6 +231,7 @@ void processFile(char *filename)
 int main(int argc, char *argv[])
 {
     Magick::InitializeMagick(*argv);
+    avcodec_init();
     avcodec_register_all();
     if ( argc != 3 ) {
         cout << "usage: heiftojpeg <input_file_name> <output_file_name>";
