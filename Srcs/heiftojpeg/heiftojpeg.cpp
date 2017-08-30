@@ -220,13 +220,13 @@ void processFile(char *filename)
     // std::cout << "bitstream=" << bitstream.size() << std::endl;
     // ofs.write((const char *)bitstream.data(), bitstream.size());
 
-    Magick::Montage montageOptions;
-    montageOptions.tile("8x6");
-    std::list<Magick::Image> montage;
-    Magick::montageImages(&montage, tileImages.begin(), tileImages.end(), montageOptions);
-    Magick::Image image = montage.front();
-    image.magick("JPEG");
-    image.write("out.jpg");
+    // Magick::Montage montageOptions;
+    // montageOptions.tile("8x6");
+    // std::list<Magick::Image> montage;
+    // Magick::montageImages(&montage, tileImages.begin(), tileImages.end(), montageOptions);
+    // Magick::Image image = montage.front();
+    // image.magick("JPEG");
+    // image.write("out.jpg");
 }
 
 int main(int argc, char *argv[])
