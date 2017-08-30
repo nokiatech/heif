@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "hevcimagefilereader.hpp"
 #include <iostream>
 #include <fstream>
@@ -65,12 +67,12 @@ static int decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *
     std::string hevcfilename = "tmp.hevc";
     std::string bmpfilename = "tmp.bmp";
     std::ofstream hevcfile(hevcfilename);
-    hevcfilename.write((char*)data[0],data.size());
-    hevcfilename.close();
+    hevcfile.write((char*)&data[0],data.size());
+    hevcfile.close();
     cout << "wrote frame hevc to " << hevcfilename << "\n";
-    system("ffmpeg -i tmp.hevc -loglevel warning -frames:v 1 -vsync vfr -q:v 1 -an " + bmpfilename);
+    system(("ffmpeg -i tmp.hevc -loglevel warning -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpfilename).c_str());
     cout << "decoded to bitmap in " << bmpfilename << "\n";
-    *image = Magick::Image(tmpfilename);
+    *image = Magick::Image(bmpfilename);
     return 1;
 
 
