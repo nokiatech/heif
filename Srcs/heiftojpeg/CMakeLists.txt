@@ -1,4 +1,4 @@
-find_package(ImageMagick COMPONENTS Magick++)
+find_package(ImageMagick COMPONENTS Magick++ MagickWand MagickCore montage)
 
 include_directories(${ImageMagick_INCLUDE_DIRS})
 
@@ -20,4 +20,3 @@ target_compile_options(${HEIFTOJPEG_EXE} PRIVATE -DMAGICKCORE_HDRI_ENABLE=0 -DMA
 target_link_libraries(${HEIFTOJPEG_EXE} avcodec)
 target_link_libraries(${HEIFTOJPEG_EXE} avformat)
 target_link_libraries(${HEIFTOJPEG_EXE} avutil)
-

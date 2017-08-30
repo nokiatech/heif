@@ -21,7 +21,6 @@ extern "C"
 
 using namespace std;
 
-
 static void pgm_save(unsigned char *buf, int wrap, int xsize, int ysize,
                      char *filename)
 {
@@ -121,6 +120,7 @@ static int decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *
 
     return 1;
 }
+
 void processFile(char *filename)
 {
     HevcImageFileReader reader;
@@ -199,17 +199,41 @@ void processFile(char *filename)
         cout << "\n";
     }
 
+
+    HevcImageFileReader::ParameterSetMap parameterSet;
+    reader.getDecoderParameterSets(contextId, tileItemIds.at(0), parameterSet);
+    std::string codeType = reader.getDecoderCodeType(contextId, tileItemIds.at(0));
+    ImageFileReaderInterface::DataVector itemDataWithDecoderParameters;
+    ImageFileReaderInterface::DataVector itemData;
+
     std::vector<Magick::Image> tileImages;
     for (auto& tileItemId: tileItemIds) {
-        ImageFileReaderInterface::DataVector data;
-        reader.getItemDataWithDecoderParameters(contextId, tileItemId, data);
+        itemDataWithDecoderParameters.clear();
+        itemData.clear();
+
+        if ((codeType == "hvc1") || (codeType == "lhv1")) {
+            // VPS (HEVC specific)
+            itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("VPS").begin(), parameterSet.at("VPS").end());
+        }
+
+        if ((codeType == "avc1") || (codeType == "hvc1") || (codeType == "lhv1")) {
+            // SPS and PPS
+            itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("SPS").begin(), parameterSet.at("SPS").end());
+            itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("PPS").begin(), parameterSet.at("PPS").end());
+        } else {
+            // No other code types supported
+            // throw FileReaderException(FileReaderException::StatusCode::UNSUPPORTED_CODE_TYPE);
+        }
+
+        reader.getItemData(contextId, tileItemId, itemData);
+        // +1 comes from skipping first zero after decoder parameters
+        itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), itemData.begin() + 1, itemData.end());
+
         Magick::Image image;
-        decodeData(data, &image);
+        decodeData(itemDataWithDecoderParameters, &image);
         tileImages.push_back(image);
     }
 
-    // HevcImageFileReader::ParameterSetMap paramset;
-    // reader.getDecoderParameterSets(contextId, tileItemIds.at(0), paramset);
 
     // std::ofstream ofs(dstfile, std::ios::binary);
     // for (const auto& key : {"VPS", "SPS", "PPS"}) {
@@ -220,13 +244,14 @@ void processFile(char *filename)
     // std::cout << "bitstream=" << bitstream.size() << std::endl;
     // ofs.write((const char *)bitstream.data(), bitstream.size());
 
-    // Magick::Montage montageOptions;
-    // montageOptions.tile("8x6");
-    // std::list<Magick::Image> montage;
-    // Magick::montageImages(&montage, tileImages.begin(), tileImages.end(), montageOptions);
-    // Magick::Image image = montage.front();
-    // image.magick("JPEG");
-    // image.write("out.jpg");
+    Magick::Montage montageOptions;
+    montageOptions.tile("8x6");
+    montageOptions.geometry("512x512");
+    std::list<Magick::Image> montage;
+    Magick::montageImages(&montage, tileImages.begin(), tileImages.end(), montageOptions);
+    Magick::Image image = montage.front();
+    image.magick("JPEG");
+    image.write("out.jpg");
 }
 
 int main(int argc, char *argv[])
