@@ -15,7 +15,7 @@ extern "C"
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
 #define av_frame_alloc avcodec_alloc_frame
 #define av_frame_free avcodec_free_frame
-#define AV_CODEC_ID_HEVC AV_CODEC_ID_H264
+// #define AV_CODEC_ID_HEVC AV_CODEC_ID_H264
 #endif
 
 #define INBUF_SIZE 4096
