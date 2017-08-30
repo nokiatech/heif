@@ -1,6 +1,6 @@
-# find_package(ImageMagick COMPONENTS Magick++)
+find_package(ImageMagick COMPONENTS Magick++)
 
-#include_directories(${ImageMagick_INCLUDE_DIRS})
+include_directories(${ImageMagick_INCLUDE_DIRS})
 
 include(CheckIncludeFiles)
 check_include_files(libavcodec/avcodec.h HAVE_AVCODEC_H)

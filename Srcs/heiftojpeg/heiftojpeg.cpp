@@ -1,6 +1,7 @@
 #include "hevcimagefilereader.hpp"
 #include <iostream>
 #include <fstream>
+#include <string>
 
 extern "C"
 {
@@ -12,82 +13,109 @@ extern "C"
 
 using namespace std;
 
-void getData(char *filename, ImageFileReaderInterface::DataVector& data)
+void decodeData(ImageFileReaderInterface::DataVector data, std::string outfilename);
+
+void processFile(char *filename)
 {
     HevcImageFileReader reader;
-    ImageFileReaderInterface::IdVector itemIds;
+    ImageFileReaderInterface::GridItem gridItem;
+    ImageFileReaderInterface::IdVector gridItemIds;
 
     cout << "reading image data from " << filename << "...\n";
     reader.initialize(filename);
     const auto& properties = reader.getFileProperties();
-
-    cout << "getting master image id...\n";
     const uint32_t contextId = properties.rootLevelMetaBoxProperties.contextId;
-    reader.getItemListByType(contextId, "master", itemIds);
-    cout << "items " << itemIds.size() << "\n";
-    const uint32_t itemId = itemIds.at(0);
-    cout << "item id " << itemId << " " << reader.getItemType(contextId, itemId) << "\n";
+
+    cout << "getting grid...\n";
+    reader.getItemListByType(contextId, "grid", gridItemIds);
+    cout << "found " << gridItemIds.size() << " grid items\n";
+    const uint32_t itemId = gridItemIds.at(0);
+    cout << "grid item 0 has id " << itemId << "\n";
+    gridItem = reader.getItemGrid(contextId, itemId);
+
+    uint32_t width = gridItem.outputWidth;
+    uint32_t height = gridItem.outputHeight;
+    uint8_t rows = gridItem.rowsMinusOne + 1;
+    uint8_t cols = gridItem.columnsMinusOne + 1;
+    cout << "grid is " << width << "x" << height << " pixels in tiles " << rows << "x" << cols << "\n";
+
+    cout << "loading tiles...";
+    ImageFileReaderInterface::IdVector tileItemIds;
+    reader.getItemListByType(contextId, "master", tileItemIds);
+    cout << "found " << tileItemIds.size() << " tile images\n";
+
+    cout << "loading props";
+    uint16_t rotation;
     const auto props = reader.getItemProperties(contextId, itemId);
     for (const auto& property : props)
     {
-
         cout << "prop ";
         if (property.type == ImageFileReaderInterface::ItemPropertyType::AUXC) {
-            cout << "AUXC";
+            cout << "AUXC ";
             cout << reader.getPropertyAuxc(contextId, property.index).auxType;
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::AVCC) {
-            cout << "AVCC";
+            cout << "AVCC ";
             // cout << reader.getPropertyAvcc(contextId, property.index);
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::CLAP) {
-            cout << "CLAP";
+            cout << "CLAP ";
             cout << reader.getPropertyClap(contextId, property.index).widthN;
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::HVCC) {
-            cout << "HVCC";
+            cout << "HVCC ";
             // cout << reader.getPropertyHvcc(contextId, property.index);
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::IMIR) {
-            cout << "IMIR";
+            cout << "IMIR ";
             cout << reader.getPropertyImir(contextId, property.index).horizontalAxis;
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::IROT) {
-            cout << "IROT";
-            cout << reader.getPropertyIrot(contextId, property.index).rotation;
+            cout << "IROT ";
+            rotation = reader.getPropertyIrot(contextId, property.index).rotation;
+            cout << rotation;
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::ISPE) {
-            cout << "ISPE";
+            cout << "ISPE ";
             // cout << reader.getPropertyIspe(contextId, property.index);
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::LHVC) {
-            cout << "LHVC";
+            cout << "LHVC ";
             // cout << reader.getPropertyLhvc(contextId, property.index);
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::LSEL) {
-            cout << "LSEL";
+            cout << "LSEL ";
             cout << reader.getPropertyLsel(contextId, property.index).layerId;
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::OINF) {
-            cout << "OINF";
+            cout << "OINF ";
             // cout << reader.getPropertyOinf(contextId, property.index);
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::RLOC) {
-            cout << "RLOC";
+            cout << "RLOC ";
             cout << reader.getPropertyRloc(contextId, property.index).horizontalOffset;
         } else if (property.type == ImageFileReaderInterface::ItemPropertyType::TOLS) {
-            cout << "TOLS";
+            cout << "TOLS ";
             cout << reader.getPropertyTols(contextId, property.index).targetOlsIndex;
         } else {
-            cout << "unknown";
+            cout << "unknown ";
         }
         cout << "\n";
     }
-    // const uint32_t itemId = reader.getCoverImageItemId(contextId);
-    // reader.getItemListByType(contextId, "iden", itemIds);
-    // cout << "items " << itemIds.size() << "\n";
-    // const uint32_t itemId = itemIds.at(0);
-    // reader.getReferencedFromItemListByType(contextId, itemId, "dimg", itemIds);
-    // const uint32_t sourceItemId = itemIds.at(0); // For demo purposes, assume there was one
-    // reader.getItemListByType(contextId, "thmb", itemIds);
-    // cout << "items " << itemIds.size() << "\n";
-    // const uint32_t thumbnailId = itemIds.at(0);
 
-    // cout << "thumbnail found with id " << thumbnailId << "\n";
-    reader.getItemDataWithDecoderParameters(contextId, itemId, data);
+    std::vector<ImageFileReaderInterface::DataVector> tileImages;
+    for (auto& tileItemId: tileItemIds) {
+        ImageFileReaderInterface::DataVector data;
+        reader.getItemDataWithDecoderParameters(contextId, tileItemId, data);
+        tileImages.push_back(data);
+    }
 
-    // cout << "cover image found with id " << itemId << " source " << sourceItemId << ", getting image data...\n";
-    // reader.getItemDataWithDecoderParameters(contextId, sourceItemId, data);
+    // HevcImageFileReader::ParameterSetMap paramset;
+    // reader.getDecoderParameterSets(contextId, tileItemIds.at(0), paramset);
+
+    // std::ofstream ofs(dstfile, std::ios::binary);
+    // for (const auto& key : {"VPS", "SPS", "PPS"}) {
+    //     const auto& nalu = paramset[key];
+    //     std::cout << key << " len=" << nalu.size() << std::endl;
+    //     ofs.write((const char *)nalu.data(), nalu.size());
+    // }
+    // std::cout << "bitstream=" << bitstream.size() << std::endl;
+    // ofs.write((const char *)bitstream.data(), bitstream.size());
+
+    for (unsigned i = 0; i < tileImages.size(); i++) {
+        auto tileImage = tileImages.at(i);
+        decodeData(tileImage, "tile-" + std::to_string(i) + ".jpg");
+    }
 }
 
 
@@ -131,7 +159,7 @@ static int decode_write_frame(const char *outfilename, AVCodecContext *avctx,
     return 0;
 }
 
-void decodeData(ImageFileReaderInterface::DataVector data, char *outfilename)
+void decodeData(ImageFileReaderInterface::DataVector data, std::string outfilename)
 {
     cout << "A\n";
     AVCodec *codec;
@@ -184,45 +212,10 @@ void decodeData(ImageFileReaderInterface::DataVector data, char *outfilename)
 
     cout << "H\n";
     frame_count = 0;
-    // int copied = 0;
-    // for (;;) {
-    //     memcpy(inbuf, data.data(), INBUF_SIZE);
-    //     vector<uint8_t> subdata(data.begin() + copied, data.begin() + INBUF_SIZE + copied);
-    //     avpkt.size = subdata.size();
-    //     copied += subdata.size();
-    //     if (avpkt.size == 0)
-    //         break;
-    //     /* NOTE1: some codecs are stream based (mpegvideo, mpegaudio)
-    //        and this is the only method to use them because you cannot
-    //        know the compressed data size before analysing it.
-    //        BUT some other codecs (msmpeg4, mpeg4) are inherently frame
-    //        based, so you must call them with all the data for one
-    //        frame exactly. You must also initialize 'width' and
-    //        'height' before initializing them. */
-    //      NOTE2: some codecs allow the raw parameters (frame size,
-    //        sample rate) to be changed at any frame. We handle this, so
-    //        you should also take care of it
-    //     /* here, we use a stream based decoder (mpeg1video), so we
-    //        feed decoder and see if it could decode a frame */
-    //     memcpy(inbuf, subdata.data(), subdata.size());
-    //     avpkt.data = inbuf;
-    //     while (avpkt.size > 0) {
-    //         cout << "I\n";
-    //         if (decode_write_frame(outfilename, c, frame, &frame_count, &avpkt, 0) < 0) {
-    //             avpkt.data = NULL;
-    // avpkt.size = 0;
-    // decode_write_frame(outfilename, c, frame, &frame_count, &avpkt, 1);
-    //             exit(1);
-    //         }
-    //     }
-    // }
-    // avpkt.data = NULL;
-    // avpkt.size = 0;
-    // decode_write_frame(outfilename, c, frame, &frame_count, &avpkt, 1);
 
     avpkt.data = data.data();
     avpkt.size = data.size();
-    decode_write_frame(outfilename, c, frame, &frame_count, &avpkt, 0);
+    decode_write_frame(outfilename.c_str(), c, frame, &frame_count, &avpkt, 0);
 
     avcodec_close(c);
     av_free(c);
@@ -243,17 +236,17 @@ int main(int argc, char *argv[])
 
     cout << "Converting HEIF image " << input_file_name << " to JPEG " << output_file_name << "\n";
 
-    ImageFileReaderInterface::DataVector data;
-    getData(input_file_name, data);
 
-    cout << "item data received with size " << data.size() << "\n";
+    processFile(input_file_name);
+
+    // cout << "item data received with size " << data.size() << "\n";
 
     // std::ofstream output_file(output_file_name);
     // std::ostream_iterator<std::uint8_t> output_iterator(output_file, "\n");
     // std::copy(data.begin(), data.end(), output_iterator);
 
 
-    decodeData(data, output_file_name);
+    // decodeData(data, output_file_name);
     return 0;
 }
 
