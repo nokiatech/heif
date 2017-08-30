@@ -9,7 +9,16 @@
 
 using namespace std;
 
-static int decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
+struct ImageData {
+    uint32_t outputWidth;
+    uint32_t outputHeight;
+    uint8_t rows;
+    uint8_t cols;
+    uint16_t rotation;
+    std::vector<ImageFileReaderInterface::DataVector> tiles;
+};
+
+static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
 {
     std::string hevcfilename = "tmp.hevc";
     std::string bmpfilename = "tmp.bmp";
@@ -18,28 +27,25 @@ static int decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *
     hevcfile.close();
     system(("ffmpeg -i tmp.hevc -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpfilename).c_str());
     *image = Magick::Image(bmpfilename);
-    return 1;
 }
 
 void processFile(char *filename)
 {
     HevcImageFileReader reader;
-    ImageFileReaderInterface::GridItem gridItem;
-    ImageFileReaderInterface::IdVector gridItemIds;
-
     reader.initialize(filename);
+
     const auto& properties = reader.getFileProperties();
     const uint32_t contextId = properties.rootLevelMetaBoxProperties.contextId;
 
+    ImageFileReaderInterface::IdVector gridItemIds;
     reader.getItemListByType(contextId, "grid", gridItemIds);
     cout << "found " << gridItemIds.size() << " grid items\n";
+
     const uint32_t itemId = gridItemIds.at(0);
-    cout << "grid item 0 has id " << itemId << "\n";
+    ImageFileReaderInterface::GridItem gridItem;
     gridItem = reader.getItemGrid(contextId, itemId);
 
-    uint8_t rows = gridItem.rowsMinusOne + 1;
-    uint8_t cols = gridItem.columnsMinusOne + 1;
-    cout << "grid is " << gridItem.outputWidth << "x" << gridItem.outputHeight << " pixels in tiles " << rows << "x" << cols << "\n";
+    cout << "grid is " << gridItem.outputWidth << "x" << gridItem.outputHeight << " pixels in tiles " << gridItem.rowsMinusOne << "x" << gridItem.columnsMinusOne << "\n";
 
     ImageFileReaderInterface::IdVector tileItemIds;
     reader.getItemListByType(contextId, "master", tileItemIds);
@@ -93,33 +99,37 @@ void processFile(char *filename)
         cout << "\n";
     }
 
-
+    // Always reuse the parameter set from the first tile, sometimes tile 7 or 8 is corrupted
     HevcImageFileReader::ParameterSetMap parameterSet;
     reader.getDecoderParameterSets(contextId, tileItemIds.at(0), parameterSet);
     std::string codeType = reader.getDecoderCodeType(contextId, tileItemIds.at(0));
+    ImageFileReaderInterface::DataVector parametersData;
+    if ((codeType == "hvc1") || (codeType == "lhv1")) {
+        // VPS (HEVC specific)
+        parametersData.insert(parametersData.end(), parameterSet.at("VPS").begin(), parameterSet.at("VPS").end());
+    }
+
+    if ((codeType == "avc1") || (codeType == "hvc1") || (codeType == "lhv1")) {
+        // SPS and PPS
+        parametersData.insert(parametersData.end(), parameterSet.at("SPS").begin(), parameterSet.at("SPS").end());
+        parametersData.insert(parametersData.end(), parameterSet.at("PPS").begin(), parameterSet.at("PPS").end());
+    } else {
+        // No other code types supported
+        // throw FileReaderException(FileReaderException::StatusCode::UNSUPPORTED_CODE_TYPE);
+    }
+
+
     ImageFileReaderInterface::DataVector itemDataWithDecoderParameters;
     ImageFileReaderInterface::DataVector itemData;
 
     std::vector<Magick::Image> tileImages;
     for (auto& tileItemId: tileItemIds) {
         itemDataWithDecoderParameters.clear();
+        itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parametersData.begin(), parametersData.end());
+
         itemData.clear();
-
-        if ((codeType == "hvc1") || (codeType == "lhv1")) {
-            // VPS (HEVC specific)
-            itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("VPS").begin(), parameterSet.at("VPS").end());
-        }
-
-        if ((codeType == "avc1") || (codeType == "hvc1") || (codeType == "lhv1")) {
-            // SPS and PPS
-            itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("SPS").begin(), parameterSet.at("SPS").end());
-            itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parameterSet.at("PPS").begin(), parameterSet.at("PPS").end());
-        } else {
-            // No other code types supported
-            // throw FileReaderException(FileReaderException::StatusCode::UNSUPPORTED_CODE_TYPE);
-        }
-
         reader.getItemData(contextId, tileItemId, itemData);
+
         // +1 comes from skipping first zero after decoder parameters
         itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), itemData.begin() + 1, itemData.end());
 
