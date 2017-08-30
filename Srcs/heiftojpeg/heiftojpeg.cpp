@@ -14,6 +14,7 @@ extern "C"
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
 #define av_frame_alloc avcodec_alloc_frame
 #define av_frame_free avcodec_free_frame
+#define AV_CODEC_ID_HEVC CODEC_ID_HEVC
 #endif
 
 #define INBUF_SIZE 4096
@@ -231,7 +232,6 @@ void processFile(char *filename)
 int main(int argc, char *argv[])
 {
     Magick::InitializeMagick(*argv);
-    avcodec_init();
     avcodec_register_all();
     if ( argc != 3 ) {
         cout << "usage: heiftojpeg <input_file_name> <output_file_name>";
