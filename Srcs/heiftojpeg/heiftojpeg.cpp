@@ -29,7 +29,17 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     *image = Magick::Image(bmpfilename);
 }
 
-void processFile(char *filename)
+static void addExif(ImageFileReaderInterface::DataVector exifData, std::string fileName)
+{
+    std::string exifFileName = "tmp.exif";
+    std::ofstream exifFile(exifFileName);
+    exifFile.write((char*)&exifData[0], exifData.size());
+    exifFile.close();
+    cout << "wrote exif to " << exifFileName << "\n";
+    system(("exiftool " + fileName + " -tagsFromFile " + exifFileName).c_str());
+}
+
+static void processFile(char *filename, char *outputFileName)
 {
     HevcImageFileReader reader;
     reader.initialize(filename);
@@ -41,18 +51,25 @@ void processFile(char *filename)
     reader.getItemListByType(contextId, "grid", gridItemIds);
     cout << "found " << gridItemIds.size() << " grid items\n";
 
-    const uint32_t itemId = gridItemIds.at(0);
+    const uint32_t gridItemId = gridItemIds.at(0);
     ImageFileReaderInterface::GridItem gridItem;
-    gridItem = reader.getItemGrid(contextId, itemId);
+    gridItem = reader.getItemGrid(contextId, gridItemId);
 
     cout << "grid is " << gridItem.outputWidth << "x" << gridItem.outputHeight << " pixels in tiles " << gridItem.rowsMinusOne << "x" << gridItem.columnsMinusOne << "\n";
+
+    ImageFileReaderInterface::IdVector exifItemIds;
+    ImageFileReaderInterface::DataVector exifData;
+    reader.getReferencedToItemListByType(contextId, gridItemId, "cdsc", exifItemIds);
+    cout << "found " << exifItemIds.size() << " cdsc items\n";
+    reader.getItemData(contextId, exifItemIds.at(0), exifData);
+    cout << "read " << exifData.size() << " bytes of exif data\n";
 
     ImageFileReaderInterface::IdVector tileItemIds;
     reader.getItemListByType(contextId, "master", tileItemIds);
     cout << "found " << tileItemIds.size() << " tile images\n";
 
     uint16_t rotation;
-    const auto props = reader.getItemProperties(contextId, itemId);
+    const auto props = reader.getItemProperties(contextId, gridItemId);
     for (const auto& property : props)
     {
         cout << "prop ";
@@ -118,7 +135,6 @@ void processFile(char *filename)
         // throw FileReaderException(FileReaderException::StatusCode::UNSUPPORTED_CODE_TYPE);
     }
 
-
     ImageFileReaderInterface::DataVector itemDataWithDecoderParameters;
     ImageFileReaderInterface::DataVector itemData;
 
@@ -147,7 +163,9 @@ void processFile(char *filename)
     image.magick("JPEG");
     image.crop(Magick::Geometry(gridItem.outputWidth,gridItem.outputHeight));
     image.rotate(-rotation);
-    image.write("out.jpg");
+    image.write(outputFileName);
+
+    addExif(exifData, outputFileName);
 }
 
 int main(int argc, char *argv[])
@@ -159,12 +177,12 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    char *input_file_name = argv[1];
-    char *output_file_name = argv[2];
+    char *inputFileName = argv[1];
+    char *outputFileName = argv[2];
 
-    cout << "Converting HEIF image " << input_file_name << " to JPEG " << output_file_name << "\n";
+    cout << "Converting HEIF image " << inputFileName << " to JPEG " << outputFileName << "\n";
 
-    processFile(input_file_name);
+    processFile(inputFileName, outputFileName);
 
     return 0;
 }
