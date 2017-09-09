@@ -9,15 +9,6 @@
 
 using namespace std;
 
-struct ImageData {
-    uint32_t outputWidth;
-    uint32_t outputHeight;
-    uint8_t rows;
-    uint8_t cols;
-    uint16_t rotation;
-    std::vector<ImageFileReaderInterface::DataVector> tiles;
-};
-
 static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
 {
     std::string hevcfilename = "tmp.hevc";
