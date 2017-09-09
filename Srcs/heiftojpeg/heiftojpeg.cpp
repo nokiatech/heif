@@ -11,13 +11,15 @@ using namespace std;
 
 static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
 {
-    std::string hevcfilename = "tmp.hevc";
-    std::string bmpfilename = "tmp.bmp";
-    std::ofstream hevcfile(hevcfilename);
-    hevcfile.write((char*)&data[0],data.size());
-    hevcfile.close();
-    system(("ffmpeg -i tmp.hevc -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpfilename).c_str());
-    *image = Magick::Image(bmpfilename);
+    std::string hevcFileName = "tmp.hevc";
+    std::string bmpFileName = "tmp.bmp";
+    std::ofstream hevcFile(hevcFileName);
+    hevcFile.write((char*)&data[0],data.size());
+    hevcFile.close();
+    system(("ffmpeg -i tmp.hevc -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
+    *image = Magick::Image(bmpFileName);
+    remove(hevcFileName.c_str());
+    remove(bmpFileName.c_str());
 }
 
 static void addExif(ImageFileReaderInterface::DataVector exifData, std::string fileName)
@@ -27,7 +29,8 @@ static void addExif(ImageFileReaderInterface::DataVector exifData, std::string f
     exifFile.write((char*)&exifData[0], exifData.size());
     exifFile.close();
     cout << "wrote exif to " << exifFileName << "\n";
-    system(("exiftool " + fileName + " -tagsFromFile " + exifFileName).c_str());
+    system(("exiftool -m -overwrite_original " + fileName + " -tagsFromFile " + exifFileName).c_str());
+    remove(exifFileName.c_str());
 }
 
 static void processFile(char *filename, char *outputFileName)
