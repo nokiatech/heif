@@ -21,9 +21,13 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     ofstream hevcFile(hevcFileName);
     hevcFile.write((char*)&data[0],data.size());
     hevcFile.close();
-    system(("ffmpeg -i " + hevcFileName + " -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
-    *image = Magick::Image(bmpFileName);
+    int retval = system(("ffmpeg -i " + hevcFileName + " -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
     remove(hevcFileName.c_str());
+    if (retval != 0) {
+        fprintf(stderr, "ffmpeg failed with exit code %d\n", retval);
+        exit(1);
+    }
+    *image = Magick::Image(bmpFileName);
     remove(bmpFileName.c_str());
 }
 
@@ -36,8 +40,12 @@ static void addExif(ImageFileReaderInterface::DataVector exifData, string fileNa
     if (VERBOSE) {
         cout << "wrote exif to " << exifFileName << "\n";
     }
-    system(("exiftool -m -overwrite_original " + fileName + " -tagsFromFile " + exifFileName).c_str());
+    int retval = system(("exiftool -m -overwrite_original " + fileName + " -tagsFromFile " + exifFileName).c_str());
     remove(exifFileName.c_str());
+    if (retval != 0) {
+        fprintf(stderr, "exiftool failed with exit code %d\n", retval);
+        exit(1);
+    }
 }
 
 static void processFile(char *filename, char *outputFileName)
