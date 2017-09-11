@@ -79,18 +79,6 @@ static void processFile(char *filename, char *outputFileName)
         cout << "found " << tileItemIds.size() << " tile images\n";
     }
 
-    uint16_t rotation;
-    const auto props = reader.getItemProperties(contextId, gridItemId);
-    for (const auto& property : props)
-    {
-        if (property.type == ImageFileReaderInterface::ItemPropertyType::IROT) {
-            rotation = reader.getPropertyIrot(contextId, property.index).rotation;
-            if (VERBOSE) {
-                cout << "IROT " << rotation << "\n";
-            }
-        }
-    }
-
     // Always reuse the parameter set from the first tile, sometimes tile 7 or 8 is corrupted
     HevcImageFileReader::ParameterSetMap parameterSet;
     reader.getDecoderParameterSets(contextId, tileItemIds.at(0), parameterSet);
@@ -150,7 +138,6 @@ static void processFile(char *filename, char *outputFileName)
             image.zoom(Magick::Geometry(scaleFactor * gridItem.outputWidth, scaleFactor * gridItem.outputHeight));
         }
     }
-    image.rotate(-rotation);
     image.write(outputFileName);
 
     addExif(exifData, outputFileName);
