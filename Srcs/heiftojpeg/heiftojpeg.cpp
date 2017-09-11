@@ -15,9 +15,9 @@ static int VERBOSE = 0;
 
 static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
 {
-    std::string hevcFileName = "tmp.hevc";
-    std::string bmpFileName = "tmp.bmp";
-    std::ofstream hevcFile(hevcFileName);
+    string hevcFileName = "tmp.hevc";
+    string bmpFileName = "tmp.bmp";
+    ofstream hevcFile(hevcFileName);
     hevcFile.write((char*)&data[0],data.size());
     hevcFile.close();
     system(("ffmpeg -i " + hevcFileName + " -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
@@ -26,10 +26,10 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     remove(bmpFileName.c_str());
 }
 
-static void addExif(ImageFileReaderInterface::DataVector exifData, std::string fileName)
+static void addExif(ImageFileReaderInterface::DataVector exifData, string fileName)
 {
-    std::string exifFileName = "tmp.exif";
-    std::ofstream exifFile(exifFileName);
+    string exifFileName = "tmp.exif";
+    ofstream exifFile(exifFileName);
     exifFile.write((char*)&exifData[0], exifData.size());
     exifFile.close();
     if (VERBOSE) {
@@ -85,8 +85,7 @@ static void processFile(char *filename, char *outputFileName)
         if (property.type == ImageFileReaderInterface::ItemPropertyType::IROT) {
             rotation = reader.getPropertyIrot(contextId, property.index).rotation;
             if (VERBOSE) {
-                cout << "IROT ";
-                cout << rotation;
+                cout << "IROT " << rotation << "\n";
             }
         }
     }
@@ -94,7 +93,7 @@ static void processFile(char *filename, char *outputFileName)
     // Always reuse the parameter set from the first tile, sometimes tile 7 or 8 is corrupted
     HevcImageFileReader::ParameterSetMap parameterSet;
     reader.getDecoderParameterSets(contextId, tileItemIds.at(0), parameterSet);
-    std::string codeType = reader.getDecoderCodeType(contextId, tileItemIds.at(0));
+    string codeType = reader.getDecoderCodeType(contextId, tileItemIds.at(0));
     ImageFileReaderInterface::DataVector parametersData;
     if ((codeType == "hvc1") || (codeType == "lhv1")) {
         // VPS (HEVC specific)
@@ -113,7 +112,7 @@ static void processFile(char *filename, char *outputFileName)
     ImageFileReaderInterface::DataVector itemDataWithDecoderParameters;
     ImageFileReaderInterface::DataVector itemData;
 
-    std::vector<Magick::Image> tileImages;
+    vector<Magick::Image> tileImages;
     for (auto& tileItemId: tileItemIds) {
         itemDataWithDecoderParameters.clear();
         itemDataWithDecoderParameters.insert(itemDataWithDecoderParameters.end(), parametersData.begin(), parametersData.end());
@@ -132,7 +131,7 @@ static void processFile(char *filename, char *outputFileName)
     Magick::Montage montageOptions;
     montageOptions.tile("8x6");
     montageOptions.geometry("512x512");
-    std::list<Magick::Image> montage;
+    list<Magick::Image> montage;
     Magick::montageImages(&montage, tileImages.begin(), tileImages.end(), montageOptions);
     Magick::Image image = montage.front();
     image.magick("JPEG");
