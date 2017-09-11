@@ -19,8 +19,19 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     string hevcFileName = "tmp.hevc";
     string bmpFileName = "tmp.bmp";
     ofstream hevcFile(hevcFileName);
+    if (!hevcFile.is_open()) {
+        fprintf(stderr, "could not open %s for writing\n", hevcFileName.c_str());
+        exit(1);
+    }
     hevcFile.write((char*)&data[0],data.size());
+    if (hevcFile.bad()) {
+        fprintf(stderr, "failed to write %lu bytes to %s\n", data.size(), hevcFileName.c_str());
+        exit(1);
+    }
     hevcFile.close();
+    if (VERBOSE) {
+        cout << "wrote " << data.size() << " bytes to " << hevcFileName << "\n";
+    }
     int retval = system(("ffmpeg -i " + hevcFileName + " -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
     remove(hevcFileName.c_str());
     if (retval != 0) {
@@ -35,10 +46,18 @@ static void addExif(ImageFileReaderInterface::DataVector exifData, string fileNa
 {
     string exifFileName = "tmp.exif";
     ofstream exifFile(exifFileName);
+    if (!exifFile.is_open()) {
+        fprintf(stderr, "could not open %s for writing\n", exifFileName.c_str());
+        exit(1);
+    }
     exifFile.write((char*)&exifData[0], exifData.size());
+    if (exifFile.bad()) {
+        fprintf(stderr, "failed to write %lu bytes to %s\n", exifData.size(), exifFileName.c_str());
+        exit(1);
+    }
     exifFile.close();
     if (VERBOSE) {
-        cout << "wrote exif to " << exifFileName << "\n";
+        cout << "wrote " << exifData.size() << " bytes to " << exifFileName << "\n";
     }
     int retval = system(("exiftool -m -overwrite_original " + fileName + " -tagsFromFile " + exifFileName).c_str());
     remove(exifFileName.c_str());
