@@ -1,13 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "hevcimagefilereader.hpp"
+#include <unistd.h>
+#include <ctype.h>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <Magick++.h>
+#include "hevcimagefilereader.hpp"
 #include <list>
 
 using namespace std;
+
+static int VERBOSE = 0;
 
 static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
 {
@@ -16,7 +20,7 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     std::ofstream hevcFile(hevcFileName);
     hevcFile.write((char*)&data[0],data.size());
     hevcFile.close();
-    system(("ffmpeg -i tmp.hevc -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
+    system(("ffmpeg -i " + hevcFileName + " -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
     *image = Magick::Image(bmpFileName);
     remove(hevcFileName.c_str());
     remove(bmpFileName.c_str());
@@ -28,7 +32,9 @@ static void addExif(ImageFileReaderInterface::DataVector exifData, std::string f
     std::ofstream exifFile(exifFileName);
     exifFile.write((char*)&exifData[0], exifData.size());
     exifFile.close();
-    cout << "wrote exif to " << exifFileName << "\n";
+    if (VERBOSE) {
+        cout << "wrote exif to " << exifFileName << "\n";
+    }
     system(("exiftool -m -overwrite_original " + fileName + " -tagsFromFile " + exifFileName).c_str());
     remove(exifFileName.c_str());
 }
@@ -43,71 +49,46 @@ static void processFile(char *filename, char *outputFileName)
 
     ImageFileReaderInterface::IdVector gridItemIds;
     reader.getItemListByType(contextId, "grid", gridItemIds);
-    cout << "found " << gridItemIds.size() << " grid items\n";
+    if (VERBOSE) {
+        cout << "found " << gridItemIds.size() << " grid items\n";
+    }
 
     const uint32_t gridItemId = gridItemIds.at(0);
     ImageFileReaderInterface::GridItem gridItem;
     gridItem = reader.getItemGrid(contextId, gridItemId);
 
-    cout << "grid is " << gridItem.outputWidth << "x" << gridItem.outputHeight << " pixels in tiles " << gridItem.rowsMinusOne << "x" << gridItem.columnsMinusOne << "\n";
+    if (VERBOSE) {
+        cout << "grid is " << gridItem.outputWidth << "x" << gridItem.outputHeight << " pixels in tiles " << gridItem.rowsMinusOne << "x" << gridItem.columnsMinusOne << "\n";
+    }
 
     ImageFileReaderInterface::IdVector exifItemIds;
     ImageFileReaderInterface::DataVector exifData;
     reader.getReferencedToItemListByType(contextId, gridItemId, "cdsc", exifItemIds);
-    cout << "found " << exifItemIds.size() << " cdsc items\n";
+    if (VERBOSE) {
+        cout << "found " << exifItemIds.size() << " cdsc items\n";
+    }
     reader.getItemData(contextId, exifItemIds.at(0), exifData);
-    cout << "read " << exifData.size() << " bytes of exif data\n";
+    if (VERBOSE) {
+        cout << "read " << exifData.size() << " bytes of exif data\n";
+    }
 
     ImageFileReaderInterface::IdVector tileItemIds;
     reader.getItemListByType(contextId, "master", tileItemIds);
-    cout << "found " << tileItemIds.size() << " tile images\n";
+    if (VERBOSE) {
+        cout << "found " << tileItemIds.size() << " tile images\n";
+    }
 
     uint16_t rotation;
     const auto props = reader.getItemProperties(contextId, gridItemId);
     for (const auto& property : props)
     {
-        cout << "prop ";
-        if (property.type == ImageFileReaderInterface::ItemPropertyType::AUXC) {
-            cout << "AUXC ";
-            cout << reader.getPropertyAuxc(contextId, property.index).auxType;
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::AVCC) {
-            cout << "AVCC ";
-            // cout << reader.getPropertyAvcc(contextId, property.index);
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::CLAP) {
-            cout << "CLAP ";
-            cout << reader.getPropertyClap(contextId, property.index).widthN;
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::HVCC) {
-            cout << "HVCC ";
-            // cout << reader.getPropertyHvcc(contextId, property.index);
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::IMIR) {
-            cout << "IMIR ";
-            cout << reader.getPropertyImir(contextId, property.index).horizontalAxis;
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::IROT) {
-            cout << "IROT ";
+        if (property.type == ImageFileReaderInterface::ItemPropertyType::IROT) {
             rotation = reader.getPropertyIrot(contextId, property.index).rotation;
-            cout << rotation;
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::ISPE) {
-            cout << "ISPE ";
-            // cout << reader.getPropertyIspe(contextId, property.index);
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::LHVC) {
-            cout << "LHVC ";
-            // cout << reader.getPropertyLhvc(contextId, property.index);
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::LSEL) {
-            cout << "LSEL ";
-            cout << reader.getPropertyLsel(contextId, property.index).layerId;
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::OINF) {
-            cout << "OINF ";
-            // cout << reader.getPropertyOinf(contextId, property.index);
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::RLOC) {
-            cout << "RLOC ";
-            cout << reader.getPropertyRloc(contextId, property.index).horizontalOffset;
-        } else if (property.type == ImageFileReaderInterface::ItemPropertyType::TOLS) {
-            cout << "TOLS ";
-            cout << reader.getPropertyTols(contextId, property.index).targetOlsIndex;
-        } else {
-            cout << "unknown ";
+            if (VERBOSE) {
+                cout << "IROT ";
+                cout << rotation;
+            }
         }
-        cout << "\n";
     }
 
     // Always reuse the parameter set from the first tile, sometimes tile 7 or 8 is corrupted
@@ -162,19 +143,48 @@ static void processFile(char *filename, char *outputFileName)
     addExif(exifData, outputFileName);
 }
 
+int usage()
+{
+    fprintf(stderr, "Usage: heiftojpeg [-v] <input.heic> <output.jpg>\n");
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
     Magick::InitializeMagick(*argv);
 
-    if ( argc != 3 ) {
-        cout << "usage: heiftojpeg <input_file_name> <output_file_name>";
-        return 1;
+
+    char *inputFileName = NULL;
+    char *outputFileName = NULL;
+    int index;
+    int c;
+
+    opterr = 0;
+    while ((c = getopt (argc, argv, "v")) != -1) {
+        switch (c) {
+            case 'v':
+                VERBOSE = 1;
+                break;
+            case '?':
+                return usage();
+            default:
+                abort ();
+        }
     }
 
-    char *inputFileName = argv[1];
-    char *outputFileName = argv[2];
+    for (index = optind; index < argc; index++) {
+        if (inputFileName == NULL) {
+            inputFileName = argv[index];
+        } else if (outputFileName == NULL) {
+            outputFileName = argv[index];
+        } else {
+            return usage();
+        }
+    }
 
-    cout << "Converting HEIF image " << inputFileName << " to JPEG " << outputFileName << "\n";
+    if (VERBOSE) {
+        cout << "Converting HEIF image " << inputFileName << " to JPEG " << outputFileName << "\n";
+    }
 
     processFile(inputFileName, outputFileName);
 
