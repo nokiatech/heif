@@ -6,8 +6,8 @@
 #include <fstream>
 #include <string>
 #include <Magick++.h>
-#include "hevcimagefilereader.hpp"
 #include <list>
+#include "hevcimagefilereader.hpp"
 
 using namespace std;
 
@@ -23,7 +23,7 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
         cerr << "could not open " << hevcFileName << " for writing\n";
         exit(1);
     }
-    hevcFile.write((char*)&data[0],data.size());
+    hevcFile.write((char*)&data[0], data.size());
     if (hevcFile.bad()) {
         cerr << "failed to write " << data.size() << " bytes to " << hevcFileName << "\n";
         exit(1);
