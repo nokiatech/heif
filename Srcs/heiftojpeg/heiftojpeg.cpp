@@ -20,12 +20,12 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     string bmpFileName = "tmp.bmp";
     ofstream hevcFile(hevcFileName);
     if (!hevcFile.is_open()) {
-        fprintf(stderr, "could not open %s for writing\n", hevcFileName.c_str());
+        cerr << "could not open " << hevcFileName << " for writing\n";
         exit(1);
     }
     hevcFile.write((char*)&data[0],data.size());
     if (hevcFile.bad()) {
-        fprintf(stderr, "failed to write %lu bytes to %s\n", data.size(), hevcFileName.c_str());
+        cerr << "failed to write " << data.size() << " bytes to " << hevcFileName << "\n";
         exit(1);
     }
     hevcFile.close();
@@ -35,7 +35,7 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     int retval = system(("ffmpeg -i " + hevcFileName + " -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
     remove(hevcFileName.c_str());
     if (retval != 0) {
-        fprintf(stderr, "ffmpeg failed with exit code %d\n", retval);
+        cerr << "ffmpeg failed with exit code " << retval << "\n";
         exit(1);
     }
     *image = Magick::Image(bmpFileName);
@@ -47,12 +47,12 @@ static void addExif(ImageFileReaderInterface::DataVector exifData, string fileNa
     string exifFileName = "tmp.exif";
     ofstream exifFile(exifFileName);
     if (!exifFile.is_open()) {
-        fprintf(stderr, "could not open %s for writing\n", exifFileName.c_str());
+        cerr << "could not open " << exifFileName << " for writing\n";
         exit(1);
     }
     exifFile.write((char*)&exifData[0], exifData.size());
     if (exifFile.bad()) {
-        fprintf(stderr, "failed to write %lu bytes to %s\n", exifData.size(), exifFileName.c_str());
+        cerr << "failed to write " << exifData.size() << " bytes to " << exifFileName << "\n";
         exit(1);
     }
     exifFile.close();
@@ -62,7 +62,7 @@ static void addExif(ImageFileReaderInterface::DataVector exifData, string fileNa
     int retval = system(("exiftool -m -overwrite_original " + fileName + " -tagsFromFile " + exifFileName).c_str());
     remove(exifFileName.c_str());
     if (retval != 0) {
-        fprintf(stderr, "exiftool failed with exit code %d\n", retval);
+        cerr << "exiftool failed with exit code " << retval << "\n";
         exit(1);
     }
 }
@@ -122,7 +122,7 @@ static void processFile(char *filename, char *outputFileName)
         parametersData.insert(parametersData.end(), parameterSet.at("PPS").begin(), parameterSet.at("PPS").end());
     } else {
         // No other code types supported
-        // throw FileReaderException(FileReaderException::StatusCode::UNSUPPORTED_CODE_TYPE);
+        throw ImageFileReaderInterface::FileReaderException(ImageFileReaderInterface::FileReaderException::StatusCode::UNSUPPORTED_CODE_TYPE);
     }
 
     ImageFileReaderInterface::DataVector itemDataWithDecoderParameters;
@@ -172,7 +172,7 @@ static void processFile(char *filename, char *outputFileName)
 
 int usage()
 {
-    fprintf(stderr, "Usage: heiftojpeg [-v] [-s <max_dimension>] <input.heic> <output.jpg>\n");
+    cerr << "Usage: heiftojpeg [-v] [-s <max_dimension>] <input.heic> <output.jpg>\n";
     return 1;
 }
 
@@ -215,7 +215,11 @@ int main(int argc, char *argv[])
         cout << "Converting HEIF image " << inputFileName << " to JPEG " << outputFileName << "\n";
     }
 
-    processFile(inputFileName, outputFileName);
+    try {
+        processFile(inputFileName, outputFileName);
+    } catch (ImageFileReaderInterface::FileReaderException e) {
+        cerr << "exception occurred while processing " << inputFileName << ": " << e.what() << "\n";
+    }
 
     return 0;
 }
