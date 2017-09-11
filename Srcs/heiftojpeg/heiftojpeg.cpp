@@ -12,6 +12,7 @@
 using namespace std;
 
 static int VERBOSE = 0;
+static int MAX_SIZE = -1;
 
 static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
 {
@@ -135,7 +136,20 @@ static void processFile(char *filename, char *outputFileName)
     Magick::montageImages(&montage, tileImages.begin(), tileImages.end(), montageOptions);
     Magick::Image image = montage.front();
     image.magick("JPEG");
-    image.crop(Magick::Geometry(gridItem.outputWidth,gridItem.outputHeight));
+    image.crop(Magick::Geometry(gridItem.outputWidth, gridItem.outputHeight));
+
+    if (MAX_SIZE > 0) {
+        double scaleFactor;
+        if (gridItem.outputWidth > gridItem.outputHeight) {
+            scaleFactor = (double)MAX_SIZE / (double)gridItem.outputWidth;
+        } else {
+            scaleFactor = (double)MAX_SIZE / (double)gridItem.outputHeight;
+        }
+
+        if (scaleFactor < 1) {
+            image.zoom(Magick::Geometry(scaleFactor * gridItem.outputWidth, scaleFactor * gridItem.outputHeight));
+        }
+    }
     image.rotate(-rotation);
     image.write(outputFileName);
 
@@ -144,7 +158,7 @@ static void processFile(char *filename, char *outputFileName)
 
 int usage()
 {
-    fprintf(stderr, "Usage: heiftojpeg [-v] <input.heic> <output.jpg>\n");
+    fprintf(stderr, "Usage: heiftojpeg [-v] [-s <max_dimension>] <input.heic> <output.jpg>\n");
     return 1;
 }
 
@@ -152,17 +166,19 @@ int main(int argc, char *argv[])
 {
     Magick::InitializeMagick(*argv);
 
-
     char *inputFileName = NULL;
     char *outputFileName = NULL;
     int index;
     int c;
 
     opterr = 0;
-    while ((c = getopt (argc, argv, "v")) != -1) {
+    while ((c = getopt (argc, argv, "vs:")) != -1) {
         switch (c) {
             case 'v':
                 VERBOSE = 1;
+                break;
+            case 's':
+                MAX_SIZE = atoi(optarg);
                 break;
             case '?':
                 return usage();
