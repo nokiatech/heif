@@ -31,9 +31,14 @@ struct measure
 
 static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
 {
-    string hevcFileName = tmpnam(nullptr);
-    string bmpFileName = tmpnam(nullptr);
-    bmpFileName += ".bmp"; // ffmpeg expects the output file to the have the extension ".bmp"
+    char tmpTemplate[] = "/tmp/tmp-decodeData.XXXXXX";
+    char *tmpDirName = mkdtemp(tmpTemplate);
+
+    string hevcFileName = tmpDirName;
+    hevcFileName += "/tmp.hevc";
+    string bmpFileName = tmpDirName;
+    bmpFileName += "/tmp.bmp";
+
     ofstream hevcFile(hevcFileName);
     if (!hevcFile.is_open()) {
         cerr << "could not open " << hevcFileName << " for writing HEVC\n";
@@ -54,6 +59,9 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     remove(hevcFileName.c_str());
     if (retval != 0) {
         cerr << "ffmpeg failed with exit code " << retval << endl;
+        string rm = "rmdir ";
+        rm += tmpDirName;
+        system(rm.c_str());
         exit(1);
     }
     if (VERBOSE) {
@@ -61,11 +69,18 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     }
     *image = Magick::Image(bmpFileName);
     remove(bmpFileName.c_str());
+    string rm = "rmdir ";
+    rm += tmpDirName;
+    system(rm.c_str());
 }
 
 static void addExif(ImageFileReaderInterface::DataVector exifData, string fileName)
 {
-    string exifFileName = tmpnam(nullptr);
+    char tmpTemplate[] = "/tmp/tmp-addExif.XXXXXX";
+    char *tmpDirName = mkdtemp(tmpTemplate);
+
+    string exifFileName = tmpDirName;
+    exifFileName += "/tmp.exif";
     ofstream exifFile(exifFileName);
     if (!exifFile.is_open()) {
         cerr << "could not open " << exifFileName << " for writing EXIF\n";
@@ -84,6 +99,9 @@ static void addExif(ImageFileReaderInterface::DataVector exifData, string fileNa
     int retval = system(("exiftool -m -overwrite_original " + fileName + " -tagsFromFile " + exifFileName).c_str());
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     remove(exifFileName.c_str());
+    string rm = "rmdir ";
+    rm += tmpDirName;
+    system(rm.c_str());
     if (retval != 0) {
         cerr << "exiftool failed with exit code " << retval << endl;
         exit(1);
