@@ -7,12 +7,27 @@
 #include <string>
 #include <Magick++.h>
 #include <list>
+#include <chrono>
 #include "hevcimagefilereader.hpp"
 
 using namespace std;
 
 static int VERBOSE = 0;
 static int MAX_SIZE = -1;
+
+template<typename TimeT = std::chrono::milliseconds>
+struct measure
+{
+    template<typename F, typename ...Args>
+    static typename TimeT::rep execution(F&& func, Args&&... args)
+    {
+        auto start = std::chrono::steady_clock::now();
+        std::forward<decltype(func)>(func)(std::forward<Args>(args)...);
+        auto duration = std::chrono::duration_cast< TimeT>
+                            (std::chrono::steady_clock::now() - start);
+        return duration.count();
+    }
+};
 
 static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
 {
@@ -26,18 +41,23 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
     }
     hevcFile.write((char*)&data[0], data.size());
     if (hevcFile.bad()) {
-        cerr << "failed to write " << data.size() << " bytes of HEVC to " << hevcFileName << "\n";
+        cerr << "failed to write " << data.size() << " bytes of HEVC to " << hevcFileName << endl;
         exit(1);
     }
     hevcFile.close();
     if (VERBOSE) {
-        cout << "wrote " << data.size() << " bytes of HEVC to " << hevcFileName << "\n";
+        cout << "wrote " << data.size() << " bytes of HEVC to " << hevcFileName << endl;
     }
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
     int retval = system(("ffmpeg -i " + hevcFileName + " -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
     remove(hevcFileName.c_str());
     if (retval != 0) {
-        cerr << "ffmpeg failed with exit code " << retval << "\n";
+        cerr << "ffmpeg failed with exit code " << retval << endl;
         exit(1);
+    }
+    if (VERBOSE) {
+        cout << "[timing] ffmpeg " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "ms" << endl;
     }
     *image = Magick::Image(bmpFileName);
     remove(bmpFileName.c_str());
@@ -53,18 +73,23 @@ static void addExif(ImageFileReaderInterface::DataVector exifData, string fileNa
     }
     exifFile.write((char*)&exifData[0], exifData.size());
     if (exifFile.bad()) {
-        cerr << "failed to write " << exifData.size() << " bytes of EXIF to " << exifFileName << "\n";
+        cerr << "failed to write " << exifData.size() << " bytes of EXIF to " << exifFileName << endl;
         exit(1);
     }
     exifFile.close();
     if (VERBOSE) {
-        cout << "wrote " << exifData.size() << " bytes of EXIF to " << exifFileName << "\n";
+        cout << "wrote " << exifData.size() << " bytes of EXIF to " << exifFileName << endl;
     }
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
     int retval = system(("exiftool -m -overwrite_original " + fileName + " -tagsFromFile " + exifFileName).c_str());
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
     remove(exifFileName.c_str());
     if (retval != 0) {
-        cerr << "exiftool failed with exit code " << retval << "\n";
+        cerr << "exiftool failed with exit code " << retval << endl;
         exit(1);
+    }
+    if (VERBOSE) {
+        cout << "[timing] exiftool " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "ms" << endl;
     }
 }
 
@@ -87,7 +112,7 @@ static void processFile(char *filename, char *outputFileName)
     gridItem = reader.getItemGrid(contextId, gridItemId);
 
     if (VERBOSE) {
-        cout << "grid is " << gridItem.outputWidth << "x" << gridItem.outputHeight << " pixels in tiles " << gridItem.rowsMinusOne << "x" << gridItem.columnsMinusOne << "\n";
+        cout << "grid is " << gridItem.outputWidth << "x" << gridItem.outputHeight << " pixels in tiles " << gridItem.rowsMinusOne << "x" << gridItem.columnsMinusOne << endl;
     }
 
     ImageFileReaderInterface::IdVector exifItemIds;
@@ -145,6 +170,7 @@ static void processFile(char *filename, char *outputFileName)
         tileImages.push_back(image);
     }
 
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
     Magick::Montage montageOptions;
     montageOptions.tile("8x6");
     montageOptions.geometry("512x512");
@@ -154,6 +180,7 @@ static void processFile(char *filename, char *outputFileName)
     image.magick("JPEG");
     image.crop(Magick::Geometry(gridItem.outputWidth, gridItem.outputHeight));
 
+    string timingName = "magick montage+crop";
     if (MAX_SIZE > 0) {
         double scaleFactor;
         if (gridItem.outputWidth > gridItem.outputHeight) {
@@ -164,9 +191,15 @@ static void processFile(char *filename, char *outputFileName)
 
         if (scaleFactor < 1) {
             image.zoom(Magick::Geometry(scaleFactor * gridItem.outputWidth, scaleFactor * gridItem.outputHeight));
+            timingName += "+zoom";
         }
     }
     image.write(outputFileName);
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
+
+    if (VERBOSE) {
+        cout << "[timing] " << timingName << " " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "ms" << endl;
+    }
 
     addExif(exifData, outputFileName);
 }
@@ -213,13 +246,18 @@ int main(int argc, char *argv[])
     }
 
     if (VERBOSE) {
-        cout << "Converting HEIF image " << inputFileName << " to JPEG " << outputFileName << "\n";
+        cout << "Converting HEIF image " << inputFileName << " to JPEG " << outputFileName << endl;
     }
 
     try {
+        chrono::steady_clock::time_point begin = chrono::steady_clock::now();
         processFile(inputFileName, outputFileName);
+        chrono::steady_clock::time_point end = chrono::steady_clock::now();
+        if (VERBOSE) {
+            cout << "[timing] processFile " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "ms" << endl;
+        }
     } catch (ImageFileReaderInterface::FileReaderException e) {
-        cerr << "exception occurred while processing " << inputFileName << ": " << e.what() << "\n";
+        cerr << "exception occurred while processing " << inputFileName << ": " << e.what() << endl;
     }
 
     return 0;
