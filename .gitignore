@@ -13,3 +13,5 @@ cmake_install.cmake
 
 # IDE files
 *.user
+
+build/*
