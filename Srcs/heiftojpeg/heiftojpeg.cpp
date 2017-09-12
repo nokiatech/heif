@@ -16,21 +16,22 @@ static int MAX_SIZE = -1;
 
 static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image *image)
 {
-    string hevcFileName = "tmp.hevc";
-    string bmpFileName = "tmp.bmp";
+    string hevcFileName = tmpnam(nullptr);
+    string bmpFileName = tmpnam(nullptr);
+    bmpFileName += ".bmp"; // ffmpeg expects the output file to the have the extension ".bmp"
     ofstream hevcFile(hevcFileName);
     if (!hevcFile.is_open()) {
-        cerr << "could not open " << hevcFileName << " for writing\n";
+        cerr << "could not open " << hevcFileName << " for writing HEVC\n";
         exit(1);
     }
     hevcFile.write((char*)&data[0], data.size());
     if (hevcFile.bad()) {
-        cerr << "failed to write " << data.size() << " bytes to " << hevcFileName << "\n";
+        cerr << "failed to write " << data.size() << " bytes of HEVC to " << hevcFileName << "\n";
         exit(1);
     }
     hevcFile.close();
     if (VERBOSE) {
-        cout << "wrote " << data.size() << " bytes to " << hevcFileName << "\n";
+        cout << "wrote " << data.size() << " bytes of HEVC to " << hevcFileName << "\n";
     }
     int retval = system(("ffmpeg -i " + hevcFileName + " -loglevel panic -frames:v 1 -vsync vfr -q:v 1 -y -an " + bmpFileName).c_str());
     remove(hevcFileName.c_str());
@@ -44,20 +45,20 @@ static void decodeData(ImageFileReaderInterface::DataVector data, Magick::Image 
 
 static void addExif(ImageFileReaderInterface::DataVector exifData, string fileName)
 {
-    string exifFileName = "tmp.exif";
+    string exifFileName = tmpnam(nullptr);
     ofstream exifFile(exifFileName);
     if (!exifFile.is_open()) {
-        cerr << "could not open " << exifFileName << " for writing\n";
+        cerr << "could not open " << exifFileName << " for writing EXIF\n";
         exit(1);
     }
     exifFile.write((char*)&exifData[0], exifData.size());
     if (exifFile.bad()) {
-        cerr << "failed to write " << exifData.size() << " bytes to " << exifFileName << "\n";
+        cerr << "failed to write " << exifData.size() << " bytes of EXIF to " << exifFileName << "\n";
         exit(1);
     }
     exifFile.close();
     if (VERBOSE) {
-        cout << "wrote " << exifData.size() << " bytes to " << exifFileName << "\n";
+        cout << "wrote " << exifData.size() << " bytes of EXIF to " << exifFileName << "\n";
     }
     int retval = system(("exiftool -m -overwrite_original " + fileName + " -tagsFromFile " + exifFileName).c_str());
     remove(exifFileName.c_str());
