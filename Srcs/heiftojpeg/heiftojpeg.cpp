@@ -179,6 +179,7 @@ static void processFile(char *filename, char *outputFileName)
     Magick::Image image = montage.front();
     image.magick("JPEG");
     image.crop(Magick::Geometry(gridItem.outputWidth, gridItem.outputHeight));
+    image.quality(92);
 
     string timingName = "magick montage+crop";
     if (MAX_SIZE > 0) {
