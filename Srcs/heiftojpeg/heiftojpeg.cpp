@@ -277,6 +277,7 @@ int main(int argc, char *argv[])
         }
     } catch (ImageFileReaderInterface::FileReaderException e) {
         cerr << "exception occurred while processing " << inputFileName << ": " << e.what() << endl;
+        return 1;
     }
 
     return 0;
