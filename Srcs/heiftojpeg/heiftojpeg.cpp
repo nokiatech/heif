@@ -130,7 +130,7 @@ static void processFile(char *filename, char *outputFileName)
     gridItem = reader.getItemGrid(contextId, gridItemId);
 
     if (VERBOSE) {
-        cout << "grid is " << gridItem.outputWidth << "x" << gridItem.outputHeight << " pixels in tiles " << gridItem.rowsMinusOne << "x" << gridItem.columnsMinusOne << endl;
+        cout << "grid is " << gridItem.outputWidth << "x" << gridItem.outputHeight << " pixels in tiles " << std::to_string(gridItem.columnsMinusOne + 1) << "x" << std::to_string(gridItem.rowsMinusOne + 1) << endl;
     }
 
     ImageFileReaderInterface::IdVector exifItemIds;
@@ -190,7 +190,7 @@ static void processFile(char *filename, char *outputFileName)
 
     chrono::steady_clock::time_point begin = chrono::steady_clock::now();
     Magick::Montage montageOptions;
-    montageOptions.tile("8x6");
+    montageOptions.tile(std::to_string(gridItem.columnsMinusOne + 1) + "x" + std::to_string(gridItem.rowsMinusOne + 1));
     montageOptions.geometry("512x512");
     list<Magick::Image> montage;
     Magick::montageImages(&montage, tileImages.begin(), tileImages.end(), montageOptions);
