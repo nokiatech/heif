@@ -1184,6 +1184,7 @@ int HevcImageFileReader::readCompatibilityVersion()
             {
                 std::string versionString;
                 bitstream.readStringWithLen(versionString, 4);
+                mInputStream->clear();
                 mInputStream->seekg(0);
                 unsigned int version = 0;
                 try
@@ -1199,6 +1200,7 @@ int HevcImageFileReader::readCompatibilityVersion()
         }
     }
 
+    mInputStream->clear();
     mInputStream->seekg(0);
 
     return 0;
