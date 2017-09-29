@@ -104,9 +104,12 @@ void ItemInfoBox::parseBox(BitStream& bitstr)
 
     for (size_t i = 0; i < entryCount; ++i)
     {
-        ItemInfoEntry infoEntry;
-        infoEntry.parseBox(bitstr);
-        addItemInfoEntry(infoEntry);
+        try{
+            ItemInfoEntry infoEntry;
+            infoEntry.parseBox(bitstr);
+            addItemInfoEntry(infoEntry);
+        }
+        catch (const std::out_of_range&) {}
     }
 }
 
