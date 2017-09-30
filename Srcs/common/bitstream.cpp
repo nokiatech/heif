@@ -339,8 +339,8 @@ void BitStream::readZeroTerminatedString(string& dstString)
     char currChar;
 
     dstString.clear();
-    currChar = read8Bits();
-    while (currChar != '\0')
+
+    while (mByteOffset != getSize() && (currChar = read8Bits()) != '\0')
     {
         dstString += currChar;
         currChar = read8Bits();
