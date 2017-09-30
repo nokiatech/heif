@@ -342,11 +342,7 @@ void ItemInfoEntry::parseBox(BitStream& bitstr)
         if (mItemType == "mime")
         {
             bitstr.readZeroTerminatedString(mContentType);
-            try {
-                bitstr.readZeroTerminatedString(mContentEncoding);
-            } catch (std::out_of_range& e) {
-                // Some iPhone images break here, but it's not critical to the conversion
-            }
+            bitstr.readZeroTerminatedString(mContentEncoding);
         }
         else if (mItemType == "uri ")
         {
