@@ -32,6 +32,26 @@ This repository contains the following items:
 * HEIF Source Code Documentation 
 * HEIF Web Site Content
 * HEIF Reader JavaScript Implementation
+* heifttojpeg conversion tool (for iOS 11 photos)
+
+## heiftojpeg
+
+This tool is compatible with Linux and Mac environments. You will need ImageMagick, Magick++, and ffmpeg to compile and run it.
+
+To compile:
+
+`cd heif/build && cmake .. && make`
+
+The executable will be in `heif/Bins/heiftojpeg`
+
+You can run it on any HEIF file:
+
+`heiftojpeg [-v] [-s <max_dimension>] <input.heic> <output.jpg>`
+
+e.g.
+
+`heiftojpeg fixtures/test_001.heic out.jpg`
+
 
 ## License:
 Please see **[LICENSE.TXT](https://github.com/nokiatech/heif/blob/master/LICENSE.TXT)** file for the terms of use of the contents of this repository.

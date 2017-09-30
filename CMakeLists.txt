@@ -42,6 +42,7 @@ message(STATUS "File-list         : ${FILELIST}")
 # Set executable filenames
 set(WRITER_EXE writerapp)
 set(EXAMPLE_EXE examples)
+set(HEIFTOJPEG_EXE heiftojpeg)
 
 set(CMAKE_VERBOSE_MAKEFILE on)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
