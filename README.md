@@ -26,12 +26,12 @@ Please follow this **[link](https://nokiatech.github.io/heif/examples.html)** to
 ## Contents of the Repository:
 This repository contains the following items:
 * ISO Base Media File Format (ISOBMFF) parser/writer source code
-* HEIF Reader API and Library
-* HEIF Writer Library and Example Application
+* [HEIF Reader API and Library](https://github.com/nokiatech/heif/wiki/III.-HEIF-Reader-API-and-Usage-Examples)
+* [HEIF Writer Library and Example Application](https://github.com/nokiatech/heif/wiki/II.-HEIF-Writer-Library-and-Configuration-Examples)
 * HEIF Reader API Usage Example Code
 * HEIF Source Code Documentation 
 * HEIF Web Site Content
-* HEIF Reader JavaScript Implementation
+* [HEIF Reader JavaScript Implementation](https://github.com/nokiatech/heif/wiki/IV.-HEIF-Reader-JavaScript-Implementation)
 
 ## License:
 Please see **[LICENSE.TXT](https://github.com/nokiatech/heif/blob/master/LICENSE.TXT)** file for the terms of use of the contents of this repository.
