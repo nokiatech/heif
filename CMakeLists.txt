@@ -49,7 +49,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # GCC 4.9.1 gives unnecessary warnings about missing field initializers when compiling
     # with -std=c++11 and -Wextra, so use -Wno-missing-field-initializers for now.
-    set(warnings "-Wall -Wextra -Werror -Wno-missing-field-initializers")
+    set(warnings "-Wall -Wextra -Wno-missing-field-initializers")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     set(warnings "/W4 /EHsc")
 endif()
