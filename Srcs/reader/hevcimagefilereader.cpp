@@ -947,22 +947,18 @@ void HevcImageFileReader::getDecoderParameterSets(const uint32_t contextId, cons
     ParameterSetMap& parameterSets) const
 {
     isInitialized();
-    auto iter = mParameterSetMap.find(Id(contextId, itemId));
-    if (iter != mParameterSetMap.end())
-    {
-        parameterSets = iter->second;
-        return;
-    }
+    getContextType(contextId); // Throw a describing exception in case contextId is not valid.
 
-    // Was it an image/sample?
-    const Id parameterSetId = mImageToParameterSetMap.at(Id(contextId, itemId));
-    iter = mParameterSetMap.find(parameterSetId);
-    if (iter != mParameterSetMap.end())
+    try
     {
-        parameterSets = iter->second;
+        const Id parameterSetId = mImageToParameterSetMap.at(Id(contextId, itemId));
+        parameterSets = mParameterSetMap.at(parameterSetId);
         return;
     }
-    throw FileReaderException(FileReaderException::StatusCode::INVALID_ITEM_ID); // or invalid context...?
+    catch(...)
+    {
+        throw FileReaderException(FileReaderException::StatusCode::INVALID_ITEM_ID);
+    }
 }
 
 HevcImageFileReader::DataVector HevcImageFileReader::getItemProtectionScheme(const std::uint32_t contextId, const std::uint32_t itemId) const

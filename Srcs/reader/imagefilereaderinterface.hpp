@@ -824,10 +824,13 @@ public:
     virtual std::string getDecoderCodeType(const uint32_t contextId, const uint32_t itemId) const = 0;
 
     /** Get decoder configuration record parameter sets.
-     *  This method can be called by Player implementations that require a separate hardware decoder initialization
-     *  before the first frame data is fed (e.g. Android)
+     *  This method can be called by player implementations that require a separate hardware decoder initialization
+     *  before the first frame data is fed (e.g. Android). The item should be a decodable image, e.g. 'hvc1', 'avc1', 'lhv1'.
+     *  Note that this method should not be called for items which have no own encoded data, like identity derived images
+     *  (type 'iden'), image overlay and grid derived images. Calling the method for such item id will cause a FileReaderException
+     *  with StatusCode INVALID_ITEM_ID to be thrown.
      *  @param [in]  contextId     Track or metabox context id.
-     *  @param [in]  itemId        Unique identifier of an image item/sample
+     *  @param [in]  itemId        Unique identifier of an image item/sample.
      *  @param [out] parameterSets Decoder configuration record parameter setsParameter sets in a map that contains
      *                             <parameter set type, bitstream> pairs.
      *                             Parameter set types are defined as "SPS", "PPS" and "VPS" for HEVC.
