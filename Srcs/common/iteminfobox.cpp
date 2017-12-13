@@ -317,14 +317,23 @@ void ItemInfoEntry::parseBox(BitStream& bitstr)
         mItemProtectionIndex = bitstr.read16Bits();
         bitstr.readZeroTerminatedString(mItemName);
         bitstr.readZeroTerminatedString(mContentType);
-        bitstr.readZeroTerminatedString(mContentEncoding);
+        if (bitstr.numBytesLeft() > 0) // This is an optional field
+        {
+            bitstr.readZeroTerminatedString(mContentEncoding);
+        }
     }
     if (getVersion() == 1)
     {
-        bitstr.readStringWithLen(mExtensionType, 4);
-        FDItemInfoExtension *itemInfoExt = new FDItemInfoExtension;
-        mItemInfoExtension = itemInfoExt;
-        itemInfoExt->parse(bitstr);
+        if (bitstr.numBytesLeft() > 0) // This is an optional field
+        {
+            bitstr.readStringWithLen(mExtensionType, 4);
+        }
+        if (bitstr.numBytesLeft() > 0) // This is an optional field
+        {
+            FDItemInfoExtension* itemInfoExt = new FDItemInfoExtension;
+            mItemInfoExtension = itemInfoExt;
+            itemInfoExt->parse(bitstr);
+        }
     }
     if (getVersion() >= 2)
     {
@@ -342,7 +351,10 @@ void ItemInfoEntry::parseBox(BitStream& bitstr)
         if (mItemType == "mime")
         {
             bitstr.readZeroTerminatedString(mContentType);
-            bitstr.readZeroTerminatedString(mContentEncoding);
+            if (bitstr.numBytesLeft() > 0) // This is an optional field
+            {
+                bitstr.readZeroTerminatedString(mContentEncoding);
+            }
         }
         else if (mItemType == "uri ")
         {
