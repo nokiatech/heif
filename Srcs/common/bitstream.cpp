@@ -336,14 +336,20 @@ void BitStream::readStringWithPosAndLen(string& dstString, const unsigned int po
 
 void BitStream::readZeroTerminatedString(string& dstString)
 {
-    char currChar;
-
+    std::uint8_t currChar = 0xff;
     dstString.clear();
-    currChar = read8Bits();
-    while (currChar != '\0')
+
+    while (mByteOffset < mStorage.size())
     {
-        dstString += currChar;
         currChar = read8Bits();
+        if ((char) currChar != '\0')
+        {
+            dstString += static_cast<char>(currChar);
+        }
+        else
+        {
+            break;
+        }
     }
 }
 
