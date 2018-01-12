@@ -44,6 +44,7 @@ function Footer () {
                     </div> \
                     <ul> \
                         <li><a href="http://mpeg.chiariglione.org/">MPEG</a></li> \
+                        <li><a href="http://standards.iso.org/ittf/PubliclyAvailableStandards/c066067_ISO_IEC_23008-12_2017.zip">HEIF standard ISO/IEC 23008-12:2017</a></li> \
                         <li><a href="http://mpeg.chiariglione.org/standards/mpeg-4/iso-base-media-file-format">ISO Base Media File Format Specification</a></li> \
                     </ul> \
                 </div> \
