@@ -1,5 +1,5 @@
 Bins/
-
+build
 CMakeCache.txt
 CMakeFiles
 Makefile
@@ -10,6 +10,14 @@ cmake_install.cmake
 
 # Windows
 *.exe
+.project
+.vscode/
+
+*.heic
+*.xml
 
 # IDE files
 *.user
+
+# MacOS
+.DS_Store
