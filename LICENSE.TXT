@@ -1,0 +1,72 @@
+
+                     Nokia High-Efficiency Image File Format (HEIF) License
+                                             Version 2.0
+
+Copyright (c) 2018, Nokia Technologies Ltd.
+All rights reserved.
+
+Definitions.
+Specification means a draft or final version of the ISO/IEC (the International Organization
+for Standardization / the International Electrotechnical Commission) International Standard
+23008-12:2017 "Information technology – MPEG systems technologies – Part 12: Image File Format".
+
+Software means any source code, object code or binary files provided by Nokia excluding THIRD
+PARTY MATERIALS that, when used, fully or partly, generates files complying with the
+Specification and/or read files complying with the Specification.
+
+ Necessarily Infringed means there is no technical means of implementing the Specification,
+including implementation of any mandatory or optional parts thereof, without infringing such
+claim of a patent.
+
+Licensed Field means the non-commercial purposes of evaluation, testing and academic research
+in each non-commercial case to use, run, modify (in a way that still complies with the
+Specification) and copy the Software to (a) generate, using one or more encoded pictures as
+inputs, a file complying with the Specification and including the one or more encoded pictures
+that were given as inputs; and/or (b) read a file complying with the Specification, resulting
+into one or more encoded pictures included in the file as outputs.
+
+Licensed Patent means, excluding any Codec Patent, a Nokia Technologies Oy patent Necessarily
+Infringed by the Software when using the Software within the Licensed Field.  For the avoidance
+of doubt, Licensed Patents are limited solely to patents implemented in the Software.
+
+Codec Patent means a patent on image or video compression or decompression. Including, for the
+avoidance of doubt, any standard essential patent on any coding standard, such as ITU-T Rec.
+H.264, ISO/IEC 14496-10, ITU-T Rec. H.265, and ISO/IEC 23008-2.
+
+License Grant.
+Nokia Technologies Ltd (“Nokia”) hereby grants to you a non-sublicensable, perpetual, worldwide,
+non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this license) license,
+under its copyrights and Licensed Patents only to, use, run, modify (in a way that still complies
+with the Specification), and copy the Software within the Licensed Field. For the avoidance of
+doubt the Licensed Patents shall not include Codec Patents. Codec Patent licenses are neither
+granted, implied nor otherwise conveyed hereunder.
+
+Termination.
+If you, directly, or indirectly via a controlled affiliate or subsidiary, agent, or exclusive
+licensee, file a Claim (as defined below) of patent infringement against any entity alleging
+that the Software in whole or in part constitutes direct or contributory patent infringement,
+or inducement of patent infringement (a “Claim”), provided that the Software also allegedly
+infringes the patents asserted in the Claim, then this license, including any patent and other
+rights granted to you under this license, shall automatically terminate retroactively as of the
+date you first received the license grant.
+
+No Warranty.
+THIS SOFTWARE IS PROVIDED BY THE NOKIA AND ITS AFFILIATES "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NOKIA OR ITS AFFILIATES BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+THIRD PARTY MATERIALS
+
+build/ios/ios.toolchain.cmake
+Copyright (c) 2016, Bogdan Cristea <cristeab@gmail.com>
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

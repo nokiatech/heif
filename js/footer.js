@@ -1,17 +1,13 @@
-// Copyright (c) 2015-2017, Nokia Technologies Ltd.
-// All rights reserved.
-//
-// Licensed under the Nokia High-Efficiency Image File Format (HEIF)
-// License (the "License").
-//
-// You may not use the High-Efficiency Image File Format except in
-// compliance with the License.
-// The License accompanies the software and can be found in the file
-// "LICENSE.TXT".
-//
-// You may also obtain the License at:
-// https://nokiatech.github.io/heif/license.txt
-//
+/* This file is part of Nokia HEIF library
+ *
+ * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ *
+ * Contact: heif@nokia.com
+ *
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ *
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ */
 
 function Footer () {
     this.inject = function () {
@@ -32,11 +28,6 @@ function Footer () {
                             <span class="glyphicon glyphicon-download"></span> HEIF Reader/Writer Source Code at GitHub\
                         </a> \
                     </div> \
-                    <div class="heif-download-content-link"> \
-                        <a href="https://github.com/nokiatech/heif/tree/gh-pages/js"> \
-                            <span class="glyphicon glyphicon-download"></span> HEIF Reader JavaScript Implementation at GitHub\
-                        </a> \
-                    </div> \
                 </div> \
                 <div class="heif-download-content col-xs-12 col-sm-6"> \
                     <div class="heif-download-content-title"> \
@@ -51,7 +42,7 @@ function Footer () {
             </div> \
             \
             <div class="heif-footer-container"> \
-                <small><span>Copyright &#169; Nokia Technologies 2015-2017</span></small> \
+                <small><span>Copyright &#169; Nokia Technologies 2015-2018</span></small> \
                 <small><span>Contact: <a href="mailto:heif@nokia.com">heif@nokia.com</a></span></small>\
             </div> \
             \
