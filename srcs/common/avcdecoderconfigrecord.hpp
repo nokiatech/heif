@@ -41,9 +41,8 @@ public:
      * Add NAL unit to the NAL unit array
      * @param sps               Sequence Parameter Set data
      * @param nalUnitType       Type of the NAL unit
-     * @param arrayCompleteness TBD
      */
-    void addNalUnit(const Vector<std::uint8_t>& sps, AvcNalUnitType nalUnitType, std::uint8_t arrayCompleteness = 0);
+    void addNalUnit(const Vector<std::uint8_t>& sps, AvcNalUnitType nalUnitType);
 
     /**
      * Serialize decoder configuration to ISOBMFF::BitStream.
@@ -116,8 +115,7 @@ private:
 
     struct NALArray
     {
-        std::uint8_t arrayCompleteness = 0;
-        AvcNalUnitType nalUnitType     = AvcNalUnitType::INVALID;
+        AvcNalUnitType nalUnitType = AvcNalUnitType::INVALID;
         Vector<Vector<std::uint8_t>> nalList;
     };
 

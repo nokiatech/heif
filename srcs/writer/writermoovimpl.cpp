@@ -55,12 +55,12 @@ namespace HEIF
                 if (nalUnit.decSpecInfoType == DecoderSpecInfoType::AVC_PPS && !ppsFound)
                 {
                     ppsFound = true;
-                    decCfg.addNalUnit(nalVector, AvcNalUnitType::PPS, 1u);
+                    decCfg.addNalUnit(nalVector, AvcNalUnitType::PPS);
                 }
                 else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::AVC_SPS && !spsFound)
                 {
                     spsFound = true;
-                    decCfg.addNalUnit(nalVector, AvcNalUnitType::SPS, 1u);
+                    decCfg.addNalUnit(nalVector, AvcNalUnitType::SPS);
                     if (decCfg.makeConfigFromSPS(nalVector) == false)
                     {
                         return ErrorCode::DECODER_CONFIGURATION_ERROR;
@@ -151,17 +151,17 @@ namespace HEIF
                 if (nalUnit.decSpecInfoType == DecoderSpecInfoType::HEVC_PPS && !ppsFound)
                 {
                     ppsFound = true;
-                    decCfg.addNalUnit(nalVector, HevcNalUnitType::PPS, 1u);
+                    decCfg.addNalUnit(nalVector, HevcNalUnitType::PPS, true);
                 }
                 else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::HEVC_VPS && !vpsFound)
                 {
                     vpsFound = true;
-                    decCfg.addNalUnit(nalVector, HevcNalUnitType::VPS, 1u);
+                    decCfg.addNalUnit(nalVector, HevcNalUnitType::VPS, true);
                 }
                 else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::HEVC_SPS && !spsFound)
                 {
                     spsFound = true;
-                    decCfg.addNalUnit(nalVector, HevcNalUnitType::SPS, 1u);
+                    decCfg.addNalUnit(nalVector, HevcNalUnitType::SPS, true);
                     decCfg.makeConfigFromSPS(nalVector, 0.0);
                 }
                 else
@@ -1003,11 +1003,12 @@ namespace HEIF
             SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
 
             // stbl Box Data
-            std::list<std::uint64_t> chunkOffsets;
-            std::list<SampleToChunkBox::ChunkEntry> chunks;
-            std::list<std::uint32_t> sampleSizes;
-            std::list<std::pair<uint32_t, int64_t>> compositionOffsets;
-            std::list<std::uint32_t> syncSampleIndices;  // list of all sync samples
+            Vector<std::uint64_t> chunkOffsets;
+            Vector<SampleToChunkBox::ChunkEntry> chunks;
+            Vector<std::uint32_t> sampleSizes;
+            sampleSizes.reserve(sequence.samples.size());
+            Vector<std::pair<uint32_t, int64_t>> compositionOffsets;
+            Vector<std::uint32_t> syncSampleIndices;  // list of all sync samples
 
             const MediaDataId mediaDataId    = sequence.samples.front().mediaDataId;
             const MediaData& firstSampleData = mMediaData.at(mediaDataId);
@@ -1075,10 +1076,10 @@ namespace HEIF
 
             // then write the actual boxes using data from above.
             // stco
-            stbl.getChunkOffsetBox().setChunkOffsets({chunkOffsets.begin(), chunkOffsets.end()});
+            stbl.getChunkOffsetBox().setChunkOffsets(chunkOffsets);
             // stsz
             stbl.getSampleSizeBox().setSampleCount(static_cast<uint32_t>(sampleSizes.size()));
-            stbl.getSampleSizeBox().setEntrySize({sampleSizes.begin(), sampleSizes.end()});
+            stbl.getSampleSizeBox().setEntrySize(sampleSizes);
             // stco
             if (compositionOffsets.size() != 1 || compositionOffsets.front().second != 0)
             {
@@ -1410,7 +1411,7 @@ namespace HEIF
         // Set total duration based on repetitions
         if (editList.looping && editList.repetitions > 0.0)
         {
-            duration = static_cast<uint64_t>((double)duration * editList.repetitions);
+            duration = static_cast<uint64_t>((double) duration * editList.repetitions);
         }
 
         return duration * movieTimeScale / sequence.timeBase.den;

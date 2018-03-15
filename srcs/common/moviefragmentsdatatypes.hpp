@@ -70,5 +70,5 @@ namespace MOVIEFRAGMENTS
         std::uint32_t defaultSampleSize;
         MOVIEFRAGMENTS::SampleFlags defaultSampleFlags;
     };
-}
+}  // namespace MOVIEFRAGMENTS
 #endif /* MOVIEFRAGMENTSDATATYPES_HPP_ */

@@ -58,7 +58,8 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Cl
   # -Wswitch-default
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
 
-  if(NOT NO_DEBUG_STL)
+  if(DEBUG_STL)
+    message("Enabling STL debug mode for the debug build.")
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG")
   endif()
 else()
@@ -105,7 +106,7 @@ execute_process(
 
 if(GIT_ERROR)
     message( "Could not get version information from git")
-    set(GIT_DESCRIBE "developer")
+    set(GIT_DESCRIBE "v3.1")
 endif()
 
 # Get build timestamp

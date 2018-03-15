@@ -69,16 +69,9 @@ namespace HEIF
         MediaFormat mediaFormat;
 
         char* data;
-        size_t size;
+        uint64_t size;
 
         DecoderConfigId decoderConfigId = 0;  // required for MediaFormat values: AVC, HEVC, JPEG and AAC. Not needed for EXIF,XMP or MPEG7 metadata.
-    };
-
-    struct HEIF_DLL_PUBLIC CodingConstraints
-    {
-        bool allRefPicsIntra;  ///< This flag when set to one indicates the restriction that samples that are not sync samples, if any, are predicted only from sync samples.
-        bool intraPredUsed;    ///< False indicates that intra prediction is not used in the inter predicted images. True indicates that intra prediction may or may not be used in the inter predicted images.
-        uint8_t maxRefPerPic;  ///< Maximum number of reference images that may be used for decoding any single image within an image sequence. (value 15 = any number)
     };
 
     struct HEIF_DLL_PUBLIC SampleInfo

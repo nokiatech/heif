@@ -16,7 +16,6 @@
 #include "fourccint.hpp"
 
 // Handler types
-const FourCCInt EXIF_HANDLER = "exif";  ///< 4CC identifier of 'Exif' metadata handler
 const FourCCInt PICT_HANDLER = "pict";  ///< 4CC identifier of 'pict' image handler
 const FourCCInt AUXV_HANDLER = "auxv";  ///< 4CC identifier of 'auxv' auxiliary image sequence track
 const FourCCInt VIDE_HANDLER = "vide";  ///< 4CC identifier of 'vide' video track handler
@@ -52,32 +51,30 @@ const String HVC1_ITEM_NAME = "HEVC Image";  ///< 'hvc1' item name in ItemInfoEn
 
 /// @todo Move helpers to a better location.
 template <typename T>
-String to_String(T a)
+String to_String(T& a)
 {
     std::basic_ostringstream<char, std::char_traits<char>, Allocator<char>> st;
     st << a;
     return st.str();
 }
 
-inline FourCCInt to_FourCCInt(std::string input)
+inline FourCCInt to_FourCCInt(std::string& input)
 {
     return FourCCInt(static_cast<uint32_t>(std::stoul(input)));
-    ;
 }
 
 template <typename T>
-std::string to_string(T a)
+std::string to_string(T& a)
 {
     std::ostringstream st;
     st << a;
     return st.str();
 }
 
-inline FourCCInt to_FourCCInt(String input)
+inline FourCCInt to_FourCCInt(String& input)
 {
     std::string tmp = to_string(input);
     return FourCCInt(static_cast<uint32_t>(std::stoul(tmp)));
-    ;
 }
 
 

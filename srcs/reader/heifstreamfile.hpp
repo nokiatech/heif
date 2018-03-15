@@ -61,6 +61,6 @@ namespace HEIF
         offset_t m_size;
         char m_buffer[8192];
     };
-}
+}  // namespace HEIF
 
 #endif  // HEIFSTREAMFILE_HPP_

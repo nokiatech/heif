@@ -33,166 +33,166 @@ class HevcDecoderConfigurationRecord;
 namespace HEIF
 {
     /** @brief Implementation for reading an HEIF image file from the filesystem. */
-    class HeifReaderImpl : public HeifReaderInterface
+    class HeifReaderImpl : public Reader
     {
     public:
         HeifReaderImpl();
         virtual ~HeifReaderImpl() = default;
 
-        /// @see HeifReaderInterface::initialize()
+        /// @see Reader::initialize()
         virtual ErrorCode initialize(const char* fileName);
 
-        /// @see HeifReaderInterface::initialize()
+        /// @see Reader::initialize()
         virtual ErrorCode initialize(StreamInterface* input);
 
-        /// @see HeifReaderInterface::close()
+        /// @see Reader::close()
         virtual void close();
 
-        /// @see HeifReaderInterface::getMajorBrand()
+        /// @see Reader::getMajorBrand()
         virtual ErrorCode getMajorBrand(FourCC& majorBrand) const;
 
-        /// @see HeifReaderInterface::getMinorVersion()
+        /// @see Reader::getMinorVersion()
         virtual ErrorCode getMinorVersion(uint32_t& minorVersion) const;
 
-        /// @see HeifReaderInterface::getCompatibleBrands()
+        /// @see Reader::getCompatibleBrands()
         virtual ErrorCode getCompatibleBrands(Array<FourCC>& compatibleBrands) const;
 
-        /// @see HeifReaderInterface::getFileInformation()
+        /// @see Reader::getFileInformation()
         virtual ErrorCode getFileInformation(FileInformation& fileinfo) const;
 
-        /// @see HeifReaderInterface::getDisplayWidth()
+        /// @see Reader::getDisplayWidth()
         virtual ErrorCode getDisplayWidth(SequenceId sequenceId, uint32_t& displayWidth) const;
 
-        /// @see HeifReaderInterface::getDisplayHeight()
+        /// @see Reader::getDisplayHeight()
         virtual ErrorCode getDisplayHeight(SequenceId sequenceId, uint32_t& displayHeight) const;
 
-        /// @see HeifReaderInterface::getWidth()
+        /// @see Reader::getWidth()
         virtual ErrorCode getWidth(ImageId itemId, uint32_t& width) const;
         virtual ErrorCode getWidth(SequenceId sequenceId, SequenceImageId itemId, uint32_t& width) const;
 
-        /// @see HeifReaderInterface::getHeight()
+        /// @see Reader::getHeight()
         virtual ErrorCode getHeight(ImageId itemId, uint32_t& width) const;
         virtual ErrorCode getHeight(SequenceId sequenceId, SequenceImageId itemId, uint32_t& width) const;
 
-        /// @see HeifReaderInterface::getMatrix()
+        /// @see Reader::getMatrix()
         virtual ErrorCode getMatrix(Array<std::int32_t>& matrix) const;
 
-        /// @see HeifReaderInterface::getMatrix()
+        /// @see Reader::getMatrix()
         virtual ErrorCode getMatrix(SequenceId sequenceId, Array<int32_t>& matrix) const;
 
-        /// @see HeifReaderInterface::getPlaybackDurationInSecs()
+        /// @see Reader::getPlaybackDurationInSecs()
         virtual ErrorCode getPlaybackDurationInSecs(SequenceId sequenceId, double& durationInSecs) const;
 
-        /// @see HeifReaderInterface::getMasterImages()
+        /// @see Reader::getMasterImages()
         virtual ErrorCode getMasterImages(Array<ImageId>& itemIds) const;
         virtual ErrorCode getMasterImages(SequenceId contextId, Array<SequenceImageId>& itemIds) const;
 
-        /// @see HeifReaderInterface::getItemListByType()
-        virtual ErrorCode getItemListByType(const char* itemType, Array<ImageId>& itemIds) const;
+        /// @see Reader::getItemListByType()
+        virtual ErrorCode getItemListByType(const FourCC& itemType, Array<ImageId>& itemIds) const;
 
-        /// @see HeifReaderInterface::getItemListByType()
+        /// @see Reader::getItemListByType()
         virtual ErrorCode getItemListByType(SequenceId sequenceId, TrackSampleType itemType, Array<SequenceImageId>& itemIds) const;
 
-        /// @see HeifReaderInterface::getItemType()
+        /// @see Reader::getItemType()
         virtual ErrorCode getItemType(ImageId itemId, FourCC& type) const;
 
-        /// @see HeifReaderInterface::getItemType()
+        /// @see Reader::getItemType()
         virtual ErrorCode getItemType(SequenceId sequenceId, SequenceImageId itemId, FourCC& type) const;
 
-        /// @see HeifReaderInterface::getReferencedFromItemListByType()
+        /// @see Reader::getReferencedFromItemListByType()
         virtual ErrorCode getReferencedFromItemListByType(ImageId, FourCC referenceType,
                                                           Array<ImageId>& itemIds) const;
 
-        /// @see HeifReaderInterface::getReferencedToItemListByType()
+        /// @see Reader::getReferencedToItemListByType()
         virtual ErrorCode getReferencedToItemListByType(ImageId toItemId, FourCC referenceType,
                                                         Array<ImageId>& itemIds) const;
 
-        /// @see HeifReaderInterface::getPrimaryItem()
+        /// @see Reader::getPrimaryItem()
         virtual ErrorCode getPrimaryItem(ImageId& itemId) const;
 
         virtual ErrorCode getItemLength(const MetaBox& metaBox, const ItemId itemId, std::uint64_t& itemLength) const;
 
-        /// @see HeifReaderInterface::getItemData()
-        virtual ErrorCode getItemData(ImageId itemId, char* memoryBuffer, uint32_t& memoryBufferSize, bool bytestreamHeaders = true) const;
+        /// @see Reader::getItemData()
+        virtual ErrorCode getItemData(ImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders = true) const;
 
-        /// @see HeifReaderInterface::getItemData()
-        virtual ErrorCode getItemData(SequenceId sequenceId, SequenceImageId itemId, char* memoryBuffer, uint32_t& memoryBufferSize, bool bytestreamHeaders = true) const;
+        /// @see Reader::getItemData()
+        virtual ErrorCode getItemData(SequenceId sequenceId, SequenceImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders = true) const;
 
-        /// @see HeifReaderInterface::getItem()
+        /// @see Reader::getItem()
         virtual ErrorCode getItem(ImageId itemId, Overlay& iovlItem) const;
 
-        /// @see HeifReaderInterface::getItem()
+        /// @see Reader::getItem()
         virtual ErrorCode getItem(ImageId itemId, Grid& gridItem) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(PropertyId index, Mirror& imir) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(PropertyId index, Rotate& irot) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(PropertyId index, AuxiliaryType& auxC) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(SequenceId trackId, std::uint32_t index, AuxiliaryType& auxC) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(PropertyId index, RelativeLocation& rloc) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(PropertyId index, PixelInformation& pixi) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(PropertyId index, PixelAspectRatio& pasp) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(PropertyId index, ColourInformation& colr) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(PropertyId index, CleanAperture& clap) const;
 
-        /// @see HeifReaderInterface::getProperty()
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(SequenceId trackId, std::uint32_t index, CleanAperture& clap) const;
 
-        /// @see HeifReaderInterface::getItemProperties()
+        /// @see Reader::getItemProperties()
         virtual ErrorCode getItemProperties(ImageId itemId, Array<ItemPropertyInfo>& propertyTypes) const;
 
-        /// @see HeifReaderInterface::getItemProperties()
+        /// @see Reader::getItemProperties()
         virtual ErrorCode getProperty(PropertyId index, RawProperty& property) const;
 
-        /// @see HeifReaderInterface::getItemDataWithDecoderParameters()
+        /// @see Reader::getItemDataWithDecoderParameters()
         virtual ErrorCode getItemDataWithDecoderParameters(ImageId itemId,
-                                                           char* memoryBuffer, uint32_t& memoryBufferSize) const;
+                                                           char* memoryBuffer, uint64_t& memoryBufferSize) const;
 
-        /// @see HeifReaderInterface::getItemDataWithDecoderParameters()
+        /// @see Reader::getItemDataWithDecoderParameters()
         virtual ErrorCode getItemDataWithDecoderParameters(SequenceId sequenceId, SequenceImageId itemId,
-                                                           char* memoryBuffer, uint32_t& memoryBufferSize) const;
+                                                           char* memoryBuffer, uint64_t& memoryBufferSize) const;
 
-        /// @see HeifReaderInterface::getItemProtectionScheme()
-        virtual ErrorCode getItemProtectionScheme(ImageId itemId, char* memoryBuffer, uint32_t& memoryBufferSize) const;
+        /// @see Reader::getItemProtectionScheme()
+        virtual ErrorCode getItemProtectionScheme(ImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize) const;
 
-        /// @see HeifReaderInterface::getItemTimestamps()
+        /// @see Reader::getItemTimestamps()
         virtual ErrorCode getItemTimestamps(SequenceId sequenceId, Array<TimestampIDPair>& timestamps) const;
 
-        /// @see HeifReaderInterface::getTimestampsOfItem()
+        /// @see Reader::getTimestampsOfItem()
         virtual ErrorCode getTimestampsOfItem(SequenceId sequenceId, SequenceImageId itemId, Array<uint64_t>& timestamps) const;
 
-        /// @see HeifReaderInterface::getItemsInDecodingOrder()
+        /// @see Reader::getItemsInDecodingOrder()
         virtual ErrorCode getItemsInDecodingOrder(SequenceId sequenceId, Array<TimestampIDPair>& decodingOrder) const;
 
-        /// @see HeifReaderInterface::getDecodeDependencies()
+        /// @see Reader::getDecodeDependencies()
         virtual ErrorCode getDecodeDependencies(SequenceId sequenceId, SequenceImageId itemId, Array<SequenceImageId>& dependencies) const;
 
-        /// @see HeifReaderInterface::getDecoderCodeType()
+        /// @see Reader::getDecoderCodeType()
         virtual ErrorCode getDecoderCodeType(ImageId itemId, FourCC& type) const;
 
-        /// @see HeifReaderInterface::getDecoderCodeType()
+        /// @see Reader::getDecoderCodeType()
         virtual ErrorCode getDecoderCodeType(SequenceId sequenceId, SequenceImageId itemId, FourCC& type) const;
 
-        /// @see HeifReaderInterface::getDecoderParameterSets()
+        /// @see Reader::getDecoderParameterSets()
         virtual ErrorCode getDecoderParameterSets(ImageId itemId, DecoderConfiguration& decoderInfos) const;
 
-        /// @see HeifReaderInterface::getDecoderParameterSets()
+        /// @see Reader::getDecoderParameterSets()
         virtual ErrorCode getDecoderParameterSets(SequenceId sequenceId, SequenceImageId itemId, Array<DecoderSpecificInfo>& decoderInfos) const;
 
     private:
@@ -305,14 +305,14 @@ namespace HEIF
          *  @param [in] size  size of data to be modified.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, FILE_READ_ERROR */
-        ErrorCode processAvcItemData(char* data, uint32_t& memoryBufferSize) const;
+        ErrorCode processAvcItemData(char* data, uint64_t& memoryBufferSize) const;
 
         /** Process item data from HEVC bitstream
          *  @param [in] data  char pointer to Raw HEVC bitstream data.
          *  @param [in] size  size of data to be modified.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, FILE_READ_ERROR */
-        ErrorCode processHevcItemData(char* data,uint32_t& memoryBufferSize) const;
+        ErrorCode processHevcItemData(char* data, uint64_t& memoryBufferSize) const;
 
         /* ********************************************************************** */
         /* *********************** Meta-specific section  *********************** */
@@ -588,7 +588,7 @@ namespace HEIF
          * @param pMap Presentation map for the track
          * @param maxSampleSize max size of samples for track.
          * @return SampleInfoVector containing information about every sample of the track */
-        SampleInfoVector makeSampleInfoVector(TrackBox* trackBox, const DecodePts::PMap& pMap, std::uint32_t& maxSampleSize) const;
+        SampleInfoVector makeSampleInfoVector(TrackBox* trackBox, const DecodePts::PMap& pMap, std::uint64_t& maxSampleSize) const;
 
         /**
          * @brief Extract information about samples for the reader interface
@@ -610,7 +610,7 @@ namespace HEIF
          * @param [in]  memorybuffer  memory buffer pointer to write data to 
          * @param [in/out]  memorybuffersize   memory buffer size with written data (or required size if too small).
          * @return ErrorCode: OK, FILE_READ_ERROR, INVALID_ITEM_ID */
-        ErrorCode getTrackFrameData(unsigned int frameIndex, const TrackInfo& trackInfo, char* memorybuffer, uint32_t& memorybuffersize) const;
+        ErrorCode getTrackFrameData(unsigned int frameIndex, const TrackInfo& trackInfo, char* memorybuffer, uint64_t& memorybuffersize) const;
 
         /**
          * @brief convertTrackInformation Convert information extracted from the MovieBox to fixed-size arrays for the public API.
@@ -691,13 +691,13 @@ namespace HEIF
     ErrorCode getRawItemType(const MetaBox& metaBox, uint32_t itemId, FourCCInt& type);
 
     /**
-     * @brief Convert CleanAperture to HeifReaderInterface::CleanAperture
+     * @brief Convert CleanAperture to Reader::CleanAperture
      * @param clapBox Pointer to input CleanAperture
      * @return A CleanAperture filled with data from CleanAperture */
     CleanAperture makeClap(const CleanApertureBox* clapBox);
 
     /**
-    * @brief Convert AuxiliaryTypeInfoBox to HeifReaderInterface::AuxProperty
+    * @brief Convert AuxiliaryTypeInfoBox to Reader::AuxProperty
     * @param auxiBox Pointer to input AuxiliaryTypeInfoBox
     * @return A AuxProperty filled with data from AuxiliaryTypeInfoBox */
     AuxiliaryType makeAuxi(const AuxiliaryTypeInfoBox* auxiBox);

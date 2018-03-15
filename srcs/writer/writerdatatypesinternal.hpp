@@ -88,7 +88,7 @@ namespace HEIF
         Vector<int32_t> matrix;
     };
 
-    struct PropertyInfo
+    struct PropertyInformation
     {
         bool isTransformative;
     };

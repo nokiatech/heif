@@ -261,7 +261,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getItemListByType(const char* itemType, Array<ImageId>& itemIds) const
+    ErrorCode HeifReaderImpl::getItemListByType(const FourCC& itemType, Array<ImageId>& itemIds) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -275,7 +275,7 @@ namespace HEIF
         {
             FourCC thisType;
             getItemType(itemId, thisType);
-            if (String(thisType.value) == itemType)
+            if (thisType == itemType)
             {
                 itemIdVector.push_back(itemId);
             }
@@ -489,7 +489,7 @@ namespace HEIF
     }
 
     /// @todo Avoid data copying.
-    ErrorCode HeifReaderImpl::getItemData(const ImageId itemId, char* memoryBuffer, uint32_t& memoryBufferSize, bool bytestreamHeaders) const
+    ErrorCode HeifReaderImpl::getItemData(const ImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders) const
     {
         ErrorCode error;
         if ((error = isValidItem(itemId)) != ErrorCode::OK)
@@ -512,7 +512,7 @@ namespace HEIF
             return ErrorCode::FILE_READ_ERROR;
         }
 
-        if (memoryBufferSize<itemLength)
+        if (memoryBufferSize < itemLength)
         {
             memoryBufferSize = static_cast<uint32_t>(itemLength);
             return ErrorCode::BUFFER_SIZE_TOO_SMALL;
@@ -580,7 +580,7 @@ namespace HEIF
             else if (codeType == FourCC("hvc1"))
             {
                 // Get item data from HEVC bitstream
-                error = processHevcItemData(memoryBuffer,memoryBufferSize);
+                error = processHevcItemData(memoryBuffer, memoryBufferSize);
                 if (error != ErrorCode::OK)
                 {
                     return error;
@@ -596,7 +596,7 @@ namespace HEIF
     }
 
     /// @todo Avoid data copying.
-    ErrorCode HeifReaderImpl::getItemData(const SequenceId sequenceId, const SequenceImageId itemId, char* memoryBuffer, uint32_t& memoryBufferSize, bool bytestreamHeaders) const
+    ErrorCode HeifReaderImpl::getItemData(const SequenceId sequenceId, const SequenceImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -901,8 +901,8 @@ namespace HEIF
             return ErrorCode::INVALID_PROPERTY_INDEX;
         }
 
-        property.data        = makeArray<std::uint8_t>(data);
-        property.type        = FourCC(reinterpret_cast<const char*>(&data[4]));
+        property.data = makeArray<std::uint8_t>(data);
+        property.type = FourCC(reinterpret_cast<const char*>(&data[4]));
 
         return ErrorCode::OK;
     }
@@ -945,7 +945,7 @@ namespace HEIF
 
 
     ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const ImageId itemId,
-                                                               char* memoryBuffer, uint32_t& memoryBufferSize) const
+                                                               char* memoryBuffer, uint64_t& memoryBufferSize) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(itemId)) != ErrorCode::OK)
@@ -991,7 +991,7 @@ namespace HEIF
             parameterSize += config.decSpecInfoData.size;
         }
 
-        uint32_t itemSize(0);
+        uint64_t itemSize(0);
         if (memoryBufferSize > parameterSize)
         {
             // Copy parameter data to the beginning of the buffer.
@@ -1020,7 +1020,7 @@ namespace HEIF
     }
 
     ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const SequenceId sequenceId, const SequenceImageId itemId,
-                                                               char* memoryBuffer, uint32_t& memoryBufferSize) const
+                                                               char* memoryBuffer, uint64_t& memoryBufferSize) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -1056,7 +1056,7 @@ namespace HEIF
         }
 
         // Copy item data to the buffer
-        uint32_t itemSize(0);
+        uint64_t itemSize(0);
         if (memoryBufferSize > parameterSize)
         {
             // Copy parameter data to the beginning of the buffer.
@@ -1300,7 +1300,7 @@ namespace HEIF
     }
 
     ErrorCode HeifReaderImpl::getItemProtectionScheme(const ImageId itemId,
-                                                      char* memoryBuffer, uint32_t& memoryBufferSize) const
+                                                      char* memoryBuffer, uint64_t& memoryBufferSize) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(itemId)) != ErrorCode::OK)

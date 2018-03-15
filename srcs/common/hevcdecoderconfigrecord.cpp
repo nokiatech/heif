@@ -158,7 +158,7 @@ void HevcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t> &sr
 }
 
 void HevcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t> &nalUnit, const HevcNalUnitType nalUnitType,
-                                                const uint8_t arrayCompleteness)
+                                                const bool arrayCompleteness)
 {
     NALArray *nalArray = nullptr;
     Vector<uint8_t> tmpNalUnit;
@@ -267,11 +267,11 @@ void HevcDecoderConfigurationRecord::parseConfig(ISOBMFF::BitStream &bitstr)
     numOfArrays = bitstr.readBits(8);
     for (unsigned int i = 0; i < numOfArrays; i++)
     {
-        uint8_t arrayCompleteness;
+        bool arrayCompleteness;
         HevcNalUnitType nalUnitType;
         unsigned int numNalus;
 
-        arrayCompleteness = static_cast<uint8_t>(bitstr.readBits(1));
+        arrayCompleteness = static_cast<bool>(bitstr.readBits(1));
         bitstr.readBits(1);  // reserved = 0
         nalUnitType = (HevcNalUnitType) bitstr.readBits(6);
         numNalus    = bitstr.readBits(16);

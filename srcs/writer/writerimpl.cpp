@@ -126,15 +126,15 @@ namespace HEIF
             return ErrorCode::FILE_OPEN_ERROR;
         }
 
+        for (auto brand : outputConfig.compatibleBrands)
+        {
+            mFileTypeBox.addCompatibleBrand(brand.value);
+        }
+
         if (outputConfig.majorBrand != FourCC())
         {
             mFileTypeBox.setMajorBrand(outputConfig.majorBrand.value);
             mFileTypeBox.addCompatibleBrand(outputConfig.majorBrand.value);
-        }
-
-        for (auto brand : outputConfig.compatibleBrands)
-        {
-            mFileTypeBox.addCompatibleBrand(brand.value);
         }
 
         if (mInitialMdat)

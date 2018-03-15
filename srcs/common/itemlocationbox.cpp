@@ -309,7 +309,7 @@ const ItemLocation& ItemLocationBox::getItemLocationForID(const unsigned int ite
         return *iter;
     }
 
-    throw RuntimeError("ItemLocationBox::getItemLocationForID: invalid item ID");
+    throw RuntimeError("ItemLocationBox::getItemLocationForID: invalid item ID, should be wrapped internally with hasItemIdEntry()");
 }
 
 const ItemLocationExtent& ItemLocation::getExtent(const unsigned int i) const

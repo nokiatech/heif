@@ -127,4 +127,4 @@ namespace HEIF
     {
         return m_eof;
     }
-}
+}  // namespace HEIF

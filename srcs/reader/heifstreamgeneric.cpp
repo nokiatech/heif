@@ -28,4 +28,4 @@ namespace HEIF
         return CUSTOM_NEW(FileStream, (filename));
 #endif  // HEIF_USE_LINUX_FILESTREAM
     }
-}
+}  // namespace HEIF

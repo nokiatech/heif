@@ -22,4 +22,4 @@ namespace HEIF
     {
         // nothing
     }
-}
+}  // namespace HEIF

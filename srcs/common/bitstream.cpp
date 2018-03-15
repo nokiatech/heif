@@ -496,4 +496,4 @@ namespace ISOBMFF
 
         return subBitstr;
     }
-}
+}  // namespace ISOBMFF

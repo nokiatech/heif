@@ -215,7 +215,7 @@ namespace ISOBMFF
         /// @brief Indicates whether data storage byte vector is provided during construction (false) or not (true).
         bool mStorageAllocated;
     };
-}
+}  // namespace ISOBMFF
 
 using BitStream = ISOBMFF::BitStream;
 

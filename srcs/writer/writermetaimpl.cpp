@@ -51,12 +51,12 @@ namespace HEIF
                 if (nalUnit.decSpecInfoType == DecoderSpecInfoType::AVC_PPS && !ppsFound)
                 {
                     ppsFound = true;
-                    configRecord.addNalUnit(nalVector, AvcNalUnitType::PPS, 0);
+                    configRecord.addNalUnit(nalVector, AvcNalUnitType::PPS);
                 }
                 else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::AVC_SPS && !spsFound)
                 {
                     spsFound = true;
-                    configRecord.addNalUnit(nalVector, AvcNalUnitType::SPS, 0);
+                    configRecord.addNalUnit(nalVector, AvcNalUnitType::SPS);
                     configRecord.makeConfigFromSPS(nalVector);
                 }
                 else
@@ -87,17 +87,17 @@ namespace HEIF
                 if (nalUnit.decSpecInfoType == DecoderSpecInfoType::HEVC_PPS && !ppsFound)
                 {
                     ppsFound = true;
-                    configRecord.addNalUnit(nalVector, HevcNalUnitType::PPS, 0);
+                    configRecord.addNalUnit(nalVector, HevcNalUnitType::PPS, true);
                 }
                 else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::HEVC_VPS && !vpsFound)
                 {
                     vpsFound = true;
-                    configRecord.addNalUnit(nalVector, HevcNalUnitType::VPS, 0);
+                    configRecord.addNalUnit(nalVector, HevcNalUnitType::VPS, true);
                 }
                 else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::HEVC_SPS && !spsFound)
                 {
                     spsFound = true;
-                    configRecord.addNalUnit(nalVector, HevcNalUnitType::SPS, 0);
+                    configRecord.addNalUnit(nalVector, HevcNalUnitType::SPS, true);
                     configRecord.makeConfigFromSPS(nalVector, 0.0);
                 }
                 else
@@ -331,7 +331,7 @@ namespace HEIF
         value.denominator = clap.verticalOffsetD;
         clapBox->setVertOffset(value);
 
-        PropertyInfo info;
+        PropertyInformation info;
         info.isTransformative   = true;
         propertyId              = PropertyId(mMetaBox.addProperty(clapBox, {}, false));
         mProperties[propertyId] = info;
@@ -349,7 +349,7 @@ namespace HEIF
         auto imirBox = std::make_shared<ImageMirror>();
         imirBox->setHorizontalAxis(imir.horizontalAxis);
 
-        PropertyInfo info;
+        PropertyInformation info;
         info.isTransformative   = true;
         propertyId              = PropertyId(mMetaBox.addProperty(imirBox, {}, false));
         mProperties[propertyId] = info;
@@ -367,7 +367,7 @@ namespace HEIF
         auto irotBox = std::make_shared<ImageRotation>();
         irotBox->setAngle(irot.angle);
 
-        PropertyInfo info;
+        PropertyInformation info;
         info.isTransformative   = true;
         propertyId              = PropertyId(mMetaBox.addProperty(irotBox, {}, false));
         mProperties[propertyId] = info;
@@ -386,7 +386,7 @@ namespace HEIF
         rlocBox->setHorizontalOffset(rloc.horizontalOffset);
         rlocBox->setVerticalOffset(rloc.verticalOffset);
 
-        PropertyInfo info;
+        PropertyInformation info;
         info.isTransformative   = false;
         propertyId              = PropertyId(mMetaBox.addProperty(rlocBox, {}, false));
         mProperties[propertyId] = info;
@@ -406,7 +406,7 @@ namespace HEIF
         paspBox->setRelativeWidth(pasp.relativeWidth);
         paspBox->setRelativeHeight(pasp.relativeHeight);
 
-        PropertyInfo info;
+        PropertyInformation info;
         info.isTransformative   = false;
         propertyId              = PropertyId(mMetaBox.addProperty(paspBox, {}, false));
         mProperties[propertyId] = info;
@@ -429,7 +429,7 @@ namespace HEIF
         }
         pixiBox->setBitsPerChannels(bitsPerChannelVector);
 
-        PropertyInfo info;
+        PropertyInformation info;
         info.isTransformative   = false;
         propertyId              = PropertyId(mMetaBox.addProperty(pixiBox, {}, false));
         mProperties[propertyId] = info;
@@ -468,7 +468,7 @@ namespace HEIF
         }
         colrBox->setIccProfile(iccProfileVector);
 
-        PropertyInfo info;
+        PropertyInformation info;
         info.isTransformative   = false;
         propertyId              = PropertyId(mMetaBox.addProperty(colrBox, {}, false));
         mProperties[propertyId] = info;
@@ -492,7 +492,7 @@ namespace HEIF
             auxCBox->setAuxSubType(vectorize(auxC.subType));
         }
 
-        PropertyInfo info;
+        PropertyInformation info;
         info.isTransformative   = false;
         propertyId              = PropertyId(mMetaBox.addProperty(auxCBox, {}, false));
         mProperties[propertyId] = info;
@@ -512,7 +512,7 @@ namespace HEIF
         Vector<uint8_t> data(property.data.begin(), property.data.end());
         customBox->setData(data);
 
-        PropertyInfo info;
+        PropertyInformation info;
         info.isTransformative   = isTransformative;
         propertyId              = PropertyId(mMetaBox.addProperty(customBox, {}, false));
         mProperties[propertyId] = info;

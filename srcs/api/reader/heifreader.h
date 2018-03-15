@@ -22,22 +22,22 @@ namespace HEIF
     class StreamInterface;
 
     /** Interface for reading an High Efficiency Image File Format (HEIF) file. */
-    class HEIF_DLL_PUBLIC HeifReaderInterface
+    class HEIF_DLL_PUBLIC Reader
     {
     public:
         /** Make an instance of HeifReader
          *
          *  If a custom memory allocator has not been set with SetCustomAllocator prior to
          *  calling this, the default allocator will be set into use. */
-        static HeifReaderInterface* Create();
+        static Reader* Create();
 
         /** Destroy the instance returned by Create */
-        static void Destroy(HeifReaderInterface* imageFileInterface);
+        static void Destroy(Reader* imageFileInterface);
 
         /** Set an optional custom memory allocator. Call this before calling Create for the
          *  first time, unless your new allocator is able to release blocks allocated with the
          *   previous allocator. The allocator is shared by all instances of
-         *   HeifReaderInterface.
+         *   Reader.
          *
          *  If you wish to change the allocator after once setting it, you must first set it to
          *  nullptr, which succeeds always. After this you can change it to the desired value.
@@ -157,20 +157,17 @@ namespace HEIF
         virtual ErrorCode getPlaybackDurationInSecs(SequenceId sequenceId, double& duration) const = 0;
 
         /** Get an array of items in MetaBox having the requested type.
-         *  @param [in]  itemType  itemType can be the following:
-         *                         'master' , 'hidden', 'pre-computed', 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1',
-         *                         'iden'
-         *                         ('master' is ('hvc1' - iref('thmb') or iref('auxl')))
-         *  @param [out] imageIds  Found items. The order of the imageIds are as present in the file.
+         *  @param [in]  itemType  Four-character code of the item type (e.g. 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1', 'iden')
+         *  @param [out] imageIds  Found items.
          *                         An empty Array if no items are found.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED */
-        virtual ErrorCode getItemListByType(const char* itemType, Array<ImageId>& imageIds) const = 0;
+        virtual ErrorCode getItemListByType(const FourCC& itemType, Array<ImageId>& imageIds) const = 0;
 
         /** Get an array of items in the container with the ID sequenceId having the requested itemType.
          *  @param [in]  sequenceId Image sequence ID (track ID).
          *  @param [in]  itemType   Type of samples to request.
-         *  @param [out] imageIds    Array of found items.
+         *  @param [out] imageIds   Array of found items.
          *                          An empty Array if no items are found.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_FUNCTION_PARAMETER, INVALID_SEQUENCE_ID */
@@ -191,9 +188,7 @@ namespace HEIF
 
         /** Get type of an item.
          *  @param [in]  itemId Id of an item in the image collection.
-         *  @param [out] type   Can be the following:
-         *                      'master' , 'hidden', 'pre-computed', 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1', 'iden'
-         *                      ('master' is ('hvc1' - iref('thmb') or iref('auxl')))'
+         *  @param [out] type   Four-character code of the item type (e.g. 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1', 'iden')
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
         virtual ErrorCode getItemType(ImageId itemId, FourCC& type) const = 0;
@@ -246,7 +241,7 @@ namespace HEIF
          *  @param [in]      bytestreamHeaders Optional - by default true. Whether to substitute H.264/H.265 nal-lenght values with bytestream header (0001).
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, FILE_READ_ERROR */
-        virtual ErrorCode getItemData(ImageId imageId, char* memoryBuffer, uint32_t& memoryBufferSize, bool bytestreamHeaders = true) const = 0;
+        virtual ErrorCode getItemData(ImageId imageId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders = true) const = 0;
 
         /** Get item data for a sample/image in an image sequence.
          *  Item data does not contain initialization or configuration data (i.e. decoder configuration records).
@@ -261,7 +256,7 @@ namespace HEIF
          *  @param [in]  bytestreamHeaders     Optional - by default true. Whether to substitute H.264/H.265 nal-lenght values with bytestream header (0001).
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_ITEM_ID */
-        virtual ErrorCode getItemData(SequenceId sequenceId, SequenceImageId imageId, char* memoryBuffer, uint32_t& memoryBufferSize, bool bytestreamHeaders = true) const = 0;
+        virtual ErrorCode getItemData(SequenceId sequenceId, SequenceImageId imageId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders = true) const = 0;
 
         /** Get data of an image overlay item (item type 'iovl').
          *  @param [in]  imageId   Id of Image overlay item
@@ -371,7 +366,7 @@ namespace HEIF
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, PROTECTED_ITEM, UNSUPPORTED_CODE_TYPE,
          *                     BUFFER_SIZE_TOO_SMALL */
         virtual ErrorCode getItemDataWithDecoderParameters(ImageId imageId,
-                                                           char* memoryBuffer, uint32_t& memoryBufferSize) const = 0;
+                                                           char* memoryBuffer, uint64_t& memoryBufferSize) const = 0;
 
         /** Get data of an image sequence image.
          *  This method shall be used only for 'hvc1' or 'avc1' type images.
@@ -383,7 +378,7 @@ namespace HEIF
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID, UNSUPPORTED_CODE_TYPE,
          *                     BUFFER_SIZE_TOO_SMALL */
         virtual ErrorCode getItemDataWithDecoderParameters(SequenceId sequenceId, SequenceImageId imageId,
-                                                           char* memoryBuffer, uint32_t& memoryBufferSize) const = 0;
+                                                           char* memoryBuffer, uint64_t& memoryBufferSize) const = 0;
 
         /** Get Protection Scheme Information Box for a protected item.
          *  @param [in] imageId               Item id.
@@ -393,7 +388,7 @@ namespace HEIF
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, UNPROTECTED_ITEM, BUFFER_SIZE_TOO_SMALL]
          */
         virtual ErrorCode getItemProtectionScheme(ImageId imageId,
-                                                  char* memoryBuffer, uint32_t& memoryBufferSize) const = 0;
+                                                  char* memoryBuffer, uint64_t& memoryBufferSize) const = 0;
 
         /** Get display timestamp for each item of a track/sequence.
          *  @param [in]  sequenceId Image sequence ID (track ID).
@@ -473,7 +468,7 @@ namespace HEIF
                                                   Array<DecoderSpecificInfo>& decoderInfos) const = 0;
 
     protected:
-        virtual ~HeifReaderInterface() = default;
+        virtual ~Reader() = default;
     };
 
 }  // namespace HEIF

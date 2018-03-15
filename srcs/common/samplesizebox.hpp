@@ -45,7 +45,7 @@ public:
 
     /** @brief Set the sample sizes of the entries as a vector of sizes.
      *  @param [in] sample_sizes vector containing sample sizes. */
-    void setEntrySize(Vector<uint32_t> sample_sizes);
+    void setEntrySize(Vector<uint32_t>& sample_sizes);
 
     /** @brief Get the sample sizes of the entries as a vector of sizes.
      *  @return vector containing sample sizes. */

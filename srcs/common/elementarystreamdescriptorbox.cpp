@@ -40,7 +40,7 @@ bool ElementaryStreamDescriptorBox::getOneParameterSet(Vector<uint8_t>& byteStre
     }
 }
 
-void ElementaryStreamDescriptorBox::setESDescriptor(ElementaryStreamDescriptorBox::ES_Descriptor esDescriptor)
+void ElementaryStreamDescriptorBox::setESDescriptor(ElementaryStreamDescriptorBox::ES_Descriptor& esDescriptor)
 {
     mES_Descriptor = esDescriptor;
 }

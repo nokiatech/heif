@@ -133,4 +133,4 @@ namespace HEIF
     {
         return !!m_file;
     }
-}
+}  // namespace HEIF

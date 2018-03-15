@@ -59,8 +59,7 @@ bool AvcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t>& sps
 }
 
 void AvcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t>& nalUnit,
-                                               const AvcNalUnitType nalUnitType,
-                                               const uint8_t arrayCompleteness)
+                                               const AvcNalUnitType nalUnitType)
 {
     NALArray* nalArray = nullptr;
     Vector<uint8_t> tmpNalUnit;
@@ -80,8 +79,7 @@ void AvcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t>& nalUnit,
     if (nalArray == nullptr)
     {
         NALArray nalArrayTmp;
-        nalArrayTmp.arrayCompleteness = arrayCompleteness;
-        nalArrayTmp.nalUnitType       = nalUnitType;
+        nalArrayTmp.nalUnitType = nalUnitType;
         mNalArray.push_back(nalArrayTmp);
         nalArray = &mNalArray.back();
     }

@@ -158,33 +158,6 @@ namespace HEIF
         ItemFeatureSet mItemFeatureSet;
     };
 
-    class CodingConstraints
-    {
-    public:
-        typedef Set<CodingConstraintsEnum::Feature> CodingConstraintsSet;
-
-        bool hasFeature(CodingConstraintsEnum::Feature feature) const
-        {
-            return (mCodingConstraintsSet.count(feature) != 0);
-        }
-        void setFeature(CodingConstraintsEnum::Feature feature)
-        {
-            mCodingConstraintsSet.insert(feature);
-        }
-        uint32_t getFeatureMask() const
-        {
-            uint32_t mask = 0;
-            for (auto set : mCodingConstraintsSet)
-            {
-                mask |= (uint32_t) set;
-            }
-            return mask;
-        }
-
-    private:
-        CodingConstraintsSet mCodingConstraintsSet;
-    };
-
     // Forward declarations
     struct TrackProperties;
     struct SampleProperties;
@@ -256,7 +229,7 @@ namespace HEIF
         Array<SampleGrouping> groupedSamples;         ///< Sample groupings of the track.
         Array<SampleVisualEquivalence> equivalences;  ///< Information from VisualEquivalenceEntry() 'eqiv' sample groups.
         Array<SampleToMetadataItem> metadatas;        ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries
-        uint32_t maxSampleSize;                       ///< Size of largest sample inside the track (can be used to allocate client side read buffer).
+        uint64_t maxSampleSize;                       ///< Size of largest sample inside the track (can be used to allocate client side read buffer).
         uint32_t timeScale;
     };
 

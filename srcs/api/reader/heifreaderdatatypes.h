@@ -75,12 +75,11 @@ namespace HEIF
     {
         enum Feature
         {
-            HasSingleImage      = 1u,
-            HasImageCollection  = 1u << 1,
-            HasImageSequence    = 1u << 2,
-            HasOtherTimedMedia  = 1u << 3,
-            HasRootLevelMetaBox = 1u << 4,
-            HasAlternateTracks  = 1u << 5  ///< The file contains a alternate tracks.
+            HasSingleImage      = 1u,       ///< File copntains only 1 master image
+            HasImageCollection  = 1u << 1,  ///< File contains Image Collection (more than 1 master images)
+            HasImageSequence    = 1u << 2,  ///< File contains Image Sequence
+            HasRootLevelMetaBox = 1u << 3,  ///< File has root level metabox
+            HasAlternateTracks  = 1u << 4   ///< The file contains a alternate tracks.
         };
     }
 
@@ -88,15 +87,15 @@ namespace HEIF
     {
         enum Feature
         {
-            IsSingleImage               = 1u,
-            IsImageCollection           = 1u << 1,
-            HasMasterImages             = 1u << 2,
-            HasThumbnails               = 1u << 3,
-            HasAuxiliaryImages          = 1u << 4,
-            HasDerivedImages            = 1u << 5,
-            HasPreComputedDerivedImages = 1u << 6,
-            HasHiddenImages             = 1u << 7,
-            HasGroupLists               = 1u << 8
+            IsSingleImage               = 1u,       ///< Metabox contains only 1 image
+            IsImageCollection           = 1u << 1,  ///< Metabox contains image collection (more than 1 image)
+            HasMasterImages             = 1u << 2,  ///< Metabox contains at least 1 master image
+            HasThumbnails               = 1u << 3,  ///< Metabox contains at least 1 thumbnail image
+            HasAuxiliaryImages          = 1u << 4,  ///< Metabox contains at least 1 auxiliary image
+            HasDerivedImages            = 1u << 5,  ///< Metabox contains at least 1 derived image
+            HasPreComputedDerivedImages = 1u << 6,  ///< Metabox contains at least 1 pre-derived coded image
+            HasHiddenImages             = 1u << 7,  ///< Metabox contains at least 1 hidden image
+            HasGroupLists               = 1u << 8   ///< Metabox contains at least 1 grouping information
         };
     }
 
@@ -104,10 +103,10 @@ namespace HEIF
     {
         enum Feature
         {
-            IsTileImageItem = 1u,
-            IsMetadataItem  = 1u << 1,
-            IsExifItem      = 1u << 2,
-            IsMimeItem      = 1u << 3,
+            IsTileImageItem = 1u,       ///< Item is of type 'hvt1' e.g. HEVC tile Item
+            IsMetadataItem  = 1u << 1,  ///< Item is metadata item and has 'cdsc' (= content descriptor) reference to other item.
+            IsExifItem      = 1u << 2,  ///< Item is metadata of type 'Exif'
+            IsMimeItem      = 1u << 3,  ///< Item is metadata of type 'mime' e.g. XMP or MPEG-7 metadata
             IsProtected     = 1u << 4,  ///< There is a Protection Scheme Info Box mapped for this item. The item is not accessible.
         };
     }
@@ -116,38 +115,29 @@ namespace HEIF
     {
         enum Feature
         {
-            IsMasterImage                    = 1u,
-            IsThumbnailImage                 = 1u << 1,
-            IsAuxiliaryImage                 = 1u << 2,
-            IsPrimaryImage                   = 1u << 3,
-            IsDerivedImage                   = 1u << 4,
-            IsPreComputedDerivedImage        = 1u << 5,
-            IsHiddenImage                    = 1u << 6,
-            IsCoverImage                     = 1u << 7,
-            IsProtected                      = 1u << 8,  ///< There is a Protection Scheme Info Box mapped for this image. The image is not accessible.
-            HasLinkedThumbnails              = 1u << 9,
-            HasLinkedAuxiliaryImage          = 1u << 10,
-            HasLinkedDerivedImage            = 1u << 11,
-            HasLinkedPreComputedDerivedImage = 1u << 12,
-            HasLinkedTiles                   = 1u << 13,
-            HasLinkedMetadata                = 1u << 14  ///< 'cdsc' reference
+            IsMasterImage                    = 1u,        ///< Image is master image e.g. not a thumbnail or an auxiliary image
+            IsThumbnailImage                 = 1u << 1,   ///< Image is thumbnail image. It has 'thmb' reference to other image
+            IsAuxiliaryImage                 = 1u << 2,   ///< Image is auxiliary image. It has 'auxl' reference to other image
+            IsPrimaryImage                   = 1u << 3,   ///< Image is an primary image. The primary item should be displayed when no other information is available on the preferred displaying method of the image collection.
+            IsDerivedImage                   = 1u << 4,   ///< Image is a derived from other image.
+            IsPreComputedDerivedImage        = 1u << 5,   ///< Image is a Pre-derived coded image. for example, a composite HDR image derived from exposure-bracketed individual images
+            IsHiddenImage                    = 1u << 6,   ///< Image is hidden. Not intended to be displayed.
+            IsCoverImage                     = 1u << 7,   ///< Image is cover image, should be displayed when no other information is available on the preference to display a collection of images.
+            IsProtected                      = 1u << 8,   ///< There is a Protection Scheme Info Box mapped for this image. The image is not accessible.
+            HasLinkedThumbnails              = 1u << 9,   ///< This image has thumbnail image(s) linked to it.
+            HasLinkedAuxiliaryImage          = 1u << 10,  ///< This image has auxiliary image(s) linked to it.
+            HasLinkedDerivedImage            = 1u << 11,  ///< This image has derived image(s) linked to it.
+            HasLinkedPreComputedDerivedImage = 1u << 12,  ///< This image has Pre-derived coded image(s) linked to it.
+            HasLinkedTiles                   = 1u << 13,  ///< This image has linked tiles to it. Used with Relative location 'rloc' Image Property. Has 'tbas' reference(s) to it.
+            HasLinkedMetadata                = 1u << 14   ///< This image has linked external metadata (like Exif). It has 'cdsc' (= content description) reference(s) to it.
         };
     }
 
     struct HEIF_DLL_PUBLIC DecoderConfiguration
     {
-        DecoderConfigId decoderConfigId;
-        Array<DecoderSpecificInfo> decoderSpecificInfo;
+        DecoderConfigId decoderConfigId;                 ///< Id identifying this particular decoder specific information. More than one image can use same decoder config.
+        Array<DecoderSpecificInfo> decoderSpecificInfo;  ///< Actual decoder specific information (type + payload).
     };
-
-    namespace CodingConstraintsEnum
-    {
-        enum Feature
-        {
-            IsAllReferencePicturesIntra = 1u,
-            IsIntraPredictionUsed       = 1u << 1
-        };
-    }
 
     typedef uint32_t FeatureBitMask;
 
@@ -155,12 +145,14 @@ namespace HEIF
     {
         ImageId itemId;
         FeatureBitMask features;  ///< bitmask of ItemFeatureEnum
+        uint64_t size;            ///< size of item data in bytes (can be 0 if item doesn't have its own data)
     };
 
     struct HEIF_DLL_PUBLIC ImageInformation
     {
         ImageId itemId;
         FeatureBitMask features;  ///< bitmask of ImageFeatureEnum
+        uint64_t size;            ///< size of image data in bytes (can be 0 if image doesn't have its own data)
     };
 
     /**
@@ -271,14 +263,14 @@ namespace HEIF
 
     struct HEIF_DLL_PUBLIC SampleInformation
     {
-        SequenceImageId sampleId;         ///< based on the sample's entry order in the sample table
-        FourCC sampleEntryType;           ///< coming from SampleDescriptionBox (codingname)
-        uint32_t sampleDescriptionIndex;  ///< coming from SampleDescriptionBox index (sample_description_index)
-        SampleType sampleType;            ///< coming from sample groupings
-        uint64_t sampleDurationTS;        ///< Sample duration in time scale units
-        bool hasClap;                     ///< CleanApertureBox is present in the sample entry
-        bool hasAuxi;                     ///< AuxiliaryTypeInfoBox is present in the sample entry
-        FeatureBitMask codingConstraintsFeature;
+        SequenceImageId sampleId;             ///< based on the sample's entry order in the sample table
+        FourCC sampleEntryType;               ///< coming from SampleDescriptionBox (codingname)
+        uint32_t sampleDescriptionIndex;      ///< coming from SampleDescriptionBox index (sample_description_index)
+        SampleType sampleType;                ///< coming from sample groupings
+        uint64_t sampleDurationTS;            ///< Sample duration in time scale units
+        bool hasClap;                         ///< CleanApertureBox is present in the sample entry
+        bool hasAuxi;                         ///< AuxiliaryTypeInfoBox is present in the sample entry
+        CodingConstraints codingConstraints;  ///< CodingConstraints for sample
     };
 
     struct HEIF_DLL_PUBLIC TrackInformation
@@ -292,7 +284,7 @@ namespace HEIF
         Array<SampleInformation> sampleProperties;    ///< SampleInformation for each of the samples inside the track.
         Array<SampleVisualEquivalence> equivalences;  ///< Data from VisualEquivalenceEntry ('eqiv') sample group entries of this track. Indexed using sampleGroupDescriptionIndex.
         Array<SampleToMetadataItem> metadatas;        ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries of this track. Indexed using sampleGroupDescriptionIndex.
-        uint32_t maxSampleSize;                       ///< Size of largest sample inside the track (can be used to allocate client side read buffer).
+        uint64_t maxSampleSize;                       ///< Size of largest sample inside the track (can be used to allocate client side read buffer).
         uint32_t timeScale;                           ///< Time scale of the track; useful for video stream procsesing purposes
     };
 

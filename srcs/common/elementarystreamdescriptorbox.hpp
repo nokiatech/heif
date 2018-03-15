@@ -63,7 +63,7 @@ public:
     bool getOneParameterSet(Vector<uint8_t>& byteStream) const;
 
     /// @brief set the ES_Descriptor. @see ISO/IEC 14496-1 for details.
-    void setESDescriptor(ElementaryStreamDescriptorBox::ES_Descriptor esDescriptor);
+    void setESDescriptor(ElementaryStreamDescriptorBox::ES_Descriptor& esDescriptor);
 
     /// @return ES_Descriptor. @see ISO/IEC 14496-1 for details.
     ES_Descriptor getESDescriptor() const;

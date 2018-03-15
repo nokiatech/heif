@@ -42,7 +42,7 @@ uint32_t SampleSizeBox::getSampleCount() const
     return mSampleCount;
 }
 
-void SampleSizeBox::setEntrySize(Vector<uint32_t> sample_sizes)
+void SampleSizeBox::setEntrySize(Vector<uint32_t>& sample_sizes)
 {
     mEntrySize = sample_sizes;
 }
@@ -89,10 +89,7 @@ void SampleSizeBox::parseBox(ISOBMFF::BitStream& bitstr)
     {
         for (uint32_t i = 0; i < mSampleCount; i++)
         {
-            if (mSampleSize == 0)
-            {
-                mEntrySize.push_back(bitstr.read32Bits());
-            }
+            mEntrySize.push_back(bitstr.read32Bits());
         }
     }
 }

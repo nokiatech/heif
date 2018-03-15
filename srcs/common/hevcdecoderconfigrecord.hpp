@@ -42,7 +42,7 @@ public:
      * @param arrayCompleteness TBD
      */
     void addNalUnit(const Vector<std::uint8_t> &sps, HevcNalUnitType nalUnitType,
-                    std::uint8_t arrayCompleteness);
+                    bool arrayCompleteness);
 
     /**
      * Serialize decoder configuration to ISOBMFF::BitStream.
@@ -91,8 +91,8 @@ private:
 
     struct NALArray
     {
-        std::uint8_t arrayCompleteness = 0;
-        HevcNalUnitType nalUnitType    = HevcNalUnitType::INVALID;
+        bool arrayCompleteness      = false;
+        HevcNalUnitType nalUnitType = HevcNalUnitType::INVALID;
         Vector<Vector<std::uint8_t>> nalList;
     };
 

@@ -315,6 +315,13 @@ namespace HEIF
         std::uint32_t rows;          ///< Number of rows in the grid, must be 1 or more
         Array<ImageId> imageIds;     ///< Ids of the images to display in the grid. Array size must match columns*rows.
     };
+
+    struct HEIF_DLL_PUBLIC CodingConstraints
+    {
+        bool allRefPicsIntra;  ///< This flag when set to one indicates the restriction that samples that are not sync samples, if any, are predicted only from sync samples.
+        bool intraPredUsed;    ///< False indicates that intra prediction is not used in the inter predicted images. True indicates that intra prediction may or may not be used in the inter predicted images.
+        uint8_t maxRefPerPic;  ///< Maximum number of reference images that may be used for decoding any single image within an image sequence. (value 15 = any number)
+    };
 }  // namespace HEIF
 
 #endif /* HEIFCOMMONDATATYPES_H */

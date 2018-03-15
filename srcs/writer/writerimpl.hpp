@@ -76,7 +76,7 @@ namespace HEIF
         virtual ErrorCode createEquivalenceGroup(GroupId& id);
         virtual ErrorCode addToGroup(const GroupId& groupId, const ImageId& id);
         virtual ErrorCode addToGroup(const GroupId& groupId, const SequenceId& id);
-        virtual ErrorCode addToEquivalenceGroup(const GroupId& equivalenceGroupId, const SequenceImageId& id, const EquivalenceTimeOffset& offset = { 0, 1 << 8 });
+        virtual ErrorCode addToEquivalenceGroup(const GroupId& equivalenceGroupId, const SequenceImageId& id, const EquivalenceTimeOffset& offset = {0, 1 << 8});
 
         virtual ErrorCode addVideoTrack(const Rational& timeBase, const CodingConstraints& constraints, SequenceId& id);
         virtual ErrorCode addVideo(const SequenceId& sequenceId, const MediaDataId& mediaDataId, const SampleInfo& sampleInfo);
@@ -191,7 +191,7 @@ namespace HEIF
         Map<PropertyIndex, ImageSize> mDecoderConfigIndexToSize;  ///< Mapping from decoder configuration property index to image size.
         Map<MediaDataId, ImageSize> mJpegDimensions;              ///< Image dimensions extracted from JPEG file bitstreams.
         Vector<int32_t> mMatrix;
-        Map<PropertyId, PropertyInfo> mProperties;  ///< Manually added properties in the metabox.
+        Map<PropertyId, PropertyInformation> mProperties;  ///< Manually added properties in the metabox.
 
         FileTypeBox mFileTypeBox;
         MetaBox mMetaBox;

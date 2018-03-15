@@ -68,6 +68,6 @@ namespace HEIF
 
         void fillBuffer();
     };
-}
+}  // namespace HEIF
 
 #endif  // HEIFSTREAMLINUX_HPP_

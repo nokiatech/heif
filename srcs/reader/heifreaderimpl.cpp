@@ -148,7 +148,7 @@ namespace HEIF
         reset();
     }
 
-    HEIF_DLL_PUBLIC ErrorCode HeifReaderInterface::SetCustomAllocator(CustomAllocator* customAllocator)
+    HEIF_DLL_PUBLIC ErrorCode Reader::SetCustomAllocator(CustomAllocator* customAllocator)
     {
         if (!setCustomAllocator(customAllocator))
         {
@@ -160,17 +160,17 @@ namespace HEIF
         }
     }
 
-    HEIF_DLL_PUBLIC HeifReaderInterface* HeifReaderInterface::Create()
+    HEIF_DLL_PUBLIC Reader* Reader::Create()
     {
         return CUSTOM_NEW(HeifReaderImpl, ());
     }
 
-    HEIF_DLL_PUBLIC void HeifReaderInterface::Destroy(HeifReaderInterface* imageFileInterface)
+    HEIF_DLL_PUBLIC void Reader::Destroy(Reader* imageFileInterface)
     {
-        CUSTOM_DELETE(imageFileInterface, HeifReaderInterface);
+        CUSTOM_DELETE(imageFileInterface, Reader);
     }
 
-    HEIF_DLL_PUBLIC const char* HeifReaderInterface::GetVersion()
+    HEIF_DLL_PUBLIC const char* Reader::GetVersion()
     {
         return BuildInfo::Version;
     }
@@ -220,6 +220,10 @@ namespace HEIF
         {
             itemInformation[i].itemId   = item.first;
             itemInformation[i].features = item.second.getFeatureMask();
+            if (getItemLength(mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId), item.first.get(), itemInformation[i].size) != ErrorCode::OK)
+            {
+                itemInformation[i].size = 0;
+            }
             ++i;
         }
         metaBoxInformation.itemInformations = itemInformation;
@@ -230,6 +234,10 @@ namespace HEIF
         {
             imageInformation[i].itemId   = image.first;
             imageInformation[i].features = image.second.getFeatureMask();
+            if (getItemLength(mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId), image.first.get(), imageInformation[i].size) != ErrorCode::OK)
+            {
+                imageInformation[i].size = 0;
+            }
             ++i;
         }
         metaBoxInformation.imageInformations = imageInformation;
@@ -276,7 +284,7 @@ namespace HEIF
                 sampleInfo[j].sampleEntryType          = sampleProp.sampleEntryType;
                 sampleInfo[j].sampleDescriptionIndex   = sampleProp.sampleDescriptionIndex;
                 sampleInfo[j].sampleType               = sampleProp.sampleType;
-                sampleInfo[j].codingConstraintsFeature = sampleProp.codingConstraints.getFeatureMask();
+                sampleInfo[j].codingConstraints        = sampleProp.codingConstraints;
                 sampleInfo[j].hasClap                  = sampleProp.hasClap;
                 sampleInfo[j].hasAuxi                  = sampleProp.hasAuxi;
                 ++j;
@@ -761,7 +769,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::processAvcItemData(char* memoryBuffer, uint32_t& memoryBufferSize) const
+    ErrorCode HeifReaderImpl::processAvcItemData(char* memoryBuffer, uint64_t& memoryBufferSize) const
     {
         uint32_t outputOffset = 0;
         uint32_t byteOffset   = 0;
@@ -788,7 +796,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::processHevcItemData(char* memoryBuffer, uint32_t& memoryBufferSize) const
+    ErrorCode HeifReaderImpl::processHevcItemData(char* memoryBuffer, uint64_t& memoryBufferSize) const
     {
         uint32_t outputOffset = 0;
         uint32_t byteOffset   = 0;
@@ -1243,7 +1251,7 @@ namespace HEIF
         data.resize(itemLength);
 
         char* dataPtr = reinterpret_cast<char*>(data.data());
-        error = readItem(metaBox, itemId, dataPtr);
+        error         = readItem(metaBox, itemId, dataPtr);
         mIo.stream->seek(oldPosition);
         return error;
     }
@@ -1256,8 +1264,13 @@ namespace HEIF
             return error;
         }
 
-        const ItemLocationBox& iloc                               = metaBox.getItemLocationBox();
-        const unsigned int version                                = iloc.getVersion();
+        const ItemLocationBox& iloc = metaBox.getItemLocationBox();
+        const unsigned int version  = iloc.getVersion();
+        if (!iloc.hasItemIdEntry(itemId))
+        {
+            itemLength = 0;
+            return ErrorCode::INVALID_ITEM_ID;
+        }
         const ItemLocation& itemLocation                          = iloc.getItemLocationForID(itemId);
         const ItemLocation::ConstructionMethod constructionMethod = itemLocation.getConstructionMethod();
         const ExtentList& extentList                              = itemLocation.getExtentList();
@@ -1326,12 +1339,16 @@ namespace HEIF
             return error;
         }
 
-        const ItemLocationBox& iloc                               = metaBox.getItemLocationBox();
+        const ItemLocationBox& iloc = metaBox.getItemLocationBox();
+        const unsigned int version  = iloc.getVersion();
+        if (!iloc.hasItemIdEntry(itemId))
+        {
+            return ErrorCode::INVALID_ITEM_ID;
+        }
         const ItemLocation& itemLocation                          = iloc.getItemLocationForID(itemId);
         const ItemLocation::ConstructionMethod constructionMethod = itemLocation.getConstructionMethod();
         const ExtentList& extentList                              = itemLocation.getExtentList();
         const std::uint64_t baseOffset                            = itemLocation.getBaseOffset();
-        const unsigned int version                                = iloc.getVersion();
 
         if (extentList.size() == 0)
         {
@@ -1477,7 +1494,7 @@ namespace HEIF
             trackProperties.trackId = trackBox->getTrackHeaderBox().getTrackID();
 
             trackProperties.sampleProperties    = makeSamplePropertiesMap(trackBox);
-            std::uint32_t maxSampleSize         = 0;
+            std::uint64_t maxSampleSize         = 0;
             trackInfo.samples                   = makeSampleInfoVector(trackBox, trackInfo.pMap, maxSampleSize);
             mTrackInfo[trackProperties.trackId] = trackInfo;
 
@@ -1859,7 +1876,7 @@ namespace HEIF
 
     HeifReaderImpl::SampleInfoVector HeifReaderImpl::makeSampleInfoVector(TrackBox* trackBox,
                                                                           const DecodePts::PMap& pMap,
-                                                                          std::uint32_t& maxSampleSize) const
+                                                                          std::uint64_t& maxSampleSize) const
     {
         SampleInfoVector sampleInfoVector;
 
@@ -1882,7 +1899,7 @@ namespace HEIF
         }
 
         std::uint32_t previousChunkIndex = 0;  // Index is 1-based so 0 will not be used.
-        std::uint32_t maxSize            = 0;
+        std::uint64_t maxSize            = 0;
         for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex)
         {
             SampleInfo sampleInfo;
@@ -2018,14 +2035,9 @@ namespace HEIF
                     if (ccst)
                     {
                         // Store values from CodingConstraintsBox
-                        if (ccst->getAllRefPicsIntra() == true)
-                        {
-                            sampleProperties.codingConstraints.setFeature(CodingConstraintsEnum::IsAllReferencePicturesIntra);
-                        }
-                        if (ccst->getIntraPredUsed() == true)
-                        {
-                            sampleProperties.codingConstraints.setFeature(CodingConstraintsEnum::IsIntraPredictionUsed);
-                        }
+                        sampleProperties.codingConstraints.allRefPicsIntra = ccst->getAllRefPicsIntra();
+                        sampleProperties.codingConstraints.intraPredUsed = ccst->getIntraPredUsed();
+                        sampleProperties.codingConstraints.maxRefPerPic = ccst->getMaxRefPicUsed();
                     }
                     else
                     {
@@ -2044,14 +2056,9 @@ namespace HEIF
                         if (ccst)
                         {
                             // Store values from CodingConstraintsBox
-                            if (ccst->getAllRefPicsIntra() == true)
-                            {
-                                sampleProperties.codingConstraints.setFeature(CodingConstraintsEnum::IsAllReferencePicturesIntra);
-                            }
-                            if (ccst->getIntraPredUsed() == true)
-                            {
-                                sampleProperties.codingConstraints.setFeature(CodingConstraintsEnum::IsIntraPredictionUsed);
-                            }
+                            sampleProperties.codingConstraints.allRefPicsIntra = ccst->getAllRefPicsIntra();
+                            sampleProperties.codingConstraints.intraPredUsed = ccst->getIntraPredUsed();
+                            sampleProperties.codingConstraints.maxRefPerPic = ccst->getMaxRefPicUsed();
                         }
                         else
                         {
@@ -2175,7 +2182,7 @@ namespace HEIF
     ErrorCode HeifReaderImpl::getTrackFrameData(const unsigned int frameIndex,
                                                 const TrackInfo& trackInfo,
                                                 char* memorybuffer,
-                                                uint32_t& memorybuffersize) const
+                                                uint64_t& memorybuffersize) const
     {
         // The requested frame should be one that is available
         if (frameIndex >= trackInfo.samples.size())

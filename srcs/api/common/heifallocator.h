@@ -29,6 +29,6 @@ namespace HEIF
         /** Release a pointer returned from allocate */
         virtual void deallocate(void* ptr) = 0;
     };
-}
+}  // namespace HEIF
 
 #endif  // HEIFFILEALLOCATOR_H

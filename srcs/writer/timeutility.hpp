@@ -15,4 +15,4 @@
 /** @return Seconds passed since 1st of January 1904. */
 unsigned int getSecondsSince1904();
 
-#endif
+#endif // TIMEUTILITY_HPP

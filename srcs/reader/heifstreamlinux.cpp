@@ -186,4 +186,4 @@ namespace HEIF
     {
         return m_size;
     }
-}
+}  // namespace HEIF

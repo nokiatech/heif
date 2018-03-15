@@ -66,6 +66,6 @@ namespace HEIF
         bool m_error;
         bool m_eof;
     };
-}
+}  // namespace HEIF
 
 #endif  // HEIFSTREAMINTERNAL_HPP_
