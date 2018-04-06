@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "mediaheaderbox.hpp"
@@ -94,8 +96,8 @@ void MediaHeaderBox::writeBox(ISOBMFF::BitStream& bitstr) const
         throw RuntimeError("MediaHeaderBox::writeBox() supports only 'mdhd' version 0 and version 1");
     }
 
-    bitstr.write16Bits(0);  //Pad, Langauge
-    bitstr.write16Bits(0);  //Predefined
+    bitstr.write16Bits(0);  // Pad, Langauge
+    bitstr.write16Bits(0);  // Predefined
 
     // Update the size of the movie box
     updateSize(bitstr);
@@ -130,6 +132,6 @@ void MediaHeaderBox::parseBox(ISOBMFF::BitStream& bitstr)
         mDuration = bitstr.read64Bits();
     }
 
-    bitstr.read16Bits();  //Pad, Langauge
-    bitstr.read16Bits();  //Predefined
+    bitstr.read16Bits();  // Pad, Langauge
+    bitstr.read16Bits();  // Predefined
 }

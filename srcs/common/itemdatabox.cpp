@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "itemdatabox.hpp"
@@ -26,11 +28,12 @@ bool ItemDataBox::read(Vector<std::uint8_t>& destination, const std::uint64_t of
         return false;
     }
 
-    destination.insert(destination.end(), mData.cbegin() + static_cast<int64_t>(offset), mData.cbegin() + static_cast<int64_t>(offset + length));
+    destination.insert(destination.end(), mData.cbegin() + static_cast<int64_t>(offset),
+                       mData.cbegin() + static_cast<int64_t>(offset + length));
     return true;
 }
 
-bool ItemDataBox::read(char* destination, const std::uint64_t offset, const std::uint64_t length) const
+bool ItemDataBox::read(uint8_t* destination, const std::uint64_t offset, const std::uint64_t length) const
 {
     if ((offset + length) > mData.size() || destination == nullptr)
     {

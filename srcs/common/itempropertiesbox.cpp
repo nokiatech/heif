@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "itempropertiesbox.hpp"
@@ -57,28 +59,62 @@ ItemPropertiesBox::PropertyType ItemPropertiesBox::getPropertyType(const Box* pr
 {
     PropertyType type = PropertyType::RAW;
     FourCCInt boxType = property->getType();
-    static const Map<FourCCInt, PropertyType> NAME_TO_ENUM_MAP =
-        {
-            {"auxC", PropertyType::AUXC},
-            {"avcC", PropertyType::AVCC},
-            {"clap", PropertyType::CLAP},
-            {"colr", PropertyType::COLR},
-            {"free", PropertyType::FREE},
-            {"hvcC", PropertyType::HVCC},
-            {"imir", PropertyType::IMIR},
-            {"irot", PropertyType::IROT},
-            {"ispe", PropertyType::ISPE},
-            {"jpgC", PropertyType::JPGC},
-            {"pasp", PropertyType::PASP},
-            {"pixi", PropertyType::PIXI},
-            {"rloc", PropertyType::RLOC},
-            {"skip", PropertyType::FREE}};
-
-    if (NAME_TO_ENUM_MAP.count(boxType))
+    if (boxType == "auxC")
     {
-        type = NAME_TO_ENUM_MAP.at(boxType);
+        type = PropertyType::AUXC;
     }
-
+    else if (boxType == "avcC")
+    {
+        type = PropertyType::AVCC;
+    }
+    else if (boxType == "clap")
+    {
+        type = PropertyType::CLAP;
+    }
+    else if (boxType == "colr")
+    {
+        type = PropertyType::COLR;
+    }
+    else if (boxType == "free")
+    {
+        type = PropertyType::FREE;
+    }
+    else if (boxType == "hvcC")
+    {
+        type = PropertyType::HVCC;
+    }
+    else if (boxType == "imir")
+    {
+        type = PropertyType::IMIR;
+    }
+    else if (boxType == "irot")
+    {
+        type = PropertyType::IROT;
+    }
+    else if (boxType == "ispe")
+    {
+        type = PropertyType::ISPE;
+    }
+    else if (boxType == "jpgC")
+    {
+        type = PropertyType::JPGC;
+    }
+    else if (boxType == "pasp")
+    {
+        type = PropertyType::PASP;
+    }
+    else if (boxType == "pixi")
+    {
+        type = PropertyType::PIXI;
+    }
+    else if (boxType == "rloc")
+    {
+        type = PropertyType::RLOC;
+    }
+    else if (boxType == "skip")
+    {
+        type = PropertyType::FREE;
+    }
     return type;
 }
 
@@ -118,14 +154,18 @@ ItemPropertiesBox::PropertyInfos ItemPropertiesBox::getItemProperties(const std:
     return propertyInfoVector;
 }
 
-uint16_t ItemPropertiesBox::addProperty(std::shared_ptr<Box> box, const Vector<std::uint32_t>& itemIds, const bool essential)
+uint16_t ItemPropertiesBox::addProperty(std::shared_ptr<Box> box,
+                                        const Vector<std::uint32_t>& itemIds,
+                                        const bool essential)
 {
     const std::uint16_t propertyIndex = mContainer.addProperty(box);
     associateProperty(propertyIndex, itemIds, essential);
     return propertyIndex;
 }
 
-void ItemPropertiesBox::associateProperty(const std::uint16_t index, const Vector<std::uint32_t>& itemIds, const bool essential)
+void ItemPropertiesBox::associateProperty(const std::uint16_t index,
+                                          const Vector<std::uint32_t>& itemIds,
+                                          const bool essential)
 {
     if (mAssociationBoxes.size() == 0)
     {

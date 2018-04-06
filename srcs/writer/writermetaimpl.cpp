@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include <algorithm>
@@ -167,10 +169,9 @@ namespace HEIF
             FourCCInt type;
             String name;
         };
-        const map<MediaFormat, FormatNames> formatMapping = {
-            {MediaFormat::AVC, {FourCCInt("avc1"), "AVC Image"}},
-            {MediaFormat::HEVC, {FourCCInt("hvc1"), "HEVC Image"}},
-            {MediaFormat::JPEG, {FourCCInt("jpeg"), "JPEG Image"}}};
+        const map<MediaFormat, FormatNames> formatMapping = {{MediaFormat::AVC, {FourCCInt("avc1"), "AVC Image"}},
+                                                             {MediaFormat::HEVC, {FourCCInt("hvc1"), "HEVC Image"}},
+                                                             {MediaFormat::JPEG, {FourCCInt("jpeg"), "JPEG Image"}}};
 
         const FormatNames& format = formatMapping.at(mediaData.mediaFormat);
 
@@ -294,17 +295,19 @@ namespace HEIF
             const ImageCollection::Image& image = entry.second;
             for (const auto& property : image.descriptiveProperties)
             {
-                mMetaBox.addProperty(static_cast<uint16_t>(property.propertyId.get()), {image.imageId.get()}, property.essential);
+                mMetaBox.addProperty(static_cast<uint16_t>(property.propertyId.get()), {image.imageId.get()},
+                                     property.essential);
             }
             for (const auto& property : image.transformativeProperties)
             {
-                mMetaBox.addProperty(static_cast<uint16_t>(property.propertyId.get()), {image.imageId.get()}, property.essential);
+                mMetaBox.addProperty(static_cast<uint16_t>(property.propertyId.get()), {image.imageId.get()},
+                                     property.essential);
             }
         }
 
         /** @todo Validity checks?
-        * if (!mPrimaryItemSet) still, in case all items were hidden.
-        * if (mImageCollection.images.size() == 0) */
+         * if (!mPrimaryItemSet) still, in case all items were hidden.
+         * if (mImageCollection.images.size() == 0) */
 
         return ErrorCode::OK;
     }
@@ -446,9 +449,7 @@ namespace HEIF
 
         auto colrBox = std::make_shared<ColourInformationBox>();
 
-        if ((colr.colourType == "nclx") ||
-            (colr.colourType == "rICC") ||
-            (colr.colourType == "prof"))
+        if ((colr.colourType == "nclx") || (colr.colourType == "rICC") || (colr.colourType == "prof"))
         {
             colrBox->setColourType(colr.colourType.value);
         }
@@ -541,14 +542,17 @@ namespace HEIF
         mMetaBox.addItem(derivedImageId.get(), "iden", "Derived image");
         mMetaBox.addItemReference("dimg", derivedImageId.get(), imageId.get());
 
-        const auto ispeIndex = mMetaBox.getItemPropertiesBox().findPropertyIndex(ItemPropertiesBox::PropertyType::ISPE, imageId.get());
+        const auto ispeIndex =
+            mMetaBox.getItemPropertiesBox().findPropertyIndex(ItemPropertiesBox::PropertyType::ISPE, imageId.get());
         assert(ispeIndex != 0);
         mMetaBox.addProperty(static_cast<uint16_t>(ispeIndex), {derivedImageId.get()}, false);
 
         return ErrorCode::OK;
     }
 
-    ErrorCode WriterImpl::associateProperty(const ImageId& imageId, const PropertyId& propertyId, const bool isEssential)
+    ErrorCode WriterImpl::associateProperty(const ImageId& imageId,
+                                            const PropertyId& propertyId,
+                                            const bool isEssential)
     {
         if (mState != State::WRITING)
         {
@@ -816,14 +820,14 @@ namespace HEIF
 
         if (mIspeIndexes.count(size) == 0)
         {
-            mIspeIndexes[size] = mMetaBox.addProperty(std::make_shared<ImageSpatialExtentsProperty>(width, height), {}, false);
+            mIspeIndexes[size] =
+                mMetaBox.addProperty(std::make_shared<ImageSpatialExtentsProperty>(width, height), {}, false);
         }
 
         return mIspeIndexes[size];
     }
 
-    ErrorCode WriterImpl::getConfigIndex(const DecoderConfigId decoderConfigId,
-                                         uint16_t& propertyIndex)
+    ErrorCode WriterImpl::getConfigIndex(const DecoderConfigId decoderConfigId, uint16_t& propertyIndex)
     {
         // Create a new decoder configuration property, if a matching one was not present already.
         if (mDecoderConfigs.count(decoderConfigId) == 0)

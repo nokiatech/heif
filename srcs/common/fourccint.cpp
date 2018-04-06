@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include <stdexcept>
@@ -19,7 +21,8 @@ FourCCInt::FourCCInt(const String& str)
     {
         throw RuntimeError("FourCCInt given an String argument not exactly 4 characters long");
     }
-    mValue = 0 | (std::uint32_t(str[0]) << 24) | (std::uint32_t(str[1]) << 16) | (std::uint32_t(str[2]) << 8) | (std::uint32_t(str[3]) << 0);
+    mValue = 0 | (std::uint32_t(str[0]) << 24) | (std::uint32_t(str[1]) << 16) | (std::uint32_t(str[2]) << 8) |
+             (std::uint32_t(str[3]) << 0);
 }
 
 String FourCCInt::getString() const

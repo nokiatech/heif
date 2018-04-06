@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "itemreferencebox.hpp"
@@ -162,18 +164,17 @@ Vector<SingleItemTypeReferenceBox> ItemReferenceBox::getReferencesOfType(FourCCI
 void ItemReferenceBox::add(FourCCInt type, const std::uint32_t fromId, const std::uint32_t toId)
 {
     const bool largeIds = getVersion() ? true : false;
-    if (((fromId > std::numeric_limits<std::uint16_t>::max()) ||
-         (toId > std::numeric_limits<std::uint16_t>::max())) &&
+    if (((fromId > std::numeric_limits<std::uint16_t>::max()) || (toId > std::numeric_limits<std::uint16_t>::max())) &&
         !largeIds)
     {
         throw RuntimeError("ItemReferenceBox::add can not add large item IDs to box version 0");
     }
 
     // Add to an existing entry if one exists for this type & fromId pair
-    auto reference = std::find_if(mReferenceList.begin(), mReferenceList.end(),
-                                  [&](const SingleItemTypeReferenceBox& entry) {
-                                      return (entry.getType() == type) && (entry.getFromItemID() == fromId);
-                                  });
+    auto reference =
+        std::find_if(mReferenceList.begin(), mReferenceList.end(), [&](const SingleItemTypeReferenceBox& entry) {
+            return (entry.getType() == type) && (entry.getFromItemID() == fromId);
+        });
     if (reference != mReferenceList.end())
     {
         reference->addToItemID(toId);

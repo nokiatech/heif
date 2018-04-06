@@ -5,7 +5,11 @@ Please follow this **[link](https://nokiatech.github.io/heif)** to access HEIF W
 You can also check the **[Wiki](https://github.com/nokiatech/heif/wiki)** pages for more information.
 
 ## News:
+
+[06.04.2018] v3.2 Release. Two new APIs added, a Java API which wraps the C++ libraries using JNI and a convenience C++ API (which is used by the Java API) that wraps the underlying reader and writer. The Java API is expected to remain relatively stable, however the new C++ API will most likely change in the future.
+
 [14.03.2018] v3.1 Release. Reader API update, bug fixes and examples update.
+
 [05.03.2018] Code updated and tagged v3.0. Writer executable replaced with writer library / API. Implementation is based on HEIF standard specification [ISO/IEC 23008-12:2017](http://standards.iso.org/ittf/PubliclyAvailableStandards/c066067_ISO_IEC_23008-12_2017.zip) that is available from iso.org web pages.
 
 [09.03.2017] ISO/IEC 23008-12 second edition includes support for the interchange of multi-layered images. The source code now includes structures that are specified in this second edition. Simple support for AVC is also added. Minor bug fixes are included in this update. Example configuration files for generating multi-layered streams can be found in the Wiki.
@@ -31,6 +35,8 @@ This repository contains the following items:
 * ISO Base Media File Format (ISOBMFF) box parse/write source code (under srcs/common/)
 * HEIF Reader API and Library (under srcs/api/reader/)
 * HEIF Writer API and Library (under srcs/api/writer/)
+* HEIF Reader/Writer Java API (under srcs/api-java/)
+* HEIF Reader/Writer convenience C++ API (under srcs/api-cpp/)
 * HEIF Reader API Usage Example Code (under srcs/examples/)
 * HEIF Source Code Documentation (**[Doxygen](http://www.stack.nl/~dimitri/doxygen/)** generator under docs/)
 * HEIF Web Site Content (in **[gh-pages branch](https://github.com/nokiatech/heif/tree/gh-pages)**)
@@ -55,3 +61,5 @@ For more information/questions/source code/commercial licensing related issues, 
 
 ### **Copyright (c) 2015-2018, Nokia Technologies Ltd.**
 ### **All rights reserved.**
+
+

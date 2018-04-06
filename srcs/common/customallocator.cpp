@@ -4,45 +4,39 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "customallocator.hpp"
+#include "../api/common/heifallocator.h"
 
-HEIF::CustomAllocator::CustomAllocator()
+namespace
 {
-    // nothing
-}
-
-HEIF::CustomAllocator::~CustomAllocator()
-{
-    // nothing
-}
-
-class DefaultAllocator : public HEIF::CustomAllocator
-{
-public:
-    DefaultAllocator()
+    class DefaultAllocator : public HEIF::CustomAllocator
     {
-    }
-    ~DefaultAllocator()
-    {
-    }
+    public:
+        DefaultAllocator()
+        {
+        }
+        ~DefaultAllocator()
+        {
+        }
 
-    void* allocate(size_t n, size_t size) override
-    {
-        return malloc(n * size);
-    }
-    void deallocate(void* ptr) override
-    {
-        free(ptr);
-    }
-};
-
-alignas(DefaultAllocator) char defaultAllocatorData[sizeof(DefaultAllocator)];
-HEIF::CustomAllocator* defaultAllocator;
+        void* allocate(size_t n, size_t size) override
+        {
+            return malloc(n * size);
+        }
+        void deallocate(void* ptr) override
+        {
+            free(ptr);
+        }
+    };
+}  // namespace
+static DefaultAllocator defaultAllocator;
 static HEIF::CustomAllocator* customAllocator;
 
 bool setCustomAllocator(HEIF::CustomAllocator* customAllocator_)
@@ -60,19 +54,14 @@ bool setCustomAllocator(HEIF::CustomAllocator* customAllocator_)
 
 HEIF::CustomAllocator* getDefaultAllocator()
 {
-    if (!defaultAllocator)
-    {
-        defaultAllocator = new (defaultAllocatorData) DefaultAllocator();
-    }
-    return defaultAllocator;
+    return &defaultAllocator;
 }
 
 HEIF::CustomAllocator* getCustomAllocator()
 {
     if (!customAllocator)
     {
-        defaultAllocator = getDefaultAllocator();
-        customAllocator  = defaultAllocator;
+        customAllocator = getDefaultAllocator();
     }
     return customAllocator;
 }

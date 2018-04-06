@@ -4,35 +4,52 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "mediadatabox.hpp"
 
+#include <fstream>
+#include <limits>
 #include <stdexcept>
 
 using namespace std;
 
 MediaDataBox::MediaDataBox()
     : Box("mdat")
-    , mData()
+    , mHeaderData()
+    , mMediaData()
+    , mTotalDataSize(0)
     , mDataOffsetArray()
     , mDataLengthArray()
 {
-    writeBoxHeader(mData);  // write Box header
+    setLargeSize();
+    writeBoxHeader(mHeaderData);  // write Box header
 }
 
-const Vector<uint8_t>& MediaDataBox::getData() const
+void MediaDataBox::writeBox(std::ofstream& output) const
 {
-    return mData.getStorage();
+    output.write(reinterpret_cast<const char*>(mHeaderData.getStorage().data()),
+                 static_cast<streamsize>(mHeaderData.getStorage().size()));
+    for (const auto& dataBlock : mMediaData)
+    {
+        output.write(reinterpret_cast<const char*>(dataBlock.data()), static_cast<streamsize>(dataBlock.size()));
+    }
 }
 
 void MediaDataBox::writeBox(ISOBMFF::BitStream& bitstr) const
 {
-    const Vector<uint8_t>& data = mData.getStorage();
+    const Vector<uint8_t>& data = mHeaderData.getStorage();
     bitstr.write8BitsArray(data, data.size());
+
+    for (const auto& dataBlock : mMediaData)
+    {
+        bitstr.write8BitsArray(dataBlock, dataBlock.size());
+    }
 }
 
 void MediaDataBox::parseBox(BitStream& /*bitstr*/)
@@ -40,17 +57,70 @@ void MediaDataBox::parseBox(BitStream& /*bitstr*/)
     // Intentionally empty
 }
 
+void MediaDataBox::updateSize(ISOBMFF::BitStream& bitstr)
+{
+    uint64_t boxSize = mTotalDataSize + bitstr.getSize();
+    setSize(boxSize);
+
+    if ((boxSize > std::numeric_limits<std::uint32_t>::max()) && (getLargeSize() == false))
+    {
+        throw RuntimeError("Box::updateSize(): Box size exceeds 4GB but large size for 64-bit size field was not set.");
+    }
+
+    // Write updated size to the bitstream.
+    if (getLargeSize())
+    {
+        bitstr.setByte(8, (boxSize >> 56) & 0xff);
+        bitstr.setByte(9, (boxSize >> 48) & 0xff);
+        bitstr.setByte(10, (boxSize >> 40) & 0xff);
+        bitstr.setByte(11, (boxSize >> 32) & 0xff);
+        bitstr.setByte(12, (boxSize >> 24) & 0xff);
+        bitstr.setByte(13, (boxSize >> 16) & 0xff);
+        bitstr.setByte(14, (boxSize >> 8) & 0xff);
+        bitstr.setByte(15, boxSize & 0xff);
+    }
+    else
+    {
+        bitstr.setByte(0, (boxSize >> 24) & 0xff);
+        bitstr.setByte(1, (boxSize >> 16) & 0xff);
+        bitstr.setByte(2, (boxSize >> 8) & 0xff);
+        bitstr.setByte(3, boxSize & 0xff);
+    }
+}
+
 std::uint64_t MediaDataBox::addData(const Vector<uint8_t>& srcData)
 {
-    std::uint64_t offset = mData.getSize();  // offset from the beginning of the box (mData contains box header already)
+    std::uint64_t offset =
+        mHeaderData.getSize() + mTotalDataSize;  // offset from the beginning of the box (including header)
 
     mDataOffsetArray.push_back(offset);          // current offset
     mDataLengthArray.push_back(srcData.size());  // length of the data to be added
 
-    mData.write8BitsArray(srcData, srcData.size());  // add media data to bitstream
+    mMediaData.push_back(srcData);
+    mTotalDataSize += srcData.size();
 
-    updateSize(mData);
+    updateSize(mHeaderData);
+    return offset;
+}
 
+std::uint64_t MediaDataBox::addData(const uint8_t* buffer, const uint64_t bufferSize)
+{
+    std::uint64_t offset =
+        mHeaderData.getSize() + mTotalDataSize;  // offset from the beginning of the box (including header)
+
+    mDataOffsetArray.push_back(offset);      // current offset
+    mDataLengthArray.push_back(bufferSize);  // length of the data to be added
+
+    // NOTE: casts should be (const uint8_t*) but clang + libc++ does the initialization in a non-optimal way if
+    // constness changes
+    // casting to (uint8_t*) allows the compiler to just do a memcpy.
+    // does not affect GCC since it ALWAYS does init non-optimally.
+    Vector<uint8_t> tmp(buffer, buffer + bufferSize);
+    mMediaData.insert(mMediaData.end(), std::move(tmp));
+
+    mTotalDataSize += bufferSize;
+
+    updateSize(mHeaderData);
     return offset;
 }
 
@@ -58,7 +128,7 @@ void MediaDataBox::addNalData(const Vector<Vector<uint8_t>>& srcData)
 {
     std::uint64_t totalLen = 0;
 
-    size_t dataOffset = mData.getSize();  // data offset for the image within the media data box
+    size_t dataOffset = mHeaderData.getSize() + mTotalDataSize;  // data offset for the image within the media data box
 
     for (const auto& i : srcData)
     {
@@ -79,29 +149,46 @@ void MediaDataBox::addNalData(const Vector<uint8_t>& srcData)
     std::uint64_t currPos  = 0;
     std::uint64_t totalLen = 0;
 
-    mDataOffsetArray.push_back(static_cast<std::uint64_t>(mData.getSize()));  // record offset for the picture to be added
+    mDataOffsetArray.push_back(static_cast<std::uint64_t>(
+        mHeaderData.getSize() + mTotalDataSize));  // record offset for the picture to be added
+
+    Vector<uint8_t> mediaDataEntry;
+    mediaDataEntry.reserve(srcData.size());
 
     // replace start codes with nal length fields
     startCodeLen = findStartCode(srcData, 0, startCodePos);
     currPos += startCodeLen;
     while (currPos < srcData.size())
     {
-        startCodeLen               = findStartCode(srcData, currPos, startCodePos);  // find next start code to determine NAL unit size
+        startCodeLen =
+            findStartCode(srcData, currPos, startCodePos);  // find next start code to determine NAL unit size
         const std::uint64_t nalLen = startCodePos - currPos;
 
-        mData.write32Bits(static_cast<uint32_t>(nalLen));  // write length field
-        mData.write8BitsArray(srcData, nalLen, currPos);   // write data (except for the start code)
+        // write length field
+        mediaDataEntry.push_back(static_cast<uint8_t>((uint32_t(nalLen) >> 24) & 0xff));
+        mediaDataEntry.push_back(static_cast<uint8_t>((uint32_t(nalLen) >> 16) & 0xff));
+        mediaDataEntry.push_back(static_cast<uint8_t>((uint32_t(nalLen) >> 8) & 0xff));
+        mediaDataEntry.push_back(static_cast<uint8_t>(uint32_t(nalLen) & 0xff));
+
+        Vector<uint8_t>::const_iterator sourceIt =
+            srcData.begin() + static_cast<Vector<uint8_t>::difference_type>(currPos);
+        mediaDataEntry.insert(mediaDataEntry.end(), sourceIt,
+                              sourceIt + static_cast<Vector<uint8_t>::difference_type>(nalLen));
 
         currPos = startCodePos + startCodeLen;
         totalLen += (nalLen + 4);
     }
 
+    mMediaData.push_back(std::move(mediaDataEntry));
+    mTotalDataSize += mMediaData.back().size();
+
     mDataLengthArray.push_back(totalLen);  // total length of the data added
 
-    updateSize(mData);
+    updateSize(mHeaderData);
 }
 
-std::uint64_t MediaDataBox::findStartCode(const Vector<uint8_t>& srcData, const std::uint64_t searchStartPos,
+std::uint64_t MediaDataBox::findStartCode(const Vector<uint8_t>& srcData,
+                                          const std::uint64_t searchStartPos,
                                           std::uint64_t& startCodePos)
 {
     std::uint64_t i          = searchStartPos;

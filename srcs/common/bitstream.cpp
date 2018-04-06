@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "bitstream.hpp"
@@ -137,11 +139,10 @@ namespace ISOBMFF
     {
         dest.clear();
         dest.reset();
-        if (begin <= mStorage.size() &&
-            end <= mStorage.size() &&
-            begin <= end)
+        if (begin <= mStorage.size() && end <= mStorage.size() && begin <= end)
         {
-            dest.mStorage.insert(dest.mStorage.begin(), mStorage.begin() + static_cast<std::int64_t>(begin), mStorage.begin() + static_cast<std::int64_t>(end));
+            dest.mStorage.insert(dest.mStorage.begin(), mStorage.begin() + static_cast<std::int64_t>(begin),
+                                 mStorage.begin() + static_cast<std::int64_t>(end));
         }
         else
         {
@@ -193,9 +194,12 @@ namespace ISOBMFF
         mStorage.push_back(static_cast<uint8_t>((bits) &0xff));
     }
 
-    void BitStream::write8BitsArray(const Vector<std::uint8_t>& bits, const std::uint64_t len, const std::uint64_t srcOffset)
+    void BitStream::write8BitsArray(const Vector<std::uint8_t>& bits,
+                                    const std::uint64_t len,
+                                    const std::uint64_t srcOffset)
     {
-        mStorage.insert(mStorage.end(), bits.begin() + static_cast<std::int64_t>(srcOffset), bits.begin() + static_cast<std::int64_t>(srcOffset + len));
+        mStorage.insert(mStorage.end(), bits.begin() + static_cast<std::int64_t>(srcOffset),
+                        bits.begin() + static_cast<std::int64_t>(srcOffset + len));
     }
 
     void BitStream::writeBits(std::uint64_t bits, std::uint32_t len)
@@ -211,13 +215,18 @@ namespace ISOBMFF
                 const unsigned int numBitsLeftInByte = 8 - mBitOffset;
                 if (numBitsLeftInByte > len)
                 {
-                    mCurrByte = mCurrByte | (static_cast<unsigned int>((bits & (std::numeric_limits<std::uint64_t>::max() >> (64 - len))) << (numBitsLeftInByte - len)));
+                    mCurrByte =
+                        mCurrByte |
+                        (static_cast<unsigned int>((bits & (std::numeric_limits<std::uint64_t>::max() >> (64 - len)))
+                                                   << (numBitsLeftInByte - len)));
                     mBitOffset += len;
                     len = 0;
                 }
                 else
                 {
-                    mCurrByte = mCurrByte | (static_cast<unsigned int>((bits >> (len - numBitsLeftInByte)) & ~((std::numeric_limits<std::uint64_t>::max() << (64 - numBitsLeftInByte)))));
+                    mCurrByte = mCurrByte | (static_cast<unsigned int>((bits >> (len - numBitsLeftInByte)) &
+                                                                       ~((std::numeric_limits<std::uint64_t>::max()
+                                                                          << (64 - numBitsLeftInByte)))));
                     mStorage.push_back((uint8_t) mCurrByte);
                     mBitOffset = 0;
                     mCurrByte  = 0;
@@ -246,7 +255,7 @@ namespace ISOBMFF
         {
             mStorage.push_back(static_cast<unsigned char>(character));
         }
-        mStorage.push_back('\0');
+        mStorage.push_back(0);
     }
 
     void BitStream::write32BitFloat(float value)
@@ -329,7 +338,8 @@ namespace ISOBMFF
     {
         if (static_cast<std::size_t>(mByteOffset + len) <= mStorage.size())
         {
-            bits.insert(bits.end(), mStorage.begin() + static_cast<std::int64_t>(mByteOffset), mStorage.begin() + static_cast<std::int64_t>(mByteOffset + len));
+            bits.insert(bits.end(), mStorage.begin() + static_cast<std::int64_t>(mByteOffset),
+                        mStorage.begin() + static_cast<std::int64_t>(mByteOffset + len));
             mByteOffset += len;
         }
         else
@@ -363,7 +373,8 @@ namespace ISOBMFF
 
         if (numBitsLeftInByte >= len)
         {
-            returnBits = (unsigned int) ((mStorage).at(mByteOffset) >> (numBitsLeftInByte - len)) & (unsigned int) ((1 << len) - 1);
+            returnBits = (unsigned int) ((mStorage).at(mByteOffset) >> (numBitsLeftInByte - len)) &
+                         (unsigned int) ((1 << len) - 1);
             mBitOffset += (unsigned int) len;
         }
         else
@@ -383,7 +394,8 @@ namespace ISOBMFF
                 else
                 {
                     returnBits = (returnBits << numBitsToGo) |
-                                 ((unsigned int) ((mStorage).at(mByteOffset) >> (8 - numBitsToGo)) & (((unsigned int) 1 << numBitsToGo) - 1));
+                                 ((unsigned int) ((mStorage).at(mByteOffset) >> (8 - numBitsToGo)) &
+                                  (((unsigned int) 1 << numBitsToGo) - 1));
                     mBitOffset += (unsigned int) (numBitsToGo);
                     numBitsToGo = 0;
                 }
@@ -427,7 +439,7 @@ namespace ISOBMFF
         while (mByteOffset < mStorage.size())
         {
             currChar = read8Bits();
-            if ((char) currChar != '\0')
+            if (currChar != 0)
             {
                 dstString += static_cast<char>(currChar);
             }

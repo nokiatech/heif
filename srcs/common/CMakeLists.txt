@@ -18,7 +18,6 @@ endif()
 project( common LANGUAGES CXX )
 
 set(COMMON_SRCS
-    customallocator.cpp
     audiosampleentrybox.cpp
     auxiliarytypeinfobox.cpp
     auxiliarytypeproperty.cpp
@@ -201,10 +200,5 @@ set(COMMON_HDRS
 
 add_library(common OBJECT ${COMMON_SRCS} ${COMMON_HDRS})
 set_property(TARGET common PROPERTY CXX_STANDARD 11)
-target_compile_definitions(common PUBLIC "HEIF_BUILDING_LIB")
-
-target_include_directories(common PUBLIC ../api/common)
-target_include_directories(common PUBLIC ../api/writer)
-target_include_directories(common PUBLIC ../api/reader)
 
 set_property(TARGET common PROPERTY POSITION_INDEPENDENT_CODE 1)

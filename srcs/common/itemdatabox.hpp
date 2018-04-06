@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef ITEMDATABOX_HPP
@@ -34,13 +36,13 @@ public:
     bool read(Vector<std::uint8_t>& destination, std::uint64_t offset, std::uint64_t length) const;
 
     /**
-    * @brief read        Read data from the box.
-    * @param destination Data pointer where data is copied
-    * @param offset      Offset to the read data, bytes from the beginning of data[].
-    * @param length      Count of read bytes.
-    * @return True if data was copied successfully. False if requested amount of bytes was not available.
-    */
-    bool read(char* destination, const std::uint64_t offset, const std::uint64_t length) const;
+     * @brief read        Read data from the box.
+     * @param destination Data pointer where data is copied
+     * @param offset      Offset to the read data, bytes from the beginning of data[].
+     * @param length      Count of read bytes.
+     * @return True if data was copied successfully. False if requested amount of bytes was not available.
+     */
+    bool read(uint8_t* destination, const std::uint64_t offset, const std::uint64_t length) const;
 
     /**
      * @brief addData Add item data to the box.

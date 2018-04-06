@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "refsgroup.hpp"
@@ -90,7 +92,8 @@ void RefsGroup::fillSgpd(SampleGroupDescriptionBox* sgpd)
         Vector<std::uint32_t> refs;
         std::tie(tag, refs) = entry;
 
-        UniquePtr<DirectReferenceSamplesList, SampleGroupDescriptionEntry> refsEntry(CUSTOM_NEW(DirectReferenceSamplesList, ()));
+        UniquePtr<DirectReferenceSamplesList, SampleGroupDescriptionEntry> refsEntry(
+            CUSTOM_NEW(DirectReferenceSamplesList, ()));
         refsEntry->setSampleId(tag);
         refsEntry->setDirectReferenceSampleIds(refs);
         sgpd->addEntry(std::move(refsEntry));
@@ -114,7 +117,8 @@ void RefsGroup::fillSbgp(SampleToGroupBox& sbgp)
             refIdx += 1;
         }
         RefsEntry element = std::make_tuple(mSampleId.at(sampleIdx), v);
-        entryIdx.push_back(static_cast<uint32_t>(std::find(mIdxEntry.begin(), mIdxEntry.end(), element) - mIdxEntry.begin() + 1));
+        entryIdx.push_back(
+            static_cast<uint32_t>(std::find(mIdxEntry.begin(), mIdxEntry.end(), element) - mIdxEntry.begin() + 1));
         sampleIdx += 1;
     }
 

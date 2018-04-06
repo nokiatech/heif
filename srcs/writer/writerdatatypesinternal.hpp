@@ -18,9 +18,9 @@
 
 namespace HEIF
 {
-    typedef IdBase<std::uint32_t, class TrackTag> TrackId;                    // used internally only
-    typedef IdBase<std::uint16_t, class AlternateGroupTag> AlternateGroupId;  // used internally only
-    typedef IdBase<std::uint32_t, class MetadataItemTag> MetadataItemId;      // used internally only
+    IdType(std::uint32_t,TrackId);
+    IdType(std::uint16_t,AlternateGroupId);
+    IdType(std::uint32_t,MetadataItemId);
 
     /// Data of one image/sample/frame
     struct MediaData
@@ -81,7 +81,7 @@ namespace HEIF
         Vector<Sample> samples;
         Vector<DecoderConfigId> decoderConfigs;
         bool anyNonSyncSample;
-        CodingConstraints codingConstraints;  // for video and image sequences.
+        CodingConstraints codingConstraints;  // for image sequences.
         AudioParams audioParams;              // for audio tracks.
         CleanAperture clap;
         EditList editList;

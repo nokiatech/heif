@@ -4,22 +4,23 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #define _SCL_SECURE_NO_WARNINGS
 
 #include <algorithm>
-#include "customallocator.hpp"
-#include "heifcommondatatypes.h"
-#if HEIF_READER_LIB
+#if defined(HEIF_READER_LIB)
 #include "heifreaderdatatypes.h"
 #endif
-#if HEIF_WRITER_LIB
+#if defined(HEIF_WRITER_LIB)
 #include "heifwriterdatatypes.h"
 #endif
+#include "customallocator.hpp"
 
 namespace HEIF
 {
@@ -87,43 +88,42 @@ namespace HEIF
         std::copy(aInit.begin(), aInit.end(), elements);
     }
 
-    //common
-    template struct Array<DecoderSpecificInfo>;
-    template struct Array<FourCC>;
-    template struct Array<ImageId>;
-    template struct Array<Overlay::Offset>;
-    template struct Array<SequenceImageId>;
-    template struct Array<char>;
-    template struct Array<int16_t>;
-    template struct Array<int32_t>;
-    template struct Array<int64_t>;
-    template struct Array<uint16_t>;
-    template struct Array<uint32_t>;
-    template struct Array<uint64_t>;
-    template struct Array<uint8_t>;
-
-#if HEIF_READER_LIB
-    // reader
-    template struct Array<EntityGrouping>;
-    template struct Array<FourCCToIds>;
-    template struct Array<SampleGrouping>;
-    template struct Array<ImageInformation>;
-    template struct Array<ItemInformation>;
-    template struct Array<ItemPropertyInfo>;
-    template struct Array<SampleAndEntryIds>;
-    template struct Array<SampleInformation>;
-    template struct Array<SampleVisualEquivalence>;
-    template struct Array<SampleToMetadataItem>;
-    template struct Array<SequenceId>;
-    template struct Array<TimestampIDPair>;
-    template struct Array<TrackInformation>;
-#endif
-#if HEIF_WRITER_LIB
-    // writer
-    template struct Array<EditUnit>;
-#endif
-
+#define instance(X) template struct Array<X>
     template HEIF_DLL_PUBLIC Array<char>::Array(String::iterator begin, String::iterator end);
     template HEIF_DLL_PUBLIC Array<char>::Array(String::const_iterator begin, String::const_iterator end);
+
+    instance(DecoderSpecificInfo);
+    instance(FourCC);
+    instance(ImageId);
+    instance(Overlay::Offset);
+    instance(SequenceImageId);
+    instance(char);
+    instance(int8_t);
+    instance(int16_t);
+    instance(int32_t);
+    instance(int64_t);
+    instance(uint8_t);
+    instance(uint16_t);
+    instance(uint32_t);
+    instance(uint64_t);
+
+#if HEIF_READER_LIB
+    instance(EntityGrouping);
+    instance(FourCCToIds);
+    instance(SampleGrouping);
+    instance(ImageInformation);
+    instance(ItemInformation);
+    instance(ItemPropertyInfo);
+    instance(SampleAndEntryIds);
+    instance(SampleInformation);
+    instance(SampleVisualEquivalence);
+    instance(SampleToMetadataItem);
+    instance(SequenceId);
+    instance(TimestampIDPair);
+    instance(TrackInformation);
+#endif
+#if HEIF_WRITER_LIB
+    instance(EditUnit);
+#endif
 
 }  // namespace HEIF

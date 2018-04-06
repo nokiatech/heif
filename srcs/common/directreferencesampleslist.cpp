@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "directreferencesampleslist.hpp"
@@ -47,7 +49,8 @@ Vector<std::uint32_t> DirectReferenceSamplesList::getDirectReferenceSampleIds() 
 std::uint32_t DirectReferenceSamplesList::getSize() const
 {
     // Sizes: sample_id (4 bytes), num_referenced_samples (1 byte), reference_sample_id (4 bytes) * number of references
-    const uint32_t size = static_cast<uint32_t>(sizeof(mSampleId) + sizeof(uint8_t) + (sizeof(uint32_t) * mDirectReferenceSampleIds.size()));
+    const uint32_t size = static_cast<uint32_t>(sizeof(mSampleId) + sizeof(uint8_t) +
+                                                (sizeof(uint32_t) * mDirectReferenceSampleIds.size()));
     return size;
 }
 

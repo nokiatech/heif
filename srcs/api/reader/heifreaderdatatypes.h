@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef HEIFFILEDATATYPES_H
@@ -24,8 +26,6 @@
 
 namespace HEIF
 {
-    typedef IdBase<std::uint32_t, class PropertyTag> PropertyId;
-
     enum TrackSampleType
     {
         out_ref,      ///< output reference frames
@@ -103,11 +103,14 @@ namespace HEIF
     {
         enum Feature
         {
-            IsTileImageItem = 1u,       ///< Item is of type 'hvt1' e.g. HEVC tile Item
-            IsMetadataItem  = 1u << 1,  ///< Item is metadata item and has 'cdsc' (= content descriptor) reference to other item.
-            IsExifItem      = 1u << 2,  ///< Item is metadata of type 'Exif'
-            IsMimeItem      = 1u << 3,  ///< Item is metadata of type 'mime' e.g. XMP or MPEG-7 metadata
-            IsProtected     = 1u << 4,  ///< There is a Protection Scheme Info Box mapped for this item. The item is not accessible.
+            IsTileImageItem = 1u,  ///< Item is of type 'hvt1' e.g. HEVC tile Item
+            IsMetadataItem =
+                1u << 1,  ///< Item is metadata item and has 'cdsc' (= content descriptor) reference to other item.
+            IsExifItem  = 1u << 2,  ///< Item is metadata of type 'Exif'
+            IsXMPItem   = 1u << 3,  ///< Item is metadata of type 'mime' and content type "application/rdf+xml"
+            IsMPEG7Item = 1u << 4,  ///< Item is metadata of type 'mime' and not content type "application/rdf+xml"
+            IsProtected =
+                1u << 5,  ///< There is a Protection Scheme Info Box mapped for this item. The item is not accessible.
         };
     }
 
@@ -115,27 +118,35 @@ namespace HEIF
     {
         enum Feature
         {
-            IsMasterImage                    = 1u,        ///< Image is master image e.g. not a thumbnail or an auxiliary image
-            IsThumbnailImage                 = 1u << 1,   ///< Image is thumbnail image. It has 'thmb' reference to other image
-            IsAuxiliaryImage                 = 1u << 2,   ///< Image is auxiliary image. It has 'auxl' reference to other image
-            IsPrimaryImage                   = 1u << 3,   ///< Image is an primary image. The primary item should be displayed when no other information is available on the preferred displaying method of the image collection.
-            IsDerivedImage                   = 1u << 4,   ///< Image is a derived from other image.
-            IsPreComputedDerivedImage        = 1u << 5,   ///< Image is a Pre-derived coded image. for example, a composite HDR image derived from exposure-bracketed individual images
-            IsHiddenImage                    = 1u << 6,   ///< Image is hidden. Not intended to be displayed.
-            IsCoverImage                     = 1u << 7,   ///< Image is cover image, should be displayed when no other information is available on the preference to display a collection of images.
-            IsProtected                      = 1u << 8,   ///< There is a Protection Scheme Info Box mapped for this image. The image is not accessible.
+            IsMasterImage    = 1u,       ///< Image is master image e.g. not a thumbnail or an auxiliary image
+            IsThumbnailImage = 1u << 1,  ///< Image is thumbnail image. It has 'thmb' reference to other image
+            IsAuxiliaryImage = 1u << 2,  ///< Image is auxiliary image. It has 'auxl' reference to other image
+            IsPrimaryImage =
+                1u << 3,  ///< Image is an primary image. The primary item should be displayed when no other information
+                          ///< is available on the preferred displaying method of the image collection.
+            IsDerivedImage            = 1u << 4,  ///< Image is a derived from other image.
+            IsPreComputedDerivedImage = 1u << 5,  ///< Image is a Pre-derived coded image. for example, a composite HDR
+                                                  ///< image derived from exposure-bracketed individual images
+            IsHiddenImage = 1u << 6,              ///< Image is hidden. Not intended to be displayed.
+            IsCoverImage  = 1u << 7,  ///< Image is cover image, should be displayed when no other information is
+                                      ///< available on the preference to display a collection of images.
+            IsProtected =
+                1u << 8,  ///< There is a Protection Scheme Info Box mapped for this image. The image is not accessible.
             HasLinkedThumbnails              = 1u << 9,   ///< This image has thumbnail image(s) linked to it.
             HasLinkedAuxiliaryImage          = 1u << 10,  ///< This image has auxiliary image(s) linked to it.
             HasLinkedDerivedImage            = 1u << 11,  ///< This image has derived image(s) linked to it.
             HasLinkedPreComputedDerivedImage = 1u << 12,  ///< This image has Pre-derived coded image(s) linked to it.
-            HasLinkedTiles                   = 1u << 13,  ///< This image has linked tiles to it. Used with Relative location 'rloc' Image Property. Has 'tbas' reference(s) to it.
-            HasLinkedMetadata                = 1u << 14   ///< This image has linked external metadata (like Exif). It has 'cdsc' (= content description) reference(s) to it.
+            HasLinkedTiles = 1u << 13,  ///< This image has linked tiles to it. Used with Relative location 'rloc' Image
+                                        ///< Property. Has 'tbas' reference(s) to it.
+            HasLinkedMetadata = 1u << 14  ///< This image has linked external metadata (like Exif). It has 'cdsc' (=
+                                          ///< content description) reference(s) to it.
         };
     }
 
     struct HEIF_DLL_PUBLIC DecoderConfiguration
     {
-        DecoderConfigId decoderConfigId;                 ///< Id identifying this particular decoder specific information. More than one image can use same decoder config.
+        DecoderConfigId decoderConfigId;  ///< Id identifying this particular decoder specific information. More than
+                                          ///< one image can use same decoder config.
         Array<DecoderSpecificInfo> decoderSpecificInfo;  ///< Actual decoder specific information (type + payload).
     };
 
@@ -177,30 +188,34 @@ namespace HEIF
     namespace TrackFeatureEnum
     {
         /** @brief Media Track or timed image sequence features flag enumeration.
-          *
-          * A HEVC file may have several media tracks with different feature sets. */
+         *
+         * A HEVC file may have several media tracks with different feature sets. */
         enum Feature
         {
-            IsMasterImageSequence           = 1u,        ///< Track handler type is 'pict', and the track is not referencing any another track.
-            IsThumbnailImageSequence        = 1u << 1,   ///< Is referencing another track with a 'thmb' type track reference.
-            IsAuxiliaryImageSequence        = 1u << 2,   ///< Is referencing another track with an 'auxl' type track reference.
-            IsEnabled                       = 1u << 3,   ///< The track is enabled.
-            IsInMovie                       = 1u << 4,   ///< The track is used in the presentation.
-            IsInPreview                     = 1u << 5,   ///< The track is used when previewing the presentation.
-            HasAlternatives                 = 1u << 6,   ///< The track has alternative track or tracks.
-            HasCodingConstraints            = 1u << 7,   ///< From Coding Constraints Box in HevcSampleEntry
-            HasSampleGroups                 = 1u << 8,   ///< The track has SampleToGroupBoxes.
+            IsMasterImageSequence =
+                1u,  ///< Track handler type is 'pict', and the track is not referencing any another track.
+            IsThumbnailImageSequence = 1u << 1,  ///< Is referencing another track with a 'thmb' type track reference.
+            IsAuxiliaryImageSequence = 1u << 2,  ///< Is referencing another track with an 'auxl' type track reference.
+            IsEnabled                = 1u << 3,  ///< The track is enabled.
+            IsInMovie                = 1u << 4,  ///< The track is used in the presentation.
+            IsInPreview              = 1u << 5,  ///< The track is used when previewing the presentation.
+            HasAlternatives          = 1u << 6,  ///< The track has alternative track or tracks.
+            HasCodingConstraints     = 1u << 7,  ///< From Coding Constraints Box in HevcSampleEntry
+            HasSampleGroups          = 1u << 8,  ///< The track has SampleToGroupBoxes.
             HasLinkedAuxiliaryImageSequence = 1u << 9,   ///< There is a 'auxl' track reference pointing to this track.
             HasLinkedThumbnailImageSequence = 1u << 10,  ///< There is a 'thmb' track reference pointing to this track.
-            HasSampleToItemGrouping         = 1u << 11,  ///< The track has one or more SampleToMetadataItemEntry ('stmi') sample groups present.
-            HasExifSampleEntry              = 1u << 12,  ///< From SampleEntryBox, not implemented yet
-            HasXmlSampleEntry               = 1u << 13,  ///< From SampleEntryBox, not implemented yet
-            HasEditList                     = 1u << 14,  ///< Track has an edit list
-            HasInfiniteLoopPlayback         = 1u << 15,  ///< Infinite looping has been set on in the edit list
-            HasSampleEquivalenceGrouping    = 1u << 16,  ///< The track has one or more VisualSampleGroupEntry ('eqiv') sample group entries present.
-            IsAudioTrack                    = 1u << 17,  ///< Track is an audio track (handler type 'soun').
-            IsVideoTrack                    = 1u << 18,  ///< Track is a video track (handler type 'vide').
-            DisplayAllSamples               = 1u << 19   ///< Edit List presentation indicates 0 or 1 samples. The player should ignore timestamps and display all non-hidden samples.
+            HasSampleToItemGrouping =
+                1u << 11,  ///< The track has one or more SampleToMetadataItemEntry ('stmi') sample groups present.
+            HasExifSampleEntry      = 1u << 12,  ///< From SampleEntryBox, not implemented yet
+            HasXmlSampleEntry       = 1u << 13,  ///< From SampleEntryBox, not implemented yet
+            HasEditList             = 1u << 14,  ///< Track has an edit list
+            HasInfiniteLoopPlayback = 1u << 15,  ///< Infinite looping has been set on in the edit list
+            HasSampleEquivalenceGrouping =
+                1u << 16,  ///< The track has one or more VisualSampleGroupEntry ('eqiv') sample group entries present.
+            IsAudioTrack      = 1u << 17,  ///< Track is an audio track (handler type 'soun').
+            IsVideoTrack      = 1u << 18,  ///< Track is a video track (handler type 'vide').
+            DisplayAllSamples = 1u << 19  ///< Edit List presentation indicates 0 or 1 samples. The player should ignore
+                                          ///< timestamps and display all non-hidden samples.
         };
     }  // namespace TrackFeatureEnum
 
@@ -239,14 +254,15 @@ namespace HEIF
     struct HEIF_DLL_PUBLIC SampleVisualEquivalence
     {
         uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
-        int16_t timeOffset;                    ///< The difference of the related image item(s) and the composition time of the sample.
-        uint16_t timescaleMultiplier;          ///< timeOffset unit as multiplier of the media timescale of the track as on 8.8 fixed-point value.
+        int16_t timeOffset;  ///< The difference of the related image item(s) and the composition time of the sample.
+        uint16_t timescaleMultiplier;  ///< timeOffset unit as multiplier of the media timescale of the track as on 8.8
+                                       ///< fixed-point value.
     };
 
     /**
-    * Information from SampleToMetadataItemEntry sample group description entry.
-    * This information is used to find Item IDs of metadata that describes samples linked to this entry.
-    */
+     * Information from SampleToMetadataItemEntry sample group description entry.
+     * This information is used to find Item IDs of metadata that describes samples linked to this entry.
+     */
     struct HEIF_DLL_PUBLIC SampleToMetadataItem
     {
         uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
@@ -277,15 +293,19 @@ namespace HEIF
     {
         SequenceId trackId;
         uint32_t alternateGroupId;
-        FeatureBitMask features;                      ///< bitmask of TrackFeatureEnum::Feature
-        Array<SequenceId> alternateTrackIds;          ///< other track' IDs with same alternateGroupId.
-        Array<FourCCToIds> referenceTrackIds;         ///< <reference_type, reference track IDs>
-        Array<SampleGrouping> sampleGroups;           ///< Sample grouping information of samples of this track.
-        Array<SampleInformation> sampleProperties;    ///< SampleInformation for each of the samples inside the track.
-        Array<SampleVisualEquivalence> equivalences;  ///< Data from VisualEquivalenceEntry ('eqiv') sample group entries of this track. Indexed using sampleGroupDescriptionIndex.
-        Array<SampleToMetadataItem> metadatas;        ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries of this track. Indexed using sampleGroupDescriptionIndex.
-        uint64_t maxSampleSize;                       ///< Size of largest sample inside the track (can be used to allocate client side read buffer).
-        uint32_t timeScale;                           ///< Time scale of the track; useful for video stream procsesing purposes
+        FeatureBitMask features;                    ///< bitmask of TrackFeatureEnum::Feature
+        Array<SequenceId> alternateTrackIds;        ///< other track' IDs with same alternateGroupId.
+        Array<FourCCToIds> referenceTrackIds;       ///< <reference_type, reference track IDs>
+        Array<SampleGrouping> sampleGroups;         ///< Sample grouping information of samples of this track.
+        Array<SampleInformation> sampleProperties;  ///< SampleInformation for each of the samples inside the track.
+        Array<SampleVisualEquivalence>
+            equivalences;  ///< Data from VisualEquivalenceEntry ('eqiv') sample group entries of this track. Indexed
+                           ///< using sampleGroupDescriptionIndex.
+        Array<SampleToMetadataItem> metadatas;  ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries
+                                                ///< of this track. Indexed using sampleGroupDescriptionIndex.
+        uint64_t maxSampleSize;  ///< Size of largest sample inside the track (can be used to allocate client side read
+                                 ///< buffer).
+        uint32_t timeScale;      ///< Time scale of the track; useful for video stream procsesing purposes
     };
 
     struct HEIF_DLL_PUBLIC FileInformation

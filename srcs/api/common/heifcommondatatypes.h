@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef HEIFCOMMONDATATYPES_H
@@ -102,21 +104,31 @@ namespace HEIF
         }
         inline bool operator==(const FourCC& other) const
         {
-            return (value[0] == other.value[0]) &&
-                   (value[1] == other.value[1]) &&
-                   (value[2] == other.value[2]) &&
+            return (value[0] == other.value[0]) && (value[1] == other.value[1]) && (value[2] == other.value[2]) &&
                    (value[3] == other.value[3]);
         }
         inline bool operator!=(const FourCC& other) const
         {
-            return (value[0] != other.value[0]) ||
-                   (value[1] != other.value[1]) ||
-                   (value[2] != other.value[2]) ||
+            return (value[0] != other.value[0]) || (value[1] != other.value[1]) || (value[2] != other.value[2]) ||
                    (value[3] != other.value[3]);
         }
         inline bool operator<(const FourCC& other) const
         {
-            return (value[0] < other.value[0]) ? true : (value[0] > other.value[0]) ? false : (value[1] < other.value[1]) ? true : (value[1] > other.value[1]) ? false : (value[2] < other.value[2]) ? true : (value[2] > other.value[2]) ? false : (value[3] < other.value[3]) ? true : (value[3] > other.value[3]) ? false : false;
+            return (value[0] < other.value[0])
+                       ? true
+                       : (value[0] > other.value[0])
+                             ? false
+                             : (value[1] < other.value[1])
+                                   ? true
+                                   : (value[1] > other.value[1])
+                                         ? false
+                                         : (value[2] < other.value[2])
+                                               ? true
+                                               : (value[2] > other.value[2])
+                                                     ? false
+                                                     : (value[3] < other.value[3])
+                                                           ? true
+                                                           : (value[3] > other.value[3]) ? false : false;
         }
         inline bool operator<=(const FourCC& other) const
         {
@@ -145,7 +157,7 @@ namespace HEIF
         Array();
         Array(size_t n);
         Array(const Array& other);
-        Array& operator=(const Array& other);
+        virtual Array& operator=(const Array& other);
         inline T& operator[](size_t index)
         {
             return elements[index];
@@ -173,13 +185,14 @@ namespace HEIF
         template <typename U>
         Array(U begin, U end);
         Array(std::initializer_list<T> aInit);
-        ~Array();
+        virtual ~Array();
     };
 
-    typedef IdBase<std::uint32_t, class ImageTag> ImageId;
-    typedef IdBase<std::uint32_t, class SequenceImageTag> SequenceImageId;
-    typedef IdBase<std::uint32_t, class SequenceTag> SequenceId;
-    typedef IdBase<std::uint32_t, class DecoderConfigTag> DecoderConfigId;
+    IdType(std::uint32_t, ImageId);
+    IdType(std::uint32_t, SequenceImageId);
+    IdType(std::uint32_t, SequenceId);
+    IdType(std::uint32_t, DecoderConfigId);
+    IdType(std::uint32_t, PropertyId);
 
     struct HEIF_DLL_PUBLIC Rational
     {
@@ -189,12 +202,17 @@ namespace HEIF
 
     enum DecoderSpecInfoType
     {
-        AVC_SPS = 7,  ///< H.264/AVC Sequence Parameter Set (SPS) nal unit, bytestream header (0001) if any is stripped internally.
-        AVC_PPS = 8,  ///< H.264/AVC Picture Parameter Set (PPS) nal unit, bytestream header (0001) if any is stripped internally.
+        AVC_SPS = 7,  ///< H.264/AVC Sequence Parameter Set (SPS) nal unit, bytestream header (0001) if any is stripped
+                      ///< internally.
+        AVC_PPS = 8,  ///< H.264/AVC Picture Parameter Set (PPS) nal unit, bytestream header (0001) if any is stripped
+                      ///< internally.
 
-        HEVC_VPS = 32,  ///< H.265/HEVC Video Parameter Set (VPS) nal unit, bytestream header (0001) if any is stripped internally.
-        HEVC_SPS = 33,  ///< H.265/HEVC Sequence Parameter Set (SPS) nal unit, bytestream header (0001) if any is stripped internally.
-        HEVC_PPS = 34,  ///< H.265/HEVC Picture Parameter Set (PPS) nal unit, bytestream header (0001) if any is stripped internally.
+        HEVC_VPS = 32,  ///< H.265/HEVC Video Parameter Set (VPS) nal unit, bytestream header (0001) if any is stripped
+                        ///< internally.
+        HEVC_SPS = 33,  ///< H.265/HEVC Sequence Parameter Set (SPS) nal unit, bytestream header (0001) if any is
+                        ///< stripped internally.
+        HEVC_PPS = 34,  ///< H.265/HEVC Picture Parameter Set (PPS) nal unit, bytestream header (0001) if any is
+                        ///< stripped internally.
 
         AudioSpecificConfig  ///< As defined in 1.6.2.1 AudioSpecificConfig of ISO/IEC 14496-3:200X(E)
     };
@@ -259,17 +277,21 @@ namespace HEIF
         uint32_t widthD;             ///< Denominator of clean aperture width fractional value, in counted pixels
         uint32_t heightN;            ///< Numerator of clean aperture height fractional value, in counted pixels
         uint32_t heightD;            ///< Denominator of clean aperture height fractional value, in counted pixels
-        uint32_t horizontalOffsetN;  ///< Numerator of fractional number to define the horizontal offset of clean aperture center minus (width-1)/2.
-        uint32_t horizontalOffsetD;  ///< Denominator of fractional number to define the horizontal offset of clean aperture center minus (width-1)/2.
-        uint32_t verticalOffsetN;    ///< Numerator of fractional number to define the vertical offset of clean aperture center minus (height-1)/2.
-        uint32_t verticalOffsetD;    ///< Denominator of fractional number to define the vertical offset of clean aperture center minus (height-1)/2.
+        uint32_t horizontalOffsetN;  ///< Numerator of fractional number to define the horizontal offset of clean
+                                     ///< aperture center minus (width-1)/2.
+        uint32_t horizontalOffsetD;  ///< Denominator of fractional number to define the horizontal offset of clean
+                                     ///< aperture center minus (width-1)/2.
+        uint32_t verticalOffsetN;    ///< Numerator of fractional number to define the vertical offset of clean aperture
+                                     ///< center minus (height-1)/2.
+        uint32_t verticalOffsetD;  ///< Denominator of fractional number to define the vertical offset of clean aperture
+                                   ///< center minus (height-1)/2.
     };
 
     /// Data of descriptive item property for auxiliary images 'auxC'.
     /// AuxProperty.auxType : "urn:mpeg:hevc:2015:auxid:1" for alpha plane
     ///                       "urn:mpeg:hevc:2015:auxid:2" for depth map
-    /// AuxProperty.subType : HEVC auxiliary images depth case see "B.2.4.2 Syntax" of ISO/IEC 23008-12:2017(E) for further details
-    /// See "6.5.8 Image properties for auxiliary images" of ISO/IEC 23008-12:2017(E) for more details
+    /// AuxProperty.subType : HEVC auxiliary images depth case see "B.2.4.2 Syntax" of ISO/IEC 23008-12:2017(E) for
+    /// further details See "6.5.8 Image properties for auxiliary images" of ISO/IEC 23008-12:2017(E) for more details
     struct HEIF_DLL_PUBLIC AuxiliaryType
     {
         Array<char> auxType;     ///< Type of the associated auxiliary image item. This is not null-terminated.
@@ -279,8 +301,10 @@ namespace HEIF
     /// Data of raw/custom item property.
     struct HEIF_DLL_PUBLIC RawProperty
     {
-        FourCC type;          ///< Box type of the property, for convenient reader API access. Type is included also in data array, as a part of box header. Writer ignores this field.
-        Array<uint8_t> data;  ///< Complete data of the property. This includes box or possible full box header (size, type, version, flags).
+        FourCC type;  ///< Box type of the property, for convenient reader API access. Type is included also in data
+                      ///< array, as a part of box header. Writer ignores this field.
+        Array<uint8_t> data;  ///< Complete data of the property. This includes box or possible full box header (size,
+                              ///< type, version, flags).
     };
 
     // Non-image item type definitions
@@ -288,21 +312,29 @@ namespace HEIF
      * Image overlay derivation */
     struct HEIF_DLL_PUBLIC Overlay
     {
-        std::uint16_t r;             ///< Fill color red value for empty canvas. The RGB values are in the sRGB color space as defined in IEC 61966-2-1.
-        std::uint16_t g;             ///< Fill color green value for empty canvas. The RGB values are in the sRGB color space as defined in IEC 61966-2-1.
-        std::uint16_t b;             ///< Fill color blue value for empty canvas. The RGB values are in the sRGB color space as defined in IEC 61966-2-1.
-        std::uint16_t a;             ///< Fill color for empty canvas. Opacity range is from 0 (transparent) to 65535 (fully opaque).
+        std::uint16_t r;  ///< Fill color red value for empty canvas. The RGB values are in the sRGB color space as
+                          ///< defined in IEC 61966-2-1.
+        std::uint16_t g;  ///< Fill color green value for empty canvas. The RGB values are in the sRGB color space as
+                          ///< defined in IEC 61966-2-1.
+        std::uint16_t b;  ///< Fill color blue value for empty canvas. The RGB values are in the sRGB color space as
+                          ///< defined in IEC 61966-2-1.
+        std::uint16_t
+            a;  ///< Fill color for empty canvas. Opacity range is from 0 (transparent) to 65535 (fully opaque).
         std::uint32_t outputWidth;   ///< Width of the reconstructed overlay image
         std::uint32_t outputHeight;  ///< Height of the reconstructed overlay image
 
         /** Offsets of an image as a part of overlay derivation */
         struct Offset
         {
-            std::int32_t horizontal;  ///< Horizontal offset of the image top-left corner, from the top-left corner of the canvas.
-            std::int32_t vertical;    ///< Vertical offset of the image top-left corner, from the top-left corner of the canvas.
+            std::int32_t horizontal;  ///< Horizontal offset of the image top-left corner, from the top-left corner of
+                                      ///< the canvas.
+            std::int32_t
+                vertical;  ///< Vertical offset of the image top-left corner, from the top-left corner of the canvas.
         };
-        Array<Offset> offsets;    ///< Image offsets. There must be one for each item referenced. Array size must match number of itemIds given.
-        Array<ImageId> imageIds;  ///< Ids of the images to display in the overlay. Array size must match number of offsets.
+        Array<Offset> offsets;  ///< Image offsets. There must be one for each item referenced. Array size must match
+                                ///< number of itemIds given.
+        Array<ImageId>
+            imageIds;  ///< Ids of the images to display in the overlay. Array size must match number of offsets.
     };
 
     /**
@@ -318,9 +350,12 @@ namespace HEIF
 
     struct HEIF_DLL_PUBLIC CodingConstraints
     {
-        bool allRefPicsIntra;  ///< This flag when set to one indicates the restriction that samples that are not sync samples, if any, are predicted only from sync samples.
-        bool intraPredUsed;    ///< False indicates that intra prediction is not used in the inter predicted images. True indicates that intra prediction may or may not be used in the inter predicted images.
-        uint8_t maxRefPerPic;  ///< Maximum number of reference images that may be used for decoding any single image within an image sequence. (value 15 = any number)
+        bool allRefPicsIntra;  ///< This flag when set to one indicates the restriction that samples that are not sync
+                               ///< samples, if any, are predicted only from sync samples.
+        bool intraPredUsed;  ///< False indicates that intra prediction is not used in the inter predicted images. True
+                             ///< indicates that intra prediction may or may not be used in the inter predicted images.
+        uint8_t maxRefPerPic;  ///< Maximum number of reference images that may be used for decoding any single image
+                               ///< within an image sequence. (value 15 = any number)
     };
 }  // namespace HEIF
 

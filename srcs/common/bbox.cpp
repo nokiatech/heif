@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "bbox.hpp"
@@ -37,6 +39,11 @@ uint64_t Box::getSize() const
 void Box::setLargeSize()
 {
     mLargeSize = true;
+}
+
+bool Box::getLargeSize() const
+{
+    return mLargeSize;
 }
 
 void Box::setType(FourCCInt type)

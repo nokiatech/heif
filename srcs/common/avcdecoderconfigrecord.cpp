@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "avcdecoderconfigrecord.hpp"
@@ -52,14 +54,16 @@ bool AvcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t>& sps
     mBitDepthLumaMinus8   = static_cast<uint8_t>(spsConfig.bit_depth_luma_minus8);
     mBitDepthChromaMinus8 = static_cast<uint8_t>(spsConfig.bit_depth_chroma_minus8);
 
-    mPicWidth  = static_cast<uint16_t>((spsConfig.pic_width_in_mbs_minus1 + 1) * 16 - (spsConfig.frame_crop_left_offset + spsConfig.frame_crop_right_offset) * 2);
-    mPicHeight = static_cast<uint16_t>((2 - static_cast<uint32_t>(spsConfig.frame_mbs_only_flag)) * (spsConfig.pic_height_in_map_units_minus1 + 1) * 16 - (spsConfig.frame_crop_top_offset + spsConfig.frame_crop_bottom_offset) * 2);
+    mPicWidth  = static_cast<uint16_t>((spsConfig.pic_width_in_mbs_minus1 + 1) * 16 -
+                                      (spsConfig.frame_crop_left_offset + spsConfig.frame_crop_right_offset) * 2);
+    mPicHeight = static_cast<uint16_t>((2 - static_cast<uint32_t>(spsConfig.frame_mbs_only_flag)) *
+                                           (spsConfig.pic_height_in_map_units_minus1 + 1) * 16 -
+                                       (spsConfig.frame_crop_top_offset + spsConfig.frame_crop_bottom_offset) * 2);
 
     return true;
 }
 
-void AvcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t>& nalUnit,
-                                               const AvcNalUnitType nalUnitType)
+void AvcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t>& nalUnit, const AvcNalUnitType nalUnitType)
 {
     NALArray* nalArray = nullptr;
     Vector<uint8_t> tmpNalUnit;
@@ -85,7 +89,8 @@ void AvcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t>& nalUnit,
     }
 
     startCodeLen = findStartCodeLen(nalUnit);
-    tmpNalUnit.insert(tmpNalUnit.begin(), nalUnit.cbegin() + static_cast<int>(startCodeLen), nalUnit.cend());  // copy NAL data excluding potential start code
+    tmpNalUnit.insert(tmpNalUnit.begin(), nalUnit.cbegin() + static_cast<int>(startCodeLen),
+                      nalUnit.cend());  // copy NAL data excluding potential start code
 
     // Add NAL unit to the NAL unit array.
     nalArray->nalList.push_back(tmpNalUnit);
@@ -134,8 +139,8 @@ void AvcDecoderConfigurationRecord::writeDecConfigRecord(BitStream& bitstr) cons
         }
     }
 
-    if (mAvcProfileIndication == 100 || mAvcProfileIndication == 110 ||
-        mAvcProfileIndication == 122 || mAvcProfileIndication == 144)
+    if (mAvcProfileIndication == 100 || mAvcProfileIndication == 110 || mAvcProfileIndication == 122 ||
+        mAvcProfileIndication == 144)
     {
         bitstr.writeBits(0xff, 6);  // reserved = '111111'b
         bitstr.writeBits(mChromaFormat, 2);
@@ -205,8 +210,8 @@ void AvcDecoderConfigurationRecord::parseConfig(BitStream& bitstr)
         return;
     }
 
-    if (mAvcProfileIndication == 100 || mAvcProfileIndication == 110 ||
-        mAvcProfileIndication == 122 || mAvcProfileIndication == 144)
+    if (mAvcProfileIndication == 100 || mAvcProfileIndication == 110 || mAvcProfileIndication == 122 ||
+        mAvcProfileIndication == 144)
     {
         bitstr.readBits(6);  // reserved = '111111'b
         mChromaFormat = static_cast<uint8_t>(bitstr.readBits(2));
@@ -230,7 +235,8 @@ void AvcDecoderConfigurationRecord::parseConfig(BitStream& bitstr)
     }
 }
 
-const AvcDecoderConfigurationRecord::NALArray* AvcDecoderConfigurationRecord::getNALArray(AvcNalUnitType nalUnitType) const
+const AvcDecoderConfigurationRecord::NALArray*
+AvcDecoderConfigurationRecord::getNALArray(AvcNalUnitType nalUnitType) const
 {
     for (const auto& array : mNalArray)
     {
@@ -243,7 +249,8 @@ const AvcDecoderConfigurationRecord::NALArray* AvcDecoderConfigurationRecord::ge
     return nullptr;  // Not found
 }
 
-void AvcDecoderConfigurationRecord::getOneParameterSet(Vector<uint8_t>& byteStream, const AvcNalUnitType nalUnitType) const
+void AvcDecoderConfigurationRecord::getOneParameterSet(Vector<uint8_t>& byteStream,
+                                                       const AvcNalUnitType nalUnitType) const
 {
     const NALArray* nalArray = getNALArray(nalUnitType);
 

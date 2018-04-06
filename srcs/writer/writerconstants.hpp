@@ -25,10 +25,6 @@ const FourCCInt XML_HANDLER  = "xml1";  ///< 4CC identifier of 'xml1' metadata h
 // Codec types
 const FourCCInt HVC1_CODEC = "hvc1";  ///< 4CC identifier of 'hvc1' codec type
 
-// Encapsulation types
-const String META_ENCAPSULATION = "meta";  ///< MetaBox encapsulation
-const String TRAK_ENCAPSULATION = "trak";  ///< TrackBox encapsulation
-
 // Item types in iinf box
 const FourCCInt EXIF_ITEM_TYPE    = "Exif";  ///< 4CC identifier of' Exif' metadata item type in ItemInfoEntry
 const FourCCInt GRID_ITEM_TYPE    = "grid";  ///< 4CC identifier of grid item type in ItemInfoEntry
@@ -43,11 +39,6 @@ const FourCCInt AUXL_TREF_TYPE  = "auxl";  ///< 4CC identifier of auxiliry track
 
 // Grouping Types
 const FourCCInt STMI_GROUP_TYPE = "stmi";  ///< 4CC identifier of Sample To Metadata Item grouping
-
-// Item names in iinf box
-const String AVC1_ITEM_NAME = "AVC Image";   ///< 'avc1' item name in ItemInfoEntry
-const String HVC1_ITEM_NAME = "HEVC Image";  ///< 'hvc1' item name in ItemInfoEntry
-
 
 /// @todo Move helpers to a better location.
 template <typename T>

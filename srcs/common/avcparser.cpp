@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "avcparser.hpp"
@@ -100,17 +102,17 @@ bool parseVUI(BitStream& bitstr, VUIParameters& retVui)
     {
         vui.low_delay_hrd_flag = static_cast<uint8_t>(bitstr.readBits(1));  // 0  u(1);
     }
-    vui.pic_struct_present_flag    = static_cast<uint8_t>(bitstr.readBits(1));  //0  u(1)
-    vui.bitstream_restriction_flag = static_cast<uint8_t>(bitstr.readBits(1));  //0  u(1)
+    vui.pic_struct_present_flag    = static_cast<uint8_t>(bitstr.readBits(1));  // 0  u(1)
+    vui.bitstream_restriction_flag = static_cast<uint8_t>(bitstr.readBits(1));  // 0  u(1)
     if (vui.bitstream_restriction_flag)
     {
-        vui.motion_vectors_over_pic_boundaries_flag = static_cast<uint8_t>(bitstr.readBits(1));  //0  u(1)
-        vui.max_bytes_per_pic_denom                 = bitstr.readExpGolombCode();                //0  ue(v)
-        vui.max_bits_per_mb_denom                   = bitstr.readExpGolombCode();                //0  ue(v)
-        vui.log2_max_mv_length_horizontal           = bitstr.readExpGolombCode();                //0  ue(v)
-        vui.log2_max_mv_length_vertical             = bitstr.readExpGolombCode();                //0  ue(v)
-        vui.max_num_reorder_frames                  = bitstr.readExpGolombCode();                //0  ue(v)
-        vui.max_dec_frame_buffering                 = bitstr.readExpGolombCode();                //0  ue(v)
+        vui.motion_vectors_over_pic_boundaries_flag = static_cast<uint8_t>(bitstr.readBits(1));  // 0  u(1)
+        vui.max_bytes_per_pic_denom                 = bitstr.readExpGolombCode();                // 0  ue(v)
+        vui.max_bits_per_mb_denom                   = bitstr.readExpGolombCode();                // 0  ue(v)
+        vui.log2_max_mv_length_horizontal           = bitstr.readExpGolombCode();                // 0  ue(v)
+        vui.log2_max_mv_length_vertical             = bitstr.readExpGolombCode();                // 0  ue(v)
+        vui.max_num_reorder_frames                  = bitstr.readExpGolombCode();                // 0  ue(v)
+        vui.max_dec_frame_buffering                 = bitstr.readExpGolombCode();                // 0  ue(v)
     }
 
     retVui = vui;
@@ -124,21 +126,20 @@ bool parseSPS(BitStream& bitstr, SPSConfigValues& retSps)
     sps.profile_compatibility = static_cast<uint8_t>(bitstr.readBits(8));  // contains a bunch of flags
     sps.level_idc             = static_cast<uint8_t>(bitstr.readBits(8));  // 0 u(8)
     sps.seq_parameter_set_id  = bitstr.readExpGolombCode();                // 0 ue(v)
-    if (sps.profile_idc == 100 || sps.profile_idc == 110 ||
-        sps.profile_idc == 122 || sps.profile_idc == 244 || sps.profile_idc == 44 ||
-        sps.profile_idc == 83 || sps.profile_idc == 86 || sps.profile_idc == 118 ||
-        sps.profile_idc == 128 || sps.profile_idc == 138 || sps.profile_idc == 139 ||
-        sps.profile_idc == 134 || sps.profile_idc == 135)
+    if (sps.profile_idc == 100 || sps.profile_idc == 110 || sps.profile_idc == 122 || sps.profile_idc == 244 ||
+        sps.profile_idc == 44 || sps.profile_idc == 83 || sps.profile_idc == 86 || sps.profile_idc == 118 ||
+        sps.profile_idc == 128 || sps.profile_idc == 138 || sps.profile_idc == 139 || sps.profile_idc == 134 ||
+        sps.profile_idc == 135)
     {
-        sps.chroma_format_idc = bitstr.readExpGolombCode();  //0  ue(v)
+        sps.chroma_format_idc = bitstr.readExpGolombCode();  // 0  ue(v)
         if (sps.chroma_format_idc == 3)
         {
-            sps.separate_colour_plane_flag = static_cast<uint8_t>(bitstr.readBits(1));  //0 u(1)
+            sps.separate_colour_plane_flag = static_cast<uint8_t>(bitstr.readBits(1));  // 0 u(1)
         }
-        sps.bit_depth_luma_minus8                = bitstr.readExpGolombCode();                //0 ue(v)
-        sps.bit_depth_chroma_minus8              = bitstr.readExpGolombCode();                //0 ue(v)
-        sps.qpprime_y_zero_transform_bypass_flag = static_cast<uint8_t>(bitstr.readBits(1));  //0 u(1)
-        sps.seq_scaling_matrix_present_flag      = static_cast<uint8_t>(bitstr.readBits(1));  //0 u(1)
+        sps.bit_depth_luma_minus8                = bitstr.readExpGolombCode();                // 0 ue(v)
+        sps.bit_depth_chroma_minus8              = bitstr.readExpGolombCode();                // 0 ue(v)
+        sps.qpprime_y_zero_transform_bypass_flag = static_cast<uint8_t>(bitstr.readBits(1));  // 0 u(1)
+        sps.seq_scaling_matrix_present_flag      = static_cast<uint8_t>(bitstr.readBits(1));  // 0 u(1)
         if (sps.seq_scaling_matrix_present_flag)
         {
             // unsupported
@@ -162,20 +163,20 @@ bool parseSPS(BitStream& bitstr, SPSConfigValues& retSps)
 #endif
         }
     }
-    sps.log2_max_frame_num_minus4 = bitstr.readExpGolombCode();  //0 ue(v)
-    sps.pic_order_cnt_type        = bitstr.readExpGolombCode();  //0 ue(v)
+    sps.log2_max_frame_num_minus4 = bitstr.readExpGolombCode();  // 0 ue(v)
+    sps.pic_order_cnt_type        = bitstr.readExpGolombCode();  // 0 ue(v)
     if (sps.pic_order_cnt_type == 0)
     {
-        sps.log2_max_pic_order_cnt_lsb_minus4 = bitstr.readExpGolombCode();  //0 ue(v)
+        sps.log2_max_pic_order_cnt_lsb_minus4 = bitstr.readExpGolombCode();  // 0 ue(v)
     }
     else
     {
         if (sps.pic_order_cnt_type == 1)
         {
-            sps.delta_pic_order_always_zero_flag      = static_cast<uint8_t>(bitstr.readBits(1));  //0 u(1)
-            sps.offset_for_non_ref_pic                = bitstr.readSignedExpGolombCode();          //0 se(v)
-            sps.offset_for_top_to_bottom_field        = bitstr.readSignedExpGolombCode();          //0 se(v)
-            sps.num_ref_frames_in_pic_order_cnt_cycle = bitstr.readExpGolombCode();                //0 ue(v)
+            sps.delta_pic_order_always_zero_flag      = static_cast<uint8_t>(bitstr.readBits(1));  // 0 u(1)
+            sps.offset_for_non_ref_pic                = bitstr.readSignedExpGolombCode();          // 0 se(v)
+            sps.offset_for_top_to_bottom_field        = bitstr.readSignedExpGolombCode();          // 0 se(v)
+            sps.num_ref_frames_in_pic_order_cnt_cycle = bitstr.readExpGolombCode();                // 0 ue(v)
             sps.offset_for_ref_frame.resize(sps.num_ref_frames_in_pic_order_cnt_cycle);
             for (size_t i = 0; i < sps.num_ref_frames_in_pic_order_cnt_cycle; i++)
             {
@@ -204,7 +205,7 @@ bool parseSPS(BitStream& bitstr, SPSConfigValues& retSps)
     sps.vui_parameters_present_flag = static_cast<uint8_t>(bitstr.readBits(1));  // 0 u(1)
     if (sps.vui_parameters_present_flag)
     {
-    // perhaps doesn't work
+        // perhaps doesn't work
 #if 0
         if (!parseVUI(bitstr, sps.vui_parameters))
         {

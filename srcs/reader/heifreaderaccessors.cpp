@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "heifreaderimpl.hpp"
@@ -161,7 +163,9 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getHeight(const SequenceId sequenceId, const SequenceImageId itemId, uint32_t& height) const
+    ErrorCode HeifReaderImpl::getHeight(const SequenceId sequenceId,
+                                        const SequenceImageId itemId,
+                                        uint32_t& height) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -227,7 +231,8 @@ namespace HEIF
         IdVector masterItemIds;
         for (auto itemId : allItems)
         {
-            const auto rawType = mMetaBoxMap.at(contextId).getItemInfoBox().getItemById(itemId).getItemType().getString();
+            const auto rawType =
+                mMetaBoxMap.at(contextId).getItemInfoBox().getItemById(itemId).getItemType().getString();
             if ((rawType == "avc1") || (rawType == "hvc1"))
             {
                 // A master image is an image that is not an auxiliary image or a thumbnail image.
@@ -253,7 +258,8 @@ namespace HEIF
 
         IdVector allItems;
         getSequenceItems(sequenceId, allItems);
-        if (mFileProperties.trackProperties.at(sequenceId.get()).trackFeature.hasFeature(TrackFeatureEnum::IsMasterImageSequence))
+        if (mFileProperties.trackProperties.at(sequenceId.get())
+                .trackFeature.hasFeature(TrackFeatureEnum::IsMasterImageSequence))
         {
             itemIds = makeArray<SequenceImageId>(allItems);
         }
@@ -285,7 +291,9 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getItemListByType(SequenceId sequenceId, TrackSampleType itemType, Array<SequenceImageId>& itemIds) const
+    ErrorCode HeifReaderImpl::getItemListByType(SequenceId sequenceId,
+                                                TrackSampleType itemType,
+                                                Array<SequenceImageId>& itemIds) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -348,7 +356,8 @@ namespace HEIF
             Vector<ItemIdTimestampPair> samplePresentationTimes;
             for (auto sampleId : sampleIds)
             {
-                const Vector<int64_t> singleSamplePresentationTimes = mTrackInfo.at(contextId).samples.at(sampleId).compositionTimes;
+                const Vector<int64_t> singleSamplePresentationTimes =
+                    mTrackInfo.at(contextId).samples.at(sampleId).compositionTimes;
                 for (auto sampleTime : singleSamplePresentationTimes)
                 {
                     samplePresentationTimes.push_back(std::make_pair(sampleId, sampleTime));
@@ -356,9 +365,8 @@ namespace HEIF
             }
 
             // Sort to display order using composition times
-            std::sort(samplePresentationTimes.begin(), samplePresentationTimes.end(), [&](ItemIdTimestampPair a, ItemIdTimestampPair b) {
-                return a.second < b.second;
-            });
+            std::sort(samplePresentationTimes.begin(), samplePresentationTimes.end(),
+                      [&](ItemIdTimestampPair a, ItemIdTimestampPair b) { return a.second < b.second; });
 
             // Push sample ids to the result
             for (auto pair : samplePresentationTimes)
@@ -411,12 +419,15 @@ namespace HEIF
             return error;
         }
 
-        type = mFileProperties.trackProperties.at(sequenceId).sampleProperties.at(sequenceImageId.get()).sampleEntryType.value;
+        type = mFileProperties.trackProperties.at(sequenceId)
+                   .sampleProperties.at(sequenceImageId.get())
+                   .sampleEntryType.value;
         return ErrorCode::OK;
     }
 
     ErrorCode HeifReaderImpl::getReferencedFromItemListByType(const ImageId fromItemId,
-                                                              const FourCC referenceType, Array<ImageId>& itemIds) const
+                                                              const FourCC referenceType,
+                                                              Array<ImageId>& itemIds) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(fromItemId)) != ErrorCode::OK)
@@ -424,8 +435,10 @@ namespace HEIF
             return error;
         }
 
-        const ItemReferenceBox& itemReferenceBox            = mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId).getItemReferenceBox();
-        const Vector<SingleItemTypeReferenceBox> references = itemReferenceBox.getReferencesOfType(FourCCInt(referenceType.value));
+        const ItemReferenceBox& itemReferenceBox =
+            mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId).getItemReferenceBox();
+        const Vector<SingleItemTypeReferenceBox> references =
+            itemReferenceBox.getReferencesOfType(FourCCInt(referenceType.value));
 
         IdVector itemIdVector;
         for (const auto& reference : references)
@@ -443,7 +456,8 @@ namespace HEIF
 
 
     ErrorCode HeifReaderImpl::getReferencedToItemListByType(const ImageId toItemId,
-                                                            const FourCC referenceType, Array<ImageId>& itemIds) const
+                                                            const FourCC referenceType,
+                                                            Array<ImageId>& itemIds) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(toItemId)) != ErrorCode::OK)
@@ -451,8 +465,10 @@ namespace HEIF
             return error;
         }
 
-        const ItemReferenceBox& itemReferenceBox            = mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId).getItemReferenceBox();
-        const Vector<SingleItemTypeReferenceBox> references = itemReferenceBox.getReferencesOfType(FourCCInt(referenceType.value));
+        const ItemReferenceBox& itemReferenceBox =
+            mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId).getItemReferenceBox();
+        const Vector<SingleItemTypeReferenceBox> references =
+            itemReferenceBox.getReferencesOfType(FourCCInt(referenceType.value));
 
         IdVector itemIdVector;
         for (const auto& reference : references)
@@ -489,7 +505,10 @@ namespace HEIF
     }
 
     /// @todo Avoid data copying.
-    ErrorCode HeifReaderImpl::getItemData(const ImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders) const
+    ErrorCode HeifReaderImpl::getItemData(const ImageId itemId,
+                                          uint8_t* memoryBuffer,
+                                          uint64_t& memoryBufferSize,
+                                          bool bytestreamHeaders) const
     {
         ErrorCode error;
         if ((error = isValidItem(itemId)) != ErrorCode::OK)
@@ -552,8 +571,7 @@ namespace HEIF
         {
             return error;
         }
-        if (!isProtected &&
-            ((rawType == "hvc1") || (rawType == "avc1")))
+        if (!isProtected && ((rawType == "hvc1") || (rawType == "avc1")))
         {
             processData = true;
         }
@@ -596,7 +614,11 @@ namespace HEIF
     }
 
     /// @todo Avoid data copying.
-    ErrorCode HeifReaderImpl::getItemData(const SequenceId sequenceId, const SequenceImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders) const
+    ErrorCode HeifReaderImpl::getItemData(const SequenceId sequenceId,
+                                          const SequenceImageId itemId,
+                                          uint8_t* memoryBuffer,
+                                          uint64_t& memoryBufferSize,
+                                          bool bytestreamHeaders) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -945,7 +967,8 @@ namespace HEIF
 
 
     ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const ImageId itemId,
-                                                               char* memoryBuffer, uint64_t& memoryBufferSize) const
+                                                               uint8_t* memoryBuffer,
+                                                               uint64_t& memoryBufferSize) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(itemId)) != ErrorCode::OK)
@@ -1019,8 +1042,10 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const SequenceId sequenceId, const SequenceImageId itemId,
-                                                               char* memoryBuffer, uint64_t& memoryBufferSize) const
+    ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const SequenceId sequenceId,
+                                                               const SequenceImageId itemId,
+                                                               uint8_t* memoryBuffer,
+                                                               uint64_t& memoryBufferSize) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -1093,7 +1118,9 @@ namespace HEIF
         Vector<TimestampIDPair> timestampVector;
         for (size_t i = 0; i < mTrackInfo.at(sequenceId.get()).samples.size(); i++)
         {
-            if (mFileProperties.trackProperties.at(sequenceId).sampleProperties.at(static_cast<uint32_t>(i)).sampleType != SampleType::NON_OUTPUT_REFERENCE_FRAME)
+            if (mFileProperties.trackProperties.at(sequenceId)
+                    .sampleProperties.at(static_cast<uint32_t>(i))
+                    .sampleType != SampleType::NON_OUTPUT_REFERENCE_FRAME)
             {
                 const auto& sampleInfo = mTrackInfo.at(sequenceId).samples.at(i);
                 for (auto compositionTime : sampleInfo.compositionTimes)
@@ -1104,16 +1131,17 @@ namespace HEIF
         }
 
         // Sort using composition times
-        std::sort(timestampVector.begin(), timestampVector.end(), [&](TimestampIDPair a, TimestampIDPair b) {
-            return a.timeStamp < b.timeStamp;
-        });
+        std::sort(timestampVector.begin(), timestampVector.end(),
+                  [&](TimestampIDPair a, TimestampIDPair b) { return a.timeStamp < b.timeStamp; });
 
         timestamps = makeArray<TimestampIDPair>(timestampVector);
         return ErrorCode::OK;
     }
 
 
-    ErrorCode HeifReaderImpl::getTimestampsOfItem(const SequenceId sequenceId, const SequenceImageId itemId, Array<uint64_t>& timestamps) const
+    ErrorCode HeifReaderImpl::getTimestampsOfItem(const SequenceId sequenceId,
+                                                  const SequenceImageId itemId,
+                                                  Array<int64_t>& timestamps) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -1121,13 +1149,15 @@ namespace HEIF
             return error;
         }
 
-        Vector<std::uint64_t> timestampVector;
+        Vector<std::int64_t> timestampVector;
 
         if (mFileProperties.trackProperties.at(sequenceId).sampleProperties.count(itemId.get()))
         {
-            if (mFileProperties.trackProperties.at(sequenceId).sampleProperties.at(itemId.get()).sampleType != SampleType::NON_OUTPUT_REFERENCE_FRAME)
+            if (mFileProperties.trackProperties.at(sequenceId).sampleProperties.at(itemId.get()).sampleType !=
+                SampleType::NON_OUTPUT_REFERENCE_FRAME)
             {
-                const Vector<std::int64_t>& displayTimes = mTrackInfo.at(sequenceId).samples.at(itemId.get()).compositionTimes;
+                const Vector<std::int64_t>& displayTimes =
+                    mTrackInfo.at(sequenceId).samples.at(itemId.get()).compositionTimes;
                 timestampVector.insert(timestampVector.begin(), displayTimes.begin(), displayTimes.end());
             }
         }
@@ -1136,12 +1166,13 @@ namespace HEIF
             return ErrorCode::INVALID_ITEM_ID;
         }
 
-        timestamps = makeArray<uint64_t>(timestampVector);
+        timestamps = makeArray<int64_t>(timestampVector);
         return ErrorCode::OK;
     }
 
 
-    ErrorCode HeifReaderImpl::getItemsInDecodingOrder(const SequenceId sequenceId, Array<TimestampIDPair>& decodingOrder) const
+    ErrorCode HeifReaderImpl::getItemsInDecodingOrder(const SequenceId sequenceId,
+                                                      Array<TimestampIDPair>& decodingOrder) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -1158,9 +1189,8 @@ namespace HEIF
             }
         }
         // Sort using composition times
-        std::sort(decodingOrderVector.begin(), decodingOrderVector.end(), [&](TimestampIDPair a, TimestampIDPair b) {
-            return a.timeStamp < b.timeStamp;
-        });
+        std::sort(decodingOrderVector.begin(), decodingOrderVector.end(),
+                  [&](TimestampIDPair a, TimestampIDPair b) { return a.timeStamp < b.timeStamp; });
 
         // Add possible decoding dependencies
         decodingOrderVector = addDecodingDependencies(sequenceId.get(), decodingOrderVector);
@@ -1170,7 +1200,8 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getDecodeDependencies(const SequenceId sequenceId, const SequenceImageId itemId,
+    ErrorCode HeifReaderImpl::getDecodeDependencies(const SequenceId sequenceId,
+                                                    const SequenceImageId itemId,
                                                     Array<SequenceImageId>& dependencies) const
     {
         ErrorCode error;
@@ -1180,7 +1211,8 @@ namespace HEIF
         }
 
         IdVector dependencyVector;
-        const IdVector& decodeDependencies = mTrackInfo.at(sequenceId.get()).samples.at(itemId.get()).decodeDependencies;
+        const IdVector& decodeDependencies =
+            mTrackInfo.at(sequenceId.get()).samples.at(itemId.get()).decodeDependencies;
         dependencyVector.insert(dependencyVector.begin(), decodeDependencies.cbegin(), decodeDependencies.cend());
 
         // For I-frames return item id itself.
@@ -1212,7 +1244,9 @@ namespace HEIF
         return ErrorCode::INVALID_ITEM_ID;
     }
 
-    ErrorCode HeifReaderImpl::getDecoderCodeType(const SequenceId sequenceId, const SequenceImageId itemId, FourCC& type) const
+    ErrorCode HeifReaderImpl::getDecoderCodeType(const SequenceId sequenceId,
+                                                 const SequenceImageId itemId,
+                                                 FourCC& type) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -1230,8 +1264,7 @@ namespace HEIF
         return ErrorCode::INVALID_ITEM_ID;
     }
 
-    ErrorCode HeifReaderImpl::getDecoderParameterSets(const ImageId itemId,
-                                                      DecoderConfiguration& decoderInfos) const
+    ErrorCode HeifReaderImpl::getDecoderParameterSets(const ImageId itemId, DecoderConfiguration& decoderInfos) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(itemId)) != ErrorCode::OK)
@@ -1265,7 +1298,8 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getDecoderParameterSets(const SequenceId sequenceId, const SequenceImageId itemId,
+    ErrorCode HeifReaderImpl::getDecoderParameterSets(const SequenceId sequenceId,
+                                                      const SequenceImageId itemId,
                                                       Array<DecoderSpecificInfo>& decoderInfos) const
     {
         ErrorCode error;
@@ -1300,7 +1334,8 @@ namespace HEIF
     }
 
     ErrorCode HeifReaderImpl::getItemProtectionScheme(const ImageId itemId,
-                                                      char* memoryBuffer, uint64_t& memoryBufferSize) const
+                                                      uint8_t* memoryBuffer,
+                                                      uint64_t& memoryBufferSize) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(itemId)) != ErrorCode::OK)
@@ -1321,7 +1356,8 @@ namespace HEIF
         }
 
         const auto& meta     = mMetaBoxMap.at(contextId);
-        const uint16_t index = static_cast<uint16_t>(meta.getItemInfoBox().getItemById(itemId.get()).getItemProtectionIndex() - 1);  // convert index to 0-based
+        const uint16_t index = static_cast<uint16_t>(
+            meta.getItemInfoBox().getItemById(itemId.get()).getItemProtectionIndex() - 1);  // convert index to 0-based
 
         Vector<std::uint8_t> sinf = meta.getProtectionSchemeInfoBox(index).getData();
 

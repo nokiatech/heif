@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "decodepts.hpp"
@@ -99,9 +101,7 @@ std::uint64_t DecodePts::lastSampleDuration() const
         {
             auto& last = *sampleDetails.rbegin();
             lastSampleDuration =
-                mTrackRunBox->getVersion() == 0
-                    ? last.version0.sampleDuration
-                    : last.version1.sampleDuration;
+                mTrackRunBox->getVersion() == 0 ? last.version0.sampleDuration : last.version1.sampleDuration;
         }
     }
     else
@@ -123,12 +123,14 @@ void DecodePts::applyShiftEdit(T& entry)
 
     if (entry.mSegmentDuration != 0)
     {
-        segmentEndTime = static_cast<std::int64_t>(static_cast<std::uint64_t>(entry.mMediaTime) + (fromMovieToMediaTS(entry.mSegmentDuration)));
+        segmentEndTime = static_cast<std::int64_t>(static_cast<std::uint64_t>(entry.mMediaTime) +
+                                                   (fromMovieToMediaTS(entry.mSegmentDuration)));
     }
 
     if (mMediaPtsTS.size())
     {
-        // this may end up being "negative", but hopefully we'll find enough samples in the loop to come back to "positive"
+        // this may end up being "negative", but hopefully we'll find enough samples in the loop to come back to
+        // "positive"
         mMovieOffset += static_cast<std::uint64_t>(mMediaPtsTS.begin()->first + mMediaOffset - entry.mMediaTime);
     }
 
@@ -146,7 +148,8 @@ void DecodePts::applyShiftEdit(T& entry)
                 it->first + mMediaOffset != static_cast<std::int64_t>(entry.mMediaTime))
             {
                 mMoviePtsTS.insert(std::make_pair(mMovieOffset, std::prev(it)->second));
-                mMovieOffset += static_cast<std::uint64_t>(it->first - (std::prev(it)->first + (entry.mMediaTime - std::prev(it)->first)));
+                mMovieOffset += static_cast<std::uint64_t>(
+                    it->first - (std::prev(it)->first + (entry.mMediaTime - std::prev(it)->first)));
             }
 
             // Insert the rest of the samples into the movie edit
@@ -169,8 +172,7 @@ void DecodePts::applyShiftEdit(T& entry)
     {
         // do corresponding fix at the end of the media
         mMovieOffset -= static_cast<std::uint64_t>(mMediaPtsTS.rbegin()->first + mMediaOffset +
-                                                   static_cast<std::int64_t>(lastSampleDuration()) -
-                                                   segmentEndTime);
+                                                   static_cast<std::int64_t>(lastSampleDuration()) - segmentEndTime);
     }
 }
 

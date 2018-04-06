@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "metabox.hpp"
@@ -104,7 +106,9 @@ void MetaBox::addItemReference(const FourCCInt type, const std::uint32_t fromId,
     mItemReferenceBox.add(type, fromId, toId);
 }
 
-void MetaBox::addIloc(const std::uint32_t itemId, const std::uint64_t offset, const std::uint64_t length,
+void MetaBox::addIloc(const std::uint32_t itemId,
+                      const std::uint64_t offset,
+                      const std::uint64_t length,
                       const std::uint64_t baseOffset)
 {
     ItemLocationExtent locationExtent;
@@ -141,7 +145,9 @@ void MetaBox::addItem(const ItemInfoEntry& itemInfoEntry)
     mItemInfoBox.addItemInfoEntry(itemInfoEntry);
 }
 
-void MetaBox::addMdatItem(const std::uint32_t itemId, FourCCInt type, const String& name,
+void MetaBox::addMdatItem(const std::uint32_t itemId,
+                          FourCCInt type,
+                          const String& name,
                           const std::uint64_t baseOffset)
 {
     addItem(itemId, type, name);
@@ -161,8 +167,7 @@ void MetaBox::addItemExtent(const std::uint32_t itemId, const std::uint64_t offs
     mItemLocationBox.addExtent(itemId, locationExtent);
 }
 
-void MetaBox::addIdatItem(const std::uint32_t itemId, FourCCInt type, const String& name,
-                          const Vector<uint8_t>& data)
+void MetaBox::addIdatItem(const std::uint32_t itemId, FourCCInt type, const String& name, const Vector<uint8_t>& data)
 {
     const uint64_t offset = mItemDataBox.addData(data);
     addItem(itemId, type, name);
@@ -229,7 +234,7 @@ void MetaBox::writeBox(ISOBMFF::BitStream& bitstr) const
     mHandlerBox.writeBox(bitstr);
     mPrimaryItemBox.writeBox(bitstr);
     // The optional 'dinf' is currently not used, so it is not written:
-    //mDataInformationBox.writeBox(bitstr);
+    // mDataInformationBox.writeBox(bitstr);
     mItemLocationBox.writeBox(bitstr);
     mItemProtectionBox.writeBox(bitstr);
     mItemInfoBox.writeBox(bitstr);

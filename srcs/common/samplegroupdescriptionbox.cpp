@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "samplegroupdescriptionbox.hpp"
@@ -141,12 +143,14 @@ void SampleGroupDescriptionBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
 
         BitStream subBitstr;
-        bitstr.extract(bitstr.getPos(), bitstr.getPos() + descriptionLength, subBitstr);  // extract "sub-bitstream" for entry
+        bitstr.extract(bitstr.getPos(), bitstr.getPos() + descriptionLength,
+                       subBitstr);  // extract "sub-bitstream" for entry
         bitstr.skipBytes(descriptionLength);
 
         if (mGroupingType == "refs")
         {
-            UniquePtr<SampleGroupDescriptionEntry> directReferenceSampleListEntry(CUSTOM_NEW(DirectReferenceSamplesList, ()));
+            UniquePtr<SampleGroupDescriptionEntry> directReferenceSampleListEntry(
+                CUSTOM_NEW(DirectReferenceSamplesList, ()));
             directReferenceSampleListEntry->parseEntry(subBitstr);
             mSampleGroupEntry.push_back(std::move(directReferenceSampleListEntry));
         }
@@ -165,7 +169,8 @@ void SampleGroupDescriptionBox::parseBox(ISOBMFF::BitStream& bitstr)
         else
         {
             /** @todo Add support for other entry types here. */
-            logWarning() << "Skipping an entry of SampleGroupDescriptionBox of an unknown grouping type '" << mGroupingType.getString() << "'.";
+            logWarning() << "Skipping an entry of SampleGroupDescriptionBox of an unknown grouping type '"
+                         << mGroupingType.getString() << "'.";
         }
     }
 }

@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "itempropertyassociation.hpp"
@@ -48,7 +50,8 @@ void ItemPropertyAssociation::addEntry(const std::uint32_t itemId, const std::ui
 }
 
 
-ItemPropertyAssociation::AssociationEntries ItemPropertyAssociation::getAssociationEntries(const std::uint32_t itemId) const
+ItemPropertyAssociation::AssociationEntries
+ItemPropertyAssociation::getAssociationEntries(const std::uint32_t itemId) const
 {
     Vector<Entry> indexes;
 

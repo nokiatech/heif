@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "heifreaderimpl.hpp"
@@ -136,9 +138,10 @@ namespace HEIF
             return ErrorCode::FILE_READ_ERROR;
         }
 
-        mFileInformation.rootMetaBoxInformation = convertRootMetaBoxInformation(mFileProperties.rootLevelMetaBoxProperties);
-        mFileInformation.trackInformation       = convertTrackInformation(mFileProperties.trackProperties);
-        mFileInformation.features               = mFileProperties.fileFeature.getFeatureMask();
+        mFileInformation.rootMetaBoxInformation =
+            convertRootMetaBoxInformation(mFileProperties.rootLevelMetaBoxProperties);
+        mFileInformation.trackInformation = convertTrackInformation(mFileProperties.trackProperties);
+        mFileInformation.features         = mFileProperties.fileFeature.getFeatureMask();
 
         return ErrorCode::OK;
     }
@@ -182,8 +185,7 @@ namespace HEIF
 
     ErrorCode HeifReaderImpl::isInitialized() const
     {
-        if (!(mState == State::INITIALIZING ||
-              mState == State::READY))
+        if (!(mState == State::INITIALIZING || mState == State::READY))
         {
             return ErrorCode::UNINITIALIZED;
         }
@@ -220,7 +222,8 @@ namespace HEIF
         {
             itemInformation[i].itemId   = item.first;
             itemInformation[i].features = item.second.getFeatureMask();
-            if (getItemLength(mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId), item.first.get(), itemInformation[i].size) != ErrorCode::OK)
+            if (getItemLength(mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId), item.first.get(),
+                              itemInformation[i].size) != ErrorCode::OK)
             {
                 itemInformation[i].size = 0;
             }
@@ -234,7 +237,8 @@ namespace HEIF
         {
             imageInformation[i].itemId   = image.first;
             imageInformation[i].features = image.second.getFeatureMask();
-            if (getItemLength(mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId), image.first.get(), imageInformation[i].size) != ErrorCode::OK)
+            if (getItemLength(mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId), image.first.get(),
+                              imageInformation[i].size) != ErrorCode::OK)
             {
                 imageInformation[i].size = 0;
             }
@@ -279,14 +283,14 @@ namespace HEIF
             unsigned int j = 0;
             for (const auto& entry : trackProperties.sampleProperties)
             {
-                const SampleProperties& sampleProp     = entry.second;
-                sampleInfo[j].sampleId                 = sampleProp.sampleId;
-                sampleInfo[j].sampleEntryType          = sampleProp.sampleEntryType;
-                sampleInfo[j].sampleDescriptionIndex   = sampleProp.sampleDescriptionIndex;
-                sampleInfo[j].sampleType               = sampleProp.sampleType;
-                sampleInfo[j].codingConstraints        = sampleProp.codingConstraints;
-                sampleInfo[j].hasClap                  = sampleProp.hasClap;
-                sampleInfo[j].hasAuxi                  = sampleProp.hasAuxi;
+                const SampleProperties& sampleProp   = entry.second;
+                sampleInfo[j].sampleId               = sampleProp.sampleId;
+                sampleInfo[j].sampleEntryType        = sampleProp.sampleEntryType;
+                sampleInfo[j].sampleDescriptionIndex = sampleProp.sampleDescriptionIndex;
+                sampleInfo[j].sampleType             = sampleProp.sampleType;
+                sampleInfo[j].codingConstraints      = sampleProp.codingConstraints;
+                sampleInfo[j].hasClap                = sampleProp.hasClap;
+                sampleInfo[j].hasAuxi                = sampleProp.hasAuxi;
                 ++j;
             }
             trackInformation[i].sampleProperties = sampleInfo;
@@ -379,7 +383,8 @@ namespace HEIF
 
                             if (supportedBrands.empty())
                             {
-                                logInfo() << "No supported brands found. Trying to continue parsing anyway." << std::endl;
+                                logInfo()
+                                    << "No supported brands found. Trying to continue parsing anyway." << std::endl;
                             }
                             else
                             {
@@ -469,16 +474,15 @@ namespace HEIF
         }
 
         // Set error if parsing was OK, but either ftyp was missing and neither meta nor moov was found.
-        if (((error == ErrorCode::OK) && !ftypFound) ||
-            ((error == ErrorCode::OK) && !moovFound && !metaFound))
+        if (((error == ErrorCode::OK) && !ftypFound) || ((error == ErrorCode::OK) && !moovFound && !metaFound))
         {
             error = ErrorCode::FILE_HEADER_ERROR;
         }
 
         if (error == ErrorCode::OK)
         {
-            // peek() sets eof bit for the stream. Clear stream to make sure it is still accessible. seekg() in C++11 should
-            // clear stream after eof, but this does not seem to be always happening.
+            // peek() sets eof bit for the stream. Clear stream to make sure it is still accessible. seekg() in C++11
+            // should clear stream after eof, but this does not seem to be always happening.
             if ((!mIo.stream->good()) && (!mIo.stream->eof()))
             {
                 return ErrorCode::FILE_READ_ERROR;
@@ -508,9 +512,10 @@ namespace HEIF
             const std::uint32_t ispeIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::ISPE, itemId);
             if (ispeIndex)
             {
-                const auto imageSpatialExtentsProperties = static_cast<const ImageSpatialExtentsProperty*>(iprp.getPropertyByIndex(ispeIndex - 1));
-                imageInfo.height                         = imageSpatialExtentsProperties->getDisplayHeight();
-                imageInfo.width                          = imageSpatialExtentsProperties->getDisplayWidth();
+                const auto imageSpatialExtentsProperties =
+                    static_cast<const ImageSpatialExtentsProperty*>(iprp.getPropertyByIndex(ispeIndex - 1));
+                imageInfo.height = imageSpatialExtentsProperties->getDisplayHeight();
+                imageInfo.width  = imageSpatialExtentsProperties->getDisplayWidth();
             }
             else
             {
@@ -769,7 +774,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::processAvcItemData(char* memoryBuffer, uint64_t& memoryBufferSize) const
+    ErrorCode HeifReaderImpl::processAvcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize) const
     {
         uint32_t outputOffset = 0;
         uint32_t byteOffset   = 0;
@@ -780,23 +785,23 @@ namespace HEIF
             nalLength                               = (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 0;
             byteOffset++;
-            nalLength                               = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
+            nalLength = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 0;
             byteOffset++;
-            nalLength                               = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
+            nalLength = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 0;
             byteOffset++;
-            nalLength                               = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
+            nalLength = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 1;
-            //byteOffset++;
-            //AvcNalUnitType naluType = AvcNalUnitType((uint8_t)memoryBuffer[outputOffset + byteOffset] & 0x1f);
+            // byteOffset++;
+            // AvcNalUnitType naluType = AvcNalUnitType((uint8_t)memoryBuffer[outputOffset + byteOffset] & 0x1f);
             outputOffset += nalLength + 4;  // 4 bytes of nal length information
             byteOffset = 0;
         }
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::processHevcItemData(char* memoryBuffer, uint64_t& memoryBufferSize) const
+    ErrorCode HeifReaderImpl::processHevcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize) const
     {
         uint32_t outputOffset = 0;
         uint32_t byteOffset   = 0;
@@ -807,16 +812,17 @@ namespace HEIF
             nalLength                               = (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 0;
             byteOffset++;
-            nalLength                               = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
+            nalLength = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 0;
             byteOffset++;
-            nalLength                               = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
+            nalLength = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 0;
             byteOffset++;
-            nalLength                               = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
+            nalLength = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 1;
-            //byteOffset++;
-            //HevcNalUnitType naluType = HevcNalUnitType(((uint8_t)memoryBuffer[outputOffset + byteOffset] >> 1) & 0x3f);
+            // byteOffset++;
+            // HevcNalUnitType naluType = HevcNalUnitType(((uint8_t)memoryBuffer[outputOffset + byteOffset] >> 1) &
+            // 0x3f);
             outputOffset += nalLength + 4;  // 4 bytes of nal length information
             byteOffset = 0;
         }
@@ -879,7 +885,8 @@ namespace HEIF
         metaBoxProperties.imageFeaturesMap = extractMetaBoxImagePropertiesMap(metaBox);
         metaBoxProperties.itemFeaturesMap  = extractMetaBoxItemPropertiesMap(metaBox);
         metaBoxProperties.entityGroupings  = extractMetaBoxEntityToGroupMaps(metaBox);
-        metaBoxProperties.metaBoxFeature   = extractMetaBoxFeatures(metaBoxProperties.imageFeaturesMap, metaBoxProperties.entityGroupings);
+        metaBoxProperties.metaBoxFeature =
+            extractMetaBoxFeatures(metaBoxProperties.imageFeaturesMap, metaBoxProperties.entityGroupings);
 
         return metaBoxProperties;
     }
@@ -989,7 +996,8 @@ namespace HEIF
                     imageFeatures.setFeature(ImageFeatureEnum::IsDerivedImage);
                 }
                 // Is this master image (<=> not a thumb and not an auxiliary image)
-                if (imageFeatures.hasFeature(ImageFeatureEnum::IsThumbnailImage) == false && imageFeatures.hasFeature(ImageFeatureEnum::IsAuxiliaryImage) == false)
+                if (imageFeatures.hasFeature(ImageFeatureEnum::IsThumbnailImage) == false &&
+                    imageFeatures.hasFeature(ImageFeatureEnum::IsAuxiliaryImage) == false)
                 {
                     imageFeatures.setFeature(ImageFeatureEnum::IsMasterImage);
                 }
@@ -1068,7 +1076,14 @@ namespace HEIF
                 }
                 else if (type == "mime")
                 {
-                    itemFeature.setFeature(ItemFeatureEnum::IsMimeItem);
+                    if (item.getContentType() == "application/rdf+xml")
+                    {
+                        itemFeature.setFeature(ItemFeatureEnum::IsXMPItem);
+                    }
+                    else
+                    {
+                        itemFeature.setFeature(ItemFeatureEnum::IsMPEG7Item);
+                    }
                 }
                 else if (type == "hvt1")
                 {
@@ -1082,6 +1097,63 @@ namespace HEIF
         return itemFeaturesMap;
     }
 
+    static ItemPropertyType itemPropertyTypeFromPropertyType(const ItemPropertiesBox::PropertyType& aType)
+    {
+        if (aType == ItemPropertiesBox::PropertyType::RAW)
+        {
+            return ItemPropertyType::RAW;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::AUXC)
+        {
+            return ItemPropertyType::AUXC;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::AVCC)
+        {
+            return ItemPropertyType::AVCC;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::CLAP)
+        {
+            return ItemPropertyType::CLAP;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::COLR)
+        {
+            return ItemPropertyType::COLR;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::HVCC)
+        {
+            return ItemPropertyType::HVCC;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::IMIR)
+        {
+            return ItemPropertyType::IMIR;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::IROT)
+        {
+            return ItemPropertyType::IROT;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::ISPE)
+        {
+            return ItemPropertyType::ISPE;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::JPGC)
+        {
+            return ItemPropertyType::JPGC;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::PASP)
+        {
+            return ItemPropertyType::PASP;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::PIXI)
+        {
+            return ItemPropertyType::PIXI;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::RLOC)
+        {
+            return ItemPropertyType::RLOC;
+        }
+        return ItemPropertyType::RAW;
+    }
+
     HeifReaderImpl::Properties HeifReaderImpl::processItemProperties(const ContextId contextId) const
     {
         Properties propertyMap;
@@ -1092,32 +1164,16 @@ namespace HEIF
         {
             ItemPropertiesBox::PropertyInfos propertyVector = iprp.getItemProperties(itemId);
 
-            // The following loop copies item property information to interface. Data structures are essentially identical
-            // in ItemPropertiesBox and the reader API, but it is not desirable to expose ItemPropertiesBox in the API,
-            // or include reader interface as part of ItemPropertiesBox.
+            // The following loop copies item property information to interface. Data structures are essentially
+            // identical in ItemPropertiesBox and the reader API, but it is not desirable to expose ItemPropertiesBox in
+            // the API, or include reader interface as part of ItemPropertiesBox.
             PropertyTypeVector propertyTypeVector;
             for (const auto& property : propertyVector)
             {
-                static const Map<ItemPropertiesBox::PropertyType, ItemPropertyType> ENUM_MAPPING =
-                    {
-                        {ItemPropertiesBox::PropertyType::RAW, ItemPropertyType::RAW},
-                        {ItemPropertiesBox::PropertyType::AUXC, ItemPropertyType::AUXC},
-                        {ItemPropertiesBox::PropertyType::AVCC, ItemPropertyType::AVCC},
-                        {ItemPropertiesBox::PropertyType::CLAP, ItemPropertyType::CLAP},
-                        {ItemPropertiesBox::PropertyType::COLR, ItemPropertyType::COLR},
-                        {ItemPropertiesBox::PropertyType::HVCC, ItemPropertyType::HVCC},
-                        {ItemPropertiesBox::PropertyType::IMIR, ItemPropertyType::IMIR},
-                        {ItemPropertiesBox::PropertyType::IROT, ItemPropertyType::IROT},
-                        {ItemPropertiesBox::PropertyType::ISPE, ItemPropertyType::ISPE},
-                        {ItemPropertiesBox::PropertyType::JPGC, ItemPropertyType::JPGC},
-                        {ItemPropertiesBox::PropertyType::PASP, ItemPropertyType::PASP},
-                        {ItemPropertiesBox::PropertyType::PIXI, ItemPropertyType::PIXI},
-                        {ItemPropertiesBox::PropertyType::RLOC, ItemPropertyType::RLOC}};
-
                 ItemPropertyInfo info;
                 info.essential = property.essential;
                 info.index     = property.index;
-                info.type      = ENUM_MAPPING.at(property.type);
+                info.type      = itemPropertyTypeFromPropertyType(property.type);
                 propertyTypeVector.push_back(info);
             }
             propertyMap.insert(std::make_pair(itemId, propertyTypeVector));
@@ -1137,8 +1193,10 @@ namespace HEIF
         {
             const ImageId imageId = imageProperties.first;
             const Id id(contextId, imageId.get());
-            const std::uint32_t hvccIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::HVCC, imageId.get());
-            const std::uint32_t avccIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::AVCC, imageId.get());
+            const std::uint32_t hvccIndex =
+                iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::HVCC, imageId.get());
+            const std::uint32_t avccIndex =
+                iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::AVCC, imageId.get());
             if ((hvccIndex == 0) && (avccIndex == 0))
             {
                 continue;
@@ -1153,7 +1211,8 @@ namespace HEIF
                 if (!mParameterSetMap.count(configIndex))
                 {
                     const HevcDecoderConfigurationRecord record =
-                        static_cast<const HevcConfigurationBox*>(iprp.getPropertyByIndex(hvccIndex - 1))->getConfiguration();
+                        static_cast<const HevcConfigurationBox*>(iprp.getPropertyByIndex(hvccIndex - 1))
+                            ->getConfiguration();
                     mParameterSetMap[configIndex] = makeDecoderParameterSetMap(record);
                 }
             }
@@ -1164,7 +1223,8 @@ namespace HEIF
                 if (!mParameterSetMap.count(configIndex))
                 {
                     const AvcDecoderConfigurationRecord record =
-                        static_cast<const AvcConfigurationBox*>(iprp.getPropertyByIndex(avccIndex - 1))->getConfiguration();
+                        static_cast<const AvcConfigurationBox*>(iprp.getPropertyByIndex(avccIndex - 1))
+                            ->getConfiguration();
                     mParameterSetMap[configIndex] = makeDecoderParameterSetMap(record);
                 }
             }
@@ -1173,7 +1233,8 @@ namespace HEIF
         }
     }
 
-    HeifReaderImpl::MetaBoxInfo HeifReaderImpl::extractItems(const MetaBox& metaBox, const std::uint32_t contextId) const
+    HeifReaderImpl::MetaBoxInfo HeifReaderImpl::extractItems(const MetaBox& metaBox,
+                                                             const std::uint32_t contextId) const
     {
         MetaBoxInfo metaBoxInfo;
         const auto itemIds = metaBox.getItemInfoBox().getItemIds();
@@ -1250,13 +1311,15 @@ namespace HEIF
         }
         data.resize(itemLength);
 
-        char* dataPtr = reinterpret_cast<char*>(data.data());
-        error         = readItem(metaBox, itemId, dataPtr);
+        uint8_t* dataPtr = data.data();
+        error            = readItem(metaBox, itemId, dataPtr);
         mIo.stream->seek(oldPosition);
         return error;
     }
 
-    ErrorCode HeifReaderImpl::getItemLength(const MetaBox& metaBox, const ItemId itemId, std::uint64_t& itemLength) const
+    ErrorCode HeifReaderImpl::getItemLength(const MetaBox& metaBox,
+                                            const ItemId itemId,
+                                            std::uint64_t& itemLength) const
     {
         ErrorCode error = isValidItem(itemId);
         if (error != ErrorCode::OK)
@@ -1289,8 +1352,9 @@ namespace HEIF
             auto isWantedItemId          = [itemId](const SingleItemTypeReferenceBox& item) {
                 return item.getFromItemID() == itemId;
             };
-            const auto ilocReference = std::find_if(allIlocReferences.cbegin(), allIlocReferences.cend(), isWantedItemId);
-            const auto toItemIds     = ilocReference->getToItemIds();
+            const auto ilocReference =
+                std::find_if(allIlocReferences.cbegin(), allIlocReferences.cend(), isWantedItemId);
+            const auto toItemIds = ilocReference->getToItemIds();
 
             // Iterate extents
             for (const auto& extent : extentList)
@@ -1331,7 +1395,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::readItem(const MetaBox& metaBox, const ItemId itemId, char* memoryBuffer) const
+    ErrorCode HeifReaderImpl::readItem(const MetaBox& metaBox, const ItemId itemId, uint8_t* memoryBuffer) const
     {
         ErrorCode error = isValidItem(itemId);
         if (error != ErrorCode::OK)
@@ -1355,8 +1419,7 @@ namespace HEIF
             return ErrorCode::FILE_READ_ERROR;  // No extents given for an item.
         }
 
-        if (version == 0 ||
-            ((version >= 1) && constructionMethod == ItemLocation::ConstructionMethod::FILE_OFFSET))
+        if (version == 0 || ((version >= 1) && constructionMethod == ItemLocation::ConstructionMethod::FILE_OFFSET))
         {
             for (const auto& extent : extentList)
             {
@@ -1366,7 +1429,7 @@ namespace HEIF
                 {
                     return ErrorCode::FILE_READ_ERROR;
                 }
-                mIo.stream->read(memoryBuffer, std::streamsize(extent.mExtentLength));
+                mIo.stream->read(reinterpret_cast<char*>(memoryBuffer), std::streamsize(extent.mExtentLength));
                 if (!mIo.stream->good())
                 {
                     return ErrorCode::FILE_READ_ERROR;
@@ -1393,8 +1456,9 @@ namespace HEIF
             auto isWantedItemId          = [itemId](const SingleItemTypeReferenceBox& item) {
                 return item.getFromItemID() == itemId;
             };
-            const auto ilocReference = std::find_if(allIlocReferences.cbegin(), allIlocReferences.cend(), isWantedItemId);
-            const auto toItemIds     = ilocReference->getToItemIds();
+            const auto ilocReference =
+                std::find_if(allIlocReferences.cbegin(), allIlocReferences.cend(), isWantedItemId);
+            const auto toItemIds = ilocReference->getToItemIds();
 
             // Iterate extents
             for (const auto& extent : extentList)
@@ -1416,8 +1480,8 @@ namespace HEIF
                 Vector<std::uint8_t> subItemData;
                 subItemData.resize(subItemLength);
 
-                char* subItemDataPtr = reinterpret_cast<char*>(subItemData.data());
-                error                = readItem(metaBox, toItemIds.at(extentSourceItemIndex - 1), subItemDataPtr);
+                uint8_t* subItemDataPtr = subItemData.data();
+                error                   = readItem(metaBox, toItemIds.at(extentSourceItemIndex - 1), subItemDataPtr);
                 if (error != ErrorCode::OK)
                 {
                     return error;
@@ -1426,15 +1490,12 @@ namespace HEIF
                 // If extent_length value = 0, length is the length of the entire item.
                 if (extent.mExtentLength == 0)
                 {
-                    std::memcpy(memoryBuffer,
-                                subItemData.data(),
-                                subItemData.size());
+                    std::memcpy(memoryBuffer, subItemData.data(), subItemData.size());
                     memoryBuffer += subItemData.size();
                 }
                 else
                 {
-                    std::memcpy(memoryBuffer,
-                                subItemData.data() + static_cast<int64_t>(extent.mExtentOffset),
+                    std::memcpy(memoryBuffer, subItemData.data() + static_cast<int64_t>(extent.mExtentOffset),
                                 extent.mExtentLength);
                     memoryBuffer += extent.mExtentLength;
                 }
@@ -1528,8 +1589,7 @@ namespace HEIF
                 trackFeature.setFeature(TrackFeatureEnum::HasLinkedAuxiliaryImageSequence);
             }
 
-            if (trackFeature.hasFeature(TrackFeatureEnum::HasEditList) &&
-                (mTrackInfo[trackId].pMap.size() <= 1))
+            if (trackFeature.hasFeature(TrackFeatureEnum::HasEditList) && (mTrackInfo[trackId].pMap.size() <= 1))
             {
                 trackFeature.setFeature(TrackFeatureEnum::DisplayAllSamples);
             }
@@ -1564,14 +1624,16 @@ namespace HEIF
     }
 
     bool HeifReaderImpl::isAnyLinkedToWithType(const TrackPropertiesMap& trackPropertiesMap,
-                                               const SequenceId trackId, const FourCCInt referenceType) const
+                                               const SequenceId trackId,
+                                               const FourCCInt referenceType) const
     {
         for (const auto& trackProperties : trackPropertiesMap)
         {
             for (const auto& reference : trackProperties.second.referenceTrackIds)
             {
                 if ((reference.first == FourCC(referenceType.getUInt32())) &&
-                    (std::find(reference.second.begin(), reference.second.end(), trackId.get()) != reference.second.end()))
+                    (std::find(reference.second.begin(), reference.second.end(), trackId.get()) !=
+                     reference.second.end()))
                 {
                     return true;
                 }
@@ -1590,10 +1652,8 @@ namespace HEIF
         SampleTableBox& stblBox       = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
         SampleDescriptionBox& stsdBox = stblBox.getSampleDescriptionBox();
 
-        if (handlerBox.getHandlerType() == "pict" ||
-            handlerBox.getHandlerType() == "auxv" ||
-            handlerBox.getHandlerType() == "vide" ||
-            handlerBox.getHandlerType() == "soun")
+        if (handlerBox.getHandlerType() == "pict" || handlerBox.getHandlerType() == "auxv" ||
+            handlerBox.getHandlerType() == "vide" || handlerBox.getHandlerType() == "soun")
         {
             std::bitset<24> flags(tkhdBox.getFlags());
             if (flags.test(0))
@@ -1614,8 +1674,7 @@ namespace HEIF
                 trackFeature.setFeature(TrackFeatureEnum::HasAlternatives);
             }
 
-            if (trackBox->getHasTrackReferences() == false &&
-                handlerBox.getHandlerType() == "pict")
+            if (trackBox->getHasTrackReferences() == false && handlerBox.getHandlerType() == "pict")
             {
                 // sample entry box has 'pict', and is not referencing any another track
                 trackFeature.setFeature(TrackFeatureEnum::IsMasterImageSequence);
@@ -1715,7 +1774,8 @@ namespace HEIF
         const auto& trackReferenceTypeBoxes = trackBox->getTrackReferenceBox().getTrefTypeBoxes();
         for (const auto& trackReferenceTypeBox : trackReferenceTypeBoxes)
         {
-            trackReferenceMap[FourCC(trackReferenceTypeBox.getType().getUInt32())] = trackReferenceTypeBox.getTrackIds();
+            trackReferenceMap[FourCC(trackReferenceTypeBox.getType().getUInt32())] =
+                trackReferenceTypeBox.getTrackIds();
         }
 
         return trackReferenceMap;
@@ -1725,7 +1785,7 @@ namespace HEIF
     {
         Vector<SampleGrouping> groupings;
 
-        SampleTableBox& stblBox                           = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        SampleTableBox& stblBox = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
         const Vector<SampleToGroupBox> sampleToGroupBoxes = stblBox.getSampleToGroupBoxes();
         for (const auto& sampleToGroupBox : sampleToGroupBoxes)
         {
@@ -1788,7 +1848,8 @@ namespace HEIF
         Array<SampleToMetadataItem> stmiInfos(entries);
         for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
         {
-            const SampleToMetadataItemEntry* stmi = static_cast<const SampleToMetadataItemEntry*>(sgpd->getEntry(groupIndex));
+            const SampleToMetadataItemEntry* stmi =
+                static_cast<const SampleToMetadataItemEntry*>(sgpd->getEntry(groupIndex));
             if (stmi->getMetaBoxHandlerType() == "pict")
             {
                 stmiInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
@@ -1801,9 +1862,9 @@ namespace HEIF
     HeifReaderImpl::TrackInfo HeifReaderImpl::extractTrackInfo(TrackBox* trackBox, MovieBox& moovBox) const
     {
         TrackInfo trackInfo;
-        SampleTableBox& stblBox                                          = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
-        TrackHeaderBox& trackHeaderBox                                   = trackBox->getTrackHeaderBox();
-        const TimeToSampleBox& timeToSampleBox                           = stblBox.getTimeToSampleBox();
+        SampleTableBox& stblBox                = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        TrackHeaderBox& trackHeaderBox         = trackBox->getTrackHeaderBox();
+        const TimeToSampleBox& timeToSampleBox = stblBox.getTimeToSampleBox();
         std::shared_ptr<const CompositionOffsetBox> compositionOffsetBox = stblBox.getCompositionOffsetBox();
 
         trackInfo.width  = trackHeaderBox.getWidth() >> 16;
@@ -1811,8 +1872,9 @@ namespace HEIF
         trackInfo.matrix = trackHeaderBox.getMatrix();
 
         const uint32_t mediaTimeScale = trackBox->getMediaBox().getMediaHeaderBox().getTimeScale();
-        const uint32_t movieTimeScale = moovBox.getMovieHeaderBox().getTimeScale();  // Number of time units that pass in a second
-        const uint64_t tkhdDuration   = trackHeaderBox.getDuration();                // Duration is in timescale units
+        const uint32_t movieTimeScale =
+            moovBox.getMovieHeaderBox().getTimeScale();              // Number of time units that pass in a second
+        const uint64_t tkhdDuration = trackHeaderBox.getDuration();  // Duration is in timescale units
 
         std::shared_ptr<const EditBox> editBox = trackBox->getEditBox();
         DecodePts decodePts;
@@ -1930,9 +1992,7 @@ namespace HEIF
             }
 
             // Set dimensions
-            if (handlerType == "pict" ||
-                handlerType == "vide" ||
-                handlerType == "auxv")
+            if (handlerType == "pict" || handlerType == "vide" || handlerType == "auxv")
             {
                 uint32_t sampleDescriptionIndex;
                 if (stscBox.getSampleDescriptionIndex(sampleIndex, sampleDescriptionIndex) == false)
@@ -1940,7 +2000,8 @@ namespace HEIF
                     throw FileReaderException(ErrorCode::FILE_HEADER_ERROR);
                 }
 
-                const AvcSampleEntry* avcSampleEntry = stsdBox.getSampleEntry<AvcSampleEntry>("avc1", sampleDescriptionIndex);
+                const AvcSampleEntry* avcSampleEntry =
+                    stsdBox.getSampleEntry<AvcSampleEntry>("avc1", sampleDescriptionIndex);
                 if (avcSampleEntry != nullptr)
                 {
                     sampleInfo.width  = avcSampleEntry->getWidth();
@@ -1948,7 +2009,8 @@ namespace HEIF
                 }
                 else
                 {
-                    const HevcSampleEntry* hevcSampleEntry = stsdBox.getSampleEntry<HevcSampleEntry>("hvc1", sampleDescriptionIndex);
+                    const HevcSampleEntry* hevcSampleEntry =
+                        stsdBox.getSampleEntry<HevcSampleEntry>("hvc1", sampleDescriptionIndex);
                     if (hevcSampleEntry != nullptr)
                     {
                         sampleInfo.width  = hevcSampleEntry->getWidth();
@@ -1971,7 +2033,8 @@ namespace HEIF
             // Figure out decode dependencies
             for (const auto& sampleToGroupBox : sampleToGroupBoxes)
             {
-                const uint32_t sampleGroupDescriptionIndex = sampleToGroupBox.getSampleGroupDescriptionIndex(sampleIndex);
+                const uint32_t sampleGroupDescriptionIndex =
+                    sampleToGroupBox.getSampleGroupDescriptionIndex(sampleIndex);
                 if (sampleGroupDescriptionIndex != 0)
                 {
                     const FourCCInt groupingType = sampleToGroupBox.getGroupingType();
@@ -1983,7 +2046,8 @@ namespace HEIF
                         {
                             throw FileReaderException(ErrorCode::FILE_HEADER_ERROR);
                         }
-                        sampleInfo.decodeDependencies = getSampleDirectDependencies(sampleIndex, sgdb, sampleToGroupBox);
+                        sampleInfo.decodeDependencies =
+                            getSampleDirectDependencies(sampleIndex, sgdb, sampleToGroupBox);
                     }
                 }
             }
@@ -2023,11 +2087,10 @@ namespace HEIF
                 throw FileReaderException(ErrorCode::FILE_HEADER_ERROR);
             }
 
-            if (handlerType == "pict" ||
-                handlerType == "vide" ||
-                handlerType == "auxv")
+            if (handlerType == "pict" || handlerType == "vide" || handlerType == "auxv")
             {
-                const AvcSampleEntry* avcSampleEntry = stsdBox.getSampleEntry<AvcSampleEntry>("avc1", sampleProperties.sampleDescriptionIndex);
+                const AvcSampleEntry* avcSampleEntry =
+                    stsdBox.getSampleEntry<AvcSampleEntry>("avc1", sampleProperties.sampleDescriptionIndex);
                 if (avcSampleEntry != nullptr)
                 {
                     sampleProperties.sampleEntryType = FourCC(avcSampleEntry->getType().getUInt32());
@@ -2036,8 +2099,8 @@ namespace HEIF
                     {
                         // Store values from CodingConstraintsBox
                         sampleProperties.codingConstraints.allRefPicsIntra = ccst->getAllRefPicsIntra();
-                        sampleProperties.codingConstraints.intraPredUsed = ccst->getIntraPredUsed();
-                        sampleProperties.codingConstraints.maxRefPerPic = ccst->getMaxRefPicUsed();
+                        sampleProperties.codingConstraints.intraPredUsed   = ccst->getIntraPredUsed();
+                        sampleProperties.codingConstraints.maxRefPerPic    = ccst->getMaxRefPicUsed();
                     }
                     else
                     {
@@ -2048,7 +2111,8 @@ namespace HEIF
                 }
                 else
                 {
-                    const HevcSampleEntry* hevcSampleEntry = stsdBox.getSampleEntry<HevcSampleEntry>("hvc1", sampleProperties.sampleDescriptionIndex);
+                    const HevcSampleEntry* hevcSampleEntry =
+                        stsdBox.getSampleEntry<HevcSampleEntry>("hvc1", sampleProperties.sampleDescriptionIndex);
                     if (hevcSampleEntry != nullptr)
                     {
                         sampleProperties.sampleEntryType = FourCC(hevcSampleEntry->getType().getUInt32());
@@ -2057,8 +2121,8 @@ namespace HEIF
                         {
                             // Store values from CodingConstraintsBox
                             sampleProperties.codingConstraints.allRefPicsIntra = ccst->getAllRefPicsIntra();
-                            sampleProperties.codingConstraints.intraPredUsed = ccst->getIntraPredUsed();
-                            sampleProperties.codingConstraints.maxRefPerPic = ccst->getMaxRefPicUsed();
+                            sampleProperties.codingConstraints.intraPredUsed   = ccst->getIntraPredUsed();
+                            sampleProperties.codingConstraints.maxRefPerPic    = ccst->getMaxRefPicUsed();
                         }
                         else
                         {
@@ -2089,23 +2153,27 @@ namespace HEIF
 
                 for (const auto& sampleToGroupBox : sampleToGroupBoxes)
                 {
-                    const uint32_t sampleGroupDescriptionIndex = sampleToGroupBox.getSampleGroupDescriptionIndex(sampleIndex);
+                    const uint32_t sampleGroupDescriptionIndex =
+                        sampleToGroupBox.getSampleGroupDescriptionIndex(sampleIndex);
                     if (sampleGroupDescriptionIndex != 0)
                     {
                         const auto groupingType = FourCC(sampleToGroupBox.getGroupingType().getUInt32());
                         if (groupingType == "refs")
                         {
-                            // If there is a "refs" sample grouping, then there is a chance that the sample is an output non-reference frame
-                            // If there is no "refs" sample group, then all samples are potentially output reference frames.
+                            // If there is a "refs" sample grouping, then there is a chance that the sample is an output
+                            // non-reference frame If there is no "refs" sample group, then all samples are potentially
+                            // output reference frames.
                             const auto sgdb = stblBox.getSampleGroupDescriptionBox(FourCCInt(groupingType.value));
                             if (sgdb == nullptr)
                             {
                                 throw FileReaderException(ErrorCode::FILE_HEADER_ERROR);
                             }
-                            const DirectReferenceSamplesList* entry = static_cast<const DirectReferenceSamplesList*>(sgdb->getEntry(sampleGroupDescriptionIndex));
+                            const DirectReferenceSamplesList* entry = static_cast<const DirectReferenceSamplesList*>(
+                                sgdb->getEntry(sampleGroupDescriptionIndex));
                             if (entry->getSampleId() == 0)
                             {
-                                // This means that there is at least one reference sample of this sample, hence it is a non-reference frame.
+                                // This means that there is at least one reference sample of this sample, hence it is a
+                                // non-reference frame.
                                 sampleProperties.sampleType = OUTPUT_NON_REFERENCE_FRAME;
                             }
                         }
@@ -2114,7 +2182,8 @@ namespace HEIF
             }
             else if (handlerType == "soun")
             {
-                const MP4AudioSampleEntryBox* sampleEntry = stsdBox.getSampleEntry<MP4AudioSampleEntryBox>("mp4a", sampleProperties.sampleDescriptionIndex);
+                const MP4AudioSampleEntryBox* sampleEntry =
+                    stsdBox.getSampleEntry<MP4AudioSampleEntryBox>("mp4a", sampleProperties.sampleDescriptionIndex);
                 if (sampleEntry)
                 {
                     sampleProperties.sampleEntryType = FourCC(sampleEntry->getType().getUInt32());
@@ -2125,8 +2194,9 @@ namespace HEIF
 
             samplePropertiesMap[sampleIndex] = sampleProperties;
 
-            const uint32_t trackId                            = trackBox->getTrackHeaderBox().getTrackID();
-            mDecoderCodeTypeMap[Id(trackId, sampleIndex)]     = FourCCInt(sampleProperties.sampleEntryType.value);  // Store decoder type for track data decoding
+            const uint32_t trackId = trackBox->getTrackHeaderBox().getTrackID();
+            mDecoderCodeTypeMap[Id(trackId, sampleIndex)] =
+                FourCCInt(sampleProperties.sampleEntryType.value);  // Store decoder type for track data decoding
             mImageToParameterSetMap[Id(trackId, sampleIndex)] = Id(trackId, sampleProperties.sampleDescriptionIndex);
         }
 
@@ -2149,10 +2219,10 @@ namespace HEIF
             const int32_t min             = std::numeric_limits<int32_t>::min();
             for (size_t i = 0; i < offsets.size(); i++)
             {
-                if ((offsets.at(i) == min) &&
-                    samplePropertiesMap.count(static_cast<uint32_t>(i)))
+                if ((offsets.at(i) == min) && samplePropertiesMap.count(static_cast<uint32_t>(i)))
                 {
-                    samplePropertiesMap.at(static_cast<uint32_t>(i)).sampleType = SampleType::NON_OUTPUT_REFERENCE_FRAME;
+                    samplePropertiesMap.at(static_cast<uint32_t>(i)).sampleType =
+                        SampleType::NON_OUTPUT_REFERENCE_FRAME;
                 }
             }
         }
@@ -2161,7 +2231,8 @@ namespace HEIF
     }
 
     Vector<ItemId> HeifReaderImpl::getSampleDirectDependencies(const ItemId itemId,
-                                                               const SampleGroupDescriptionBox* sgpd, const SampleToGroupBox& sampleToGroupBox) const
+                                                               const SampleGroupDescriptionBox* sgpd,
+                                                               const SampleToGroupBox& sampleToGroupBox) const
     {
         const uint32_t index                    = sampleToGroupBox.getSampleGroupDescriptionIndex(itemId);
         const DirectReferenceSamplesList* entry = static_cast<const DirectReferenceSamplesList*>(sgpd->getEntry(index));
@@ -2181,7 +2252,7 @@ namespace HEIF
 
     ErrorCode HeifReaderImpl::getTrackFrameData(const unsigned int frameIndex,
                                                 const TrackInfo& trackInfo,
-                                                char* memorybuffer,
+                                                uint8_t* memorybuffer,
                                                 uint64_t& memorybuffersize) const
     {
         // The requested frame should be one that is available
@@ -2203,7 +2274,7 @@ namespace HEIF
         {
             return ErrorCode::FILE_READ_ERROR;
         }
-        mIo.stream->read(memorybuffer, sampleLength);
+        mIo.stream->read(reinterpret_cast<char*>(memorybuffer), sampleLength);
         if (!mIo.stream->good())
         {
             return ErrorCode::FILE_READ_ERROR;
@@ -2214,8 +2285,9 @@ namespace HEIF
 
     void HeifReaderImpl::fillSampleEntryMap(TrackBox* trackBox)
     {
-        const uint32_t trackId        = trackBox->getTrackHeaderBox().getTrackID();
-        SampleDescriptionBox& stsdBox = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox().getSampleDescriptionBox();
+        const uint32_t trackId = trackBox->getTrackHeaderBox().getTrackID();
+        SampleDescriptionBox& stsdBox =
+            trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox().getSampleDescriptionBox();
 
         // Process HevcSampleEntries
         {
@@ -2266,8 +2338,9 @@ namespace HEIF
         }
     }
 
-    Vector<TimestampIDPair> HeifReaderImpl::addDecodingDependencies(const SequenceId sequenceId,
-                                                                    const Vector<TimestampIDPair>& itemDecodingOrder) const
+    Vector<TimestampIDPair>
+    HeifReaderImpl::addDecodingDependencies(const SequenceId sequenceId,
+                                            const Vector<TimestampIDPair>& itemDecodingOrder) const
     {
         Vector<TimestampIDPair> output;
 
@@ -2343,16 +2416,15 @@ namespace HEIF
 
     bool isImageItemType(const FourCCInt& type)
     {
-        static const std::set<FourCCInt> IMAGE_TYPES =
-            {
-                "avc1", "hvc1", "grid", "iovl", "iden", "jpeg"};
+        static const std::set<FourCCInt> IMAGE_TYPES = {"avc1", "hvc1", "grid", "iovl", "iden", "jpeg"};
 
         return IMAGE_TYPES.find(type) != IMAGE_TYPES.end();
     }
 
     bool doReferencesFromItemIdExist(const MetaBox& metaBox, const uint32_t itemId, const FourCCInt& referenceType)
     {
-        const Vector<SingleItemTypeReferenceBox> references = metaBox.getItemReferenceBox().getReferencesOfType(FourCCInt(referenceType));
+        const Vector<SingleItemTypeReferenceBox> references =
+            metaBox.getItemReferenceBox().getReferencesOfType(FourCCInt(referenceType));
         for (const auto& singleItemTypeReferenceBox : references)
         {
             if (singleItemTypeReferenceBox.getFromItemID() == itemId)
@@ -2365,7 +2437,8 @@ namespace HEIF
 
     bool doReferencesToItemIdExist(const MetaBox& metaBox, const uint32_t itemId, const FourCCInt& referenceType)
     {
-        const Vector<SingleItemTypeReferenceBox> references = metaBox.getItemReferenceBox().getReferencesOfType(FourCCInt(referenceType));
+        const Vector<SingleItemTypeReferenceBox> references =
+            metaBox.getItemReferenceBox().getReferencesOfType(FourCCInt(referenceType));
         for (const auto& singleItemTypeReferenceBox : references)
         {
             const Vector<uint32_t> toIds = singleItemTypeReferenceBox.getToItemIds();
@@ -2382,9 +2455,7 @@ namespace HEIF
     Array<T> makeArray(const Container& container)
     {
         Array<T> array(container.size());
-        for (typename Container::const_iterator it = container.begin();
-             it != container.end();
-             ++it)
+        for (typename Container::const_iterator it = container.begin(); it != container.end(); ++it)
         {
             array.elements[it - container.begin()] = T(*it);
         }
@@ -2401,6 +2472,7 @@ namespace HEIF
     template Array<char> makeArray(const String& container);
     template Array<std::int32_t> makeArray(const Vector<std::int32_t>& container);
     template Array<std::uint32_t> makeArray(const Vector<std::uint32_t>& container);
+    template Array<std::int64_t> makeArray(const Vector<std::int64_t>& container);
     template Array<std::uint64_t> makeArray(const Vector<std::uint64_t>& container);
     template Array<std::uint8_t> makeArray(const Vector<std::uint8_t>& container);
 

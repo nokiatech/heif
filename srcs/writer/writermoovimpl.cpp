@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include <cassert>
@@ -33,6 +35,50 @@ namespace HEIF
 {
     namespace
     {
+        void fillVisualSampleEntryCommon(const ImageSequence& sequence, VisualSampleEntryBox* box)
+        {
+            if (sequence.handlerType == PICT_HANDLER)
+            {
+                box->createCodingConstraintsBox();
+                auto ccst = box->getCodingConstraintsBox();
+                if (ccst != nullptr)
+                {
+                    ccst->setAllRefPicsIntra(sequence.codingConstraints.allRefPicsIntra);
+                    ccst->setIntraPredUsed(sequence.codingConstraints.intraPredUsed);
+                    ccst->setMaxRefPicUsed(sequence.codingConstraints.maxRefPerPic);
+                }
+            }
+
+            if (sequence.containsCleanApertureBox)
+            {
+                box->createClap();
+                CleanApertureBox* clapBox = box->getClap();
+                if (clapBox != nullptr)
+                {
+                    ::CleanApertureBox::Fraction value;
+                    value.numerator   = sequence.clap.heightN;
+                    value.denominator = sequence.clap.heightD;
+                    clapBox->setHeight(value);
+                    value.numerator   = sequence.clap.widthN;
+                    value.denominator = sequence.clap.widthD;
+                    clapBox->setWidth(value);
+                    value.numerator   = sequence.clap.horizontalOffsetN;
+                    value.denominator = sequence.clap.horizontalOffsetD;
+                    clapBox->setHorizOffset(value);
+                    value.numerator   = sequence.clap.verticalOffsetN;
+                    value.denominator = sequence.clap.verticalOffsetD;
+                    clapBox->setVertOffset(value);
+                }
+            }
+
+            if (sequence.auxiliaryType.length())
+            {
+                box->createAuxi();
+                auto auxiBox = box->getAuxi();
+                auxiBox->setAuxType(sequence.auxiliaryType);
+            }
+        }
+
         HEIF::ErrorCode makeAVCVideoSampleEntryBox(ImageSequence& sequence,
                                                    const Array<DecoderSpecificInfo>& nalUnits,
                                                    UniquePtr<SampleEntryBox>& sampleEntryBox)
@@ -79,50 +125,15 @@ namespace HEIF
 
             box->setWidth(decCfg.getPicWidth());
             box->setHeight(decCfg.getPicHeight());
-            if (uint32_t(sequence.maxDimensions.height * sequence.maxDimensions.width) < uint32_t(decCfg.getPicWidth() * decCfg.getPicHeight()))
+            if (uint32_t(sequence.maxDimensions.height * sequence.maxDimensions.width) <
+                uint32_t(decCfg.getPicWidth() * decCfg.getPicHeight()))
             {
                 sequence.maxDimensions.width  = decCfg.getPicWidth();
                 sequence.maxDimensions.height = decCfg.getPicHeight();
             }
             cfg.setConfiguration(decCfg);
 
-            box->createCodingConstraintsBox();
-            auto ccst = box->getCodingConstraintsBox();
-            if (ccst != nullptr)
-            {
-                ccst->setAllRefPicsIntra(sequence.codingConstraints.allRefPicsIntra);
-                ccst->setIntraPredUsed(sequence.codingConstraints.intraPredUsed);
-                ccst->setMaxRefPicUsed(sequence.codingConstraints.maxRefPerPic);
-            }
-
-            if (sequence.containsCleanApertureBox)
-            {
-                box->createClap();
-                CleanApertureBox* clapBox = box->getClap();
-                if (clapBox != nullptr)
-                {
-                    ::CleanApertureBox::Fraction value;
-                    value.numerator   = sequence.clap.heightN;
-                    value.denominator = sequence.clap.heightD;
-                    clapBox->setHeight(value);
-                    value.numerator   = sequence.clap.widthN;
-                    value.denominator = sequence.clap.widthD;
-                    clapBox->setWidth(value);
-                    value.numerator   = sequence.clap.horizontalOffsetN;
-                    value.denominator = sequence.clap.horizontalOffsetD;
-                    clapBox->setHorizOffset(value);
-                    value.numerator   = sequence.clap.verticalOffsetN;
-                    value.denominator = sequence.clap.verticalOffsetD;
-                    clapBox->setVertOffset(value);
-                }
-            }
-
-            if (sequence.auxiliaryType.length())
-            {
-                box->createAuxi();
-                auto auxiBox = box->getAuxi();
-                auxiBox->setAuxType(sequence.auxiliaryType);
-            }
+            fillVisualSampleEntryCommon(sequence, box.get());
 
             sampleEntryBox = std::move(box);
             return ErrorCode::OK;
@@ -177,7 +188,8 @@ namespace HEIF
 
             box->setWidth(decCfg.getPicWidth());
             box->setHeight(decCfg.getPicHeight());
-            if (uint32_t(sequence.maxDimensions.height * sequence.maxDimensions.width) < uint32_t(decCfg.getPicWidth() * decCfg.getPicHeight()))
+            if (uint32_t(sequence.maxDimensions.height * sequence.maxDimensions.width) <
+                uint32_t(decCfg.getPicWidth() * decCfg.getPicHeight()))
             {
                 sequence.maxDimensions.width  = decCfg.getPicWidth();
                 sequence.maxDimensions.height = decCfg.getPicHeight();
@@ -185,49 +197,15 @@ namespace HEIF
 
             cfg.setConfiguration(decCfg);
 
-            box->createCodingConstraintsBox();
-            auto ccst = box->getCodingConstraintsBox();
-            if (ccst != nullptr)
-            {
-                ccst->setAllRefPicsIntra(sequence.codingConstraints.allRefPicsIntra);
-                ccst->setIntraPredUsed(sequence.codingConstraints.intraPredUsed);
-                ccst->setMaxRefPicUsed(sequence.codingConstraints.maxRefPerPic);
-            }
-
-            if (sequence.containsCleanApertureBox)
-            {
-                box->createClap();
-                CleanApertureBox* clapBox = box->getClap();
-                if (clapBox != nullptr)
-                {
-                    ::CleanApertureBox::Fraction value;
-                    value.numerator   = sequence.clap.heightN;
-                    value.denominator = sequence.clap.heightD;
-                    clapBox->setHeight(value);
-                    value.numerator   = sequence.clap.widthN;
-                    value.denominator = sequence.clap.widthD;
-                    clapBox->setWidth(value);
-                    value.numerator   = sequence.clap.horizontalOffsetN;
-                    value.denominator = sequence.clap.horizontalOffsetD;
-                    clapBox->setHorizOffset(value);
-                    value.numerator   = sequence.clap.verticalOffsetN;
-                    value.denominator = sequence.clap.verticalOffsetD;
-                    clapBox->setVertOffset(value);
-                }
-            }
-
-            if (sequence.auxiliaryType.length())
-            {
-                box->createAuxi();
-                auto auxiBox = box->getAuxi();
-                auxiBox->setAuxType(sequence.auxiliaryType);
-            }
+            fillVisualSampleEntryCommon(sequence, box.get());
 
             sampleEntryBox = std::move(box);
             return ErrorCode::OK;
         }
 
-        HEIF::ErrorCode makeMP4AudioSampleEntryBox(ImageSequence& sequence, const Array<DecoderSpecificInfo>& nalUnits, UniquePtr<SampleEntryBox>& sampleEntryBox)
+        HEIF::ErrorCode makeMP4AudioSampleEntryBox(ImageSequence& sequence,
+                                                   const Array<DecoderSpecificInfo>& nalUnits,
+                                                   UniquePtr<SampleEntryBox>& sampleEntryBox)
         {
             auto box = makeCustomUnique<::MP4AudioSampleEntryBox, ::SampleEntryBox>();
             box->setDataReferenceIndex(1);
@@ -243,15 +221,16 @@ namespace HEIF
                 esd.size            = 0;  // filled later by ElementaryStreamDescriptorBox::writeBox()
                 esd.ES_ID           = 1;
                 esd.flags           = 0;
-                esd.dependsOn_ES_ID = 0;   //flags == 0 -> not written
-                esd.URLlength       = 0;   //flags == 0 -> not written
-                esd.URLstring       = "";  //flags == 0 -> not written
-                esd.OCR_ES_Id       = 0;   //flags == 0 -> not written
+                esd.dependsOn_ES_ID = 0;   // flags == 0 -> not written
+                esd.URLlength       = 0;   // flags == 0 -> not written
+                esd.URLstring       = "";  // flags == 0 -> not written
+                esd.OCR_ES_Id       = 0;   // flags == 0 -> not written
             }
             {
-                esd.decConfigDescr.DecoderConfigDescrTag              = 4;
-                esd.decConfigDescr.streamType                         = 0x05;  // ISO/IEC 14496-1:2010(E), Table 6, 0x05 AudioStream
-                esd.decConfigDescr.objectTypeIndication               = 0x40;  // Audio ISO/IEC 14496-3 (d) http://www.mp4ra.org/object.html
+                esd.decConfigDescr.DecoderConfigDescrTag = 4;
+                esd.decConfigDescr.streamType            = 0x05;  // ISO/IEC 14496-1:2010(E), Table 6, 0x05 AudioStream
+                esd.decConfigDescr.objectTypeIndication =
+                    0x40;  // Audio ISO/IEC 14496-3 (d) http://www.mp4ra.org/object.html
                 esd.decConfigDescr.bufferSizeDB                       = 0;
                 esd.decConfigDescr.avgBitrate                         = sequence.audioParams.averageBitrate;
                 esd.decConfigDescr.maxBitrate                         = sequence.audioParams.maxBitrate;
@@ -263,10 +242,11 @@ namespace HEIF
                 {
                     const auto nalVector = vectorize(nalUnit.decSpecInfoData);
 
-                    if (nalUnit.decSpecInfoType == DecoderSpecInfoType::AudioSpecificConfig && !audioSpecificConfigFound)
+                    if (nalUnit.decSpecInfoType == DecoderSpecInfoType::AudioSpecificConfig &&
+                        !audioSpecificConfigFound)
                     {
-                        audioSpecificConfigFound                           = true;
-                        esd.decConfigDescr.decSpecificInfo.size            = static_cast<uint32_t>(nalUnit.decSpecInfoData.size);
+                        audioSpecificConfigFound                = true;
+                        esd.decConfigDescr.decSpecificInfo.size = static_cast<uint32_t>(nalUnit.decSpecInfoData.size);
                         esd.decConfigDescr.decSpecificInfo.DecSpecificInfo = vectorize(nalUnit.decSpecInfoData);
                     }
                 }
@@ -299,7 +279,9 @@ namespace HEIF
     /* *************************************************************** */
     /* ************************* API methods ************************* */
     /* *************************************************************** */
-    ErrorCode WriterImpl::addImageSequence(const Rational& aTimeBase, const CodingConstraints& aCodingConstraints, SequenceId& aId)
+    ErrorCode WriterImpl::addImageSequence(const Rational& aTimeBase,
+                                           const CodingConstraints& aCodingConstraints,
+                                           SequenceId& aId)
     {
         if (mState != State::WRITING)
         {
@@ -365,7 +347,10 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode WriterImpl::addImage(const SequenceId& aSequenceId, const MediaDataId& aMediaDataId, const SampleInfo& aSampleInfo, SequenceImageId& aSequenceImageId)
+    ErrorCode WriterImpl::addImage(const SequenceId& aSequenceId,
+                                   const MediaDataId& aMediaDataId,
+                                   const SampleInfo& aSampleInfo,
+                                   SequenceImageId& aSequenceImageId)
     {
         if (mState != State::WRITING)
         {
@@ -386,8 +371,7 @@ namespace HEIF
         }
 
         ImageSequence& sequence = mImageSequences.at(aSequenceId);
-        if (sequence.samples.size() &&
-            mMediaData.at(aMediaDataId).mediaFormat != sequence.mediaFormat)
+        if (sequence.samples.size() && mMediaData.at(aMediaDataId).mediaFormat != sequence.mediaFormat)
         {  // do not allow mediaData from different media formats
             return ErrorCode::INVALID_MEDIA_FORMAT;
         }
@@ -424,11 +408,11 @@ namespace HEIF
             }
         }
 
-        sample.mediaDataId       = aMediaDataId;
-        sample.sequenceImageId   = Context::getValue();
-        aSequenceImageId         = sample.sequenceImageId;
-        sample.sampleDuration    = static_cast<uint32_t>(aSampleInfo.duration * sequence.timeBase.num);
-        sample.dts               = sequence.samples.size() ? sequence.samples.back().dts + sequence.samples.back().sampleDuration : 0;
+        sample.mediaDataId     = aMediaDataId;
+        sample.sequenceImageId = Context::getValue();
+        aSequenceImageId       = sample.sequenceImageId;
+        sample.sampleDuration  = static_cast<uint32_t>(aSampleInfo.duration * sequence.timeBase.num);
+        sample.dts = sequence.samples.size() ? sequence.samples.back().dts + sequence.samples.back().sampleDuration : 0;
         sample.compositionOffset = aSampleInfo.compositionOffset * static_cast<int64_t>(sequence.timeBase.num);
         sample.isSyncSample      = aSampleInfo.isSyncSample;
 
@@ -469,7 +453,9 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode WriterImpl::addMetadata(const MediaDataId& mediaDataId, const SequenceId& sequenceId, const SequenceImageId& sequenceImageId)
+    ErrorCode WriterImpl::addMetadata(const MediaDataId& mediaDataId,
+                                      const SequenceId& sequenceId,
+                                      const SequenceImageId& sequenceImageId)
     {
         if (mState != State::WRITING)
         {
@@ -527,8 +513,7 @@ namespace HEIF
 
         ImageSequence& thumpSequence = mImageSequences.at(thumbSequenceId);
         ImageSequence& imageSequence = mImageSequences.at(sequenceId);
-        if (thumpSequence.handlerType != PICT_HANDLER &&
-            imageSequence.handlerType != PICT_HANDLER)
+        if (thumpSequence.handlerType != PICT_HANDLER && imageSequence.handlerType != PICT_HANDLER)
         {
             // as per "7.5.2 Thumbnail image sequence track" only 'pict' allowed
             return ErrorCode::INVALID_SEQUENCE_ID;
@@ -620,15 +605,16 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode WriterImpl::addAuxiliaryReference(const AuxiliaryType& auxC, const SequenceId& auxiliarySequenceId, const SequenceId& sequenceId)
+    ErrorCode WriterImpl::addAuxiliaryReference(const AuxiliaryType& auxC,
+                                                const SequenceId& auxiliarySequenceId,
+                                                const SequenceId& sequenceId)
     {
         if (mState != State::WRITING)
         {
             return ErrorCode::UNINITIALIZED;
         }
 
-        if (!mImageSequences.count(sequenceId) ||
-            !mImageSequences.count(auxiliarySequenceId) ||
+        if (!mImageSequences.count(sequenceId) || !mImageSequences.count(auxiliarySequenceId) ||
             mImageSequences.at(sequenceId).handlerType == SOUN_HANDLER)
         {
             return ErrorCode::INVALID_SEQUENCE_ID;
@@ -646,6 +632,39 @@ namespace HEIF
 
         // set AuxReferenceType:
         auxlSequence.auxiliaryType = String(auxC.auxType.begin(), auxC.auxType.end());
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::setAlternateGrouping(const SequenceId& sequenceId1, const SequenceId& sequenceId2)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        if (!mImageSequences.count(sequenceId1) || !mImageSequences.count(sequenceId2))
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+
+        ImageSequence& sequence1 = mImageSequences.at(sequenceId1);
+        ImageSequence& sequence2 = mImageSequences.at(sequenceId2);
+
+        if (sequence1.alternateGroup.get() == 0 && sequence2.alternateGroup.get() == 0)
+        {
+            // create new
+            sequence1.alternateGroup = Track::createAlternateGroupId();
+            sequence2.alternateGroup = sequence1.alternateGroup;
+        }
+        else if (sequence1.alternateGroup.get() == 0 && sequence2.alternateGroup.get() != 0)
+        {
+            sequence1.alternateGroup = sequence2.alternateGroup;
+        }
+        else
+        {
+            sequence2.alternateGroup = sequence1.alternateGroup;
+        }
+
         return ErrorCode::OK;
     }
 
@@ -808,7 +827,9 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode WriterImpl::addToEquivalenceGroup(const GroupId& equivalenceGroupId, const SequenceImageId& id, const EquivalenceTimeOffset& offset)
+    ErrorCode WriterImpl::addToEquivalenceGroup(const GroupId& equivalenceGroupId,
+                                                const SequenceImageId& id,
+                                                const EquivalenceTimeOffset& offset)
     {
         if (mState != State::WRITING)
         {
@@ -880,8 +901,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode WriterImpl::setEditList(const SequenceId& sequenceId,
-                                      const EditList& editList)
+    ErrorCode WriterImpl::setEditList(const SequenceId& sequenceId, const EditList& editList)
     {
         if (mState != State::WRITING)
         {
@@ -901,11 +921,10 @@ namespace HEIF
 
         mImageSequences.at(sequenceId).editList = editList;
 
-        const auto trackId = mImageSequences.at(sequenceId).trackId;
-        auto trackBox      = mMovieBox.getTrackBox(trackId.get());
-        const auto mediaTimescale =
-            trackBox->getMediaBox().getMediaHeaderBox().getTimeScale();
-        auto editBox = createEditBox(editList, mediaTimescale);
+        const auto trackId        = mImageSequences.at(sequenceId).trackId;
+        auto trackBox             = mMovieBox.getTrackBox(trackId.get());
+        const auto mediaTimescale = trackBox->getMediaBox().getMediaHeaderBox().getTimeScale();
+        auto editBox              = createEditBox(editList, mediaTimescale);
 
         trackBox->setEditBox(editBox);
 
@@ -916,7 +935,8 @@ namespace HEIF
     /* ******************* Internal helper methods ******************* */
     /* *************************************************************** */
 
-    ErrorCode WriterImpl::isValidSequenceImage(const SequenceId& sequenceId, const SequenceImageId& sequenceImageId) const
+    ErrorCode WriterImpl::isValidSequenceImage(const SequenceId& sequenceId,
+                                               const SequenceImageId& sequenceImageId) const
     {
         if (mState != State::WRITING)
         {
@@ -1023,7 +1043,8 @@ namespace HEIF
                 const MediaData& sampleData = mMediaData.at(sample.mediaDataId);
 
                 // chunks:
-                if (sampleData.offset != nextSampleOffset || (chunks.size() && (chunks.back().sampleDescriptionIndex != sample.decoderConfigIndex)))
+                if (sampleData.offset != nextSampleOffset ||
+                    (chunks.size() && (chunks.back().sampleDescriptionIndex != sample.decoderConfigIndex)))
                 {  // sample belongs to new chunk
                     chunkOffsets.push_back(sampleData.offset);
                     SampleToChunkBox::ChunkEntry chunk{};
@@ -1056,8 +1077,7 @@ namespace HEIF
                 stbl.getTimeToSampleBox().addSampleDelta(sample.sampleDuration);
 
                 // compositionTimes:
-                if (!compositionOffsets.size() ||
-                    compositionOffsets.back().second != sample.compositionOffset)
+                if (!compositionOffsets.size() || compositionOffsets.back().second != sample.compositionOffset)
                 {
                     compositionOffsets.push_back({1, sample.compositionOffset});
                 }
@@ -1126,7 +1146,8 @@ namespace HEIF
                 UniquePtr<SampleEntryBox> sampleEntryBox;
                 if (sequence.mediaFormat == MediaFormat::AVC)
                 {
-                    ErrorCode error = makeAVCVideoSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig), sampleEntryBox);
+                    ErrorCode error =
+                        makeAVCVideoSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig), sampleEntryBox);
                     if (error != ErrorCode::OK)
                     {
                         return error;
@@ -1136,7 +1157,8 @@ namespace HEIF
                 }
                 else if (sequence.mediaFormat == MediaFormat::HEVC)
                 {
-                    ErrorCode error = makeHEVCVideoSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig), sampleEntryBox);
+                    ErrorCode error =
+                        makeHEVCVideoSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig), sampleEntryBox);
                     if (error != ErrorCode::OK)
                     {
                         return error;
@@ -1145,7 +1167,8 @@ namespace HEIF
                 }
                 else if (sequence.mediaFormat == MediaFormat::AAC)
                 {
-                    ErrorCode error = makeMP4AudioSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig), sampleEntryBox);
+                    ErrorCode error =
+                        makeMP4AudioSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig), sampleEntryBox);
                     if (error != ErrorCode::OK)
                     {
                         return error;
@@ -1171,7 +1194,8 @@ namespace HEIF
             {
                 for (const auto& entitygroup : sample.equivalenceGroups)
                 {
-                    entityGroupSamples[entitygroup.first].push_back(sample.sampleIndex);  // sampleIndexes added for debug purposes.
+                    entityGroupSamples[entitygroup.first].push_back(
+                        sample.sampleIndex);  // sampleIndexes added for debug purposes.
                     equivalenceOffsets.insert(entitygroup.second);
                 }
             }
@@ -1184,7 +1208,8 @@ namespace HEIF
 
                 for (const auto& offset : equivalenceOffsets)
                 {
-                    UniquePtr<VisualEquivalenceEntry, SampleGroupDescriptionEntry> eqivEntry(CUSTOM_NEW(VisualEquivalenceEntry, ()));
+                    UniquePtr<VisualEquivalenceEntry, SampleGroupDescriptionEntry> eqivEntry(
+                        CUSTOM_NEW(VisualEquivalenceEntry, ()));
                     eqivEntry->setTimeOffset(offset.timeOffset);
                     eqivEntry->setTimescaleMultiplier(offset.timescaleMultiplier);
                     sgpd->setDefaultLength(eqivEntry->getSize());
@@ -1214,7 +1239,8 @@ namespace HEIF
                         for (const auto& offset : equivalenceOffsets)
                         {
                             if (sample.equivalenceGroups.at(group.first).timeOffset == offset.timeOffset &&
-                                sample.equivalenceGroups.at(group.first).timescaleMultiplier == offset.timescaleMultiplier)
+                                sample.equivalenceGroups.at(group.first).timescaleMultiplier ==
+                                    offset.timescaleMultiplier)
                             {
                                 sampleGroupDescriptionIndex = i;
                                 break;
@@ -1312,7 +1338,8 @@ namespace HEIF
                 size_t defaultSize     = 0;
                 for (const auto& entry : entries)
                 {
-                    UniquePtr<SampleToMetadataItemEntry, SampleGroupDescriptionEntry> stmiEntry(CUSTOM_NEW(SampleToMetadataItemEntry, ()));
+                    UniquePtr<SampleToMetadataItemEntry, SampleGroupDescriptionEntry> stmiEntry(
+                        CUSTOM_NEW(SampleToMetadataItemEntry, ()));
                     if (canUseDefaultSize && (entry.size() != entries.begin()->size()))
                     {
                         canUseDefaultSize = false;
@@ -1417,8 +1444,7 @@ namespace HEIF
         return duration * movieTimeScale / sequence.timeBase.den;
     }
 
-    EditBox WriterImpl::createEditBox(const EditList& editList,
-                                      const uint32_t mediaTimescale) const
+    EditBox WriterImpl::createEditBox(const EditList& editList, const uint32_t mediaTimescale) const
     {
         EditBox editBox;
 
@@ -1453,8 +1479,7 @@ namespace HEIF
         return editBox;
     }
 
-    void WriterImpl::addEmptyEdit(EditListBox* editListBox,
-                                  const EditUnit& editUnit) const
+    void WriterImpl::addEmptyEdit(EditListBox* editListBox, const EditUnit& editUnit) const
     {
         EditListBox::EntryVersion0 editEntry;
 
@@ -1531,7 +1556,7 @@ namespace HEIF
         return ErrorCode::INVALID_FUNCTION_PARAMETER;
     }
 
-    ErrorCode WriterImpl::addVideoTrack(const Rational& aTimeBase, const CodingConstraints& aConstraints, SequenceId& aId)
+    ErrorCode WriterImpl::addVideoTrack(const Rational& aTimeBase, SequenceId& aId)
     {
         if (mState != State::WRITING)
         {
@@ -1563,7 +1588,7 @@ namespace HEIF
         sequence.alternateGroup    = 0;
         sequence.auxiliaryType     = "";
         sequence.anyNonSyncSample  = false;
-        sequence.codingConstraints = aConstraints;
+        sequence.codingConstraints = {};
 
         mImageSequences[sequence.id] = sequence;
 
@@ -1663,16 +1688,22 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode WriterImpl::addVideo(const SequenceId& sequenceId, const MediaDataId& mediaDataId, const SampleInfo& sampleInfo)
+    ErrorCode WriterImpl::addVideo(const SequenceId& sequenceId,
+                                   const MediaDataId& mediaDataId,
+                                   const SampleInfo& sampleInfo)
     {
         SequenceImageId sequenceImageId;
-        return addImage(sequenceId, mediaDataId, sampleInfo, sequenceImageId);  // use addImage() as internal functionality for samples is the same.
+        return addImage(sequenceId, mediaDataId, sampleInfo,
+                        sequenceImageId);  // use addImage() as internal functionality for samples is the same.
     }
 
-    ErrorCode WriterImpl::addAudio(const SequenceId& sequenceId, const MediaDataId& mediaDataId, const SampleInfo& sampleInfo)
+    ErrorCode WriterImpl::addAudio(const SequenceId& sequenceId,
+                                   const MediaDataId& mediaDataId,
+                                   const SampleInfo& sampleInfo)
     {
         SequenceImageId sequenceImageId;
-        return addImage(sequenceId, mediaDataId, sampleInfo, sequenceImageId);  // use addImage() as internal functionality for samples is the same.
+        return addImage(sequenceId, mediaDataId, sampleInfo,
+                        sequenceImageId);  // use addImage() as internal functionality for samples is the same.
     }
 
 }  // namespace HEIF

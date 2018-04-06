@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "sampletablebox.hpp"
@@ -220,8 +222,9 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
     //  First parse the box header
     parseBoxHeader(bitstr);
 
-    int64_t sampleCountMax         = -1;
-    int64_t absoluteSampleCountMax = MP4VR_ABSOLUTE_MAX_SAMPLE_COUNT;  // 4 194 304  (more than day worth of 48hz samples)
+    int64_t sampleCountMax = -1;
+    int64_t absoluteSampleCountMax =
+        MP4VR_ABSOLUTE_MAX_SAMPLE_COUNT;  // 4 194 304  (more than day worth of 48hz samples)
 
     // if there a data available in the file
     while (bitstr.numBytesLeft() > 0)
@@ -311,7 +314,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
                 // we can't update sampleCountMax here as sbgp can have less samples than total.
             }
             else if (sampleCount > sampleCountMax)
-            {  //special case, there can be less samples defined in this box, but not more
+            {  // special case, there can be less samples defined in this box, but not more
                 throw RuntimeError("Non-matching sample counts from sbgp to rest of sample table");
             }
             mSampleToGroupBoxes.push_back(move(sampleToGroupBox));
@@ -355,7 +358,8 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         sizes.push_back(mTimeToSampleBox.getSampleCount());
         sizes.push_back(mSampleSizeBox.getSampleCount());
 
-        auto lowerBound    = mSampleToChunkBox.getSampleCountLowerBound(static_cast<unsigned int>(mChunkOffsetBox.getChunkOffsets().size()));
+        auto lowerBound = mSampleToChunkBox.getSampleCountLowerBound(
+            static_cast<unsigned int>(mChunkOffsetBox.getChunkOffsets().size()));
         auto referenceSize = sizes[0];
         for (size_t c = 0; c < sizes.size(); ++c)
         {

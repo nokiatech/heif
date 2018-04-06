@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "sampletometadataitementry.hpp"
@@ -45,7 +47,8 @@ const Vector<uint32_t>& SampleToMetadataItemEntry::getItemIds() const
 
 std::uint32_t SampleToMetadataItemEntry::getSize() const
 {
-    const uint32_t size = static_cast<uint32_t>(sizeof(mMetaBoxHandlerType) + sizeof(uint32_t) + (mItemIds.size() * sizeof(uint32_t)));
+    const uint32_t size =
+        static_cast<uint32_t>(sizeof(mMetaBoxHandlerType) + sizeof(uint32_t) + (mItemIds.size() * sizeof(uint32_t)));
     return size;
 }
 

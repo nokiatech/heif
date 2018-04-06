@@ -78,7 +78,9 @@ namespace HEIF
         virtual ErrorCode addToGroup(const GroupId& groupId, const SequenceId& id);
         virtual ErrorCode addToEquivalenceGroup(const GroupId& equivalenceGroupId, const SequenceImageId& id, const EquivalenceTimeOffset& offset = {0, 1 << 8});
 
-        virtual ErrorCode addVideoTrack(const Rational& timeBase, const CodingConstraints& constraints, SequenceId& id);
+        virtual ErrorCode  setAlternateGrouping(const SequenceId& sequenceId1, const SequenceId& sequenceId2);
+
+        virtual ErrorCode addVideoTrack(const Rational& timeBase, SequenceId& id);
         virtual ErrorCode addVideo(const SequenceId& sequenceId, const MediaDataId& mediaDataId, const SampleInfo& sampleInfo);
         virtual ErrorCode addAudioTrack(const Rational& timeBase, const AudioParams& config, SequenceId& id);
         virtual ErrorCode addAudio(const SequenceId& sequenceId, const MediaDataId& mediaDataId, const SampleInfo& sampleInfo);

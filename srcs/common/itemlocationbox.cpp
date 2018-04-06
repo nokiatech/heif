@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "itemlocationbox.hpp"
@@ -309,7 +311,8 @@ const ItemLocation& ItemLocationBox::getItemLocationForID(const unsigned int ite
         return *iter;
     }
 
-    throw RuntimeError("ItemLocationBox::getItemLocationForID: invalid item ID, should be wrapped internally with hasItemIdEntry()");
+    throw RuntimeError(
+        "ItemLocationBox::getItemLocationForID: invalid item ID, should be wrapped internally with hasItemIdEntry()");
 }
 
 const ItemLocationExtent& ItemLocation::getExtent(const unsigned int i) const
@@ -326,18 +329,16 @@ const ItemLocationExtent& ItemLocation::getExtent(const unsigned int i) const
 
 ItemLocationVector::const_iterator ItemLocationBox::findItem(const std::uint32_t itemId) const
 {
-    ItemLocationVector::const_iterator iter = std::find_if(mItemLocations.cbegin(), mItemLocations.cend(),
-                                                           [itemId](const ItemLocation& itemLocation) {
-                                                               return itemLocation.getItemID() == itemId;
-                                                           });
+    ItemLocationVector::const_iterator iter =
+        std::find_if(mItemLocations.cbegin(), mItemLocations.cend(),
+                     [itemId](const ItemLocation& itemLocation) { return itemLocation.getItemID() == itemId; });
     return iter;
 }
 
 ItemLocationVector::iterator ItemLocationBox::findItem(const std::uint32_t itemId)
 {
-    ItemLocationVector::iterator iter = std::find_if(mItemLocations.begin(), mItemLocations.end(),
-                                                     [itemId](const ItemLocation& itemLocation) {
-                                                         return itemLocation.getItemID() == itemId;
-                                                     });
+    ItemLocationVector::iterator iter =
+        std::find_if(mItemLocations.begin(), mItemLocations.end(),
+                     [itemId](const ItemLocation& itemLocation) { return itemLocation.getItemID() == itemId; });
     return iter;
 }

@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "trackheaderbox.hpp"
@@ -142,13 +144,13 @@ void TrackHeaderBox::writeBox(ISOBMFF::BitStream& bitstr) const
         throw RuntimeError("TrackHeaderBox::writeBox() supports only 'tkhd' version 0 and version 1");
     }
 
-    bitstr.write32Bits(0);  //Reserved
+    bitstr.write32Bits(0);  // Reserved
     bitstr.write32Bits(0);
 
-    bitstr.write16Bits(0);                //Layer
-    bitstr.write16Bits(mAlternateGroup);  //Alternate Group
-    bitstr.write16Bits(mVolume);          //Volume
-    bitstr.write16Bits(0);                //Reserved
+    bitstr.write16Bits(0);                // Layer
+    bitstr.write16Bits(mAlternateGroup);  // Alternate Group
+    bitstr.write16Bits(mVolume);          // Volume
+    bitstr.write16Bits(0);                // Reserved
 
     for (auto value : mMatrix)
     {
@@ -191,16 +193,16 @@ void TrackHeaderBox::parseBox(ISOBMFF::BitStream& bitstr)
         mDuration = bitstr.read64Bits();
     }
 
-    bitstr.read32Bits();  //Reserved
+    bitstr.read32Bits();  // Reserved
     bitstr.read32Bits();
 
-    bitstr.read16Bits();                    //Layer
-    mAlternateGroup = bitstr.read16Bits();  //Alternate Group
-    mVolume         = bitstr.read16Bits();  //Volume
-    bitstr.read16Bits();                    //Reserved
+    bitstr.read16Bits();                    // Layer
+    mAlternateGroup = bitstr.read16Bits();  // Alternate Group
+    mVolume         = bitstr.read16Bits();  // Volume
+    bitstr.read16Bits();                    // Reserved
 
     mMatrix.clear();
-    for (int n = 9; n > 0; n--)  //Matrix[9]
+    for (int n = 9; n > 0; n--)  // Matrix[9]
     {
         mMatrix.push_back(static_cast<int32_t>(bitstr.read32Bits()));
     }

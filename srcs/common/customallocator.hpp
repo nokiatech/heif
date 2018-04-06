@@ -19,8 +19,11 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "../api/common/heifallocator.h"
 
+namespace HEIF
+{
+    class CustomAllocator;
+}
 HEIF::CustomAllocator* getDefaultAllocator();
 bool setCustomAllocator(HEIF::CustomAllocator* customAllocator);
 HEIF::CustomAllocator* getCustomAllocator();
@@ -93,48 +96,70 @@ public:
     {                                                    \
         customDestructAndDeallocateArray<class>(object); \
     }
-
+#if !defined(HEIF_GCC_ALLOCATOR_FIX)
+#define HEIF_GCC_ALLOCATOR_FIX 0
+#endif
 template <typename T>
-class Allocator : public std::allocator<T>
+class Allocator
 {
 public:
-    typedef size_t size_type;
-    typedef T* pointer;
-    typedef const T* const_pointer;
+    using value_type = T;
 
+#if HEIF_GCC_ALLOCATOR_FIX == 1
+    //GCC versions prior to 6 had incomplete, non-compliant c++11 allocator support.
+    //and require declaring all of these, which in turn causes compliant implementations to work non-optimally.
+    //Also if using 'libc++' we should not do this.
+    using size_type = std::size_t;
+    using pointer = T * ;
+    using const_pointer = const T*;
+    using reference = T&;
+    using const_reference =const T&;
     template <typename U>
     struct rebind
     {
-        typedef Allocator<U> other;
+        using other = Allocator<U>;
     };
 
-    pointer allocate(size_type n, const void* hint = 0)
+    template< class U, class... Args > void construct( U* p, Args&&... args )
     {
-        (void) hint;
-        return static_cast<pointer>(getCustomAllocator()->allocate(n, sizeof(T)));
+        ::new((void *)p) U(std::forward<Args>(args)...);
+    }
+    template< class U > void destroy( U* p )
+    {
+        p->~U();
+    }
+#endif
+
+    Allocator() noexcept
+    {
     }
 
-    void deallocate(pointer p, size_type n)
+    ~Allocator() = default;
+
+    template <class U>
+    Allocator(const Allocator<U>&) noexcept
     {
-        (void) n;
-        return getCustomAllocator()->deallocate(p);
     }
 
-    Allocator() throw()
-        : std::allocator<T>()
+    T* allocate(const std::size_t n) const
     {
+        return static_cast<T*>(customAllocate(n * sizeof(T)));
     }
-    Allocator(const Allocator& a) throw()
-        : std::allocator<T>(a)
+
+    void deallocate(T* const p, std::size_t) const noexcept
     {
+        return customDeallocate((void*)p);
+    }
+
+    template <class U>
+    bool operator==(const Allocator<U>&) const noexcept
+    {
+        return true;
     }
     template <class U>
-    Allocator(const Allocator<U>& a) throw()
-        : std::allocator<T>(a)
+    bool operator!=(const Allocator<U>&) const noexcept
     {
-    }
-    ~Allocator() throw()
-    {
+        return false;
     }
 };
 

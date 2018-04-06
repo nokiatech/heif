@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "compositiontodecodebox.hpp"
@@ -28,8 +30,7 @@ namespace
 {
     bool requires64Bits(const int64_t value)
     {
-        if ((value > std::numeric_limits<std::int32_t>::max()) ||
-            (value < std::numeric_limits<std::int32_t>::min()))
+        if ((value > std::numeric_limits<std::int32_t>::max()) || (value < std::numeric_limits<std::int32_t>::min()))
         {
             return true;
         }
@@ -94,10 +95,8 @@ std::int64_t CompositionToDecodeBox::getCompositionEndTime() const
 
 void CompositionToDecodeBox::updateVersion()
 {
-    if (requires64Bits(mCompositionToDtsShift) ||
-        requires64Bits(mLeastDecodeToDisplayDelta) ||
-        requires64Bits(mGreatestDecodeToDisplayDelta) ||
-        requires64Bits(mCompositionStartTime) ||
+    if (requires64Bits(mCompositionToDtsShift) || requires64Bits(mLeastDecodeToDisplayDelta) ||
+        requires64Bits(mGreatestDecodeToDisplayDelta) || requires64Bits(mCompositionStartTime) ||
         requires64Bits(mCompositionEndTime))
     {
         setVersion(1);

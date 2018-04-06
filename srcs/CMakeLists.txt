@@ -18,6 +18,28 @@ endif()
 project(heif LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if (USE_LIBC++)
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    include_directories(SYSTEM "/usr/include/libcxxabi/")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
+  else()
+    message("libc++ requires use of Clang.")
+  endif()
+endif()
+
+
+#verify which type of allocator we can use.
+try_compile(COMPILE_SUCCEEDED ${CMAKE_BINARY_DIR}/compile_tests SOURCES ${PROJECT_SOURCE_DIR}/../build/allocator_test.cpp CMAKE_FLAGS CXX_STANDARD 11)
+if(COMPILE_SUCCEEDED)
+  message("Allocator test passed")
+else()
+  message("Allocator test failed, enable fix")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHEIF_GCC_ALLOCATOR_FIX=1")
+endif()
+
 
 # picked from http://stackoverflow.com/a/3818084
 if(MSVC)
@@ -122,6 +144,7 @@ add_subdirectory(writer)
 if (NOT IOS)
   add_subdirectory(examples)
 endif()
+add_subdirectory(api-cpp)
 
 message(STATUS "System name       : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Project Name      : ${PROJECT_NAME}")

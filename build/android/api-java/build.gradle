@@ -1,0 +1,55 @@
+apply plugin: 'com.android.library'
+
+def projectDir = getProjectDir().absolutePath
+def rootPath = file(projectDir + "/../../../").path
+
+def javaApiSourcePath = file(rootPath + "/srcs/api-java/").path
+def javaApiJavaPath = file(javaApiSourcePath + "/java/").path
+def javaApiNativePath = file(javaApiSourcePath + "/cpp/").path
+
+android {
+    compileSdkVersion 26
+    defaultConfig {
+
+        minSdkVersion 24
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        externalNativeBuild {
+            cmake {
+                targets "heifjni"
+                abiFilters "armeabi-v7a", "arm64-v8a", "x86"
+                arguments "-DANDROID_STL=c++_shared", "-DNO_TESTS=true"
+                cppFlags "-std=c++11"
+            }
+        }
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86"
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path javaApiNativePath + "/CMakeLists.txt"
+        }
+    }
+
+    sourceSets.main {
+        java.srcDirs = [javaApiJavaPath]
+
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}

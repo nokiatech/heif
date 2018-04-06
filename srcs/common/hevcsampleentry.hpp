@@ -36,7 +36,7 @@ public:
     HevcConfigurationBox& getHevcConfigurationBox();
 
     /** @brief Create CodingConstraintsBox */
-    void createCodingConstraintsBox();
+    virtual void createCodingConstraintsBox() override;
 
     /** @brief Gets the CodingConstraintsBox
      *  @return Pointer to CodingConstraintsBox, if present. */

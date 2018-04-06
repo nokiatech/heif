@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef JPEGPARSER_H
@@ -33,19 +35,20 @@ public:
 
     /**
      * @brief parse Parse a JPEG file data to find dimensions of the contained image.
-     * @param data  JPEG data. Ownership of the data is not transferred. The caller must free the memory when it is no more required.
+     * @param data  JPEG data. Ownership of the data is not transferred. The caller must free the memory when it is no
+     * more required.
      * @param size  Size of the JPEG data in bytes.
      * @return JpegInfo struct containing parsing results. parsingoK is set to true in case parsing was successfull.
      */
-    JpegInfo parse(char* data, unsigned int size);
+    JpegInfo parse(uint8_t* data, unsigned int size);
 
 private:
-    char* mData;          ///< JPEG file data.
+    uint8_t* mData;       ///< JPEG file data.
     unsigned int mSize;   ///< JPEG file data size.
     unsigned int mIndex;  ///< Parsing index in the data.
 
     /// JPEG segment marker types.
-    enum Marker : unsigned char
+    enum Marker : uint8_t
     {
         SOF0  = 0xC0,
         SOF1  = 0xC1,
@@ -110,7 +113,8 @@ private:
     /**
      * @brief getSosSegmentSize Determine SOS segment size by scanning for the EOI marker.
      * @param size              Size of the segment in bytes.
-     * @return                  True if an EOI marker was found and segment size was calculated successfully, false otherwise.
+     * @return                  True if an EOI marker was found and segment size was calculated successfully, false
+     * otherwise.
      */
     bool getSosSegmentSize(unsigned int& size) const;
 

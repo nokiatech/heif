@@ -39,14 +39,8 @@ set(WRITER_SRCS
     writermetaimpl.cpp
     writermoovimpl.cpp
     ../common/arraydatatype.cpp
+    ../common/customallocator.cpp
     )
-
-
-if(ANDROID)
-  set(USE_LINUX_FILESTREAM 1)
-else(ANDROID)
-  set(USE_LINUX_FILESTREAM 0)
-endif(ANDROID)
 
 set(API_HDRS
     ../api/writer/heifwriter.h
@@ -81,17 +75,16 @@ macro(split_debug_info target)
   endif()
 endmacro()
 
-set(HEIF_WRITER_LIB_COMMON_DEFINES "HEIF_BUILDING_LIB" "_FILE_OFFSET_BITS=64" "_LARGEFILE64_SOURCE" "HEIF_WRITER_LIB")
-if(USE_LINUX_FILESTREAM)
-    set(HEIF_WRITER_LIB_COMMON_DEFINES ${HEIF_WRITER_LIB_COMMON_DEFINES} "HEIF_USE_LINUX_FILESTREAM")
-endif()
+set(HEIF_WRITER_LIB_COMMON_DEFINES "_FILE_OFFSET_BITS=64" "_LARGEFILE64_SOURCE" "HEIF_WRITER_LIB" $<$<BOOL:${ANDROID}>:HEIF_USE_LINUX_FILESTREAM>)
 
 add_library(${HEIF_WRITER_LIB_NAME} STATIC ${WRITER_SRCS} ${API_HDRS} ${WRITER_HDRS} $<TARGET_OBJECTS:common> )
 set_property(TARGET ${HEIF_WRITER_LIB_NAME} PROPERTY CXX_STANDARD 11)
-target_compile_definitions(${HEIF_WRITER_LIB_NAME} PRIVATE ${HEIF_WRITER_LIB_COMMON_DEFINES})
-target_include_directories(${HEIF_WRITER_LIB_NAME} PRIVATE ../common)
-target_include_directories(${HEIF_WRITER_LIB_NAME} PUBLIC ../api/common)
-target_include_directories(${HEIF_WRITER_LIB_NAME} PUBLIC ../api/writer)
+target_compile_definitions(${HEIF_WRITER_LIB_NAME} INTERFACE "HEIF_USE_STATIC_LIB"
+                                                   PRIVATE "HEIF_BUILDING_LIB"
+                                                   PRIVATE ${HEIF_WRITER_LIB_COMMON_DEFINES})
+target_include_directories(${HEIF_WRITER_LIB_NAME} PRIVATE ../common
+                                                   PUBLIC ../api/common
+                                                   PUBLIC ../api/writer)
 if (IOS)
     set_xcode_property(${HEIF_WRITER_LIB_NAME} IPHONEOS_DEPLOYMENT_TARGET "10.0")
 endif(IOS)
@@ -102,9 +95,10 @@ if(NOT IOS)
     if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
       split_debug_info(${HEIF_SHARED_WRITER_LIB_NAME})
     endif()
-    target_compile_definitions(${HEIF_SHARED_WRITER_LIB_NAME} PRIVATE "HEIF_BUILDING_DLL")
-    target_compile_definitions(${HEIF_SHARED_WRITER_LIB_NAME} PRIVATE ${HEIF_WRITER_LIB_COMMON_DEFINES})
-    target_include_directories(${HEIF_SHARED_WRITER_LIB_NAME} PRIVATE ../common)
-    target_include_directories(${HEIF_SHARED_WRITER_LIB_NAME} PUBLIC ../api/common)
-    target_include_directories(${HEIF_SHARED_WRITER_LIB_NAME} PUBLIC ../api/writer)
+    target_compile_definitions(${HEIF_SHARED_WRITER_LIB_NAME} INTERFACE "HEIF_USE_SHARED_LIB"
+                                                              PRIVATE "HEIF_BUILDING_DLL"
+                                                              PRIVATE ${HEIF_WRITER_LIB_COMMON_DEFINES})
+    target_include_directories(${HEIF_SHARED_WRITER_LIB_NAME} PRIVATE ../common
+                                                              PUBLIC ../api/common
+                                                              PUBLIC ../api/writer)
 endif(NOT IOS)

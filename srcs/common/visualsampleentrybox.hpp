@@ -66,6 +66,12 @@ public:
     const AuxiliaryTypeInfoBox* getAuxi() const;
     AuxiliaryTypeInfoBox* getAuxi();
 
+    /** @brief Create an optional HEIF CodingConstraintsBox. */
+    virtual void createCodingConstraintsBox()
+    {
+        // base class implementation intentionally empty
+    }
+
     /** @brief Gets the CodingConstraintsBox from the derived class instance
      *  @return Pointer to CodingConstraintsBox if present, nullptr if not. */
     virtual const CodingConstraintsBox* getCodingConstraintsBox() const

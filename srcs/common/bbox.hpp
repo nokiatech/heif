@@ -44,6 +44,11 @@ public:
      */
     void setLargeSize();
 
+    /**
+    * @brief getLargeSize Whether 64-bit size field (true) instead of 32-bit for the box.
+    */
+    bool getLargeSize() const;
+
     /** @brief Writes the Box structure as a bitstream.
      * This virtual method should be implemented by each class
      * that extends from Box and based on the relevant data structure

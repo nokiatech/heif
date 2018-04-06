@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "elementarystreamdescriptorbox.hpp"
@@ -78,12 +80,12 @@ namespace
         return sizeSize;
     }
 
-    void writeDecoderSpecificInfo(BitStream& bitstr, const ElementaryStreamDescriptorBox::DecoderSpecificInfo& decSpecificInfo)
+    void writeDecoderSpecificInfo(BitStream& bitstr,
+                                  const ElementaryStreamDescriptorBox::DecoderSpecificInfo& decSpecificInfo)
     {
         bitstr.write8Bits(decSpecificInfo.DecSpecificInfoTag);
         writeSize(bitstr, decSpecificInfo.size);
-        bitstr.write8BitsArray(decSpecificInfo.DecSpecificInfo,
-                               decSpecificInfo.size);
+        bitstr.write8BitsArray(decSpecificInfo.DecSpecificInfo, decSpecificInfo.size);
     }
 }  // namespace
 
@@ -183,7 +185,7 @@ void ElementaryStreamDescriptorBox::parseBox(BitStream& bitstr)
     //      Fill in struct ES_Descriptor        //
     //////////////////////////////////////////////
     mES_Descriptor.ES_DescrTag = bitstr.read8Bits();
-    if (mES_Descriptor.ES_DescrTag != 3)  //ES_DescrTag
+    if (mES_Descriptor.ES_DescrTag != 3)  // ES_DescrTag
     {
         throw RuntimeError("ElementaryStreamDescritorBox ES_Descriptor.ES_DescrTag not valid");
     }

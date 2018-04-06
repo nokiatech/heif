@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "hevcdecoderconfigrecord.hpp"
@@ -157,7 +159,8 @@ void HevcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t> &sr
     mParallelismType           = 0;
 }
 
-void HevcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t> &nalUnit, const HevcNalUnitType nalUnitType,
+void HevcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t> &nalUnit,
+                                                const HevcNalUnitType nalUnitType,
                                                 const bool arrayCompleteness)
 {
     NALArray *nalArray = nullptr;
@@ -185,7 +188,8 @@ void HevcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t> &nalUnit, 
     }
 
     startCodeLen = findStartCodeLen(nalUnit);
-    tmpNalUnit.insert(tmpNalUnit.begin(), nalUnit.cbegin() + static_cast<int>(startCodeLen), nalUnit.cend());  // copy NAL data excluding potential start code
+    tmpNalUnit.insert(tmpNalUnit.begin(), nalUnit.cbegin() + static_cast<int>(startCodeLen),
+                      nalUnit.cend());  // copy NAL data excluding potential start code
 
     // add NAL unit to the NAL unit array
     nalArray->nalList.push_back(tmpNalUnit);
@@ -271,7 +275,7 @@ void HevcDecoderConfigurationRecord::parseConfig(ISOBMFF::BitStream &bitstr)
         HevcNalUnitType nalUnitType;
         unsigned int numNalus;
 
-        arrayCompleteness = static_cast<bool>(bitstr.readBits(1));
+        arrayCompleteness = (bitstr.readBits(1) != 0);
         bitstr.readBits(1);  // reserved = 0
         nalUnitType = (HevcNalUnitType) bitstr.readBits(6);
         numNalus    = bitstr.readBits(16);
@@ -288,8 +292,8 @@ void HevcDecoderConfigurationRecord::parseConfig(ISOBMFF::BitStream &bitstr)
     }
 }
 
-void HevcDecoderConfigurationRecord::getOneParameterSet(
-    Vector<uint8_t> &byteStream, const HevcNalUnitType nalUnitType) const
+void HevcDecoderConfigurationRecord::getOneParameterSet(Vector<uint8_t> &byteStream,
+                                                        const HevcNalUnitType nalUnitType) const
 {
     for (const auto &array : mNalArray)
     {
@@ -307,14 +311,14 @@ void HevcDecoderConfigurationRecord::getOneParameterSet(
 
 uint16_t HevcDecoderConfigurationRecord::getPicWidth() const
 {
-    static const Vector<uint16_t> subWidthC = {1, 2, 2, 1};
-    return mPicWidthInLumaSamples - subWidthC.at(mChromaFormat) * (mConfWinLeftOffset + mConfWinRightOffset);
+    const uint16_t subWidthC[4] = {1, 2, 2, 1};
+    return mPicWidthInLumaSamples - subWidthC[mChromaFormat] * (mConfWinLeftOffset + mConfWinRightOffset);
 }
 
 uint16_t HevcDecoderConfigurationRecord::getPicHeight() const
 {
-    static const Vector<uint16_t> subHeightC = {1, 2, 1, 1};
-    return mPicHeightInLumaSamples - subHeightC.at(mChromaFormat) * (mConfWinTopOffset + mConfWinBottomOffset);
+    const uint16_t subHeightC[4] = {1, 2, 1, 1};
+    return mPicHeightInLumaSamples - subHeightC[mChromaFormat] * (mConfWinTopOffset + mConfWinBottomOffset);
 }
 
 uint16_t HevcDecoderConfigurationRecord::getAvgFrameRate() const

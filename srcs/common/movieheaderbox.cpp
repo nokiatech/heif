@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "movieheaderbox.hpp"
@@ -109,19 +111,19 @@ void MovieHeaderBox::writeBox(ISOBMFF::BitStream& bitstr) const
     {
         throw RuntimeError("MovieHeaderBox::writeBox() supports only 'mvhd' version 0 and version 1");
     }
-    bitstr.write32Bits(0x00010000);  //Rate
-    bitstr.write16Bits(0x0100);      //Volume
-    bitstr.write16Bits(0);           //Reserved
+    bitstr.write32Bits(0x00010000);  // Rate
+    bitstr.write16Bits(0x0100);      // Volume
+    bitstr.write16Bits(0);           // Reserved
 
-    bitstr.write32Bits(0);  //Reserved
+    bitstr.write32Bits(0);  // Reserved
     bitstr.write32Bits(0);
 
     for (unsigned int i = 0; i < MATRIX_LENGTH; ++i)
     {
-        bitstr.write32Bits(static_cast<std::uint32_t>(mMatrix.at(i)));  //Matrix[9]
+        bitstr.write32Bits(static_cast<std::uint32_t>(mMatrix.at(i)));  // Matrix[9]
     }
 
-    bitstr.write32Bits(0);  //Predefined[6]
+    bitstr.write32Bits(0);  // Predefined[6]
     bitstr.write32Bits(0);
     bitstr.write32Bits(0);
     bitstr.write32Bits(0);
@@ -160,20 +162,20 @@ void MovieHeaderBox::parseBox(ISOBMFF::BitStream& bitstr)
     {
         mDuration = bitstr.read64Bits();
     }
-    bitstr.read32Bits();  //Rate
-    bitstr.read16Bits();  //Volume
-    bitstr.read16Bits();  //Reserved
+    bitstr.read32Bits();  // Rate
+    bitstr.read16Bits();  // Volume
+    bitstr.read16Bits();  // Reserved
 
-    bitstr.read32Bits();  //Reserved
+    bitstr.read32Bits();  // Reserved
     bitstr.read32Bits();
 
     mMatrix.clear();
     for (int i = 0; i < MATRIX_LENGTH; ++i)
     {
-        mMatrix.push_back(static_cast<std::int32_t>(bitstr.read32Bits()));  //Matrix[9]
+        mMatrix.push_back(static_cast<std::int32_t>(bitstr.read32Bits()));  // Matrix[9]
     }
 
-    bitstr.read32Bits();  //Predefined[6]
+    bitstr.read32Bits();  // Predefined[6]
     bitstr.read32Bits();
     bitstr.read32Bits();
     bitstr.read32Bits();

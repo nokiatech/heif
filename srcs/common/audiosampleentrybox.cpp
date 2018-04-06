@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "audiosampleentrybox.hpp"
@@ -130,7 +132,8 @@ SamplingRateBox& AudioSampleEntryBox::getSamplingRateBox()
     }
     else
     {
-        throw RuntimeError("AudioSampleEntryBox::getSamplingRateBox Error: trying to getSamplingRateBox from version other than 1");
+        throw RuntimeError(
+            "AudioSampleEntryBox::getSamplingRateBox Error: trying to getSamplingRateBox from version other than 1");
     }
 }
 

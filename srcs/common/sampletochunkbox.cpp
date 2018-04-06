@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "sampletochunkbox.hpp"
@@ -118,14 +120,15 @@ uint32_t SampleToChunkBox::getSampleCountLowerBound(uint32_t chunkEntryCount) co
         {
             if (mRunOfChunks.at(chunkEntryIndex + 1).firstChunk <= firstChunk)
             {
-                throw RuntimeError("Invalid first_chunk value in SampleToChunkBox entry. Must be greater than previous");
+                throw RuntimeError(
+                    "Invalid first_chunk value in SampleToChunkBox entry. Must be greater than previous");
             }
 
             chunkRepetitions = mRunOfChunks.at(chunkEntryIndex + 1).firstChunk - firstChunk;
         }
         else if (chunkEntryIndex == mRunOfChunks.size() - 1)
         {
-            //handle last entry.
+            // handle last entry.
             chunkRepetitions = chunkEntryCount - mRunOfChunks.at(chunkEntryIndex).firstChunk + 1;
         }
 
@@ -168,14 +171,15 @@ void SampleToChunkBox::decodeEntries(std::uint32_t chunkEntryCount)
         {
             if (mRunOfChunks.at(chunkEntryIndex + 1).firstChunk <= firstChunk)
             {
-                throw RuntimeError("Invalid first_chunk value in SampleToChunkBox entry. Must be greater than previous");
+                throw RuntimeError(
+                    "Invalid first_chunk value in SampleToChunkBox entry. Must be greater than previous");
             }
 
             chunkRepetitions = mRunOfChunks.at(chunkEntryIndex + 1).firstChunk - firstChunk;
         }
         else if (chunkEntryIndex == mRunOfChunks.size() - 1)
         {
-            //handle last entry.
+            // handle last entry.
             chunkRepetitions = chunkEntryCount - mRunOfChunks.at(chunkEntryIndex).firstChunk + 1;
         }
 

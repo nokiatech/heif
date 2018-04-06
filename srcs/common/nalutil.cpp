@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "nalutil.hpp"
@@ -44,7 +46,8 @@ Vector<uint8_t> convertByteStreamToRBSP(const Vector<uint8_t>& byteStr)
 
     // copy NALU header
     static const size_t NALU_HEADER_LENGTH = 2;
-    dest.insert(dest.end(), byteStr.cbegin() + static_cast<int32_t>(i), byteStr.cbegin() + static_cast<int32_t>(i) + NALU_HEADER_LENGTH);
+    dest.insert(dest.end(), byteStr.cbegin() + static_cast<int32_t>(i),
+                byteStr.cbegin() + static_cast<int32_t>(i) + NALU_HEADER_LENGTH);
     i += NALU_HEADER_LENGTH;
 
     // copy rest of the data while removing start code emulation prevention bytes

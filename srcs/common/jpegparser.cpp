@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "jpegparser.hpp"
@@ -21,7 +23,7 @@ JpegParser::JpegParser()
 {
 }
 
-JpegParser::JpegInfo JpegParser::parse(char* data, const unsigned int size)
+JpegParser::JpegInfo JpegParser::parse(uint8_t* data, const unsigned int size)
 {
     JpegInfo info;
     Marker marker;
@@ -51,7 +53,8 @@ JpegParser::JpegInfo JpegParser::parse(char* data, const unsigned int size)
                 break;
             }
 
-            logInfo() << "JpegParser: SOFn marker found. Read image dimensions (WxH):" << info.imageWidth << " x " << info.imageHeight << std::endl;
+            logInfo() << "JpegParser: SOFn marker found. Read image dimensions (WxH):" << info.imageWidth << " x "
+                      << info.imageHeight << std::endl;
 
             if (info.imageHeight == 0)
             {
@@ -127,7 +130,7 @@ bool JpegParser::readNextMarker(Marker& marker)
 
     // Skip one or more 0xff bytes.
     bool foundFF = false;
-    while ((mIndex < mSize) && (mData[mIndex] == '\xff'))
+    while ((mIndex < mSize) && (mData[mIndex] == 0xff))
     {
         foundFF = true;
         ++mIndex;
@@ -149,7 +152,7 @@ bool JpegParser::getSosSegmentSize(unsigned int& size) const
     auto index = mIndex;
     while ((index + 1) < mSize)
     {
-        if ((mData[index] == '\xff') && (mData[index + 1] == static_cast<char>(Marker::EOI)))
+        if ((mData[index] == 0xff) && (mData[index + 1] == static_cast<uint8_t>(Marker::EOI)))
         {
             size = index - mIndex;
             return true;
@@ -171,49 +174,18 @@ std::uint16_t JpegParser::readUint16(const unsigned int index) const
 
 void JpegParser::printName(const Marker marker) const
 {
-    const std::map<Marker, std::string> markerNames =
-        {
-            {Marker::SOF0, "SOF0"},
-            {Marker::SOF1, "SOF1"},
-            {Marker::SOF2, "SOF2"},
-            {Marker::DHT, "DHT"},
-            {Marker::DQT, "DQT"},
-            {Marker::DRI, "DRI"},
-            {Marker::SOF3, "SOF3"},
-            {Marker::SOF5, "SOF5"},
-            {Marker::SOF6, "SOF6"},
-            {Marker::SOF7, "SOF7"},
-            {Marker::SOF9, "SOF9"},
-            {Marker::SOF10, "SOF10"},
-            {Marker::SOF11, "SOF11"},
-            {Marker::SOF13, "SOF13"},
-            {Marker::SOF14, "SOF14"},
-            {Marker::SOF15, "SOF15"},
-            {Marker::SOI, "SOI"},
-            {Marker::EOI, "EOI"},
-            {Marker::RST0, "RST0"},
-            {Marker::RST1, "RST1"},
-            {Marker::RST2, "RST2"},
-            {Marker::RST3, "RST3"},
-            {Marker::RST4, "RST4"},
-            {Marker::RST5, "RST5"},
-            {Marker::RST6, "RST6"},
-            {Marker::RST7, "RST7"},
-            {Marker::SOS, "SOS"},
-            {Marker::APP0, "APP0"},
-            {Marker::APP1, "APP1"},
-            {Marker::APP2, "APP2"},
-            {Marker::APP3, "APP3"},
-            {Marker::APP4, "APP4"},
-            {Marker::APP5, "APP5"},
-            {Marker::APP6, "APP6"},
-            {Marker::APP7, "APP7"},
-            {Marker::APP8, "APP8"},
-            {Marker::APP9, "APP9"},
-            {Marker::APP10, "APP10"},
-            {Marker::APP11, "APP11"},
-            {Marker::APP12, "APP12"},
-            {Marker::COM, "COM"}};
+    const std::map<Marker, std::string> markerNames = {
+        {Marker::SOF0, "SOF0"},   {Marker::SOF1, "SOF1"},   {Marker::SOF2, "SOF2"},   {Marker::DHT, "DHT"},
+        {Marker::DQT, "DQT"},     {Marker::DRI, "DRI"},     {Marker::SOF3, "SOF3"},   {Marker::SOF5, "SOF5"},
+        {Marker::SOF6, "SOF6"},   {Marker::SOF7, "SOF7"},   {Marker::SOF9, "SOF9"},   {Marker::SOF10, "SOF10"},
+        {Marker::SOF11, "SOF11"}, {Marker::SOF13, "SOF13"}, {Marker::SOF14, "SOF14"}, {Marker::SOF15, "SOF15"},
+        {Marker::SOI, "SOI"},     {Marker::EOI, "EOI"},     {Marker::RST0, "RST0"},   {Marker::RST1, "RST1"},
+        {Marker::RST2, "RST2"},   {Marker::RST3, "RST3"},   {Marker::RST4, "RST4"},   {Marker::RST5, "RST5"},
+        {Marker::RST6, "RST6"},   {Marker::RST7, "RST7"},   {Marker::SOS, "SOS"},     {Marker::APP0, "APP0"},
+        {Marker::APP1, "APP1"},   {Marker::APP2, "APP2"},   {Marker::APP3, "APP3"},   {Marker::APP4, "APP4"},
+        {Marker::APP5, "APP5"},   {Marker::APP6, "APP6"},   {Marker::APP7, "APP7"},   {Marker::APP8, "APP8"},
+        {Marker::APP9, "APP9"},   {Marker::APP10, "APP10"}, {Marker::APP11, "APP11"}, {Marker::APP12, "APP12"},
+        {Marker::COM, "COM"}};
 
     if (markerNames.count(marker))
     {

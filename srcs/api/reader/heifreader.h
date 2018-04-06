@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef HEIFREADER_H
@@ -14,7 +16,7 @@
 
 #include <stdint.h>
 #include "heifallocator.h"
-#include "heifcommondatatypes.h"
+#include "heifexport.h"
 #include "heifreaderdatatypes.h"
 
 namespace HEIF
@@ -157,7 +159,8 @@ namespace HEIF
         virtual ErrorCode getPlaybackDurationInSecs(SequenceId sequenceId, double& duration) const = 0;
 
         /** Get an array of items in MetaBox having the requested type.
-         *  @param [in]  itemType  Four-character code of the item type (e.g. 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1', 'iden')
+         *  @param [in]  itemType  Four-character code of the item type (e.g. 'hvc1', 'iovl', 'grid', 'Exif', 'mime',
+         * 'hvt1', 'iden')
          *  @param [out] imageIds  Found items.
          *                         An empty Array if no items are found.
          *  @pre initialize() has been called successfully.
@@ -171,7 +174,9 @@ namespace HEIF
          *                          An empty Array if no items are found.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_FUNCTION_PARAMETER, INVALID_SEQUENCE_ID */
-        virtual ErrorCode getItemListByType(SequenceId sequenceId, TrackSampleType itemType, Array<SequenceImageId>& imageIds) const = 0;
+        virtual ErrorCode getItemListByType(SequenceId sequenceId,
+                                            TrackSampleType itemType,
+                                            Array<SequenceImageId>& imageIds) const = 0;
 
         /** Get an array of master image items of the image collection.
          *  @param [out] imageIds  Found items, if any. The order of the item ids are as present in the file.
@@ -188,7 +193,8 @@ namespace HEIF
 
         /** Get type of an item.
          *  @param [in]  itemId Id of an item in the image collection.
-         *  @param [out] type   Four-character code of the item type (e.g. 'hvc1', 'iovl', 'grid', 'Exif', 'mime', 'hvt1', 'iden')
+         *  @param [out] type   Four-character code of the item type (e.g. 'hvc1', 'iovl', 'grid', 'Exif', 'mime',
+         * 'hvt1', 'iden')
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
         virtual ErrorCode getItemType(ImageId itemId, FourCC& type) const = 0;
@@ -209,7 +215,8 @@ namespace HEIF
          *                             An empty Array if no items are found.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
-        virtual ErrorCode getReferencedFromItemListByType(ImageId fromItemId, FourCC referenceType,
+        virtual ErrorCode getReferencedFromItemListByType(ImageId fromItemId,
+                                                          FourCC referenceType,
                                                           Array<ImageId>& itemIds) const = 0;
 
         /** Get items which are referencing the given item with a certain type of reference.
@@ -220,7 +227,8 @@ namespace HEIF
          *                             An empty Array if no items are found.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
-        virtual ErrorCode getReferencedToItemListByType(ImageId toItemId, FourCC referenceType,
+        virtual ErrorCode getReferencedToItemListByType(ImageId toItemId,
+                                                        FourCC referenceType,
                                                         Array<ImageId>& itemIds) const = 0;
 
         /** Get the ID of the primary item of the metabox/file.
@@ -231,32 +239,41 @@ namespace HEIF
 
         /** Get item data.
          *  Item data does not contain initialization or configuration data (i.e. decoder configuration records).
-         *  By default nal-length values of 'hvc1'/'avc1' type encoded image data is substituted with bytestream headers.
-         *  For protected items pure data is returned always. Information how to handle such data is available from
-         *  getItemProtectionScheme() which returns related 'sinf' box as whole. Note that getItemData() is the only reader
-         *  API method which can be used for requesting data of such items.
+         *  By default nal-length values of 'hvc1'/'avc1' type encoded image data is substituted with bytestream
+         * headers. For protected items pure data is returned always. Information how to handle such data is available
+         * from getItemProtectionScheme() which returns related 'sinf' box as whole. Note that getItemData() is the only
+         * reader API method which can be used for requesting data of such items.
          *  @param [in]      imageId           Item id of the image.
          *  @param [in,out]  memoryBuffer      Memory buffer where  data is to be written to.
          *  @param [in,out]  memoryBufferSize  Memory buffer size.
-         *  @param [in]      bytestreamHeaders Optional - by default true. Whether to substitute H.264/H.265 nal-lenght values with bytestream header (0001).
+         *  @param [in]      bytestreamHeaders Optional - by default true. Whether to substitute H.264/H.265 nal-lenght
+         * values with bytestream header (0001).
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, FILE_READ_ERROR */
-        virtual ErrorCode getItemData(ImageId imageId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders = true) const = 0;
+        virtual ErrorCode getItemData(ImageId imageId,
+                                      uint8_t* memoryBuffer,
+                                      uint64_t& memoryBufferSize,
+                                      bool bytestreamHeaders = true) const = 0;
 
         /** Get item data for a sample/image in an image sequence.
          *  Item data does not contain initialization or configuration data (i.e. decoder configuration records).
-         *  By default nal-length values of 'hvc1'/'avc1' type encoded image data is substituted with bytestream headers.
-         *  For protected items pure data is returned always. Information how to handle such data is available from
-         *  getItemProtectionScheme() which returns related 'sinf' box as whole. Note that getItemData() is the only reader
-         *  API method which can be used for requesting data of such items.
+         *  By default nal-length values of 'hvc1'/'avc1' type encoded image data is substituted with bytestream
+         * headers. For protected items pure data is returned always. Information how to handle such data is available
+         * from getItemProtectionScheme() which returns related 'sinf' box as whole. Note that getItemData() is the only
+         * reader API method which can be used for requesting data of such items.
          *  @param [in]  sequenceId            Image sequence ID (track ID).
          *  @param [in]  imageId               Identifier of an image in the sequence (a sample).
          *  @param [in,out] memoryBuffer       Memory buffer where  data is to be written to.
          *  @param [in,out] memoryBufferSize   Memory buffer size.
-         *  @param [in]  bytestreamHeaders     Optional - by default true. Whether to substitute H.264/H.265 nal-lenght values with bytestream header (0001).
+         *  @param [in]  bytestreamHeaders     Optional - by default true. Whether to substitute H.264/H.265 nal-lenght
+         * values with bytestream header (0001).
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_ITEM_ID */
-        virtual ErrorCode getItemData(SequenceId sequenceId, SequenceImageId imageId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders = true) const = 0;
+        virtual ErrorCode getItemData(SequenceId sequenceId,
+                                      SequenceImageId imageId,
+                                      uint8_t* memoryBuffer,
+                                      uint64_t& memoryBufferSize,
+                                      bool bytestreamHeaders = true) const = 0;
 
         /** Get data of an image overlay item (item type 'iovl').
          *  @param [in]  imageId   Id of Image overlay item
@@ -366,7 +383,8 @@ namespace HEIF
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, PROTECTED_ITEM, UNSUPPORTED_CODE_TYPE,
          *                     BUFFER_SIZE_TOO_SMALL */
         virtual ErrorCode getItemDataWithDecoderParameters(ImageId imageId,
-                                                           char* memoryBuffer, uint64_t& memoryBufferSize) const = 0;
+                                                           uint8_t* memoryBuffer,
+                                                           uint64_t& memoryBufferSize) const = 0;
 
         /** Get data of an image sequence image.
          *  This method shall be used only for 'hvc1' or 'avc1' type images.
@@ -377,8 +395,10 @@ namespace HEIF
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID, UNSUPPORTED_CODE_TYPE,
          *                     BUFFER_SIZE_TOO_SMALL */
-        virtual ErrorCode getItemDataWithDecoderParameters(SequenceId sequenceId, SequenceImageId imageId,
-                                                           char* memoryBuffer, uint64_t& memoryBufferSize) const = 0;
+        virtual ErrorCode getItemDataWithDecoderParameters(SequenceId sequenceId,
+                                                           SequenceImageId imageId,
+                                                           uint8_t* memoryBuffer,
+                                                           uint64_t& memoryBufferSize) const = 0;
 
         /** Get Protection Scheme Information Box for a protected item.
          *  @param [in] imageId               Item id.
@@ -388,7 +408,8 @@ namespace HEIF
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, UNPROTECTED_ITEM, BUFFER_SIZE_TOO_SMALL]
          */
         virtual ErrorCode getItemProtectionScheme(ImageId imageId,
-                                                  char* memoryBuffer, uint64_t& memoryBufferSize) const = 0;
+                                                  uint8_t* memoryBuffer,
+                                                  uint64_t& memoryBufferSize) const = 0;
 
         /** Get display timestamp for each item of a track/sequence.
          *  @param [in]  sequenceId Image sequence ID (track ID).
@@ -404,18 +425,20 @@ namespace HEIF
          *  @param [out] timestamps Array of timestamps. For non-output samples, an empty Array.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID */
-        virtual ErrorCode getTimestampsOfItem(SequenceId sequenceId, SequenceImageId imageId, Array<uint64_t>& timestamps) const = 0;
+        virtual ErrorCode getTimestampsOfItem(SequenceId sequenceId,
+                                              SequenceImageId imageId,
+                                              Array<int64_t>& timestamps) const = 0;
 
         /** Get items in decoding order.
          *  @param [in]  sequenceId        Image sequence ID (track ID).
-         *  @param [out] decodingOrder     TimestampIDPair struct of <display timestamp in milliseconds, sample id> pairs.
-         *                                 Also complete decoding dependencies are listed here. If an sample ID is present
-         *                                 as a decoding dependency for a succeeding frame, its timestamp is set to 0xffffffff.
-         *                                 Array is sorted by composition time.
+         *  @param [out] decodingOrder     TimestampIDPair struct of <display timestamp in milliseconds, sample id>
+         * pairs. Also complete decoding dependencies are listed here. If an sample ID is present as a decoding
+         * dependency for a succeeding frame, its timestamp is set to 0xffffffff. Array is sorted by composition time.
          *                                 Timestamps in milliseconds. Timestamp truncated integer from float.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID */
-        virtual ErrorCode getItemsInDecodingOrder(SequenceId sequenceId, Array<TimestampIDPair>& decodingOrder) const = 0;
+        virtual ErrorCode getItemsInDecodingOrder(SequenceId sequenceId,
+                                                  Array<TimestampIDPair>& decodingOrder) const = 0;
 
         /** Retrieve decoding dependencies for given imageId, in decoding order.
          *  This method should be used to retrieve referenced samples of a sample in a track.
@@ -425,14 +448,16 @@ namespace HEIF
          *                             For images that has no dependencies, this method returns imageId itself.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID */
-        virtual ErrorCode getDecodeDependencies(SequenceId sequenceId, SequenceImageId imageId, Array<SequenceImageId>& dependencies) const = 0;
+        virtual ErrorCode getDecodeDependencies(SequenceId sequenceId,
+                                                SequenceImageId imageId,
+                                                Array<SequenceImageId>& dependencies) const = 0;
 
         /** Get coding type for image collection image.
          *  @param [in]  imageId Identifier of an image item.
          *  @param [out] type    Decoder code type, e.g. "hvc1" or "avc1".
          *  @pre initialize() has been called successfully.
-         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID. INVALID_ITEM_ID is also returned in case the item ID exists,
-         *          but it is a grid or overlay image item without own encoded data. */
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID. INVALID_ITEM_ID is also returned in case the item ID
+         * exists, but it is a grid or overlay image item without own encoded data. */
         virtual ErrorCode getDecoderCodeType(ImageId imageId, FourCC& type) const = 0;
 
         /** Get decoder code type for an image/sample.
@@ -446,12 +471,13 @@ namespace HEIF
         /** Get decoder configuration record parameter sets.
          *  The item must be a decodable image item, e.g. 'hvc1', 'avc1'.
          *  This method should not be called for items which have no own encoded data, like identity derived images
-         *  (type 'iden'), image overlay and grid derived images. Calling the method for such item id will return error code INVALID_ITEM_ID.
+         *  (type 'iden'), image overlay and grid derived images. Calling the method for such item id will return error
+         * code INVALID_ITEM_ID.
          *  @param [in]  imageId       Identifier of an image item.
          *  @param [out] decoderInfos  DecoderConfiguration struct containing:
          *                             DecoderConfigId             Property Id for decoder configs
-         *                             Array<DecoderSpecificInfo>  Array of decoder configs with type DecoderSpecInfoType
-         *                                                         and actual payload for each.
+         *                             Array<DecoderSpecificInfo>  Array of decoder configs with type
+         * DecoderSpecInfoType and actual payload for each.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
         virtual ErrorCode getDecoderParameterSets(ImageId imageId, DecoderConfiguration& decoderInfos) const = 0;
@@ -464,7 +490,8 @@ namespace HEIF
          *                             AVC_SPS, AVC_PPS, HEVC_VPS, HEVC_SPS, HEVC_PPS
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID */
-        virtual ErrorCode getDecoderParameterSets(SequenceId sequenceId, SequenceImageId imageId,
+        virtual ErrorCode getDecoderParameterSets(SequenceId sequenceId,
+                                                  SequenceImageId imageId,
                                                   Array<DecoderSpecificInfo>& decoderInfos) const = 0;
 
     protected:

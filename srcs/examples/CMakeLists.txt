@@ -10,14 +10,17 @@
 
 set(EXAMPLE_EXE example)
 
-set(EXAMPLE_SRCS
-    example.cpp)
+set(EXAMPLE_SRCS example.cpp)
 
 add_executable(${EXAMPLE_EXE} ${EXAMPLE_SRCS})
 
 set_property(TARGET ${EXAMPLE_EXE} PROPERTY CXX_STANDARD 11)
-target_compile_definitions(${EXAMPLE_EXE} PUBLIC HEIF_USE_STATIC_LIB)
+
 target_link_libraries(${EXAMPLE_EXE} heif_static heif_writer_static)
 
-#target_link_libraries(${EXAMPLE_EXE} heif_shared heif_writer_shared)
 
+add_executable(${EXAMPLE_EXE}_shared ${EXAMPLE_SRCS})
+
+set_property(TARGET ${EXAMPLE_EXE}_shared PROPERTY CXX_STANDARD 11)
+
+target_link_libraries(${EXAMPLE_EXE}_shared heif_shared heif_writer_shared)

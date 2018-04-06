@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "sampledescriptionbox.hpp"
@@ -34,7 +36,9 @@ void SampleDescriptionBox::writeBox(ISOBMFF::BitStream& bitstr) const
     {
         if (!entry)
         {
-            throw RuntimeError("SampleDescriptionBox::writeBox can not write file because an unknown sample entry type was present when the file was read.");
+            throw RuntimeError(
+                "SampleDescriptionBox::writeBox can not write file because an unknown sample entry type was present "
+                "when the file was read.");
         }
         entry->writeBox(bitstr);
     }
@@ -68,7 +72,8 @@ void SampleDescriptionBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else if (boxType == "mp4a")
         {
-            UniquePtr<MP4AudioSampleEntryBox, SampleEntryBox> mp4AudioSampleEntry(CUSTOM_NEW(MP4AudioSampleEntryBox, ()));
+            UniquePtr<MP4AudioSampleEntryBox, SampleEntryBox> mp4AudioSampleEntry(
+                CUSTOM_NEW(MP4AudioSampleEntryBox, ()));
             mp4AudioSampleEntry->parseBox(entryBitStream);
             mIndex.push_back(std::move(mp4AudioSampleEntry));
         }

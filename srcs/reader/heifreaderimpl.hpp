@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef HEIFREADERIMPL_HPP
@@ -91,7 +93,9 @@ namespace HEIF
         virtual ErrorCode getItemListByType(const FourCC& itemType, Array<ImageId>& itemIds) const;
 
         /// @see Reader::getItemListByType()
-        virtual ErrorCode getItemListByType(SequenceId sequenceId, TrackSampleType itemType, Array<SequenceImageId>& itemIds) const;
+        virtual ErrorCode getItemListByType(SequenceId sequenceId,
+                                            TrackSampleType itemType,
+                                            Array<SequenceImageId>& itemIds) const;
 
         /// @see Reader::getItemType()
         virtual ErrorCode getItemType(ImageId itemId, FourCC& type) const;
@@ -100,11 +104,11 @@ namespace HEIF
         virtual ErrorCode getItemType(SequenceId sequenceId, SequenceImageId itemId, FourCC& type) const;
 
         /// @see Reader::getReferencedFromItemListByType()
-        virtual ErrorCode getReferencedFromItemListByType(ImageId, FourCC referenceType,
-                                                          Array<ImageId>& itemIds) const;
+        virtual ErrorCode getReferencedFromItemListByType(ImageId, FourCC referenceType, Array<ImageId>& itemIds) const;
 
         /// @see Reader::getReferencedToItemListByType()
-        virtual ErrorCode getReferencedToItemListByType(ImageId toItemId, FourCC referenceType,
+        virtual ErrorCode getReferencedToItemListByType(ImageId toItemId,
+                                                        FourCC referenceType,
                                                         Array<ImageId>& itemIds) const;
 
         /// @see Reader::getPrimaryItem()
@@ -113,10 +117,17 @@ namespace HEIF
         virtual ErrorCode getItemLength(const MetaBox& metaBox, const ItemId itemId, std::uint64_t& itemLength) const;
 
         /// @see Reader::getItemData()
-        virtual ErrorCode getItemData(ImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders = true) const;
+        virtual ErrorCode getItemData(ImageId itemId,
+                                      uint8_t* memoryBuffer,
+                                      uint64_t& memoryBufferSize,
+                                      bool bytestreamHeaders = true) const;
 
         /// @see Reader::getItemData()
-        virtual ErrorCode getItemData(SequenceId sequenceId, SequenceImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize, bool bytestreamHeaders = true) const;
+        virtual ErrorCode getItemData(SequenceId sequenceId,
+                                      SequenceImageId itemId,
+                                      uint8_t* memoryBuffer,
+                                      uint64_t& memoryBufferSize,
+                                      bool bytestreamHeaders = true) const;
 
         /// @see Reader::getItem()
         virtual ErrorCode getItem(ImageId itemId, Overlay& iovlItem) const;
@@ -162,26 +173,35 @@ namespace HEIF
 
         /// @see Reader::getItemDataWithDecoderParameters()
         virtual ErrorCode getItemDataWithDecoderParameters(ImageId itemId,
-                                                           char* memoryBuffer, uint64_t& memoryBufferSize) const;
+                                                           uint8_t* memoryBuffer,
+                                                           uint64_t& memoryBufferSize) const;
 
         /// @see Reader::getItemDataWithDecoderParameters()
-        virtual ErrorCode getItemDataWithDecoderParameters(SequenceId sequenceId, SequenceImageId itemId,
-                                                           char* memoryBuffer, uint64_t& memoryBufferSize) const;
+        virtual ErrorCode getItemDataWithDecoderParameters(SequenceId sequenceId,
+                                                           SequenceImageId itemId,
+                                                           uint8_t* memoryBuffer,
+                                                           uint64_t& memoryBufferSize) const;
 
         /// @see Reader::getItemProtectionScheme()
-        virtual ErrorCode getItemProtectionScheme(ImageId itemId, char* memoryBuffer, uint64_t& memoryBufferSize) const;
+        virtual ErrorCode getItemProtectionScheme(ImageId itemId,
+                                                  uint8_t* memoryBuffer,
+                                                  uint64_t& memoryBufferSize) const;
 
         /// @see Reader::getItemTimestamps()
         virtual ErrorCode getItemTimestamps(SequenceId sequenceId, Array<TimestampIDPair>& timestamps) const;
 
         /// @see Reader::getTimestampsOfItem()
-        virtual ErrorCode getTimestampsOfItem(SequenceId sequenceId, SequenceImageId itemId, Array<uint64_t>& timestamps) const;
+        virtual ErrorCode getTimestampsOfItem(SequenceId sequenceId,
+                                              SequenceImageId itemId,
+                                              Array<int64_t>& timestamps) const;
 
         /// @see Reader::getItemsInDecodingOrder()
         virtual ErrorCode getItemsInDecodingOrder(SequenceId sequenceId, Array<TimestampIDPair>& decodingOrder) const;
 
         /// @see Reader::getDecodeDependencies()
-        virtual ErrorCode getDecodeDependencies(SequenceId sequenceId, SequenceImageId itemId, Array<SequenceImageId>& dependencies) const;
+        virtual ErrorCode getDecodeDependencies(SequenceId sequenceId,
+                                                SequenceImageId itemId,
+                                                Array<SequenceImageId>& dependencies) const;
 
         /// @see Reader::getDecoderCodeType()
         virtual ErrorCode getDecoderCodeType(ImageId itemId, FourCC& type) const;
@@ -193,7 +213,9 @@ namespace HEIF
         virtual ErrorCode getDecoderParameterSets(ImageId itemId, DecoderConfiguration& decoderInfos) const;
 
         /// @see Reader::getDecoderParameterSets()
-        virtual ErrorCode getDecoderParameterSets(SequenceId sequenceId, SequenceImageId itemId, Array<DecoderSpecificInfo>& decoderInfos) const;
+        virtual ErrorCode getDecoderParameterSets(SequenceId sequenceId,
+                                                  SequenceImageId itemId,
+                                                  Array<DecoderSpecificInfo>& decoderInfos) const;
 
     private:
         enum class State
@@ -305,14 +327,14 @@ namespace HEIF
          *  @param [in] size  size of data to be modified.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, FILE_READ_ERROR */
-        ErrorCode processAvcItemData(char* data, uint64_t& memoryBufferSize) const;
+        ErrorCode processAvcItemData(uint8_t* data, uint64_t& memoryBufferSize) const;
 
         /** Process item data from HEVC bitstream
          *  @param [in] data  char pointer to Raw HEVC bitstream data.
          *  @param [in] size  size of data to be modified.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, FILE_READ_ERROR */
-        ErrorCode processHevcItemData(char* data, uint64_t& memoryBufferSize) const;
+        ErrorCode processHevcItemData(uint8_t* data, uint64_t& memoryBufferSize) const;
 
         /* ********************************************************************** */
         /* *********************** Meta-specific section  *********************** */
@@ -432,7 +454,7 @@ namespace HEIF
          * @param [out] data Item Data
          * @pre mInputStream is good
          * @return ErrorCode: OK, INVALID_ITEM_ID, FILE_READ_ERROR */
-        ErrorCode readItem(const MetaBox& metaBox, ItemId itemId, char* memorybuffer) const;
+        ErrorCode readItem(const MetaBox& metaBox, ItemId itemId, uint8_t* memorybuffer) const;
 
         /**
          * @brief Convert information extracted from the MetaBox to fixed-sized arrays for public API.
@@ -451,26 +473,29 @@ namespace HEIF
         /// Reader internal information about each sample.
         struct SampleInfo
         {
-            std::uint32_t decodingOrder = 0;        ///< Decoding order/sequence number of the sample
-            Vector<std::int64_t> compositionTimes;  ///< Timestamps of the sample. Possible edit list is considered here.
-            std::uint64_t dataOffset = 0;           ///< File offset of sample data in bytes
-            std::uint32_t dataLength = 0;           ///< Length of same in bytes
-            std::uint32_t width      = 0;           ///< Width of the frame
-            std::uint32_t height     = 0;           ///< Height of the frame
-            IdVector decodeDependencies;            ///< Direct decoding dependencies
+            std::uint32_t decodingOrder = 0;  ///< Decoding order/sequence number of the sample
+            Vector<std::int64_t>
+                compositionTimes;          ///< Timestamps of the sample. Possible edit list is considered here.
+            std::uint64_t dataOffset = 0;  ///< File offset of sample data in bytes
+            std::uint32_t dataLength = 0;  ///< Length of same in bytes
+            std::uint32_t width      = 0;  ///< Width of the frame
+            std::uint32_t height     = 0;  ///< Height of the frame
+            IdVector decodeDependencies;   ///< Direct decoding dependencies
         };
         typedef Vector<SampleInfo> SampleInfoVector;
 
         struct TrackInfo
         {
-            SampleInfoVector samples;                                   ///< Information about each sample in the TrackBox
-            std::uint32_t width;                                        ///< display width in pixels, from 16.16 fixed point in TrackHeaderBox
-            std::uint32_t height;                                       ///< display height in pixels, from 16.16 fixed point in TrackHeaderBox
-            Vector<int32_t> matrix;                                     ///< transformation matrix of the track (from track header box)
-            double duration;                                            ///< Track duration in seconds, from TrackHeaderBox
-            DecodePts::PMap pMap;                                       ///< Display timestamps, from edit list
-            Map<SampleDescriptionIndex, CleanAperture> clapProperties;  ///< Clean aperture data from sample description entries
-            Map<SampleDescriptionIndex, AuxiliaryType> auxiProperties;  ///< Clean aperture data from sample description entries
+            SampleInfoVector samples;  ///< Information about each sample in the TrackBox
+            std::uint32_t width;       ///< display width in pixels, from 16.16 fixed point in TrackHeaderBox
+            std::uint32_t height;      ///< display height in pixels, from 16.16 fixed point in TrackHeaderBox
+            Vector<int32_t> matrix;    ///< transformation matrix of the track (from track header box)
+            double duration;           ///< Track duration in seconds, from TrackHeaderBox
+            DecodePts::PMap pMap;      ///< Display timestamps, from edit list
+            Map<SampleDescriptionIndex, CleanAperture>
+                clapProperties;  ///< Clean aperture data from sample description entries
+            Map<SampleDescriptionIndex, AuxiliaryType>
+                auxiProperties;  ///< Clean aperture data from sample description entries
         };
         Map<SequenceId, TrackInfo> mTrackInfo;  ///< Reader internal information about each TrackBox
 
@@ -484,8 +509,8 @@ namespace HEIF
         /**
          * @param sequenceId      ID of the track containing the sample.
          * @param sequenceImageId ID of the sample/image.
-         * @return OK if the image/sample is a valid sample on the sequenceId given.  INVALID_SEQUENCE_IMAGE_ID or INVALID_SEQUENCE_ID
-         *         otherwise. UNINITIALIZED if initialize() had not been called.
+         * @return OK if the image/sample is a valid sample on the sequenceId given.  INVALID_SEQUENCE_IMAGE_ID or
+         * INVALID_SEQUENCE_ID otherwise. UNINITIALIZED if initialize() had not been called.
          */
         ErrorCode isValidSample(SequenceId sequenceId, SequenceImageId sequenceImageId) const;
 
@@ -526,7 +551,8 @@ namespace HEIF
          * @param trackId            ID of the TrackBox to look references to
          * @param referenceType      4CC reference type to look for
          * @return True if a reference was found */
-        bool isAnyLinkedToWithType(const TrackPropertiesMap& trackPropertiesMap, SequenceId trackId,
+        bool isAnyLinkedToWithType(const TrackPropertiesMap& trackPropertiesMap,
+                                   SequenceId trackId,
                                    FourCCInt referenceType) const;
 
         /**
@@ -535,7 +561,8 @@ namespace HEIF
          * @param sgpd             SampleGroupDescriptionBox of the TrackBox
          * @param sampleToGroupBox SampleToGroupBox of the TrackBox
          * @return Item IDs of decoding dependencies */
-        Vector<ItemId> getSampleDirectDependencies(ItemId itemId, const SampleGroupDescriptionBox* sgpd,
+        Vector<ItemId> getSampleDirectDependencies(ItemId itemId,
+                                                   const SampleGroupDescriptionBox* sgpd,
                                                    const SampleToGroupBox& sampleToGroupBox) const;
 
         /**
@@ -563,9 +590,9 @@ namespace HEIF
         Array<SampleVisualEquivalence> getEquivalenceGroups(TrackBox* trackBox) const;
 
         /**
-        * @brief Extract information about sample SampleToMetadataItemEntry() groups ('stmi') for the reader interface.
-        * @param [in] trackBox TrackBox to extract data from.
-        * @return Sample to Metadata information. */
+         * @brief Extract information about sample SampleToMetadataItemEntry() groups ('stmi') for the reader interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return Sample to Metadata information. */
         Array<SampleToMetadataItem> getSampleToMetadataItemGroups(TrackBox* trackBox) const;
 
         /**
@@ -588,7 +615,9 @@ namespace HEIF
          * @param pMap Presentation map for the track
          * @param maxSampleSize max size of samples for track.
          * @return SampleInfoVector containing information about every sample of the track */
-        SampleInfoVector makeSampleInfoVector(TrackBox* trackBox, const DecodePts::PMap& pMap, std::uint64_t& maxSampleSize) const;
+        SampleInfoVector makeSampleInfoVector(TrackBox* trackBox,
+                                              const DecodePts::PMap& pMap,
+                                              std::uint64_t& maxSampleSize) const;
 
         /**
          * @brief Extract information about samples for the reader interface
@@ -601,19 +630,24 @@ namespace HEIF
          * @param sequenceId        ID of the track
          * @param itemDecodingOrder Items/samples to get decoding dependencies for
          * @return DecodingOrderVector with decoding dependencies */
-        Vector<TimestampIDPair> addDecodingDependencies(SequenceId sequenceId, const Vector<TimestampIDPair>& itemDecodingOrder) const;
+        Vector<TimestampIDPair> addDecodingDependencies(SequenceId sequenceId,
+                                                        const Vector<TimestampIDPair>& itemDecodingOrder) const;
 
         /**
          * @brief Load frame data for a sample/item/frame from the input stream
          * @param [in]  frameIndex 0-based index of the sample (/item ID)
          * @param [in]  trackInfo  TrackInfo containing the sample
-         * @param [in]  memorybuffer  memory buffer pointer to write data to 
+         * @param [in]  memorybuffer  memory buffer pointer to write data to
          * @param [in/out]  memorybuffersize   memory buffer size with written data (or required size if too small).
          * @return ErrorCode: OK, FILE_READ_ERROR, INVALID_ITEM_ID */
-        ErrorCode getTrackFrameData(unsigned int frameIndex, const TrackInfo& trackInfo, char* memorybuffer, uint64_t& memorybuffersize) const;
+        ErrorCode getTrackFrameData(unsigned int frameIndex,
+                                    const TrackInfo& trackInfo,
+                                    uint8_t* memorybuffer,
+                                    uint64_t& memorybuffersize) const;
 
         /**
-         * @brief convertTrackInformation Convert information extracted from the MovieBox to fixed-size arrays for the public API.
+         * @brief convertTrackInformation Convert information extracted from the MovieBox to fixed-size arrays for the
+         * public API.
          * @param trackPropertiesMap Data extracted from the MovieBox during initialization.
          * @return TrackInformation structs for track in the file.
          */
@@ -697,9 +731,9 @@ namespace HEIF
     CleanAperture makeClap(const CleanApertureBox* clapBox);
 
     /**
-    * @brief Convert AuxiliaryTypeInfoBox to Reader::AuxProperty
-    * @param auxiBox Pointer to input AuxiliaryTypeInfoBox
-    * @return A AuxProperty filled with data from AuxiliaryTypeInfoBox */
+     * @brief Convert AuxiliaryTypeInfoBox to Reader::AuxProperty
+     * @param auxiBox Pointer to input AuxiliaryTypeInfoBox
+     * @return A AuxProperty filled with data from AuxiliaryTypeInfoBox */
     AuxiliaryType makeAuxi(const AuxiliaryTypeInfoBox* auxiBox);
 
     /**

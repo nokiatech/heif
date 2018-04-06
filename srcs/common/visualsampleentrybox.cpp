@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "visualsampleentrybox.hpp"
@@ -21,9 +23,7 @@
 /// Length of compressorname string in VisualSampleEntry class
 static const unsigned int COMPRESSORNAME_STRING_LENGTH = 31;
 
-VisualSampleEntryBox::VisualSampleEntryBox(
-    FourCCInt codingName,
-    const String& compressorName)
+VisualSampleEntryBox::VisualSampleEntryBox(FourCCInt codingName, const String& compressorName)
     : SampleEntryBox(codingName)
     , mWidth(0)
     , mHeight(0)
@@ -35,8 +35,7 @@ VisualSampleEntryBox::VisualSampleEntryBox(
     mCompressorName.resize(COMPRESSORNAME_STRING_LENGTH, '\0');  // Make fixed length
 }
 
-VisualSampleEntryBox::VisualSampleEntryBox(
-    const VisualSampleEntryBox& box)
+VisualSampleEntryBox::VisualSampleEntryBox(const VisualSampleEntryBox& box)
     : SampleEntryBox(box)
     , mWidth(box.mWidth)
     , mHeight(box.mHeight)

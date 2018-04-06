@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #include "writerimpl.hpp"
@@ -143,10 +145,11 @@ namespace HEIF
             mFileTypeBox.writeBox(output);
             writeBitstream(output, mFile);
 
-            // Write Media Data Box 'mdat' header. We can not know input data size, so use 64-bit large size field for the box.
+            // Write Media Data Box 'mdat' header. We can not know input data size, so use 64-bit large size field for
+            // the box.
             mMdatOffset = static_cast<uint64_t>(mFile.tellp());
             output.clear();
-            output.write32Bits(1);                              // size field, value 1 implies using largesize field instead.
+            output.write32Bits(1);  // size field, value 1 implies using largesize field instead.
             output.write32Bits(FourCCInt("mdat").getUInt32());  // boxtype field
             output.write64Bits(0);                              // largesize field
             writeBitstream(output, mFile);
@@ -176,7 +179,9 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        if (((aData.mediaFormat == MediaFormat::AVC) || (aData.mediaFormat == MediaFormat::HEVC) || (aData.mediaFormat == MediaFormat::AAC)) && !mAllDecoderConfigs.count(aData.decoderConfigId))
+        if (((aData.mediaFormat == MediaFormat::AVC) || (aData.mediaFormat == MediaFormat::HEVC) ||
+             (aData.mediaFormat == MediaFormat::AAC)) &&
+            !mAllDecoderConfigs.count(aData.decoderConfigId))
         {
             return ErrorCode::INVALID_DECODER_CONFIG_ID;
         }
@@ -191,8 +196,7 @@ namespace HEIF
             if (decoderSpecInfo.size >= 2)
             {
                 DecoderSpecInfoType type = decoderSpecInfo.elements[0].decSpecInfoType;
-                if ((type != DecoderSpecInfoType::AVC_SPS) &&
-                    (type != DecoderSpecInfoType::AVC_PPS))
+                if ((type != DecoderSpecInfoType::AVC_SPS) && (type != DecoderSpecInfoType::AVC_PPS))
                 {
                     return ErrorCode::INVALID_DECODER_CONFIG_ID;
                 }
@@ -208,8 +212,7 @@ namespace HEIF
             if (decoderSpecInfo.size >= 3)
             {
                 DecoderSpecInfoType type = decoderSpecInfo.elements[0].decSpecInfoType;
-                if ((type != DecoderSpecInfoType::HEVC_SPS) &&
-                    (type != DecoderSpecInfoType::HEVC_PPS) &&
+                if ((type != DecoderSpecInfoType::HEVC_SPS) && (type != DecoderSpecInfoType::HEVC_PPS) &&
                     (type != DecoderSpecInfoType::HEVC_VPS))
                 {
                     return ErrorCode::INVALID_DECODER_CONFIG_ID;
@@ -263,13 +266,11 @@ namespace HEIF
         if (mInitialMdat)
         {
             mediaData.offset = static_cast<uint64_t>(mFile.tellp());
-            mFile.write(aData.data, static_cast<streamsize>(aData.size));
+            mFile.write(reinterpret_cast<char*>(aData.data), static_cast<streamsize>(aData.size));
         }
         else
         {
-            Vector<uint8_t> data(aData.size);
-            std::memcpy(data.data(), aData.data, aData.size);
-            mediaData.offset = mMediaDataBox.addData(data);
+            mediaData.offset = mMediaDataBox.addData(aData.data, aData.size);
             if (mMediaDataSize > std::numeric_limits<std::uint32_t>::max())
             {
                 mMediaDataBox.setLargeSize();
@@ -408,8 +409,7 @@ namespace HEIF
         }
         else
         {
-            if ((mFileTypeBox.getMajorBrand() == 0) ||
-                (mFileTypeBox.getCompatibleBrands().size() == 0))
+            if ((mFileTypeBox.getMajorBrand() == 0) || (mFileTypeBox.getCompatibleBrands().size() == 0))
             {
                 return ErrorCode::BRANDS_NOT_SET;
             }
@@ -456,8 +456,7 @@ namespace HEIF
                 output.clear();
             }
             // Finally write mdat.
-            mMediaDataBox.writeBox(output);
-            writeBitstream(output, mFile);
+            mMediaDataBox.writeBox(mFile);
         }
         mFile.close();
 

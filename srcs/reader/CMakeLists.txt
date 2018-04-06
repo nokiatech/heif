@@ -39,19 +39,9 @@ set(READER_SRCS
     heifstreaminterface.cpp
     heifstreaminternal.cpp
     ../common/arraydatatype.cpp
+    ../common/customallocator.cpp
+    $<$<BOOL:${ANDROID}>:heifstreamlinux.cpp>
     )
-
-if(ANDROID)
-  set(USE_LINUX_FILESTREAM 1)
-else(ANDROID)
-  set(USE_LINUX_FILESTREAM 0)
-endif(ANDROID)
-
-if(USE_LINUX_FILESTREAM)
-  set(READER_SRCS
-      ${READER_SRCS}
-      heifstreamlinux.cpp)
-endif(USE_LINUX_FILESTREAM)
 
 set(API_HDRS
     ../api/common/heifid.h
@@ -84,17 +74,16 @@ macro(split_debug_info target)
   endif()
 endmacro()
 
-set(HEIF_LIB_COMMON_DEFINES "HEIF_BUILDING_LIB" "_FILE_OFFSET_BITS=64" "_LARGEFILE64_SOURCE" "HEIF_READER_LIB")
-if(USE_LINUX_FILESTREAM)
-  set(HEIF_LIB_COMMON_DEFINES ${HEIF_LIB_COMMON_DEFINES} "HEIF_USE_LINUX_FILESTREAM")
-endif()
+set(HEIF_LIB_COMMON_DEFINES "_FILE_OFFSET_BITS=64" "_LARGEFILE64_SOURCE" "HEIF_READER_LIB" $<$<BOOL:${ANDROID}>:HEIF_USE_LINUX_FILESTREAM>)
 
 add_library(${HEIF_LIB_NAME} STATIC ${READER_SRCS} ${API_HDRS} ${READER_HDRS} $<TARGET_OBJECTS:common>)
 set_property(TARGET ${HEIF_LIB_NAME} PROPERTY CXX_STANDARD 11)
-target_compile_definitions(${HEIF_LIB_NAME} PRIVATE ${HEIF_LIB_COMMON_DEFINES})
-target_include_directories(${HEIF_LIB_NAME} PRIVATE ../common)
-target_include_directories(${HEIF_LIB_NAME} PUBLIC ../api/common)
-target_include_directories(${HEIF_LIB_NAME} PUBLIC ../api/reader)
+target_compile_definitions(${HEIF_LIB_NAME} INTERFACE "HEIF_USE_STATIC_LIB"
+                                            PRIVATE "HEIF_BUILDING_LIB"
+                                            PRIVATE ${HEIF_LIB_COMMON_DEFINES})
+target_include_directories(${HEIF_LIB_NAME} PRIVATE ../common
+                                            PUBLIC ../api/common
+                                            PUBLIC ../api/reader)
 if (IOS)
     set_xcode_property(${HEIF_LIB_NAME} IPHONEOS_DEPLOYMENT_TARGET "10.0")
 endif(IOS)
@@ -105,9 +94,10 @@ if(NOT IOS)
     if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
       split_debug_info(${HEIF_SHARED_LIB_NAME})
     endif()
-    target_compile_definitions(${HEIF_SHARED_LIB_NAME} PRIVATE "HEIF_BUILDING_DLL")
-    target_compile_definitions(${HEIF_SHARED_LIB_NAME} PRIVATE ${HEIF_LIB_COMMON_DEFINES})
-    target_include_directories(${HEIF_SHARED_LIB_NAME} PRIVATE ../common)
-    target_include_directories(${HEIF_SHARED_LIB_NAME} PUBLIC ../api/common)
-    target_include_directories(${HEIF_SHARED_LIB_NAME} PUBLIC ../api/reader)
+    target_compile_definitions(${HEIF_SHARED_LIB_NAME} INTERFACE "HEIF_USE_SHARED_LIB"
+                                                       PRIVATE "HEIF_BUILDING_DLL"
+                                                       PRIVATE ${HEIF_LIB_COMMON_DEFINES})
+    target_include_directories(${HEIF_SHARED_LIB_NAME} PRIVATE ../common
+                                                       PUBLIC ../api/common
+                                                       PUBLIC ../api/reader)
 endif(NOT IOS)
