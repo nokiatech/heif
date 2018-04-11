@@ -21,6 +21,11 @@ public final class HEIF
 
     private static final String TAG = "HEIF";
 
+    static
+    {
+        System.loadLibrary("heifjni");
+    }
+
     public static final FourCC FOURCC_AVC = new FourCC("avc1", true);
     public static final FourCC FOURCC_HEVC = new FourCC("hvc1", true);
     public static final FourCC FOURCC_JPEG = new FourCC("jpeg", true);
