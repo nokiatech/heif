@@ -22,13 +22,17 @@ public final class PixelAspectRatioProperty extends DescriptiveProperty
     /**
      * Creates a PixelAspectRatioProperty to the given HEIF instance
      * @param heif The parent HEIF instance for the new object
+     * @param relativeWidth The relative width
+     * @param relativeHeight The relative height
      * @throws Exception Thrown if the parent HEIF instance is invalid
      */
-    public PixelAspectRatioProperty(HEIF heif)
+    public PixelAspectRatioProperty(HEIF heif, int relativeWidth, int relativeHeight)
             throws Exception
     {
         super(heif);
         mNativeHandle = createContextNative(heif);
+        setRelativeWidth(relativeWidth);
+        setRelativeHeight(relativeHeight);
     }
 
     /**

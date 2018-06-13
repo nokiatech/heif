@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef SMALLVECTOR_HPP
@@ -21,7 +23,7 @@
  * number of values (most of the time). For the exceptional case
  * of overflowing the buffer an Vector will be used to store
  * the contents instead.
-*/
+ */
 
 template <typename Value, size_t Size>
 class SmallVector
@@ -268,19 +270,19 @@ public:
 
         bool operator<(const iterator_root<BaseContainer, Iterator, VectorIterator>& other) const
         {
-            return root::small ? root::smallIndex > other.smallIndex : root::iterator < other.root::iterator;
+            return root::small ? (root::smallIndex > other.smallIndex) : (root::iterator < other.root::iterator);
         }
         bool operator<=(const iterator_root<BaseContainer, Iterator, VectorIterator>& other) const
         {
-            return root::small ? root::smallIndex >= other.smallIndex : root::iterator <= other.root::iterator;
+            return root::small ? (root::smallIndex >= other.smallIndex) : (root::iterator <= other.root::iterator);
         }
         bool operator>(const iterator_root<BaseContainer, Iterator, VectorIterator>& other) const
         {
-            return root::small ? root::smallIndex < other.smallIndex : root::iterator > other.root::iterator;
+            return root::small ? (root::smallIndex < other.smallIndex) : (root::iterator > other.root::iterator);
         }
         bool operator>=(const iterator_root<BaseContainer, Iterator, VectorIterator>& other) const
         {
-            return root::small ? root::smallIndex <= other.smallIndex : root::iterator >= other.root::iterator;
+            return root::small ? (root::smallIndex <= other.smallIndex) : (root::iterator >= other.root::iterator);
         }
     };
 
@@ -300,19 +302,16 @@ public:
         }
         Value& operator*()
         {
-            return base::small
-                       ? base::container.mSmallContents[base::smallIndex]
-                       : *base::iterator;
+            return base::small ? base::container.mSmallContents[base::smallIndex] : *base::iterator;
         }
         const Value& operator*() const
         {
-            return base::small
-                       ? base::container.mSmallContents[base::smallIndex]
-                       : *base::iterator;
+            return base::small ? base::container.mSmallContents[base::smallIndex] : *base::iterator;
         }
     };
 
-    struct const_iterator : public iterator_base<const SmallVector<Value, Size>, const_iterator, typename Vector::const_iterator>
+    struct const_iterator
+        : public iterator_base<const SmallVector<Value, Size>, const_iterator, typename Vector::const_iterator>
     {
         typedef iterator_base<const SmallVector<Value, Size>, const_iterator, typename Vector::const_iterator> base;
         const_iterator()
@@ -328,15 +327,15 @@ public:
         }
         const Value& operator*() const
         {
-            return base::small
-                       ? base::container.mSmallContents[base::smallIndex]
-                       : *base::iterator;
+            return base::small ? base::container.mSmallContents[base::smallIndex] : *base::iterator;
         }
     };
 
-    struct reverse_iterator : public reverse_iterator_base<SmallVector<Value, Size>, reverse_iterator, typename Vector::reverse_iterator>
+    struct reverse_iterator
+        : public reverse_iterator_base<SmallVector<Value, Size>, reverse_iterator, typename Vector::reverse_iterator>
     {
-        typedef reverse_iterator_base<SmallVector<Value, Size>, reverse_iterator, typename Vector::reverse_iterator> base;
+        typedef reverse_iterator_base<SmallVector<Value, Size>, reverse_iterator, typename Vector::reverse_iterator>
+            base;
         reverse_iterator()
         {
         }
@@ -350,21 +349,22 @@ public:
         }
         Value& operator*()
         {
-            return base::small
-                       ? base::container.mSmallContents[base::smallIndex]
-                       : *base::iterator;
+            return base::small ? base::container.mSmallContents[base::smallIndex] : *base::iterator;
         }
         const Value& operator*() const
         {
-            return base::small
-                       ? base::container.mSmallContents[base::smallIndex]
-                       : *base::iterator;
+            return base::small ? base::container.mSmallContents[base::smallIndex] : *base::iterator;
         }
     };
 
-    struct const_reverse_iterator : public reverse_iterator_base<const SmallVector<Value, Size>, const_reverse_iterator, typename Vector::const_reverse_iterator>
+    struct const_reverse_iterator : public reverse_iterator_base<const SmallVector<Value, Size>,
+                                                                 const_reverse_iterator,
+                                                                 typename Vector::const_reverse_iterator>
     {
-        typedef reverse_iterator_base<const SmallVector<Value, Size>, const_reverse_iterator, typename Vector::const_reverse_iterator> base;
+        typedef reverse_iterator_base<const SmallVector<Value, Size>,
+                                      const_reverse_iterator,
+                                      typename Vector::const_reverse_iterator>
+            base;
         const_reverse_iterator()
         {
         }
@@ -378,9 +378,7 @@ public:
         }
         const Value& operator*() const
         {
-            return base::small
-                       ? base::container.mSmallContents[base::smallIndex]
-                       : *base::iterator;
+            return base::small ? base::container.mSmallContents[base::smallIndex] : *base::iterator;
         }
     };
 
@@ -467,8 +465,7 @@ SmallVector<Value, Size>::SmallVector(const SmallVector<Value, Size>& other)
 }
 
 template <typename Value, size_t Size>
-SmallVector<Value, Size>&
-SmallVector<Value, Size>::operator=(const SmallVector<Value, Size>& other)
+SmallVector<Value, Size>& SmallVector<Value, Size>::operator=(const SmallVector<Value, Size>& other)
 {
     if (this != &other)
     {
@@ -476,9 +473,7 @@ SmallVector<Value, Size>::operator=(const SmallVector<Value, Size>& other)
         mVector.reset();
         mSmall       = other.mSmall;
         mNumElements = other.mNumElements;
-        for (Value* it = mSmallContents + mNumElements;
-             it < mSmallContents + prevNumElements;
-             ++it)
+        for (Value* it = mSmallContents + mNumElements; it < mSmallContents + prevNumElements; ++it)
         {
             *it = Value();
         }
@@ -495,71 +490,65 @@ SmallVector<Value, Size>::operator=(const SmallVector<Value, Size>& other)
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::iterator
-SmallVector<Value, Size>::begin()
+typename SmallVector<Value, Size>::iterator SmallVector<Value, Size>::begin()
 {
     return mSmall ? iterator(*this, 0) : iterator(*this, mVector->begin());
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::iterator
-SmallVector<Value, Size>::end()
+typename SmallVector<Value, Size>::iterator SmallVector<Value, Size>::end()
 {
     return mSmall ? iterator(*this, static_cast<signed int>(mNumElements)) : iterator(*this, mVector->end());
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::const_iterator
-SmallVector<Value, Size>::begin() const
+typename SmallVector<Value, Size>::const_iterator SmallVector<Value, Size>::begin() const
 {
     return mSmall ? const_iterator(*this, 0) : const_iterator(*this, mVector->cbegin());
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::const_iterator
-SmallVector<Value, Size>::end() const
+typename SmallVector<Value, Size>::const_iterator SmallVector<Value, Size>::end() const
 {
-    return mSmall ? const_iterator(*this, static_cast<signed int>(mNumElements)) : const_iterator(*this, mVector->cend());
+    return mSmall ? const_iterator(*this, static_cast<signed int>(mNumElements))
+                  : const_iterator(*this, mVector->cend());
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::const_iterator
-SmallVector<Value, Size>::cbegin() const
+typename SmallVector<Value, Size>::const_iterator SmallVector<Value, Size>::cbegin() const
 {
     return mSmall ? const_iterator(*this, 0) : const_iterator(*this, mVector->begin());
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::const_iterator
-SmallVector<Value, Size>::cend() const
+typename SmallVector<Value, Size>::const_iterator SmallVector<Value, Size>::cend() const
 {
-    return mSmall ? const_iterator(*this, static_cast<signed int>(mNumElements)) : const_iterator(*this, mVector->end());
+    return mSmall ? const_iterator(*this, static_cast<signed int>(mNumElements))
+                  : const_iterator(*this, mVector->end());
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::reverse_iterator
-SmallVector<Value, Size>::rbegin()
+typename SmallVector<Value, Size>::reverse_iterator SmallVector<Value, Size>::rbegin()
 {
-    return mSmall ? reverse_iterator(*this, static_cast<signed int>(mNumElements) - 1) : reverse_iterator(*this, mVector->rbegin());
+    return mSmall ? reverse_iterator(*this, static_cast<signed int>(mNumElements) - 1)
+                  : reverse_iterator(*this, mVector->rbegin());
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::reverse_iterator
-SmallVector<Value, Size>::rend()
+typename SmallVector<Value, Size>::reverse_iterator SmallVector<Value, Size>::rend()
 {
     return mSmall ? reverse_iterator(*this, -1) : reverse_iterator(*this, mVector->rend());
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::const_reverse_iterator
-SmallVector<Value, Size>::rbegin() const
+typename SmallVector<Value, Size>::const_reverse_iterator SmallVector<Value, Size>::rbegin() const
 {
-    return mSmall ? const_reverse_iterator(*this, static_cast<signed int>(mNumElements) - 1) : const_reverse_iterator(*this, mVector->rbegin());
+    return mSmall ? const_reverse_iterator(*this, static_cast<signed int>(mNumElements) - 1)
+                  : const_reverse_iterator(*this, mVector->rbegin());
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::const_reverse_iterator
-SmallVector<Value, Size>::rend() const
+typename SmallVector<Value, Size>::const_reverse_iterator SmallVector<Value, Size>::rend() const
 {
     return mSmall ? const_reverse_iterator(*this, -1) : const_reverse_iterator(*this, mVector->rend());
 }
@@ -602,8 +591,7 @@ void SmallVector<Value, Size>::push_back(const Value& value)
 }
 
 template <typename Value, size_t Size>
-Value&
-SmallVector<Value, Size>::at(size_t index)
+Value& SmallVector<Value, Size>::at(size_t index)
 {
     if (mSmall)
     {
@@ -643,22 +631,19 @@ Value SmallVector<Value, Size>::at(size_t index) const
 }
 
 template <typename Value, size_t Size>
-Value&
-    SmallVector<Value, Size>::operator[](size_t index)
+Value& SmallVector<Value, Size>::operator[](size_t index)
 {
     return mSmall ? mSmallContents[index] : (*mVector)[index];
 }
 
 template <typename Value, size_t Size>
-Value
-    SmallVector<Value, Size>::operator[](size_t index) const
+Value SmallVector<Value, Size>::operator[](size_t index) const
 {
     return mSmall ? mSmallContents[index] : (*mVector)[index];
 }
 
 template <typename Value, size_t Size>
-typename SmallVector<Value, Size>::size_type
-SmallVector<Value, Size>::size() const
+typename SmallVector<Value, Size>::size_type SmallVector<Value, Size>::size() const
 {
     return mSmall ? mNumElements : mVector->size();
 }

@@ -22,11 +22,11 @@ namespace HEIFPP
     public:
         JPEGDecoderConfiguration(Heif* aHeif);
         virtual ~JPEGDecoderConfiguration() = default;
-        virtual void getConfig(uint8_t*& data, uint32_t& size) const;
-        virtual HEIF::ErrorCode  setConfig(const uint8_t* data, uint32_t size);
+        virtual void getConfig(std::uint8_t*& data, std::uint32_t& size) const;
+        virtual HEIF::ErrorCode  setConfig(const std::uint8_t* data, std::uint32_t size);
     protected:
-        HEIF::ErrorCode convertToRawData(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig, uint8_t*& aData, uint32_t& aSize) const;
-        HEIF::ErrorCode convertFromRawData(const uint8_t* aData, uint32_t aSize);       
+        HEIF::ErrorCode convertToRawData(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig, std::uint8_t*& aData, std::uint32_t& aSize) const;
+        HEIF::ErrorCode convertFromRawData(const std::uint8_t* aData, std::uint32_t aSize);       
     private:
         JPEGDecoderConfiguration & operator=(const JPEGDecoderConfiguration&) = delete;
         JPEGDecoderConfiguration(const JPEGDecoderConfiguration&) = delete;
@@ -38,14 +38,14 @@ namespace HEIFPP
     {
     public:
         JPEGCodedImageItem(Heif* aHeif);
-        virtual ~JPEGCodedImageItem() = default;
+        ~JPEGCodedImageItem() = default;
 
     protected:
         // serialization
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-        virtual void getBitstream(uint8_t*& aData, uint64_t& aSize);
+        bool getBitstream(std::uint8_t*& aData, std::uint64_t& aSize) override;
 
     private:
         JPEGCodedImageItem& operator=(const JPEGCodedImageItem&) = delete;

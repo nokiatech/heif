@@ -85,3 +85,23 @@ void SampleDescriptionBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
     }
 }
+
+/** @brief Get the list of sample entries.
+ *  @returns Vector of sample entries */
+const Vector<UniquePtr<SampleEntryBox>>& SampleDescriptionBox::getSampleEntries() const
+{
+    return mIndex;
+}
+
+/** @brief Get the sample entry at a particular index from the list.
+ *  @param [in] index 1-based index of the sample entry
+ *  @returns Sample Entry of defined type */
+const SampleEntryBox* SampleDescriptionBox::getSampleEntry(unsigned int index) const
+{
+    if (mIndex.size() < index || index == 0)
+    {
+        throw RuntimeError("SampleDescriptionBox::getSampleEntry invalid sample entry index.");
+    }
+
+    return mIndex[index - 1].get();
+}

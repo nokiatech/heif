@@ -15,6 +15,7 @@
 #include <heifwriter.h>
 
 using namespace HEIFPP;
+
 Identity::Identity(Heif* aHeif)
     : DerivedImageItem(aHeif, HEIF::FourCC("iden"))
 {
@@ -46,8 +47,7 @@ void Identity::setImage(ImageItem* aImage)
 
 Result Identity::removeImage(ImageItem* aImage)
 {
-    ImageItem* curImage = getImage();
-    if (curImage != aImage)
+    if (getImage() != aImage)
     {
         return Result::INVALID_HANDLE;
     }
@@ -57,7 +57,8 @@ Result Identity::removeImage(ImageItem* aImage)
 
 HEIF::ErrorCode Identity::save(HEIF::Writer* aWriter)
 {
-    HEIF::ErrorCode error;
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+
     ImageItem* image = getImage();
     if (image == nullptr)
     {
@@ -69,7 +70,9 @@ HEIF::ErrorCode Identity::save(HEIF::Writer* aWriter)
         if (HEIF::ErrorCode::OK != error)
             return error;
     }
-    error = aWriter->addDerivedImage(image->getId(), mId);
+    HEIF::ImageId newId;
+    error = aWriter->addDerivedImage(image->getId(), newId);
+    setId(newId);
     if (HEIF::ErrorCode::OK != error)
         return error;
     error = DerivedImageItem::save(aWriter);

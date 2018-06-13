@@ -16,6 +16,7 @@
 #include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "elementarystreamdescriptorbox.hpp"
+#include "mp4audiodecoderconfigrecord.hpp"
 
 /** @brief AudioSampleEntryBox class. Extends from SampleEntryBox.
  *  @details This box contains information related to the mp4 audio samples of the track
@@ -37,16 +38,23 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    virtual void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a AudioSampleEntryBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    virtual void parseBox(ISOBMFF::BitStream& bitstr) override;
 
-    virtual MP4AudioSampleEntryBox* clone() const;
+    virtual MP4AudioSampleEntryBox* clone() const override;
+
+    /* @brief Returns the configuration record for this sample */
+    virtual const DecoderConfigurationRecord* getConfigurationRecord() const override;
+
+    /* @brief Returns the configuration box for this sample */
+    virtual const Box* getConfigurationBox() const override;
 
 private:
     ElementaryStreamDescriptorBox mESDBox;
+    MP4AudioDecoderConfigurationRecord mRecord;
 };
 
 #endif  // MP4AUDIOSAMPLEENTRYBOX_HPP

@@ -74,6 +74,7 @@ set(COMMON_SRCS
     metabox.cpp
     moviebox.cpp
     movieheaderbox.cpp
+    mp4audiodecoderconfigrecord.cpp
     mp4audiosampleentrybox.cpp
     nalutil.cpp
     nullmediaheaderbox.cpp
@@ -126,6 +127,8 @@ set(COMMON_HDRS
     datainformationbox.hpp
     datareferencebox.hpp
     decodepts.hpp
+    decoderconfigrecord.hpp
+    decoderconfigurationbox.hpp
     directreferencesampleslist.hpp
     editbox.hpp
     elementarystreamdescriptorbox.hpp
@@ -166,6 +169,7 @@ set(COMMON_HDRS
     moviefragmentsdatatypes.hpp
     movieheaderbox.hpp
     mp4audiosampleentrybox.hpp
+    mp4audiodecoderconfigrecord.hpp
     nalutil.hpp
     nullmediaheaderbox.hpp
     pixelaspectratiobox.hpp

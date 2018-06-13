@@ -328,6 +328,7 @@ public abstract class ImageItem extends Item
             throws Exception
     {
         checkState();
+        checkParameter(size);
         setSizeNative(size.width, size.height);
     }
 

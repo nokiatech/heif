@@ -319,7 +319,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        auto clapBox = std::make_shared<::CleanApertureBox>();
+        auto clapBox = makeCustomShared<::CleanApertureBox>();
         ::CleanApertureBox::Fraction value;
         value.numerator   = clap.heightN;
         value.denominator = clap.heightD;
@@ -349,7 +349,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        auto imirBox = std::make_shared<ImageMirror>();
+        auto imirBox = makeCustomShared<ImageMirror>();
         imirBox->setHorizontalAxis(imir.horizontalAxis);
 
         PropertyInformation info;
@@ -367,7 +367,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        auto irotBox = std::make_shared<ImageRotation>();
+        auto irotBox = makeCustomShared<ImageRotation>();
         irotBox->setAngle(irot.angle);
 
         PropertyInformation info;
@@ -385,7 +385,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        auto rlocBox = std::make_shared<ImageRelativeLocationProperty>();
+        auto rlocBox = makeCustomShared<ImageRelativeLocationProperty>();
         rlocBox->setHorizontalOffset(rloc.horizontalOffset);
         rlocBox->setVerticalOffset(rloc.verticalOffset);
 
@@ -404,7 +404,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        auto paspBox = std::make_shared<PixelAspectRatioBox>();
+        auto paspBox = makeCustomShared<PixelAspectRatioBox>();
 
         paspBox->setRelativeWidth(pasp.relativeWidth);
         paspBox->setRelativeHeight(pasp.relativeHeight);
@@ -424,7 +424,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        auto pixiBox = std::make_shared<PixelInformationProperty>();
+        auto pixiBox = makeCustomShared<PixelInformationProperty>();
         Vector<std::uint8_t> bitsPerChannelVector;
         for (const auto bitsPerChannel : pixi.bitsPerChannel)
         {
@@ -447,7 +447,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        auto colrBox = std::make_shared<ColourInformationBox>();
+        auto colrBox = makeCustomShared<ColourInformationBox>();
 
         if ((colr.colourType == "nclx") || (colr.colourType == "rICC") || (colr.colourType == "prof"))
         {
@@ -484,7 +484,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        auto auxCBox = std::make_shared<AuxiliaryTypeProperty>();
+        auto auxCBox = makeCustomShared<AuxiliaryTypeProperty>();
 
         String typeUrn(auxC.auxType.begin(), auxC.auxType.end());
         auxCBox->setAuxType(typeUrn);
@@ -508,7 +508,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        auto customBox = std::make_shared<RawPropertyBox>();
+        auto customBox = makeCustomShared<RawPropertyBox>();
 
         Vector<uint8_t> data(property.data.begin(), property.data.end());
         customBox->setData(data);
@@ -690,6 +690,37 @@ namespace HEIF
     }
 
 
+    ErrorCode WriterImpl::addMetadataItemReference(const MetadataItemId& metadataItemId, const ImageId& toImageId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        if (!checkImageIds({toImageId}))
+        {
+            return ErrorCode::INVALID_ITEM_ID;
+        }
+
+        bool found = false;
+        for (auto finder : mMetadataItems)
+        {
+            if (finder.second == metadataItemId)
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            return ErrorCode::INVALID_METADATAITEM_ID;
+        }
+
+        mMetaBox.addItemReference("cdsc", metadataItemId.get(), toImageId.get());
+        return ErrorCode::OK;
+    }
+
     ErrorCode WriterImpl::addTbasItemReference(const ImageId& fromImageId, const ImageId& toImageId)
     {
         if (mState != State::WRITING)
@@ -727,16 +758,11 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode WriterImpl::addMetadata(const MediaDataId& mediaDataId, const ImageId& imageId)
+    ErrorCode WriterImpl::addMetadata(const MediaDataId& mediaDataId, MetadataItemId& metadataIemId)
     {
         if (mState != State::WRITING)
         {
             return ErrorCode::UNINITIALIZED;
-        }
-
-        if (!checkImageIds({imageId}))
-        {
-            return ErrorCode::INVALID_ITEM_ID;
         }
 
         if (mMediaData.count(mediaDataId) == 0)
@@ -744,13 +770,15 @@ namespace HEIF
             return ErrorCode::INVALID_MEDIADATA_ID;
         }
 
-        MetadataItemId metadataItemId;
-        if (createMetadataItem(mediaDataId, metadataItemId) != ErrorCode::OK)
+        if (!mMetadataItems.count(mediaDataId))
         {
-            return ErrorCode::INVALID_MEDIADATA_ID;
+            return createMetadataItem(mediaDataId, metadataIemId);
         }
-        mMetaBox.addItemReference("cdsc", metadataItemId.get(), imageId.get());
-        return ErrorCode::OK;
+        else
+        {
+            metadataIemId = mMetadataItems.at(mediaDataId);
+            return ErrorCode::OK;
+        }
     }
 
     /* *************************************************************** */
@@ -821,7 +849,7 @@ namespace HEIF
         if (mIspeIndexes.count(size) == 0)
         {
             mIspeIndexes[size] =
-                mMetaBox.addProperty(std::make_shared<ImageSpatialExtentsProperty>(width, height), {}, false);
+                mMetaBox.addProperty(makeCustomShared<ImageSpatialExtentsProperty>(width, height), {}, false);
         }
 
         return mIspeIndexes[size];
@@ -839,7 +867,7 @@ namespace HEIF
                 if (configNalUnits.begin()->decSpecInfoType == AVC_SPS ||
                     configNalUnits.begin()->decSpecInfoType == AVC_PPS)
                 {
-                    auto configBox = std::make_shared<AvcConfigurationBox>();
+                    auto configBox = makeCustomShared<AvcConfigurationBox>();
                     AvcDecoderConfigurationRecord configRecord;
                     ErrorCode error = createAvcDecoderConfigurationRecord(configNalUnits, configRecord);
                     if (error != ErrorCode::OK)
@@ -856,7 +884,7 @@ namespace HEIF
                          configNalUnits.begin()->decSpecInfoType == HEVC_PPS ||
                          configNalUnits.begin()->decSpecInfoType == HEVC_VPS)
                 {
-                    auto configBox = std::make_shared<HevcConfigurationBox>();
+                    auto configBox = makeCustomShared<HevcConfigurationBox>();
                     HevcDecoderConfigurationRecord configRecord;
                     ErrorCode error = createHevcDecoderConfigurationRecord(configNalUnits, configRecord);
                     if (error != ErrorCode::OK)

@@ -15,20 +15,20 @@
 #include <jni.h>
 #include "DerivedImageItem.h"
 #include "Helpers.h"
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_DerivedImageItem_##method_name
+#define CLASS_NAME DerivedImageItem
 
 extern "C"
 {
-    JNI_METHOD(jint, getSourceImageCountNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getSourceImageCountNative)
     {
-        NATIVE_DERIVED_IMAGE_ITEM(nativeHandle, obj);
-        return nativeHandle->getSourceImageCount();
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->getSourceImageCount());
     }
 
-    JNI_METHOD(jobject, getSourceImageNative)(JNIEnv *env, jobject obj, jint index)
+    JNI_METHOD_ARG(jobject, getSourceImageNative, jint index)
     {
-        NATIVE_DERIVED_IMAGE_ITEM(nativeHandle, obj);
-        return getJavaItem(env, getJavaHEIF(env, obj), nativeHandle->getSourceImage(index));
+        NATIVE_SELF;
+        return getJavaItem(env, getJavaHEIF(env, self),
+                           nativeSelf->getSourceImage(static_cast<uint32_t>(index)));
     }
 }

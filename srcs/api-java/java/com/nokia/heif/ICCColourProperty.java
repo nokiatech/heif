@@ -84,6 +84,7 @@ public final class ICCColourProperty extends ColourInformationProperty
             throws Exception
     {
         checkState();
+        checkParameter(profile);
         setICCProfileNative(profile);
     }
 }

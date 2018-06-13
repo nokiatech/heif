@@ -46,7 +46,7 @@ public abstract class MimeItem extends MetaItem
             throws Exception
     {
         checkState();
-        ByteBuffer buffer = getItemDataNative();
+        ByteBuffer buffer = getData();
         byte[] output = new byte[buffer.remaining()];
         buffer.get(output);
         return output;

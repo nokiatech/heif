@@ -167,7 +167,7 @@ std::uint16_t JpegParser::readUint16(const unsigned int index) const
 {
     if (index + 1 >= mSize)
     {
-        throw std::runtime_error("JpegParser: Failure while reading an uint16 from JPEG file bitstream.");
+        throw RuntimeError("JpegParser: Failure while reading an uint16 from JPEG file bitstream.");
     }
     return ((mData[index] & 0xff) << 8) | (mData[index + 1] & 0xff);
 }

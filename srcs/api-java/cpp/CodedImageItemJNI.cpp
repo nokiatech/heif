@@ -13,97 +13,99 @@
  */
 
 #include <jni.h>
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_CodedImageItem_##method_name
 #include "CodedImageItem.h"
 #include "Helpers.h"
 
+#define CLASS_NAME CodedImageItem
+
 extern "C"
 {
-    JNI_METHOD(jstring, getDecoderCodeTypeNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jstring, getDecoderCodeTypeNative)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
-        return env->NewStringUTF(nativeHandle->getDecoderCodeType().value);
+        NATIVE_SELF;
+        return env->NewStringUTF(nativeSelf->getDecoderCodeType().value);
     }
 
-
-    JNI_METHOD(jobject, getItemDataNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getItemDataNative)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
-        return env->NewDirectByteBuffer((void *) nativeHandle->getItemData(), nativeHandle->getItemDataSize());
+        NATIVE_SELF;
+        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeSelf->getItemData()),
+                                        static_cast<jlong>(nativeSelf->getItemDataSize()));
     }
 
-    JNI_METHOD(void, setItemDataNative)(JNIEnv *env, jobject obj, jbyteArray data)
+    JNI_METHOD_ARG(void, setItemDataNative, jbyteArray data)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_SELF;
         jbyte *nativeData = env->GetByteArrayElements(data, 0);
-        nativeHandle->setItemData((uint8_t *) nativeData, env->GetArrayLength(data));
+        nativeSelf->setItemData((uint8_t*)(nativeData),
+                                  static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 
-    JNI_METHOD(jint, getBaseImageCountNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getBaseImageCountNative)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
-        return nativeHandle->getBaseImageCount();
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->getBaseImageCount());
     }
 
-    JNI_METHOD(jobject, getBaseImageNative)(JNIEnv *env, jobject obj, jint index)
+    JNI_METHOD_ARG(jobject, getBaseImageNative, jint index)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
-        return getJavaItem(env, getJavaHEIF(env, obj), (jobject) nativeHandle->getBaseImage(index));
+        NATIVE_SELF;
+        return getJavaItem(env, getJavaHEIF(env, self), (jobject) nativeSelf->getBaseImage(
+                static_cast<uint32_t>(index)));
     }
 
-    JNI_METHOD(void, addBaseImageNative)(JNIEnv *env, jobject obj, jobject image)
+    JNI_METHOD_ARG(void, addBaseImageNative, jobject image)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeImage, image);
-        nativeHandle->addBaseImage(nativeImage);
+        nativeSelf->addBaseImage(nativeImage);
     }
 
-    JNI_METHOD(void, removeBaseImageNative)(JNIEnv *env, jobject obj, jobject image)
+    JNI_METHOD_ARG(void, removeBaseImageNative, jobject image)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeImage, image);
-        nativeHandle->removeBaseImage(nativeImage);
+        nativeSelf->removeBaseImage(nativeImage);
     }
 
-    JNI_METHOD(void, removeBaseImageByIndexNative)(JNIEnv *env, jobject obj, jint index)
+    JNI_METHOD_ARG(void, removeBaseImageByIndexNative, jint index)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
-        nativeHandle->removeBaseImage(index);
+        NATIVE_SELF;
+        nativeSelf->removeBaseImage(static_cast<uint32_t>(index));
     }
 
-    JNI_METHOD(void, setBaseImageByIndexNative)(JNIEnv *env, jobject obj, jint index, jobject image)
+    JNI_METHOD_ARG(void, setBaseImageByIndexNative, jint index, jobject image)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeImage, image);
-        nativeHandle->setBaseImage(index, nativeImage);
+        nativeSelf->setBaseImage(static_cast<uint32_t>(index), nativeImage);
     }
 
-    JNI_METHOD(void, setBaseImageNative)(JNIEnv *env, jobject obj, jobject oldImage, jobject newImage)
+    JNI_METHOD_ARG(void, setBaseImageNative, jobject oldImage, jobject newImage)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeOldImage, oldImage);
         NATIVE_IMAGE_ITEM(nativeNewImage, newImage);
-        nativeHandle->setBaseImage(nativeOldImage, nativeNewImage);
+        nativeSelf->setBaseImage(nativeOldImage, nativeNewImage);
     }
 
-    JNI_METHOD(void, reserveBaseImagesNative)(JNIEnv *env, jobject obj, jint count)
+    JNI_METHOD_ARG(void, reserveBaseImagesNative, jint count)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
-        nativeHandle->reserveBaseImages(count);
+        NATIVE_SELF;
+        nativeSelf->reserveBaseImages(static_cast<uint32_t>(count));
     }
 
-    JNI_METHOD(void, setDecoderConfigNative)(JNIEnv *env, jobject obj, jobject config)
+    JNI_METHOD_ARG(void, setDecoderConfigNative, jobject config)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_SELF;
         NATIVE_DECODER_CONFIG(nativeConfig, config);
-        nativeHandle->setDecoderConfiguration(nativeConfig);
+        nativeSelf->setDecoderConfiguration(nativeConfig);
     }
 
-    JNI_METHOD(jobject, getDecoderConfigNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getDecoderConfigNative)
     {
-        NATIVE_CODED_IMAGE_ITEM(nativeHandle, obj);
-        return getDecoderConfig(env, getJavaHEIF(env, obj), nativeHandle->getDecoderConfiguration());
+        NATIVE_SELF;
+        return getDecoderConfig(env, getJavaHEIF(env, self), nativeSelf->getDecoderConfiguration());
     }
 }

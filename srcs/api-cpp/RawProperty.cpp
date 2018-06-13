@@ -13,27 +13,32 @@
 #include "RawProperty.h"
 #include <heifreader.h>
 #include <heifwriter.h>
+#include <cstring>
 
 using namespace HEIFPP;
+
 RawProperty::RawProperty(Heif* aHeif)
-    : ItemProperty(aHeif, HEIF::ItemPropertyType::RAW, false)
-    , mRawData(nullptr)
-    , mRawDataSize(0){};
+    : ItemProperty(aHeif, HEIF::ItemPropertyType::RAW, false){};
 RawProperty::~RawProperty()
 {
-    delete[] mRawData;
 }
-void RawProperty::getData(const uint8_t*& aData, uint64_t& aLength) const
+void RawProperty::getData(const std::uint8_t*& aData, std::uint64_t& aLength) const
 {
-    aData   = mRawData;
-    aLength = mRawDataSize;
+    aData   = mRaw.data.elements + 8;
+    aLength = mRaw.data.size - 8;
 }
-void RawProperty::setData(const uint8_t* aData, uint64_t aLength)
+void RawProperty::setData(const std::uint8_t* aData, std::uint64_t aLength)
 {
-    mRawDataSize = aLength;
-    delete[] mRawData;
-    mRawData = new uint8_t[mRawDataSize];
-    memcpy(mRawData, aData, mRawDataSize);
+    mRaw.data    = HEIF::Array<uint8_t>(aLength + 8);
+    mRaw.data[0] = (aLength >> 24) & 0xFF;
+    mRaw.data[1] = (aLength >> 16) & 0xFF;
+    mRaw.data[2] = (aLength >> 8) & 0xFF;
+    mRaw.data[3] = (aLength) &0xFF;
+    mRaw.data[4] = static_cast<std::uint8_t>(mRawType.value[0]);
+    mRaw.data[5] = static_cast<std::uint8_t>(mRawType.value[1]);
+    mRaw.data[6] = static_cast<std::uint8_t>(mRawType.value[2]);
+    mRaw.data[7] = static_cast<std::uint8_t>(mRawType.value[3]);
+    std::memcpy(mRaw.data.elements + 8, aData, aLength);
 }
 const HEIF::FourCC& RawProperty::rawType() const
 {
@@ -41,8 +46,8 @@ const HEIF::FourCC& RawProperty::rawType() const
 }
 void RawProperty::setRawType(const HEIF::FourCC& aType, bool aIsTransform)
 {
-    mIsTransform = aIsTransform;
-    mRawType     = aType;
+    setIsTransformative(aIsTransform);
+    mRawType = aType;
     // TODO: if mIsTransform changes AFTER the property is associated with an item,
     // we should move it to correct place in the props list. (declarative properties first, then transformative).
 }
@@ -52,43 +57,38 @@ HEIF::ErrorCode RawProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId&
     error = ItemProperty::load(aReader, aId);
     if (HEIF::ErrorCode::OK == error)
     {
-        HEIF::RawProperty raw;
-        aReader->getProperty(aId, raw);
-        if (raw.data.size < 8)  // needs atleast 8 bytes
+        aReader->getProperty(aId, mRaw);
+        if (mRaw.data.size < 8)  // needs atleast 8 bytes
         {
             return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
         }
-        uint32_t size;
-        size = ((uint32_t) raw.data[0]) << 24;
-        size |= ((uint32_t) raw.data[1]) << 16;
-        size |= ((uint32_t) raw.data[2]) << 8;
-        size |= ((uint32_t) raw.data[3]);
-        uint8_t fcc[5] = {0};
-        fcc[0]         = raw.data[4];
-        fcc[1]         = raw.data[5];
-        fcc[2]         = raw.data[6];
-        fcc[3]         = raw.data[7];
-        mRawType       = HEIF::FourCC((char*) fcc);
-        if (size != raw.data.size)
+        std::uint32_t size;
+        size = static_cast<uint32_t>(mRaw.data[0]) << 24;
+        size |= static_cast<uint32_t>(mRaw.data[1]) << 16;
+        size |= static_cast<uint32_t>(mRaw.data[2]) << 8;
+        size |= static_cast<uint32_t>(mRaw.data[3]);
+        mRawType.value[0] = static_cast<char>(mRaw.data[4]);
+        mRawType.value[1] = static_cast<char>(mRaw.data[5]);
+        mRawType.value[2] = static_cast<char>(mRaw.data[6]);
+        mRawType.value[3] = static_cast<char>(mRaw.data[7]);
+        mRawType.value[4] = 0;
+        if (size != mRaw.data.size)
         {
             return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
         }
-        if (mRawType != raw.type)
+        if (mRawType != mRaw.type)
         {
             return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
         }
-        setData(raw.data.elements + 8, (uint32_t) raw.data.size - 8);
     }
     return error;
 };
 HEIF::ErrorCode RawProperty::save(HEIF::Writer* aWriter)
 {
-    HEIF::ErrorCode error;
-    HEIF::RawProperty raw;
-    raw.data.elements = mRawData;
-    raw.data.size     = mRawDataSize;
-    error             = aWriter->addProperty(raw, mIsTransform, mId);
-    raw.data.elements = nullptr;
-    raw.data.size     = 0;
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+    HEIF::PropertyId newId;
+    error = aWriter->addProperty(mRaw, isTransformative(), newId);
+    if (HEIF::ErrorCode::OK == error)
+        setId(newId);
     return error;
 }

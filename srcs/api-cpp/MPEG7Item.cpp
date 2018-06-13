@@ -15,6 +15,7 @@
 #include <heifwriter.h>
 
 using namespace HEIFPP;
+
 MPEG7Item::MPEG7Item(Heif* aHeif)
     : MimeItem(aHeif)
 {

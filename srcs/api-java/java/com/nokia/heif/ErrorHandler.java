@@ -13,15 +13,15 @@
 
 package com.nokia.heif;
 
-import android.util.SparseArray;
-
+import java.util.HashMap;
 
 public final class ErrorHandler
 {
-
     // Additional Java errors
     static final public int INVALID_PARAMETER = -2;
     static final public int WRONG_HEIF_INSTANCE = -3;
+    static final public int OBJECT_ALREADY_DELETED = -4;
+    static final public int INVALID_STRUCTURE = -5;
 
     // Native C++ error codes
     static final public int OK = 0;
@@ -31,19 +31,25 @@ public final class ErrorHandler
     static final public int BRANDS_NOT_SET = 4;
     static final public int HIDDEN_PRIMARY_ITEM = 5;
     static final public int INVALID_HANDLE = 6;
+    static final public int ALREADY_IN_GROUP = 7;
     static final public int UNDEFINED_ERROR = 999;
 
-    private static final SparseArray<String> ERROR_MESSAGES =
-            new SparseArray<String>();
+    private static final HashMap<Integer, String> ERROR_MESSAGES =
+            new HashMap<Integer, String>();
 
     static
     {
-        ERROR_MESSAGES.put(OK,
-                           "OK");
-        ERROR_MESSAGES.put(INVALID_HANDLE,
-                           "INVALID_HANDLE");
         ERROR_MESSAGES.put(INVALID_PARAMETER,
                            "INVALID_PARAMETER");
+        ERROR_MESSAGES.put(WRONG_HEIF_INSTANCE,
+                           "WRONG_HEIF_INSTANCE");
+        ERROR_MESSAGES.put(OBJECT_ALREADY_DELETED,
+                           "OBJECT_ALREADY_DELETED");
+        ERROR_MESSAGES.put(INVALID_STRUCTURE,
+                           "INVALID_STRUCTURE");
+
+        ERROR_MESSAGES.put(OK,
+                           "OK");
         ERROR_MESSAGES.put(INDEX_OUT_OF_BOUNDS,
                            "INDEX_OUT_OF_BOUNDS");
         ERROR_MESSAGES.put(ALREADY_INITIALIZED,
@@ -56,8 +62,11 @@ public final class ErrorHandler
                            "HIDDEN_PRIMARY_ITEM");
         ERROR_MESSAGES.put(INVALID_HANDLE,
                            "INVALID_HANDLE");
-        ERROR_MESSAGES.put(WRONG_HEIF_INSTANCE,
-                           "WRONG_HEIF_INSTANCE");
+        ERROR_MESSAGES.put(ALREADY_IN_GROUP,
+                           "ALREADY_IN_GROUP");
+
+
+
         ERROR_MESSAGES.put(UNDEFINED_ERROR,
                            "UNDEFINED_ERROR");
     }
@@ -75,18 +84,14 @@ public final class ErrorHandler
     }
 
     /**
-     * Checks if an error occured and throws an exception with the given information
+     * Throws an exception with the given information
      * @param errorCode Error code
      * @param errorInfo Additional information to be printed with the exception
      * @throws Exception
      */
-    static void checkError(int errorCode, String errorInfo)
+    static void throwException(int errorCode, String errorInfo)
             throws Exception
     {
-        if (errorCode == OK)
-        {
-            return;
-        }
         throw new Exception(errorCode, errorInfo);
     }
 }

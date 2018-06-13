@@ -13,32 +13,36 @@
  */
 
 #include <jni.h>
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_DecoderConfig_##method_name
-#include "CodedImageItem.h"
+
+#include <cstring>
+#include "DecoderConfiguration.h"
 #include "Helpers.h"
+
+#define CLASS_NAME DecoderConfig
+
 extern "C"
 {
-    JNI_METHOD(void, destroyContextNative)(JNIEnv* env, jobject obj)
+    JNI_METHOD(void, destroyContextNative)
     {
-        NATIVE_DECODER_CONFIG(nativeItem, obj);
-        jobject javaHandle = (jobject) nativeItem->getContext();
+        NATIVE_DECODER_CONFIG(nativeItem, self);
+        jobject javaHandle = GET_JAVA_OBJECT(nativeItem);
         env->DeleteGlobalRef(javaHandle);
-        setNativeHandle(env, obj, 0);
+        setNativeHandle(env, self, 0);
         delete nativeItem;
     }
 
-    JNI_METHOD(void, setConfigNative)(JNIEnv* env, jobject obj, jbyteArray configdata)
+    JNI_METHOD_ARG(void, setConfigNative, jbyteArray configdata)
     {
-        NATIVE_DECODER_CONFIG(nativeHandle, obj);
+        NATIVE_DECODER_CONFIG(nativeHandle, self);
         jbyte* nativeData = env->GetByteArrayElements(configdata, 0);
-        nativeHandle->setConfig((uint8_t*) nativeData, env->GetArrayLength(configdata));
+        nativeHandle->setConfig((uint8_t*) nativeData,
+                                static_cast<uint32_t>(env->GetArrayLength(configdata)));
         env->ReleaseByteArrayElements(configdata, nativeData, 0);
     }
 
-    JNI_METHOD(jobject, getConfigNative)(JNIEnv* env, jobject obj)
+    JNI_METHOD(jobject, getConfigNative)
     {
-        NATIVE_DECODER_CONFIG(nativeHandle, obj);
+        NATIVE_DECODER_CONFIG(nativeHandle, self);
         const HEIF::Array<HEIF::DecoderSpecificInfo>& codecInfo = nativeHandle->getConfig();
         size_t totalSize                                        = 0;
         for (size_t index = 0; index < codecInfo.size; index++)
@@ -49,11 +53,12 @@ extern "C"
         size_t writeIndex = 0;
         for (size_t index = 0; index < codecInfo.size; index++)
         {
-            memcpy(data + writeIndex, codecInfo[index].decSpecInfoData.elements, codecInfo[index].decSpecInfoData.size);
+            std::memcpy(data + writeIndex, codecInfo[index].decSpecInfoData.elements,
+                        codecInfo[index].decSpecInfoData.size);
             writeIndex += codecInfo[index].decSpecInfoData.size;
         }
-        jbyteArray output = env->NewByteArray(totalSize);
-        env->SetByteArrayRegion(output, 0, totalSize, data);
+        jbyteArray output = env->NewByteArray(static_cast<jsize>(totalSize));
+        env->SetByteArrayRegion(output, 0, static_cast<jsize>(totalSize), data);
         delete[] data;
         return output;
     }

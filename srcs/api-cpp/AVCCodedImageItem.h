@@ -16,47 +16,18 @@
 
 namespace HEIFPP
 {
-    class AVCDecoderConfiguration : public HEIFPP::DecoderConfiguration
-    {
-    public:
-        AVCDecoderConfiguration(Heif* aHeif);
-        virtual ~AVCDecoderConfiguration() = default;
-
-        /** Returns the whole configuration as a block
-         * @param [out] data: Reference to where the data should be copied
-         * @param [out] size: The size of the data copied */
-        void getConfig(uint8_t*& data, uint32_t& size) const;
-
-        /** Sets the decoder data as a block
-         * @param [in] data: Pointer to the data
-         * @param [in] size: The size of the data */
-        HEIF::ErrorCode setConfig(const uint8_t* data, uint32_t size);
-
-    protected:
-        HEIF::ErrorCode convertToRawData(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig,
-                                         uint8_t*& aData,
-                                         uint32_t& aSize) const;
-        HEIF::ErrorCode convertFromRawData(const uint8_t* aData, uint32_t aSize);
-
-    private:
-        AVCDecoderConfiguration& operator=(const AVCDecoderConfiguration&) = delete;
-        AVCDecoderConfiguration(const AVCDecoderConfiguration&)            = delete;
-        AVCDecoderConfiguration(AVCDecoderConfiguration&&)                 = delete;
-        AVCDecoderConfiguration()                                          = delete;
-    };
-
     class AVCCodedImageItem : public HEIFPP::CodedImageItem
     {
     public:
         AVCCodedImageItem(Heif* aHeif);
-        virtual ~AVCCodedImageItem() = default;
+        ~AVCCodedImageItem() = default;
 
     protected:
         // serialization
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-        void getBitstream(uint8_t*& aData, uint64_t& aSize);
+        bool getBitstream(std::uint8_t*& aData, std::uint64_t& aSize) override;
 
     private:
         AVCCodedImageItem& operator=(const AVCCodedImageItem&) = delete;

@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef HEIFFILEDATATYPESINTERNAL_HPP
@@ -175,8 +177,8 @@ namespace HEIF
     typedef Vector<ItemPropertyInfo> PropertyTypeVector;
 
 
-    // In the type definitions, the first element of each map represents the file-given ID of the relevant data structure.
-    // In he below mentioned type definitions, key value is the ID of the entity.
+    // In the type definitions, the first element of each map represents the file-given ID of the relevant data
+    // structure. In he below mentioned type definitions, key value is the ID of the entity.
     typedef Map<ImageId, ImageFeature> ImageFeaturesMap;
     typedef Map<ImageId, ItemFeature> ItemFeaturesMap;
     typedef Map<SequenceId, TrackProperties> TrackPropertiesMap;  ///< <track_id/context_id, TrackProperties>
@@ -205,11 +207,12 @@ namespace HEIF
         std::uint32_t sampleId;                ///< based on the sample's entry order in the sample table
         FourCC sampleEntryType;                ///< coming from SampleDescriptionBox (codingname)
         std::uint32_t sampleDescriptionIndex;  ///< coming from SampleDescriptionBox index (sample_description_index)
-
-        SampleType sampleType;  ///< coming from sample groupings
-        CodingConstraints codingConstraints;
+        SampleType sampleType;                 ///< coming from sample groupings
+        uint64_t sampleDurationTS;             ///< duration of sample in timescale
+        int64_t sampleCompositionOffsetTs;
         bool hasClap;  ///< CleanApertureBox is present in the sample entry
         bool hasAuxi;  ///< AuxiliaryTypeInfo box is present in the sample entry
+        CodingConstraints codingConstraints;
     };
 
     /** @brief Track Property definition which contain sample properties.
@@ -224,13 +227,18 @@ namespace HEIF
         std::uint32_t alternateGroupId;
         TrackFeature trackFeature;
         SamplePropertiesMap sampleProperties;
-        IdVector alternateTrackIds;                   ///< other tracks IDs with the same alternate_group id.
-        TypeToIdsMap referenceTrackIds;               ///< <reference_type, reference track ID> (coming from 'tref')
-        Array<SampleGrouping> groupedSamples;         ///< Sample groupings of the track.
-        Array<SampleVisualEquivalence> equivalences;  ///< Information from VisualEquivalenceEntry() 'eqiv' sample groups.
-        Array<SampleToMetadataItem> metadatas;        ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries
-        uint64_t maxSampleSize;                       ///< Size of largest sample inside the track (can be used to allocate client side read buffer).
+        IdVector alternateTrackIds;            ///< other tracks IDs with the same alternate_group id.
+        TypeToIdsMap referenceTrackIds;        ///< <reference_type, reference track ID> (coming from 'tref')
+        Array<SampleGrouping> groupedSamples;  ///< Sample groupings of the track.
+        Array<SampleVisualEquivalence>
+            equivalences;                       ///< Information from VisualEquivalenceEntry() 'eqiv' sample groups.
+        Array<SampleToMetadataItem> metadatas;  ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries
+        Array<DirectReferenceSamples>
+            referenceSamples;    ///< Data of DirectReferenceSamplesList ('refs') sample group entries
+        uint64_t maxSampleSize;  ///< Size of largest sample inside the track (can be used to allocate client side read
+                                 ///< buffer).
         uint32_t timeScale;
+        EditList editList;  ///< Editlist for this track.
     };
 
     /** @brief Overall File Property definition which contains file's properties.*/
@@ -239,6 +247,7 @@ namespace HEIF
         FileFeature fileFeature;
         TrackPropertiesMap trackProperties;
         MetaBoxProperties rootLevelMetaBoxProperties;
+        uint32_t movieTimescale;
     };
 
 

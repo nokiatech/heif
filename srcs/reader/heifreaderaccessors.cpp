@@ -103,7 +103,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getDisplayWidth(const SequenceId sequenceId, uint32_t& displayWidth) const
+    ErrorCode HeifReaderImpl::getDisplayWidth(const SequenceId& sequenceId, uint32_t& displayWidth) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -115,7 +115,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getDisplayHeight(const SequenceId sequenceId, uint32_t& displayHeight) const
+    ErrorCode HeifReaderImpl::getDisplayHeight(const SequenceId& sequenceId, uint32_t& displayHeight) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -127,7 +127,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getWidth(const ImageId itemId, uint32_t& width) const
+    ErrorCode HeifReaderImpl::getWidth(const ImageId& itemId, uint32_t& width) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(itemId)) != ErrorCode::OK)
@@ -139,7 +139,9 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getWidth(const SequenceId sequenceId, const SequenceImageId itemId, uint32_t& width) const
+    ErrorCode HeifReaderImpl::getWidth(const SequenceId& sequenceId,
+                                       const SequenceImageId& itemId,
+                                       uint32_t& width) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -151,7 +153,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getHeight(const ImageId itemId, uint32_t& height) const
+    ErrorCode HeifReaderImpl::getHeight(const ImageId& itemId, uint32_t& height) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(itemId)) != ErrorCode::OK)
@@ -163,8 +165,8 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getHeight(const SequenceId sequenceId,
-                                        const SequenceImageId itemId,
+    ErrorCode HeifReaderImpl::getHeight(const SequenceId& sequenceId,
+                                        const SequenceImageId& itemId,
                                         uint32_t& height) const
     {
         ErrorCode error;
@@ -185,11 +187,16 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
+        if (mMatrix.size() == 0)
+        {
+            return ErrorCode::NOT_APPLICABLE;
+        }
+
         matrix = makeArray<int32_t>(mMatrix);
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getMatrix(SequenceId sequenceId, Array<int32_t>& matrix) const
+    ErrorCode HeifReaderImpl::getMatrix(const SequenceId& sequenceId, Array<int32_t>& matrix) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -205,7 +212,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getPlaybackDurationInSecs(SequenceId sequenceId, double& durationInSecs) const
+    ErrorCode HeifReaderImpl::getPlaybackDurationInSecs(const SequenceId& sequenceId, double& durationInSecs) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -248,7 +255,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getMasterImages(const SequenceId sequenceId, Array<SequenceImageId>& itemIds) const
+    ErrorCode HeifReaderImpl::getMasterImages(const SequenceId& sequenceId, Array<SequenceImageId>& itemIds) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -291,8 +298,8 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getItemListByType(SequenceId sequenceId,
-                                                TrackSampleType itemType,
+    ErrorCode HeifReaderImpl::getItemListByType(const SequenceId& sequenceId,
+                                                const TrackSampleType& itemType,
                                                 Array<SequenceImageId>& itemIds) const
     {
         ErrorCode error;
@@ -388,7 +395,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getItemType(ImageId itemId, FourCC& type) const
+    ErrorCode HeifReaderImpl::getItemType(const ImageId& itemId, FourCC& type) const
     {
         ErrorCode error;
         if ((error = isInitialized()) != ErrorCode::OK)
@@ -411,7 +418,9 @@ namespace HEIF
         return ErrorCode::INVALID_ITEM_ID;
     }
 
-    ErrorCode HeifReaderImpl::getItemType(SequenceId sequenceId, SequenceImageId sequenceImageId, FourCC& type) const
+    ErrorCode HeifReaderImpl::getItemType(const SequenceId& sequenceId,
+                                          const SequenceImageId& sequenceImageId,
+                                          FourCC& type) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, sequenceImageId)) != ErrorCode::OK)
@@ -425,8 +434,8 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getReferencedFromItemListByType(const ImageId fromItemId,
-                                                              const FourCC referenceType,
+    ErrorCode HeifReaderImpl::getReferencedFromItemListByType(const ImageId& fromItemId,
+                                                              const FourCC& referenceType,
                                                               Array<ImageId>& itemIds) const
     {
         ErrorCode error;
@@ -455,8 +464,8 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getReferencedToItemListByType(const ImageId toItemId,
-                                                            const FourCC referenceType,
+    ErrorCode HeifReaderImpl::getReferencedToItemListByType(const ImageId& toItemId,
+                                                            const FourCC& referenceType,
                                                             Array<ImageId>& itemIds) const
     {
         ErrorCode error;
@@ -505,7 +514,7 @@ namespace HEIF
     }
 
     /// @todo Avoid data copying.
-    ErrorCode HeifReaderImpl::getItemData(const ImageId itemId,
+    ErrorCode HeifReaderImpl::getItemData(const ImageId& itemId,
                                           uint8_t* memoryBuffer,
                                           uint64_t& memoryBufferSize,
                                           bool bytestreamHeaders) const
@@ -614,8 +623,8 @@ namespace HEIF
     }
 
     /// @todo Avoid data copying.
-    ErrorCode HeifReaderImpl::getItemData(const SequenceId sequenceId,
-                                          const SequenceImageId itemId,
+    ErrorCode HeifReaderImpl::getItemData(const SequenceId& sequenceId,
+                                          const SequenceImageId& itemId,
                                           uint8_t* memoryBuffer,
                                           uint64_t& memoryBufferSize,
                                           bool bytestreamHeaders) const
@@ -643,7 +652,7 @@ namespace HEIF
 
         if (bytestreamHeaders)
         {
-            if (codeType == FourCC("avc1"))
+            if ((codeType == FourCC("avc1")) || (codeType == FourCC("avc3")))
             {
                 // Get item data from AVC bitstream
                 error = processAvcItemData(memoryBuffer, memoryBufferSize);
@@ -652,7 +661,7 @@ namespace HEIF
                     return error;
                 }
             }
-            else if (codeType == FourCC("hvc1"))
+            else if ((codeType == FourCC("hvc1")) || (codeType == FourCC("hev1")))
             {
                 // Get item data from HEVC bitstream
                 error = processHevcItemData(memoryBuffer, memoryBufferSize);
@@ -670,7 +679,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getItem(const ImageId itemId, Overlay& iovlItem) const
+    ErrorCode HeifReaderImpl::getItem(const ImageId& itemId, Overlay& iovlItem) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -697,7 +706,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getItem(const ImageId itemId, Grid& gridItem) const
+    ErrorCode HeifReaderImpl::getItem(const ImageId& itemId, Grid& gridItem) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -723,7 +732,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getProperty(PropertyId index, AuxiliaryType& auxc) const
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, AuxiliaryType& auxc) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -749,7 +758,9 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getProperty(const SequenceId sequenceId, std::uint32_t index, AuxiliaryType& auxc) const
+    ErrorCode HeifReaderImpl::getProperty(const SequenceId& sequenceId,
+                                          const std::uint32_t index,
+                                          AuxiliaryType& auxc) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -767,7 +778,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getProperty(PropertyId index, Mirror& imir) const
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, Mirror& imir) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -787,7 +798,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getProperty(PropertyId index, Rotate& irot) const
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, Rotate& irot) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -807,7 +818,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getProperty(PropertyId index, RelativeLocation& rloc) const
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, RelativeLocation& rloc) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -827,7 +838,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getProperty(PropertyId index, PixelInformation& pixi) const
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, PixelInformation& pixi) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -846,7 +857,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getProperty(PropertyId index, ColourInformation& colr) const
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, ColourInformation& colr) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -871,7 +882,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getProperty(PropertyId index, PixelAspectRatio& pasp) const
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, PixelAspectRatio& pasp) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -891,7 +902,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getProperty(PropertyId index, CleanAperture& clap) const
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, CleanAperture& clap) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -909,7 +920,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getProperty(PropertyId index, RawProperty& property) const
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, RawProperty& property) const
     {
         if (isInitialized() != ErrorCode::OK)
         {
@@ -929,7 +940,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getProperty(const SequenceId sequenceId, std::uint32_t index, CleanAperture& clap) const
+    ErrorCode HeifReaderImpl::getProperty(const SequenceId& sequenceId, std::uint32_t index, CleanAperture& clap) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -947,7 +958,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getItemProperties(const ImageId itemId, Array<ItemPropertyInfo>& propertyTypes) const
+    ErrorCode HeifReaderImpl::getItemProperties(const ImageId& itemId, Array<ItemPropertyInfo>& propertyTypes) const
     {
         ErrorCode error;
         if ((error = isValidItem(itemId)) != ErrorCode::OK)
@@ -966,7 +977,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const ImageId itemId,
+    ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const ImageId& itemId,
                                                                uint8_t* memoryBuffer,
                                                                uint64_t& memoryBufferSize) const
     {
@@ -1042,8 +1053,8 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const SequenceId sequenceId,
-                                                               const SequenceImageId itemId,
+    ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const SequenceId& sequenceId,
+                                                               const SequenceImageId& itemId,
                                                                uint8_t* memoryBuffer,
                                                                uint64_t& memoryBufferSize) const
     {
@@ -1060,14 +1071,15 @@ namespace HEIF
             return error;
         }
 
-        if ((codeType != FourCC("hvc1")) && (codeType != FourCC("avc1")))
+        if ((codeType != FourCC("hvc1")) && (codeType != FourCC("hev1")) && (codeType != FourCC("avc1")) &&
+            (codeType != FourCC("avc3")))
         {
             // No other code types supported
             return ErrorCode::UNSUPPORTED_CODE_TYPE;
         }
 
-        Array<DecoderSpecificInfo> decoderInfos;
-        error = getDecoderParameterSets(sequenceId, itemId, decoderInfos);
+        DecoderConfiguration decoderConfiguration;
+        error = getDecoderParameterSets(sequenceId, itemId, decoderConfiguration);
         if (error != ErrorCode::OK)
         {
             return error;
@@ -1075,7 +1087,7 @@ namespace HEIF
 
         // Calculate size of parameter sets, but do not copy the data yet.
         size_t parameterSize = 0;
-        for (auto& config : decoderInfos)
+        for (auto& config : decoderConfiguration.decoderSpecificInfo)
         {
             parameterSize += config.decSpecInfoData.size;
         }
@@ -1086,7 +1098,7 @@ namespace HEIF
         {
             // Copy parameter data to the beginning of the buffer.
             size_t offset = 0;
-            for (const auto& config : decoderInfos)
+            for (const auto& config : decoderConfiguration.decoderSpecificInfo)
             {
                 std::memcpy(memoryBuffer + offset, config.decSpecInfoData.begin(), config.decSpecInfoData.size);
                 offset += config.decSpecInfoData.size;
@@ -1107,7 +1119,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getItemTimestamps(const SequenceId sequenceId, Array<TimestampIDPair>& timestamps) const
+    ErrorCode HeifReaderImpl::getItemTimestamps(const SequenceId& sequenceId, Array<TimestampIDPair>& timestamps) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -1139,8 +1151,8 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getTimestampsOfItem(const SequenceId sequenceId,
-                                                  const SequenceImageId itemId,
+    ErrorCode HeifReaderImpl::getTimestampsOfItem(const SequenceId& sequenceId,
+                                                  const SequenceImageId& itemId,
                                                   Array<int64_t>& timestamps) const
     {
         ErrorCode error;
@@ -1171,7 +1183,7 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getItemsInDecodingOrder(const SequenceId sequenceId,
+    ErrorCode HeifReaderImpl::getItemsInDecodingOrder(const SequenceId& sequenceId,
                                                       Array<TimestampIDPair>& decodingOrder) const
     {
         ErrorCode error;
@@ -1200,8 +1212,8 @@ namespace HEIF
     }
 
 
-    ErrorCode HeifReaderImpl::getDecodeDependencies(const SequenceId sequenceId,
-                                                    const SequenceImageId itemId,
+    ErrorCode HeifReaderImpl::getDecodeDependencies(const SequenceId& sequenceId,
+                                                    const SequenceImageId& itemId,
                                                     Array<SequenceImageId>& dependencies) const
     {
         ErrorCode error;
@@ -1225,7 +1237,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getDecoderCodeType(const ImageId itemId, FourCC& type) const
+    ErrorCode HeifReaderImpl::getDecoderCodeType(const ImageId& itemId, FourCC& type) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(itemId)) != ErrorCode::OK)
@@ -1244,8 +1256,8 @@ namespace HEIF
         return ErrorCode::INVALID_ITEM_ID;
     }
 
-    ErrorCode HeifReaderImpl::getDecoderCodeType(const SequenceId sequenceId,
-                                                 const SequenceImageId itemId,
+    ErrorCode HeifReaderImpl::getDecoderCodeType(const SequenceId& sequenceId,
+                                                 const SequenceImageId& itemId,
                                                  FourCC& type) const
     {
         ErrorCode error;
@@ -1264,7 +1276,7 @@ namespace HEIF
         return ErrorCode::INVALID_ITEM_ID;
     }
 
-    ErrorCode HeifReaderImpl::getDecoderParameterSets(const ImageId itemId, DecoderConfiguration& decoderInfos) const
+    ErrorCode HeifReaderImpl::getDecoderParameterSets(const ImageId& itemId, DecoderConfiguration& decoderInfos) const
     {
         ErrorCode error;
         if ((error = isValidImageItem(itemId)) != ErrorCode::OK)
@@ -1298,9 +1310,9 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getDecoderParameterSets(const SequenceId sequenceId,
-                                                      const SequenceImageId itemId,
-                                                      Array<DecoderSpecificInfo>& decoderInfos) const
+    ErrorCode HeifReaderImpl::getDecoderParameterSets(const SequenceId& sequenceId,
+                                                      const SequenceImageId& itemId,
+                                                      DecoderConfiguration& decoderInfos) const
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -1318,22 +1330,23 @@ namespace HEIF
         const auto iter = mParameterSetMap.find(parameterSetId);
         assert(iter != mParameterSetMap.cend());
 
-        const auto& parameterSetMap = iter->second;
-        decoderInfos                = Array<DecoderSpecificInfo>(parameterSetMap.size());
+        const auto& parameterSetMap      = iter->second;
+        decoderInfos.decoderConfigId     = parameterSetId.second;
+        decoderInfos.decoderSpecificInfo = Array<DecoderSpecificInfo>(parameterSetMap.size());
 
         int i = 0;
         for (auto const& entry : parameterSetMap)
         {
             DecoderSpecificInfo decSpecInfo;
-            decSpecInfo.decSpecInfoType = entry.first;
-            decSpecInfo.decSpecInfoData = makeArray<unsigned char>(entry.second);
-            decoderInfos.elements[i++]  = decSpecInfo;
+            decSpecInfo.decSpecInfoType                    = entry.first;
+            decSpecInfo.decSpecInfoData                    = makeArray<unsigned char>(entry.second);
+            decoderInfos.decoderSpecificInfo.elements[i++] = decSpecInfo;
         }
 
         return ErrorCode::OK;
     }
 
-    ErrorCode HeifReaderImpl::getItemProtectionScheme(const ImageId itemId,
+    ErrorCode HeifReaderImpl::getItemProtectionScheme(const ImageId& itemId,
                                                       uint8_t* memoryBuffer,
                                                       uint64_t& memoryBufferSize) const
     {

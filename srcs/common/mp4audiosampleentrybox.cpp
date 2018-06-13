@@ -17,6 +17,7 @@
 MP4AudioSampleEntryBox::MP4AudioSampleEntryBox()
     : AudioSampleEntryBox("mp4a")
     , mESDBox()
+    , mRecord(mESDBox)
 {
 }
 
@@ -57,4 +58,14 @@ void MP4AudioSampleEntryBox::parseBox(BitStream& bitstr)
 MP4AudioSampleEntryBox* MP4AudioSampleEntryBox::clone() const
 {
     return CUSTOM_NEW(MP4AudioSampleEntryBox, (*this));
+}
+
+const Box* MP4AudioSampleEntryBox::getConfigurationBox() const
+{
+    return &mESDBox;
+}
+
+const DecoderConfigurationRecord* MP4AudioSampleEntryBox::getConfigurationRecord() const
+{
+    return &mRecord;
 }

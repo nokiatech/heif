@@ -16,18 +16,23 @@
 #include "bitstream.hpp"
 
 AvcConfigurationBox::AvcConfigurationBox()
-    : Box("avcC")
+    : DecoderConfigurationBox("avcC")
     , mAvcConfig()
 {
 }
 
 AvcConfigurationBox::AvcConfigurationBox(const AvcConfigurationBox& box)
-    : Box(box.getType())
+    : DecoderConfigurationBox(box.getType())
     , mAvcConfig(box.mAvcConfig)
 {
 }
 
-const AvcDecoderConfigurationRecord& AvcConfigurationBox::getConfiguration() const
+const AvcDecoderConfigurationRecord& AvcConfigurationBox::getAvcConfiguration() const
+{
+    return mAvcConfig;
+}
+
+const DecoderConfigurationRecord& AvcConfigurationBox::getConfiguration() const
 {
     return mAvcConfig;
 }

@@ -364,3 +364,15 @@ void AvcDecoderConfigurationRecord::setBitDepthChromaMinus8(std::uint8_t bitDept
 {
     mBitDepthChromaMinus8 = bitDepthChromaMinus8;
 }
+
+void AvcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap) const
+{
+    Vector<std::uint8_t> sps;
+    Vector<std::uint8_t> pps;
+    getOneParameterSet(sps, AvcNalUnitType::SPS);
+    getOneParameterSet(pps, AvcNalUnitType::PPS);
+
+    aMap.clear();
+    aMap.insert({DecoderParameterType::AVC_SPS, move(sps)});
+    aMap.insert({DecoderParameterType::AVC_PPS, move(pps)});
+}

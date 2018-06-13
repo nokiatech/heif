@@ -39,9 +39,13 @@ public abstract class Base
     protected Base(HEIF heif)
             throws Exception
     {
-        if (heif == null || heif.mNativeHandle == 0)
+        if (heif == null)
         {
-            ErrorHandler.checkError(ErrorHandler.INVALID_HANDLE, "HEIF instance already deleted or null");
+            throw new Exception(ErrorHandler.INVALID_PARAMETER, "HEIF can't be null");
+        }
+        else if (heif.mNativeHandle == 0)
+        {
+            throw new Exception(ErrorHandler.OBJECT_ALREADY_DELETED, "HEIF instance already deleted");
         }
         mHEIF = new WeakReference<HEIF>(heif);
     }
@@ -57,6 +61,18 @@ public abstract class Base
         mNativeHandle = nativeHandle;
     }
 
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj instanceof Base)
+        {
+            return ((Base)obj).mNativeHandle == this.mNativeHandle;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     /**
      * Removes this object from its parent HEIF and releases the native resources
@@ -97,7 +113,7 @@ public abstract class Base
     {
         if (mNativeHandle == 0)
         {
-            ErrorHandler.checkError(ErrorHandler.INVALID_HANDLE, "Object already deleted");
+            throw new Exception(ErrorHandler.OBJECT_ALREADY_DELETED, "Object already deleted");
         }
     }
 
@@ -124,17 +140,27 @@ public abstract class Base
      * @param handle Object being passed as a parameter
      * @throws Exception Thrown if the object is either null, deleted or belongs to a different HEIF instance
      */
-    protected void checkParameter(Base handle)
+    protected void checkParameter(Object handle)
             throws Exception
     {
-        if (handle == null || handle.mNativeHandle == 0)
+        if (handle == null)
         {
-            ErrorHandler.checkError(ErrorHandler.INVALID_HANDLE, "Object already deleted or null");
+            throw new Exception(ErrorHandler.INVALID_PARAMETER, "Object is null");
         }
-        else if (handle.getParentHEIF() != mHEIF.get())
+
+        if (handle instanceof Base)
         {
-            ErrorHandler.checkError(ErrorHandler.WRONG_HEIF_INSTANCE, "HEIF instances don't match");
+            Base baseHandle = (Base) handle;
+            if (baseHandle.mNativeHandle == 0)
+            {
+                throw new Exception(ErrorHandler.OBJECT_ALREADY_DELETED, "Object already deleted");
+            }
+            else if (baseHandle.getParentHEIF() != mHEIF.get())
+            {
+                throw new Exception(ErrorHandler.WRONG_HEIF_INSTANCE, "HEIF instances don't match");
+            }
         }
+
     }
 
     /**

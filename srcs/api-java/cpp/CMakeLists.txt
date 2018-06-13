@@ -19,7 +19,10 @@ else()
 endif()
 
 set(api_cpp_path "../../api-cpp")
-
+if(NOT ANDROID)
+    find_package(JNI REQUIRED)
+    include_directories(${JNI_INCLUDE_DIRS})
+endif()
 set(sources
     CleanAperturePropertyJNI.cpp
     HEIFJNI.cpp
@@ -28,12 +31,10 @@ set(sources
     ImageItemJNI.cpp
     ItemJNI.cpp
     ItemPropertyJNI.cpp
-    TransformativePropertyJNI.cpp
     GridImageItemJNI.cpp
     CodedImageItemJNI.cpp
     DerivedImageItemJNI.cpp
     DecoderConfigJNI.cpp
-    MediaJNI.cpp
     HEVCImageItemJNI.cpp
     RotatePropertyJNI.cpp
     PixelInformationPropertyJNI.cpp
@@ -51,6 +52,21 @@ set(sources
     XMPItemJNI.cpp
     MimeItemJNI.cpp
     ExifItemJNI.cpp
+    InputStream.cpp
+    AudioTrackJNI.cpp
+    VideoTrackJNI.cpp
+    TrackJNI.cpp
+    SampleJNI.cpp
+    HEVCSampleJNI.cpp
+    AACDecoderConfigJNI.cpp
+    AACSampleJNI.cpp
+    AVCSampleJNI.cpp
+    AlternativeTrackGroupJNI.cpp
+    EntityGroupJNI.cpp
+    EquivalenceGroupJNI.cpp
+    AlternateGroupJNI.cpp
+    StereoPairGroupJNI.cpp
+    ImageSequenceJNI.cpp
     )
 
 

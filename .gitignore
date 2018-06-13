@@ -13,6 +13,8 @@ cmake_install.cmake
 .project
 .vscode/
 
+*.bak
+
 *.heic
 *.xml
 
@@ -21,3 +23,4 @@ cmake_install.cmake
 
 # MacOS
 .DS_Store
+.idea/

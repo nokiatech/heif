@@ -13,15 +13,18 @@
 #pragma once
 
 #include <ItemProperty.h>
+
 namespace HEIFPP
 {
     class TransformativeProperty : public HEIFPP::ItemProperty
     {
+    public:
+        ~TransformativeProperty() = default;
+
     protected:
         TransformativeProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType);
-        virtual ~TransformativeProperty() = default;
         // valid types: 'clap' 'irot' 'imir'
-        virtual HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId);
+        HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
 
     private:
         TransformativeProperty& operator=(const TransformativeProperty&) = delete;
@@ -35,11 +38,11 @@ namespace HEIFPP
     public:
         HEIF::CleanAperture mClap;
         CleanApertureProperty(Heif* aHeif);
-        virtual ~CleanApertureProperty() = default;
+        ~CleanApertureProperty() = default;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         CleanApertureProperty& operator=(const CleanApertureProperty&) = delete;
@@ -52,11 +55,11 @@ namespace HEIFPP
     public:
         HEIF::Rotate mRotate;
         RotateProperty(Heif* aHeif);
-        virtual ~RotateProperty() = default;
+        ~RotateProperty() = default;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         RotateProperty& operator=(const RotateProperty&) = delete;
@@ -69,11 +72,11 @@ namespace HEIFPP
     public:
         HEIF::Mirror mMirror;
         MirrorProperty(Heif* aHeif);
-        virtual ~MirrorProperty() = default;
+        ~MirrorProperty() = default;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         MirrorProperty& operator=(const MirrorProperty&) = delete;

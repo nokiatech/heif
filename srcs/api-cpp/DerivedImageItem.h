@@ -13,32 +13,33 @@
 #pragma once
 
 #include <ImageItem.h>
+
 namespace HEIFPP
 {
     class DerivedImageItem : public HEIFPP::ImageItem
     {
     public:
-        virtual ~DerivedImageItem();
+        ~DerivedImageItem();
 
         /** Returns count of source images associated with this derived image.
          * @return count of source images*/
-        uint32_t getSourceImageCount() const;
+        std::uint32_t getSourceImageCount() const;
 
         /** Returns indexed source image associated with this derived image.
          * @param [in] aIndex: Index of the image
          * @return ImageItem*/
-        ImageItem* getSourceImage(uint32_t aIndex);
-        const ImageItem* getSourceImage(uint32_t aIndex) const;
+        ImageItem* getSourceImage(std::uint32_t aIndex);
+        const ImageItem* getSourceImage(std::uint32_t aIndex) const;
 
         /** Removes the image from the derived image
          * @param [in] aImage: Image to be removed */
         virtual Result removeImage(ImageItem* aImage) = 0;
 
     protected:
-        void reserveSourceImages(uint32_t cnt);
+        void reserveSourceImages(std::uint32_t cnt);
 
         // Replaces specified sourceimage with aImage
-        void setSourceImage(uint32_t aId, ImageItem* aImage);
+        void setSourceImage(std::uint32_t aId, ImageItem* aImage);
         // Replaces all instances of aOldImage with aNewImage
         // returns false if no instance of aOldImage is found.
         bool setSourceImage(ImageItem* aOldImage, ImageItem* aNewImage);
@@ -49,13 +50,13 @@ namespace HEIFPP
         // Removes all instances of aImage from sources.
         bool removeSourceImage(ImageItem* aImage);
         // Removes image specified by index.
-        void removeSourceImage(uint32_t aId);
+        void removeSourceImage(std::uint32_t aId);
 
         std::vector<ImageItem*> mSourceImages;
 
         DerivedImageItem(Heif* aHeif, const HEIF::FourCC&);
 
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
 
     private:
         DerivedImageItem& operator=(const DerivedImageItem&) = delete;

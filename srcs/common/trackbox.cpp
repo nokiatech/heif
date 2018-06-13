@@ -70,7 +70,7 @@ void TrackBox::setEditBox(const EditBox& editBox)
 {
     if (mEditBox == nullptr)
     {
-        mEditBox = std::make_shared<EditBox>(editBox);
+        mEditBox = makeCustomShared<EditBox>(editBox);
     }
     else
     {
@@ -140,7 +140,7 @@ void TrackBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else if (boxType == "edts")
         {
-            mEditBox = std::make_shared<EditBox>();
+            mEditBox = makeCustomShared<EditBox>();
             mEditBox->parseBox(subBitstr);
         }
         else

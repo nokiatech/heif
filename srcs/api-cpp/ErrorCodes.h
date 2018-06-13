@@ -11,7 +11,9 @@
  */
 
 #pragma once
+
 #include "heifcommondatatypes.h"
+
 namespace HEIFPP
 {
     enum class Result
@@ -23,6 +25,7 @@ namespace HEIFPP
         BRANDS_NOT_SET       = 4,
         HIDDEN_PRIMARY_ITEM  = 5,
         INVALID_HANDLE       = 6,
+        ALREADY_IN_GROUP     = 7,
         ERROR_UNDEFINED      = 999
     };
 

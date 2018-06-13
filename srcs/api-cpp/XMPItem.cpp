@@ -15,6 +15,7 @@
 #include <heifwriter.h>
 
 using namespace HEIFPP;
+
 XMPItem::XMPItem(Heif* aHeif)
     : MimeItem(aHeif)
 {

@@ -32,8 +32,12 @@ public:
     virtual ~HevcSampleEntry() = default;
 
     /** @brief Gets the HevcConfigurationBox
-     *  @return Reference to the HevcConfigurationBox */
+    *  @return Reference to the HevcConfigurationBox */
     HevcConfigurationBox& getHevcConfigurationBox();
+
+    /** @brief Gets the HevcConfigurationBox
+    *  @return Reference to the HevcConfigurationBox */
+    const HevcConfigurationBox& getHevcConfigurationBox() const;
 
     /** @brief Create CodingConstraintsBox */
     virtual void createCodingConstraintsBox() override;
@@ -56,6 +60,12 @@ public:
     virtual void parseBox(ISOBMFF::BitStream& bitstr) override;
 
     virtual HevcSampleEntry* clone() const override;
+
+    /* @brief Returns the configuration record for this sample */
+    virtual const DecoderConfigurationRecord* getConfigurationRecord() const override;
+
+    /* @brief Returns the configuration box for this sample */
+    virtual const Box* getConfigurationBox() const override;
 
 private:
     HevcConfigurationBox mHevcConfigurationBox;

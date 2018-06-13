@@ -37,6 +37,16 @@ ImageItem::ImageItem(Heif* aHeif, const HEIF::FourCC& aType, bool aDerived, bool
 ImageItem::~ImageItem()
 {
     // disconnect all links "to".
+    // Disconnect all metadatas
+    for (; !mMetaItems.empty();)
+    {
+        MetaItem* meta = mMetaItems[0];
+        if (meta)
+        {
+            removeMetadata(meta);
+        }
+    }
+
     // Disconnect all thumbnails
     for (; !mThumbnailImages.empty();)
     {
@@ -60,8 +70,8 @@ ImageItem::~ImageItem()
     // Remove this(thumbnail) from all master images.
     for (; !mIsThumbnailTo.empty();)
     {
-        std::pair<ImageItem*, uint32_t>& p = mIsThumbnailTo[0];
-        ImageItem* image                   = p.first;
+        std::pair<ImageItem*, std::uint32_t>& p = mIsThumbnailTo[0];
+        ImageItem* image                        = p.first;
         if (image)
         {
             image->removeThumbnail(this);
@@ -70,8 +80,8 @@ ImageItem::~ImageItem()
     // Remove this(auxiliary) from all master images.
     for (; !mIsAuxiliaryTo.empty();)
     {
-        std::pair<ImageItem*, uint32_t>& p = mIsAuxiliaryTo[0];
-        ImageItem* image                   = p.first;
+        std::pair<ImageItem*, std::uint32_t>& p = mIsAuxiliaryTo[0];
+        ImageItem* image                        = p.first;
         if (image)
         {
             image->removeAuxImage(this);
@@ -80,8 +90,8 @@ ImageItem::~ImageItem()
     // Remove this(base) from all master images.
     for (; !mIsBaseImageTo.empty();)
     {
-        std::pair<CodedImageItem*, uint32_t>& p = mIsBaseImageTo[0];
-        CodedImageItem* image                   = p.first;
+        std::pair<CodedImageItem*, std::uint32_t>& p = mIsBaseImageTo[0];
+        CodedImageItem* image                        = p.first;
         if (image)
         {
             image->removeBaseImage(this);
@@ -90,8 +100,8 @@ ImageItem::~ImageItem()
     // Remove this(source) from all master images.
     for (; !mIsSourceImageTo.empty();)
     {
-        std::pair<DerivedImageItem*, uint32_t>& p = mIsSourceImageTo[0];
-        DerivedImageItem* image                   = p.first;
+        std::pair<DerivedImageItem*, std::uint32_t>& p = mIsSourceImageTo[0];
+        DerivedImageItem* image                        = p.first;
         if (image)
         {
             image->removeImage(this);
@@ -153,38 +163,56 @@ const AuxProperty* ImageItem::aux() const
     return static_cast<const AuxProperty*>(getFirstPropertyOfType(HEIF::ItemPropertyType::AUXC));
 }
 
-void ImageItem::setSize(uint32_t aWidth, uint32_t aHeight)
+void ImageItem::setSize(std::uint32_t aWidth, std::uint32_t aHeight)
 {
     mWidth  = aWidth;
     mHeight = aHeight;
 }
-uint32_t ImageItem::width() const
+std::uint32_t ImageItem::width() const
 {
     return mWidth;
 }
 
-uint32_t ImageItem::height() const
+std::uint32_t ImageItem::height() const
 {
     return mHeight;
 }
 
-uint32_t ImageItem::transformativePropertyCount() const
+std::uint32_t ImageItem::transformativePropertyCount() const
 {
     return mTransformCount;
 }
-TransformativeProperty* ImageItem::getTransformativeProperty(uint32_t aId)
+TransformativeProperty* ImageItem::getTransformativeProperty(std::uint32_t aId)
 {
-    if (aId < mTransformCount)
+    std::uint32_t index = 0;
+    auto it = mProps.begin();
+    for (; it != mProps.end(); it++)
     {
-        return static_cast<TransformativeProperty*>(mProps[mFirstTransform + aId].first);
+        if (it->first->isTransformative())
+        {
+            if (aId == index)
+            {
+                return static_cast<TransformativeProperty*>(it->first);
+            }
+            index++;
+        }
     }
     return nullptr;
 }
-const TransformativeProperty* ImageItem::getTransformativeProperty(uint32_t aId) const
+const TransformativeProperty* ImageItem::getTransformativeProperty(std::uint32_t aId) const
 {
-    if (aId < mTransformCount)
+    std::uint32_t index = 0;
+    auto it = mProps.begin();
+    for (; it != mProps.end(); it++)
     {
-        return static_cast<const TransformativeProperty*>(mProps[mFirstTransform + aId].first);
+        if (it->first->isTransformative())
+        {
+            if (aId == index)
+            {
+                return static_cast<const TransformativeProperty*>(it->first);
+            }
+            index++;
+        }
     }
     return nullptr;
 }
@@ -295,11 +323,10 @@ HEIF::ErrorCode ImageItem::save(HEIF::Writer* aWriter)
             if (HEIF::ErrorCode::OK != error)
                 return error;
         }
-        error = aWriter->addMetadata(item->getId().get(), mId);
+        error = aWriter->addMetadataItemReference(item->getId().get(), mId);
         if (HEIF::ErrorCode::OK != error)
             return error;
     }
-
 
     // save all thumbs..
     for (ImageItem* image : mThumbnailImages)
@@ -413,7 +440,7 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
     return HEIF::ErrorCode::OK;
 }
 
-uint32_t ImageItem::getThumbnailCount() const
+std::uint32_t ImageItem::getThumbnailCount() const
 {
     return (uint32_t) mThumbnailImages.size();
 }
@@ -464,7 +491,7 @@ void ImageItem::removeThumbnail(ImageItem* aImage)
 }
 
 
-uint32_t ImageItem::getAuxCount() const
+std::uint32_t ImageItem::getAuxCount() const
 {
     return (uint32_t) mAuxImages.size();
 }
@@ -514,7 +541,7 @@ void ImageItem::removeAuxImage(ImageItem* aImage)
     }
 }
 
-uint32_t ImageItem::getMetadataCount() const
+std::uint32_t ImageItem::getMetadataCount() const
 {
     return (uint32_t) mMetaItems.size();
 }
@@ -534,24 +561,23 @@ const MetaItem* ImageItem::getMetadata(uint32_t aId) const
     }
     return nullptr;
 }
-void ImageItem::addMetadata(MetaItem* item)
+void ImageItem::addMetadata(MetaItem* aItem)
 {
-    if (item == nullptr)
+    if (aItem == nullptr)
         return;
-    if (!AddItemTo(mMetaItems, item))
+
+    if (AddItemTo(mMetaItems, aItem))
     {
-        // tried to add an already added metaitem
-        HEIF_ASSERT(true);
+        aItem->link(this);
     }
 }
-void ImageItem::removeMetadata(MetaItem* item)
+void ImageItem::removeMetadata(MetaItem* aItem)
 {
-    if (item == nullptr)
+    if (aItem == nullptr)
         return;
-    if (!RemoveItemFrom(mMetaItems, item))
+    if (RemoveItemFrom(mMetaItems, aItem))
     {
-        // tried to remove non added metaitem.
-        HEIF_ASSERT(false);
+        aItem->unlink(this);
     }
 }
 

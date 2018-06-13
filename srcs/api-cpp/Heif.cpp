@@ -10,29 +10,48 @@
  * of this material requires the prior written consent of Nokia.
  */
 
-#include "Heif.h"
 #include <heifreader.h>
 #include <heifstreaminterface.h>
 #include <heifwriter.h>
+#include "AACDecoderConfiguration.h"
+#include "AVCDecoderConfiguration.h"
+#include "HEVCDecoderConfiguration.h"
+
 #include "AVCCodedImageItem.h"
-#include "DescriptiveProperty.h"
 #include "ExifItem.h"
 #include "GridImageItem.h"
 #include "HEVCCodedImageItem.h"
+#include "Heif.h"
 #include "IdentityImageItem.h"
-#include "Item.h"
 #include "JPEGCodedImageItem.h"
 #include "MPEG7Item.h"
 #include "OverlayImageItem.h"
-#include "RawProperty.h"
-#include "TransformativeProperty.h"
 #include "XMPItem.h"
 
+#include "DescriptiveProperty.h"
+#include "RawProperty.h"
+#include "TransformativeProperty.h"
+
+#include "AudioSample.h"
+#include "AudioTrack.h"
+#include "ImageSequence.h"
+#include "VideoSample.h"
+#include "VideoTrack.h"
+
+#include "AlternativeTrackGroup.h"
+#include "EntityGroup.h"
+#include "EqivGroup.h"
+
 using namespace HEIFPP;
-const HEIF::ImageId Heif::InvalidItem((uint32_t) 0);
-const HEIF::PropertyId Heif::InvalidProperty((uint32_t) 0);
-const HEIF::DecoderConfigId Heif::InvalidDecoderConfig((uint32_t) 0);
-const HEIF::MediaDataId Heif::InvalidMediaData((uint32_t) 0);
+
+constexpr HEIF::GroupId Heif::InvalidGroup((std::uint32_t) 0);
+constexpr HEIF::ImageId Heif::InvalidItem((std::uint32_t) 0);
+constexpr HEIF::SequenceId Heif::InvalidSequence((std::uint32_t) ~0);
+constexpr HEIF::SequenceImageId Heif::InvalidSequenceImage((std::uint32_t) ~0);
+constexpr HEIF::PropertyId Heif::InvalidProperty((std::uint32_t) 0);
+constexpr HEIF::DecoderConfigId Heif::InvalidDecoderConfig((std::uint32_t) 0);
+constexpr HEIF::MediaDataId Heif::InvalidMediaData((std::uint32_t) 0);
+
 #define ISPE_AS_RAW_PROPERTY 0
 #define DECODER_CONFIG_AS_RAW_PROPERTY 0
 
@@ -47,6 +66,7 @@ Heif::Heif()
     , mProperties()
     , mDecoderConfigs()
     , mPrimaryItem(nullptr)
+    , mMatrix{0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000}
     , mItemsLoad()
     , mPropertiesLoad()
     , mDecoderConfigsLoad()
@@ -61,6 +81,26 @@ Heif::~Heif()
 
 void Heif::reset()
 {
+    for (; !mAltGroups.empty();)
+    {
+        auto it = mAltGroups.begin();
+        delete (*it);
+    }
+    for (; !mGroups.empty();)
+    {
+        auto it = mGroups.begin();
+        delete (*it);
+    }
+    for (; !mTracks.empty();)
+    {
+        auto it = mTracks.begin();
+        delete (*it);
+    }
+    for (; !mSamples.empty();)
+    {
+        auto it = mSamples.begin();
+        delete (*it);
+    }
     for (; !mItems.empty();)
     {
         auto it = mItems.begin();
@@ -80,6 +120,15 @@ void Heif::reset()
     mMajorBrand  = HEIF::FourCC();
     mPrimaryItem = nullptr;
     mFileinfo    = HEIF::FileInformation();
+    mMatrix[0]   = 0x10000;
+    mMatrix[1]   = 0;
+    mMatrix[2]   = 0;
+    mMatrix[3]   = 0;
+    mMatrix[4]   = 0x10000;
+    mMatrix[5]   = 0;
+    mMatrix[6]   = 0;
+    mMatrix[7]   = 0;
+    mMatrix[8]   = 0x40000000;
 }
 
 /** Custom user data can be bound to objects. */
@@ -95,22 +144,32 @@ const void* Heif::getContext() const
 
 Result Heif::save(const char* fileName)
 {
-    HEIF::Writer* writer;
     if (mMajorBrand == HEIF::FourCC())
+    {
         return Result::BRANDS_NOT_SET;
+    }
     if (mPrimaryItem == nullptr)
-        return Result::PRIMARY_ITEM_NOT_SET;
-    if (mPrimaryItem->isHidden())
-        return Result::HIDDEN_PRIMARY_ITEM;
-
-    HEIF::ErrorCode error;
-    writer = HEIF::Writer::Create();
+    {
+        if (mTracks.empty())
+        {
+            return Result::PRIMARY_ITEM_NOT_SET;
+        }
+    }
+    else
+    {
+        if (mPrimaryItem->isHidden())
+        {
+            return Result::HIDDEN_PRIMARY_ITEM;
+        }
+    }
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+    HEIF::Writer* writer  = HEIF::Writer::Create();
     HEIF::OutputConfig output;
     output.fileName         = fileName;
     output.majorBrand       = mMajorBrand;
     output.compatibleBrands = HEIF::Array<HEIF::FourCC>(mCompatibleBrands.size());
     output.progressiveFile  = false;
-    for (uint32_t i = 0; i < mCompatibleBrands.size(); i++)
+    for (std::uint32_t i = 0; i < mCompatibleBrands.size(); i++)
     {
         output.compatibleBrands[i] = mCompatibleBrands[i];
     }
@@ -133,31 +192,119 @@ Result Heif::save(const char* fileName)
             // set an "invalid" id.
             config->setId(InvalidDecoderConfig);
         }
-        for (auto* item : mItems)
+        for (auto* track : mTracks)
         {
-            if (item->getId() == Heif::InvalidItem)
+            track->setId(InvalidSequence);
+        }
+        for (auto* sample : mSamples)
+        {
+            sample->setId(InvalidSequenceImage);
+        }
+        for (auto grp : mGroups)
+        {
+            grp->setId(InvalidGroup);
+        }
+
+        HEIF::Array<int32_t> matrix(9);
+        for (size_t i = 0; i < 9; i++)
+        {
+            matrix[i] = mMatrix[i];
+        }
+        error = writer->setMatrix(matrix);
+
+
+        if (HEIF::ErrorCode::OK == error)
+        {
+            for (auto* item : mItems)
             {
-                error = item->save(writer);
-                if (HEIF::ErrorCode::OK != error)
+                if (item->getId() == Heif::InvalidItem)
                 {
-                    break;
+                    error = item->save(writer);
+                    if (HEIF::ErrorCode::OK != error)
+                    {
+                        break;
+                    }
                 }
             }
         }
-        if (HEIF::ErrorCode::OK == error)
+        if ((HEIF::ErrorCode::OK == error) && (mPrimaryItem))
         {
             error = writer->setPrimaryItem(mPrimaryItem->getId());
         }
 
-        HEIF::ErrorCode finalizeError = writer->finalize();
+        // write samples?/tracks?
+        if (HEIF::ErrorCode::OK == error)
+        {
+            for (auto* track : mTracks)
+            {
+                if (track->getId() == Heif::InvalidSequence)
+                {
+                    error = track->save(writer);
+                    if (HEIF::ErrorCode::OK != error)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        // save groups.
+        if (HEIF::ErrorCode::OK == error)
+        {
+            for (auto grp : mGroups)
+            {
+                auto type = grp->getType();
+                HEIF::GroupId gid;
+                error = writer->createEntityGroup(type, gid);
+                if (HEIF::ErrorCode::OK != error)
+                {
+                    break;
+                }
+                grp->setId(gid);
+
+                for (std::uint32_t i = 0; i < grp->getEntityCount(); i++)
+                {
+                    if (grp->isItem(i))
+                    {
+                        error = writer->addToGroup(gid, grp->getItem(i)->getId());
+                    }
+                    else if (grp->isTrack(i))
+                    {
+                        error = writer->addToGroup(gid, grp->getTrack(i)->getId());
+                    }
+                    else if (grp->isSample(i))
+                    {
+                        Sample* smp = grp->getSample(i);
+                        if (type == "eqiv")
+                        {
+                            HEIF::EquivalenceTimeOffset eqi;
+                            eqi.timeOffset          = static_cast<EqivGroup*>(grp)->getOffset(smp);
+                            eqi.timescaleMultiplier = static_cast<EqivGroup*>(grp)->getMultiplier(smp);
+                            error = writer->addToEquivalenceGroup(gid, smp->getTrack()->getId(), smp->getId(), eqi);
+                        }
+                        else
+                        {
+                            // TODO: currently there is only one way to add samples to groups..
+                        }
+                    }
+                    if (HEIF::ErrorCode::OK != error)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
 
         if (HEIF::ErrorCode::OK == error)
         {
-            error = finalizeError;
+            error = writer->finalize();
         }
     }
     HEIF::Writer::Destroy(writer);
     return convertErrorCode(error);
+}
+const HEIF::FileInformation* Heif::getFileInformation() const
+{
+    return &mFileinfo;
 }
 const HEIF::ItemInformation* Heif::getItemInformation(const HEIF::ImageId& aItemId) const
 {
@@ -181,49 +328,29 @@ const HEIF::ImageInformation* Heif::getImageInformation(const HEIF::ImageId& aIt
     }
     return nullptr;
 }
-Result Heif::load(const char* fileName)
+const HEIF::TrackInformation* Heif::getTrackInformation(const HEIF::SequenceId& aItemId) const
 {
-    HEIF::Reader* reader;
-    if (mMajorBrand != HEIF::FourCC())
-        return Result::ALREADY_INITIALIZED;
-    if (!mCompatibleBrands.empty())
-        return Result::ALREADY_INITIALIZED;
-    if (!mItems.empty())
-        return Result::ALREADY_INITIALIZED;
-    if (!mItemsOfType.empty())
-        return Result::ALREADY_INITIALIZED;
-    if (!mProperties.empty())
-        return Result::ALREADY_INITIALIZED;
-    if (!mDecoderConfigs.empty())
-        return Result::ALREADY_INITIALIZED;
-    if (mPrimaryItem)
-        return Result::ALREADY_INITIALIZED;
-
-    reader                = HEIF::Reader::Create();
-    HEIF::ErrorCode error = reader->initialize(fileName);
-    if (HEIF::ErrorCode::OK == error)
+    for (const auto& i : mFileinfo.trackInformation)
     {
-        error = load(reader);
+        if (i.trackId == aItemId)
+        {
+            return &i;
+        }
     }
-    mItemsLoad.clear();
-    mPropertiesLoad.clear();
-    mDecoderConfigsLoad.clear();
-    if (HEIF::ErrorCode::OK != error)
-    {
-        // clean up on error.
-        reset();
-    }
+    return nullptr;
+}
 
-    // TODO: leave the reader object alive, and on-demand read item datas...
-    HEIF::Reader::Destroy(reader);
-    reader = nullptr;
-
-    return convertErrorCode(error);
+Result Heif::load(const char* aFilename)
+{
+    return load(aFilename, nullptr);
 }
 
 Result Heif::load(HEIF::StreamInterface* aStream)
 {
-    HEIF::Reader* reader;
+    return load(nullptr, aStream);
+}
+Result Heif::load(const char* aFilename, HEIF::StreamInterface* aStream)
+{
     if (mMajorBrand != HEIF::FourCC())
         return Result::ALREADY_INITIALIZED;
     if (!mCompatibleBrands.empty())
@@ -239,15 +366,27 @@ Result Heif::load(HEIF::StreamInterface* aStream)
     if (mPrimaryItem)
         return Result::ALREADY_INITIALIZED;
 
-    reader                = HEIF::Reader::Create();
-    HEIF::ErrorCode error = reader->initialize(aStream);
+    HEIF::Reader* reader  = HEIF::Reader::Create();
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+    if (aStream)
+    {
+        error = reader->initialize(aStream);
+    }
+    else
+    {
+        error = reader->initialize(aFilename);
+    }
     if (HEIF::ErrorCode::OK == error)
     {
         error = load(reader);
     }
     mItemsLoad.clear();
+    mTracksLoad.clear();
     mPropertiesLoad.clear();
     mDecoderConfigsLoad.clear();
+    mSamplesLoad.clear();
+    mGroupsLoad.clear();
+    mAltGroupsLoad.clear();
     if (HEIF::ErrorCode::OK != error)
     {
         // clean up on error.
@@ -261,7 +400,6 @@ Result Heif::load(HEIF::StreamInterface* aStream)
 
     return convertErrorCode(error);
 }
-
 HEIF::ErrorCode Heif::load(HEIF::Reader* aReader)
 {
     HEIF::ErrorCode error;
@@ -283,31 +421,228 @@ HEIF::ErrorCode Heif::load(HEIF::Reader* aReader)
                 error = aReader->getFileInformation(mFileinfo);
                 if (HEIF::ErrorCode::OK == error)
                 {
-                    HEIF::ImageId prim = 0;  // should be invalid?
-                    error              = aReader->getPrimaryItem(prim);
-                    if (HEIF::ErrorCode::OK != error)
+                    if (mFileinfo.features & HEIF::FileFeatureEnum::HasRootLevelMetaBox)
                     {
-                        return error;
+                        HEIF::ImageId prim = InvalidItem;
+                        error              = aReader->getPrimaryItem(prim);
+                        if (HEIF::ErrorCode::PRIMARY_ITEM_NOT_SET == error)
+                        {
+                            // Warning: no primary item specified.
+                            // Ignore this.
+                            error = HEIF::ErrorCode::OK;
+                        }
+                        else if (HEIF::ErrorCode::OK != error)
+                        {
+                            // other error.
+                            return error;
+                        }
+
+                        for (const auto& i : mFileinfo.rootMetaBoxInformation.imageInformations)
+                        {
+                            ImageItem* image = static_cast<ImageItem*>(constructItem(aReader, i.itemId, error));
+                            if (HEIF::ErrorCode::OK != error)
+                            {
+                                return error;
+                            }
+                            if (i.itemId == prim)
+                            {
+                                setPrimaryItem(image);
+                            }
+                        }
+                        for (const auto& i : mFileinfo.rootMetaBoxInformation.itemInformations)
+                        {
+                            constructItem(aReader, i.itemId, error);
+                            if (HEIF::ErrorCode::OK != error)
+                            {
+                                return error;
+                            }
+                        }
+                    }
+                    for (const auto& i : mFileinfo.trackInformation)
+                    {
+                        mSamples.reserve(mSamples.size() + i.sampleProperties.size);
+                        constructTrack(aReader, i.trackId, error);
+                        if (HEIF::ErrorCode::OK != error)
+                        {
+                            return error;
+                        }
                     }
 
-                    for (const auto& i : mFileinfo.rootMetaBoxInformation.imageInformations)
+                    // handle grouping here. and not in track/image/sample.
+
+                    // first link items and tracks...
+                    for (const auto& g : mFileinfo.rootMetaBoxInformation.entityGroupings)
                     {
-                        ImageItem* image = static_cast<ImageItem*>(constructItem(aReader, i.itemId, error));
-                        if (HEIF::ErrorCode::OK != error)
+                        Track* track = nullptr;
+                        Item* item   = nullptr;
+                        if (g.type == "stmi")
                         {
-                            return error;
+                            //stmi (sample to media group) linking is processed later on.
                         }
-                        if (i.itemId == prim)
+                        else
                         {
-                            setPrimaryItem(image);
+                            EntityGroup* eg = constructGroup(g.type);
+                            eg->setId(g.groupId);
+                            mGroupsLoad[g.groupId] = eg;
+                            for (const auto& i : g.entityIds)
+                            {
+                                if (mTracksLoad.find(HEIF::SequenceId(i)) != mTracksLoad.end())
+                                {
+                                    // image sequence?
+                                    track = mTracksLoad[HEIF::SequenceId(i)];
+                                    eg->addTrack(track);
+                                }
+                                else if (mItemsLoad.find(HEIF::ImageId(i)) != mItemsLoad.end())
+                                {
+                                    // Image/item then..
+                                    item = mItemsLoad[HEIF::ImageId(i)];
+                                    eg->addItem(item);
+                                }
+                                else
+                                {
+                                    // TODO: fail or warn?
+                                    // the grouped entity does not exist
+                                }
+                            }
                         }
                     }
-                    for (const auto& i : mFileinfo.rootMetaBoxInformation.itemInformations)
+
+                    // and now check if tracks are linked with out specifying them in the entitygroupings.
+                    for (const auto& ii : mFileinfo.trackInformation)
                     {
-                        constructItem(aReader, i.itemId, error);
-                        if (HEIF::ErrorCode::OK != error)
+                        auto* info = &ii;
+                        if (info->alternateGroupId != 0)
                         {
-                            return error;
+                            auto res = mAltGroupsLoad.insert({info->alternateGroupId, nullptr});
+                            if (res.second)
+                            {
+                                res.first->second = new AlternativeTrackGroup(this);
+                            }
+
+                            auto it = mTracksLoad.find(ii.trackId);
+                            if (it != mTracksLoad.end())
+                            {
+                                Track* track = it->second;
+                                res.first->second->addTrack(track);
+                            }
+                        }
+                    }
+
+                    // and finally handle sample groupings (metadata or other..)
+                    for (const auto& ii : mFileinfo.trackInformation)
+                    {
+                        auto* info = &ii;
+                        if (mTracksLoad.find(ii.trackId) != mTracksLoad.end())
+                        {
+                            std::map<std::uint32_t, HEIF::SampleVisualEquivalence> groupIdToEqu;
+                            std::map<std::uint32_t, HEIF::SampleToMetadataItem> groupIdToMeta;
+
+                            for (const auto& at : info->equivalences)
+                            {
+                                groupIdToEqu[at.sampleGroupDescriptionIndex] = at;
+                            }
+                            for (const auto& at : info->metadatas)
+                            {
+                                groupIdToMeta[at.sampleGroupDescriptionIndex] = at;
+                            }
+                            for (const auto& at : info->sampleGroups)
+                            {
+                                if (at.type == "stmi")
+                                {
+                                    // handle sample to meta specially.
+                                    for (const auto& sampleId : at.samples)
+                                    {
+                                        Sample* s        = mSamplesLoad[{ii.trackId, sampleId.sampleId}];
+                                        const auto& meta = groupIdToMeta[sampleId.sampleGroupDescriptionIndex];
+                                        for (auto metaId : meta.metadataItemIds)
+                                        {
+                                            MetaItem* m = static_cast<MetaItem*>(mItemsLoad[metaId.get()]);
+                                            s->addMetadata(m);
+                                        }
+                                    }
+                                }
+                                else if (at.type == "refs")
+                                {
+                                    // handled differently.. (see decode deps later)
+                                }
+                                else
+                                {
+                                    EntityGroup* group = nullptr;
+                                    auto it = mGroupsLoad.insert({HEIF::GroupId(at.typeParameter), nullptr});
+                                    if (at.type == "eqiv")
+                                    {
+                                        if (it.second)
+                                        {
+                                            it.first->second = constructGroup(at.type);
+                                            it.first->second->setId(HEIF::GroupId(at.typeParameter));
+                                        }
+                                        group = it.first->second;
+                                        // verify type of group.
+                                        if (group->getType() != "eqiv")
+                                        {
+                                            // warning: corrupted file..
+                                            continue;
+                                        }
+                                        EqivGroup* eg = static_cast<EqivGroup*>(group);
+                                        for (const auto& sampleId : at.samples)
+                                        {
+                                            Sample* s       = mSamplesLoad[{ii.trackId, sampleId.sampleId}];
+                                            const auto& equ = groupIdToEqu[sampleId.sampleGroupDescriptionIndex];
+                                            eg->addSample(s, equ.timeOffset, equ.timescaleMultiplier);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        //link sample to generic group. NOTE: information might be missing since we don't actually know the group type.
+                                        if (it.second)
+                                        {
+                                            it.first->second = constructGroup(at.type);
+                                            it.first->second->setId(HEIF::GroupId(at.typeParameter));
+                                        }
+                                        group = it.first->second;
+                                        for (const auto& sampleId : at.samples)
+                                        {
+                                            Sample* s = mSamplesLoad[{ii.trackId, sampleId.sampleId}];
+                                            group->addSample(s);
+                                        }
+                                    }
+                                }
+                            }
+
+                            for (const auto& sampleId : info->sampleProperties)
+                            {
+                                Sample* s = mSamplesLoad[{ii.trackId, sampleId.sampleId}];
+                                HEIF::Array<HEIF::SequenceImageId> dependencies;
+                                aReader->getDecodeDependencies(ii.trackId, sampleId.sampleId, dependencies);
+                                for (auto sid : dependencies)
+                                {
+                                    s->addDecodeDependency(mSamplesLoad[{ii.trackId, sid}]);
+                                }
+                            }
+                        }
+                    }
+
+                    if (HEIF::ErrorCode::OK == error)
+                    {
+                        HEIF::Array<std::int32_t> mat;
+                        error = aReader->getMatrix(mat);
+                        if (HEIF::ErrorCode::NOT_APPLICABLE == error)
+                        {
+                            // no matrix in file. no error.
+                            error = HEIF::ErrorCode::OK;
+                        }
+                        else
+                        {
+                            if (HEIF::ErrorCode::OK == error)
+                            {
+                                if (mat.size == 9)
+                                {
+                                    for (size_t i = 0; i < 9; i++)
+                                    {
+                                        mMatrix[i] = mat[i];
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -324,25 +659,25 @@ void Heif::setMajorBrand(const HEIF::FourCC& aBrand)
 {
     mMajorBrand = aBrand;
 }
-uint32_t Heif::getMinorVersion() const
+std::uint32_t Heif::getMinorVersion() const
 {
     return mMinorVersion;
 }
-void Heif::setMinorVersion(uint32_t aVersion)
+void Heif::setMinorVersion(std::uint32_t aVersion)
 {
     mMinorVersion = aVersion;
 }
-uint32_t Heif::compatibleBrands() const
+std::uint32_t Heif::compatibleBrands() const
 {
-    return (uint32_t) mCompatibleBrands.size();
+    return (std::uint32_t) mCompatibleBrands.size();
 }
-const HEIF::FourCC& Heif::getCompatibleBrand(uint32_t aId) const
+const HEIF::FourCC& Heif::getCompatibleBrand(std::uint32_t aId) const
 {
     if (aId < mCompatibleBrands.size())
     {
         return mCompatibleBrands[aId];
     }
-    static HEIF::FourCC aInvalidFourCC((uint32_t) 0);
+    static HEIF::FourCC aInvalidFourCC((std::uint32_t) 0);
     return aInvalidFourCC;
 }
 
@@ -354,11 +689,11 @@ void Heif::addCompatibleBrand(const HEIF::FourCC& brand)
         HEIF_ASSERT(false);
     }
 }
-void Heif::removeCompatibleBrand(uint32_t aId)
+void Heif::removeCompatibleBrand(std::uint32_t aId)
 {
     if (aId < mCompatibleBrands.size())
     {
-        mCompatibleBrands.erase(mCompatibleBrands.begin() + (int32_t) aId);
+        mCompatibleBrands.erase(mCompatibleBrands.begin() + (std::int32_t) aId);
     }
 }
 void Heif::removeCompatibleBrand(const HEIF::FourCC& brand)
@@ -370,10 +705,106 @@ void Heif::removeCompatibleBrand(const HEIF::FourCC& brand)
     }
 }
 
+EntityGroup* Heif::constructGroup(const HEIF::FourCC& aType)
+{
+    if (aType == "eqiv")
+    {
+        return new EqivGroup(this);
+    }
+    return new EntityGroup(this, aType);
+}
+
+Sample* Heif::constructSample(HEIF::Reader* aReader,
+                              const HEIF::SequenceId& aTrack,
+                              const HEIF::SampleInformation& aInfo,
+                              HEIF::ErrorCode& aErrorCode)
+{
+    auto it = mSamplesLoad.insert({{aTrack, aInfo.sampleId}, nullptr});
+    if (it.second)
+    {
+        auto info    = getTrackInformation(aTrack);
+        Sample* item = nullptr;
+
+        if ((info->features & HEIF::TrackFeatureEnum::Feature::IsVideoTrack) ||
+            (info->features & HEIF::TrackFeatureEnum::Feature::IsMasterImageSequence) ||
+            (info->features & HEIF::TrackFeatureEnum::Feature::IsThumbnailImageSequence) ||
+            (info->features & HEIF::TrackFeatureEnum::Feature::IsAuxiliaryImageSequence))
+        {
+            item = new VideoSample(this);
+        }
+        else if (info->features & HEIF::TrackFeatureEnum::Feature::IsAudioTrack)
+        {
+            item = new AudioSample(this);
+        }
+        else
+        {
+            //unknown sample type. ignore.
+        }
+        if (item)
+        {
+            item->setId(aInfo.sampleId);
+            it.first->second = item;
+            aErrorCode       = item->load(aReader, aTrack, aInfo);
+            return item;
+        }
+#ifdef FAIL_ON_UNKNOWN_ITEM
+        aErrorCode = HEIF::ErrorCode::MEDIA_PARSING_ERROR;
+#endif
+        // invalid state.
+        mSamplesLoad.erase({aTrack, aInfo.sampleId});
+        return nullptr;
+    }
+    aErrorCode = HEIF::ErrorCode::OK;
+    return it.first->second;
+}
+
+Track* Heif::constructTrack(HEIF::Reader* aReader, const HEIF::SequenceId& aTrackId, HEIF::ErrorCode& aErrorCode)
+{
+    auto it = mTracksLoad.insert({aTrackId, nullptr});
+    if (it.second)
+    {
+        auto info   = getTrackInformation(aTrackId);
+        Track* item = nullptr;
+        if (info->features & HEIF::TrackFeatureEnum::Feature::IsVideoTrack)
+        {
+            item = new VideoTrack(this);
+        }
+        else if ((info->features & HEIF::TrackFeatureEnum::Feature::IsMasterImageSequence) ||
+                 (info->features & HEIF::TrackFeatureEnum::Feature::IsThumbnailImageSequence) ||
+                 (info->features & HEIF::TrackFeatureEnum::Feature::IsAuxiliaryImageSequence))
+        {
+            item = new ImageSequence(this);
+        }
+        else if (info->features & HEIF::TrackFeatureEnum::Feature::IsAudioTrack)
+        {
+            item = new AudioTrack(this);
+        }
+        else
+        {
+            // unknown track type. ignore
+        }
+        if (item)
+        {
+            item->setId(aTrackId);
+            it.first->second = item;
+            aErrorCode       = item->load(aReader, aTrackId);
+            return item;
+        }
+#ifdef FAIL_ON_UNKNOWN_ITEM
+        aErrorCode = HEIF::ErrorCode::MEDIA_PARSING_ERROR;
+#endif
+        // invalid state.
+        mTracksLoad.erase(aTrackId);
+        return nullptr;
+    }
+    aErrorCode = HEIF::ErrorCode::OK;
+    return it.first->second;
+}
+
 Item* Heif::constructItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, HEIF::ErrorCode& aErrorCode)
 {
-    auto it = mItemsLoad.find(aItemId);
-    if (it == mItemsLoad.end())
+    auto it = mItemsLoad.insert({aItemId, nullptr});
+    if (it.second)
     {
         HEIF::FourCC type;
         aErrorCode = aReader->getItemType(aItemId, type);
@@ -432,27 +863,28 @@ Item* Heif::constructItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, H
         if (item)
         {
             item->setId(aItemId);
-            mItemsLoad[aItemId] = item;
-            aErrorCode          = item->load(aReader, aItemId);
+            it.first->second = item;
+            aErrorCode       = item->load(aReader, aItemId);
             return item;
         }
 #ifdef FAIL_ON_UNKNOWN_ITEM
         aErrorCode = HEIF::ErrorCode::MEDIA_PARSING_ERROR;
 #endif
         // invalid state.
+        mItemsLoad.erase(aItemId);
         return nullptr;
     }
     aErrorCode = HEIF::ErrorCode::OK;
-    HEIF_ASSERT(it->second != nullptr);
-    return it->second;
+    return it.first->second;
 }
+
 ItemProperty* Heif::constructItemProperty(HEIF::Reader* aReader,
                                           const HEIF::ItemPropertyInfo& aItemInfo,
                                           HEIF::ErrorCode& aErrorCode)
 {
     // method is valid only during load
-    auto it = mPropertiesLoad.find(aItemInfo.index);
-    if (it == mPropertiesLoad.end())
+    auto it = mPropertiesLoad.insert({aItemInfo.index, nullptr});
+    if (it.second)
     {
         ItemProperty* p = nullptr;
         switch (aItemInfo.type)
@@ -542,50 +974,38 @@ ItemProperty* Heif::constructItemProperty(HEIF::Reader* aReader,
         if (p)
         {
             p->setId(aItemInfo.index);
-            mPropertiesLoad[aItemInfo.index] = p;
-            aErrorCode                       = p->load(aReader, aItemInfo.index);
+            it.first->second = p;
+            aErrorCode       = p->load(aReader, aItemInfo.index);
             return p;
         }
 #ifdef FAIL_ON_UNKNOWN_PROPERTY
         aErrorCode = HEIF::ErrorCode::MEDIA_PARSING_ERROR;
 #endif
+        mPropertiesLoad.erase(aItemInfo.index);
         return nullptr;
     }
     aErrorCode = HEIF::ErrorCode::OK;
-    HEIF_ASSERT(it->second != nullptr);
-    return it->second;
+    return it.first->second;
 }
+
 void Heif::addProperty(ItemProperty* aItemProperty)
 {
-    aItemProperty->setId(((uint32_t) mProperties.size()) + 1);
-    if (!AddItemTo(mProperties, aItemProperty))
-    {
-        // Tried to add already added property.
-        HEIF_ASSERT(false);
-    }
+    aItemProperty->setId(((std::uint32_t) mProperties.size()) + 1);
+    mProperties.push_back(aItemProperty);
 }
 void Heif::addItem(Item* aItem)
 {
-    aItem->setId(((uint32_t) mItems.size()) + 1);
-    if (!AddItemTo(mItems, aItem))
-    {
-        // Tried to add an already added item
-        HEIF_ASSERT(false);
-        return;
-    }
-    if (!AddItemTo(mItemsOfType[aItem->getType()], aItem))
-    {
-        // Tried to add an already added item
-        HEIF_ASSERT(false);
-    }
+    aItem->setId(((std::uint32_t) mItems.size()) + 1);
+    mItems.push_back(aItem);
+    mItemsOfType[aItem->getType()].push_back(aItem);
 }
 
-uint32_t Heif::getPropertyCount() const
+std::uint32_t Heif::getPropertyCount() const
 {
-    return (uint32_t) mProperties.size();
+    return (std::uint32_t) mProperties.size();
 }
 
-ItemProperty* Heif::getProperty(uint32_t aIndex)
+ItemProperty* Heif::getProperty(std::uint32_t aIndex)
 {
     if (aIndex < mProperties.size())
     {
@@ -593,7 +1013,7 @@ ItemProperty* Heif::getProperty(uint32_t aIndex)
     }
     return nullptr;
 }
-const ItemProperty* Heif::getProperty(uint32_t aIndex) const
+const ItemProperty* Heif::getProperty(std::uint32_t aIndex) const
 {
     if (aIndex < mProperties.size())
     {
@@ -641,17 +1061,17 @@ void Heif::removeItem(Item* aItem)
     }
 }
 
-uint32_t Heif::getItemsOfTypeCount(const HEIF::FourCC& aType) const
+std::uint32_t Heif::getItemsOfTypeCount(const HEIF::FourCC& aType) const
 {
     const auto& it = mItemsOfType.find(aType);
     if (it != mItemsOfType.end())
     {
-        return (uint32_t) it->second.size();
+        return (std::uint32_t) it->second.size();
     }
     return 0;
 }
 
-Item* Heif::getItemOfType(const HEIF::FourCC& aType, uint32_t aId)
+Item* Heif::getItemOfType(const HEIF::FourCC& aType, std::uint32_t aId)
 {
     const auto& it = mItemsOfType.find(aType);
     if (it != mItemsOfType.end())
@@ -663,7 +1083,7 @@ Item* Heif::getItemOfType(const HEIF::FourCC& aType, uint32_t aId)
     }
     return nullptr;
 }
-const Item* Heif::getItemOfType(const HEIF::FourCC& aType, uint32_t aId) const
+const Item* Heif::getItemOfType(const HEIF::FourCC& aType, std::uint32_t aId) const
 {
     const auto& it = mItemsOfType.find(aType);
     if (it != mItemsOfType.end())
@@ -690,9 +1110,9 @@ void Heif::setPrimaryItem(ImageItem* aPrimary)
     mPrimaryItem = aPrimary;
 }
 
-uint32_t Heif::getMasterImageCount() const
+std::uint32_t Heif::getMasterImageCount() const
 {
-    uint32_t cnt = 0;
+    std::uint32_t cnt = 0;
     for (const auto& it : mItems)
     {
         if ((it->isImageItem()) && ((static_cast<ImageItem*>(it))->isMasterImage()))
@@ -703,9 +1123,9 @@ uint32_t Heif::getMasterImageCount() const
     return cnt;
 }
 
-ImageItem* Heif::getMasterImage(uint32_t aId)
+ImageItem* Heif::getMasterImage(std::uint32_t aId)
 {
-    uint32_t cnt = 0;
+    std::uint32_t cnt = 0;
     for (const auto& it : mItems)
     {
         if ((it->isImageItem()) && ((static_cast<ImageItem*>(it))->isMasterImage()))
@@ -718,9 +1138,9 @@ ImageItem* Heif::getMasterImage(uint32_t aId)
     return nullptr;
 }
 
-const ImageItem* Heif::getMasterImage(uint32_t aId) const
+const ImageItem* Heif::getMasterImage(std::uint32_t aId) const
 {
-    uint32_t cnt = 0;
+    std::uint32_t cnt = 0;
     for (const auto& it : mItems)
     {
         if ((it->isImageItem()) && ((static_cast<ImageItem*>(it))->isMasterImage()))
@@ -733,9 +1153,9 @@ const ImageItem* Heif::getMasterImage(uint32_t aId) const
     return nullptr;
 }
 
-uint32_t Heif::getItemCount() const
+std::uint32_t Heif::getItemCount() const
 {
-    uint32_t cnt = 0;
+    std::uint32_t cnt = 0;
     for (const auto& it : mItems)
     {
         if ((!it->isImageItem()) || (!(static_cast<ImageItem*>(it))->isCodedImage()))
@@ -746,24 +1166,9 @@ uint32_t Heif::getItemCount() const
     return cnt;
 }
 
-Item* Heif::getItem(uint32_t aId)
+Item* Heif::getItem(std::uint32_t aId)
 {
-    uint32_t cnt = 0;
-    for (const auto& it : mItems)
-    {
-        if ((!it->isImageItem()) || (!(static_cast<ImageItem*>(it))->isCodedImage()))
-        {
-            if (cnt == aId)
-                return it;
-            ++cnt;
-        }
-    }
-    return nullptr;
-}
-
-const Item* Heif::getItem(uint32_t aId) const
-{
-    uint32_t cnt = 0;
+    std::uint32_t cnt = 0;
     for (const auto& it : mItems)
     {
         if ((!it->isImageItem()) || (!(static_cast<ImageItem*>(it))->isCodedImage()))
@@ -776,9 +1181,24 @@ const Item* Heif::getItem(uint32_t aId) const
     return nullptr;
 }
 
-uint32_t Heif::getImageCount() const
+const Item* Heif::getItem(std::uint32_t aId) const
 {
-    uint32_t cnt = 0;
+    std::uint32_t cnt = 0;
+    for (const auto& it : mItems)
+    {
+        if ((!it->isImageItem()) || (!(static_cast<ImageItem*>(it))->isCodedImage()))
+        {
+            if (cnt == aId)
+                return it;
+            ++cnt;
+        }
+    }
+    return nullptr;
+}
+
+std::uint32_t Heif::getImageCount() const
+{
+    std::uint32_t cnt = 0;
     for (const auto& it : mItems)
     {
         if (it->isImageItem())
@@ -789,9 +1209,9 @@ uint32_t Heif::getImageCount() const
     return cnt;
 }
 
-ImageItem* Heif::getImage(uint32_t aId)
+ImageItem* Heif::getImage(std::uint32_t aId)
 {
-    uint32_t cnt = 0;
+    std::uint32_t cnt = 0;
     for (const auto& it : mItems)
     {
         if (it->isImageItem())
@@ -804,9 +1224,9 @@ ImageItem* Heif::getImage(uint32_t aId)
     return nullptr;
 }
 
-const ImageItem* Heif::getImage(uint32_t aId) const
+const ImageItem* Heif::getImage(std::uint32_t aId) const
 {
-    uint32_t cnt = 0;
+    std::uint32_t cnt = 0;
     for (const auto& it : mItems)
     {
         if (it->isImageItem())
@@ -829,33 +1249,90 @@ bool Heif::hasImageCollection()
     return getMasterImageCount() > 1;
 }
 
-
 DecoderConfiguration* Heif::constructDecoderConfig(HEIF::Reader* aReader,
-                                                   const HEIF::MediaFormat& aFormat,
+                                                   const HEIF::SequenceId& aTrackId,
+                                                   const HEIF::SequenceImageId& aTrackImageId,
+                                                   HEIF::ErrorCode& aErrorCode)
+{
+    return constructDecoderConfig(aReader, Heif::InvalidItem, aTrackId, aTrackImageId, aErrorCode);
+}
+DecoderConfiguration* Heif::constructDecoderConfig(HEIF::Reader* aReader,
+                                                   const HEIF::ImageId& aImageId,
+                                                   HEIF::ErrorCode& aErrorCode)
+{
+    return constructDecoderConfig(aReader, aImageId, Heif::InvalidSequence, Heif::InvalidSequenceImage, aErrorCode);
+}
+DecoderConfiguration* Heif::constructDecoderConfig(HEIF::Reader* aReader,
                                                    const HEIF::ImageId& aItemId,
+                                                   const HEIF::SequenceId& aTrackId,
+                                                   const HEIF::SequenceImageId& aTrackImageId,
                                                    HEIF::ErrorCode& aErrorCode)
 {
     // method is only valid during load
     HEIF::DecoderConfiguration cfg;
-    aReader->getDecoderParameterSets(aItemId, cfg);
-
-    auto it = mDecoderConfigsLoad.find(cfg.decoderConfigId);
-    if ((it == mDecoderConfigsLoad.end()) || (it->second == nullptr))
+    std::pair<HEIF::SequenceId, HEIF::DecoderConfigId> key;
+    HEIF::FourCC aType;
+    if (aItemId == InvalidItem)
+    {
+        aErrorCode = aReader->getDecoderCodeType(aTrackId, aTrackImageId, aType);
+        if (HEIF::ErrorCode::OK != aErrorCode)
+        {
+            return nullptr;
+        }
+        aErrorCode = aReader->getDecoderParameterSets(aTrackId, aTrackImageId, cfg);
+        if (HEIF::ErrorCode::OK != aErrorCode)
+        {
+            return nullptr;
+        }
+        key.first  = aTrackId;
+        key.second = cfg.decoderConfigId;
+    }
+    else
+    {
+        aErrorCode = aReader->getDecoderCodeType(aItemId, aType);
+        if (HEIF::ErrorCode::OK != aErrorCode)
+        {
+            return nullptr;
+        }
+        aErrorCode = aReader->getDecoderParameterSets(aItemId, cfg);
+        if (HEIF::ErrorCode::OK != aErrorCode)
+        {
+            return nullptr;
+        }
+        key.first  = InvalidSequence;
+        key.second = cfg.decoderConfigId;
+    }
+    auto it = mDecoderConfigsLoad.insert({key, nullptr});
+    if (it.second)
     {
         DecoderConfiguration* config = nullptr;
-        if (aFormat == HEIF::MediaFormat::AVC)
-        {
-            config = new AVCDecoderConfiguration(this);
-        }
 #if 0
-        else if (aFormat == HEIF::MediaFormat::JPEG)
+        if (fourcc for jpeg?)
         {
-            config = new JPEGDecoderConfiguration(this);
+            config = new JPEGDecoderConfiguration(this,aTYpe);
         }
 #endif
-        else if (aFormat == HEIF::MediaFormat::HEVC)
+        switch (mediaFormatFromFourCC(aType))
         {
-            config = new HEVCDecoderConfiguration(this);
+        case HEIF::MediaFormat::AVC:
+        {
+            config = new AVCDecoderConfiguration(this, aType);
+            break;
+        }
+        case HEIF::MediaFormat::HEVC:
+        {
+            config = new HEVCDecoderConfiguration(this, aType);
+            break;
+        }
+        case HEIF::MediaFormat::AAC:
+        {
+            config = new AACDecoderConfiguration(this, aType);
+            break;
+        }
+        default:
+        {
+            config = nullptr;
+        }
         }
 
         if (config)
@@ -864,25 +1341,27 @@ DecoderConfiguration* Heif::constructDecoderConfig(HEIF::Reader* aReader,
             if (HEIF::ErrorCode::OK == aErrorCode)
             {
                 config->setId(cfg.decoderConfigId);  // save the original id.
-                mDecoderConfigsLoad[cfg.decoderConfigId] = config;
+                it.first->second = config;
+                return config;
             }
-            return config;
+            delete config;
         }
 #ifdef FAIL_ON_UNKNOWN_CONFIGTYPE
         aErrorCode = HEIF::ErrorCode::MEDIA_PARSING_ERROR;
 #endif
+        mDecoderConfigsLoad.erase(key);
         return nullptr;
     }
     aErrorCode = HEIF::ErrorCode::OK;
-    return it->second;
+    return it.first->second;
 }
 
-uint32_t Heif::getDecoderConfigCount() const
+std::uint32_t Heif::getDecoderConfigCount() const
 {
-    return (uint32_t) mDecoderConfigs.size();
+    return (std::uint32_t) mDecoderConfigs.size();
 }
 
-DecoderConfiguration* Heif::getDecoderConfig(uint32_t aId)
+DecoderConfiguration* Heif::getDecoderConfig(std::uint32_t aId)
 {
     if (aId < mDecoderConfigs.size())
     {
@@ -890,7 +1369,7 @@ DecoderConfiguration* Heif::getDecoderConfig(uint32_t aId)
     }
     return nullptr;
 }
-const DecoderConfiguration* Heif::getDecoderConfig(uint32_t aId) const
+const DecoderConfiguration* Heif::getDecoderConfig(std::uint32_t aId) const
 {
     if (aId < mDecoderConfigs.size())
     {
@@ -901,12 +1380,8 @@ const DecoderConfiguration* Heif::getDecoderConfig(uint32_t aId) const
 
 void Heif::addDecoderConfig(DecoderConfiguration* aItem)
 {
-    aItem->setId(((uint32_t) mDecoderConfigs.size()) + 1);
-    if (!AddItemTo(mDecoderConfigs, aItem))
-    {
-        // Tried to add a already added DecoderConfiguration
-        HEIF_ASSERT(false);
-    }
+    aItem->setId(((std::uint32_t) mDecoderConfigs.size()) + 1);
+    mDecoderConfigs.push_back(aItem);
 }
 
 void Heif::removeDecoderConfig(DecoderConfiguration* aDecoderConfig)
@@ -916,4 +1391,205 @@ void Heif::removeDecoderConfig(DecoderConfiguration* aDecoderConfig)
         // Tried to remove a non added DecoderConfiguration
         HEIF_ASSERT(false);
     }
+}
+
+std::uint32_t Heif::getTrackCount() const
+{
+    return (std::uint32_t) mTracks.size();
+}
+
+Track* Heif::getTrack(std::uint32_t aTrack)
+{
+    return mTracks[aTrack];
+}
+
+const Track* Heif::getTrack(std::uint32_t aTrack) const
+{
+    return mTracks[aTrack];
+}
+
+void Heif::addTrack(Track* aTrack)
+{
+    aTrack->setId(((std::uint32_t) mTracks.size()) + 1);
+    mTracks.push_back(aTrack);
+}
+void Heif::removeTrack(Track* aTrack)
+{
+    // firstly remove it from the all items list.
+    if (!RemoveItemFrom(mTracks, aTrack))
+    {
+        // Tried to remove an item that was not added!
+        HEIF_ASSERT(false);
+    }
+}
+
+void Heif::addSample(Sample* aSample)
+{
+    aSample->setId(((std::uint32_t) mSamples.size()) + 1);
+    mSamples.push_back(aSample);
+}
+void Heif::removeSample(Sample* aSample)
+{
+    // firstly remove it from the all items list.
+    if (!RemoveItemFrom(mSamples, aSample))
+    {
+        // Tried to remove an item that was not added!
+        HEIF_ASSERT(false);
+    }
+}
+
+void Heif::addGroup(EntityGroup* aItem)
+{
+    aItem->setId(((std::uint32_t) mGroups.size()) + 1);
+    mGroups.push_back(aItem);
+    mGroupsOfType[aItem->getType()].push_back(aItem);
+}
+
+void Heif::removeGroup(EntityGroup* aItem)
+{
+    // firstly remove it from the all items list.
+    if (!RemoveItemFrom(mGroups, aItem))
+    {
+        // Tried to remove an item that was not added!
+        HEIF_ASSERT(false);
+    }
+
+    // secondly remove the item from the mItemsOfType lists..
+    auto tmp = mGroupsOfType.find(aItem->getType());
+    if (tmp != mGroupsOfType.end())
+    {
+        if (!RemoveItemFrom(tmp->second, aItem))
+        {
+            // Tried to remove an item that was not added!
+            HEIF_ASSERT(false);
+        }
+        // and cleanup the type map if it was the last of it's type
+        if (tmp->second.empty())
+        {
+            mGroupsOfType.erase(tmp);
+        }
+    }
+}
+std::uint32_t Heif::getAlternativeTrackGroupCount() const
+{
+    return (std::uint32_t) mAltGroups.size();
+}
+AlternativeTrackGroup* Heif::getAlternativeTrackGroup(std::uint32_t aId)
+{
+    if (aId < mAltGroups.size())
+    {
+        return mAltGroups[aId];
+    }
+    return nullptr;
+}
+const AlternativeTrackGroup* Heif::getAlternativeTrackGroup(std::uint32_t aId) const
+{
+    if (aId < mAltGroups.size())
+    {
+        return mAltGroups[aId];
+    }
+    return nullptr;
+}
+void Heif::removeAlternativeTrackGroup(AlternativeTrackGroup* aGroup)
+{
+    RemoveItemFrom(mAltGroups, aGroup);
+}
+void Heif::addAlternativeTrackGroup(AlternativeTrackGroup* aGroup)
+{
+    mAltGroups.push_back(aGroup);
+}
+
+std::uint32_t Heif::getGroupCount() const
+{
+    return (std::uint32_t) mGroups.size();
+}
+EntityGroup* Heif::getGroup(std::uint32_t aId)
+{
+    if (aId < mGroups.size())
+    {
+        return mGroups[aId];
+    }
+    return nullptr;
+}
+const EntityGroup* Heif::getGroup(std::uint32_t aId) const
+{
+    if (aId < mGroups.size())
+    {
+        return mGroups[aId];
+    }
+    return nullptr;
+}
+std::uint32_t Heif::getGroupByTypeCount(const HEIF::FourCC& aType) const
+{
+    auto tmp = mGroupsOfType.find(aType);
+    if (tmp != mGroupsOfType.end())
+    {
+        return (std::uint32_t) tmp->second.size();
+    }
+    return 0;
+}
+EntityGroup* Heif::getGroupByType(const HEIF::FourCC& aType, std::uint32_t aId)
+{
+    auto tmp = mGroupsOfType.find(aType);
+    if (tmp != mGroupsOfType.end())
+    {
+        if (aId < tmp->second.size())
+        {
+            return tmp->second[aId];
+        }
+    }
+    return nullptr;
+}
+EntityGroup* Heif::getGroupById(const HEIF::GroupId& aId)
+{
+    for (auto grp : mGroups)
+    {
+        if (grp->getId() == aId)
+        {
+            return grp;
+        }
+    }
+    return nullptr;
+}
+const EntityGroup* Heif::getGroupByType(const HEIF::FourCC& aType, std::uint32_t aId) const
+{
+    auto tmp = mGroupsOfType.find(aType);
+    if (tmp != mGroupsOfType.end())
+    {
+        if (aId < tmp->second.size())
+        {
+            return tmp->second[aId];
+        }
+    }
+    return nullptr;
+}
+const EntityGroup* Heif::getGroupById(const HEIF::GroupId& aId) const
+{
+    for (auto grp : mGroups)
+    {
+        if (grp->getId() == aId)
+        {
+            return grp;
+        }
+    }
+    return nullptr;
+}
+
+HEIF::MediaFormat Heif::mediaFormatFromFourCC(const HEIF::FourCC& aType)
+{
+    if (aType == "mp4a")
+        return HEIF::MediaFormat::AAC;
+    else if (aType == "hvc1")
+        return HEIF::MediaFormat::HEVC;
+    else if (aType == "hev1")
+        return HEIF::MediaFormat::HEVC;
+    else if (aType == "avc1")
+        return HEIF::MediaFormat::AVC;
+    else if (aType == "avc3")
+        return HEIF::MediaFormat::AVC;
+    else
+    {
+        HEIF_ASSERT(false);
+    }
+    return HEIF::MediaFormat::INVALID;
 }

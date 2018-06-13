@@ -14,7 +14,7 @@
 
 #include <jni.h>
 
-#define JNI_METHOD(return_type, method_name) JNIEXPORT return_type JNICALL Java_com_nokia_heif_HEIF_##method_name
+#include "AlternativeTrackGroup.h"
 #include "DescriptiveProperty.h"
 #include "GridImageItem.h"
 #include "HEVCCodedImageItem.h"
@@ -22,21 +22,26 @@
 #include "Helpers.h"
 #include "IdentityImageItem.h"
 #include "ImageItem.h"
+#include "InputStream.h"
 #include "Item.h"
 #include "ItemProperty.h"
 #include "OverlayImageItem.h"
+#include "Sample.h"
+#include "Track.h"
 #include "TransformativeProperty.h"
+
+#define CLASS_NAME HEIF
 extern "C"
 {
-    JNI_METHOD(void, createInstanceNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(void, createInstanceNative)
     {
         HEIFPP::Heif *instance = new HEIFPP::Heif();
-        setNativeHandle(env, obj, (jlong) instance);
+        setNativeHandle(env, self, (jlong) instance);
     }
 
-    JNI_METHOD(void, destroyInstanceNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(void, destroyInstanceNative)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
 
         uint32_t count = nativeHandle->getImageCount();
         for (uint32_t index = 0; index < count; index++)
@@ -44,7 +49,7 @@ extern "C"
             HEIFPP::ImageItem *image = nativeHandle->getImage(index);
             if (image->getContext() != nullptr)
             {
-                jobject javaHandle = (jobject) image->getContext();
+                jobject javaHandle = GET_JAVA_OBJECT(image);
                 releaseJavaHandles(env, javaHandle);
                 env->DeleteGlobalRef(javaHandle);
                 image->setContext(nullptr);
@@ -57,7 +62,7 @@ extern "C"
             HEIFPP::Item *item = nativeHandle->getItem(index);
             if (item->getContext() != nullptr)
             {
-                jobject javaHandle = (jobject) item->getContext();
+                jobject javaHandle = GET_JAVA_OBJECT(item);
                 releaseJavaHandles(env, javaHandle);
                 env->DeleteGlobalRef(javaHandle);
                 item->setContext(nullptr);
@@ -70,7 +75,7 @@ extern "C"
             HEIFPP::ItemProperty *item = nativeHandle->getProperty(index);
             if (item->getContext() != nullptr)
             {
-                jobject javaHandle = (jobject) item->getContext();
+                jobject javaHandle = GET_JAVA_OBJECT(item);
                 releaseJavaHandles(env, javaHandle);
                 env->DeleteGlobalRef(javaHandle);
                 item->setContext(nullptr);
@@ -83,7 +88,45 @@ extern "C"
             HEIFPP::DecoderConfiguration *item = nativeHandle->getDecoderConfig(index);
             if (item->getContext() != nullptr)
             {
-                jobject javaHandle = (jobject) item->getContext();
+                jobject javaHandle = GET_JAVA_OBJECT(item);
+                releaseJavaHandles(env, javaHandle);
+                env->DeleteGlobalRef(javaHandle);
+                item->setContext(nullptr);
+            }
+        }
+
+        count = nativeHandle->getTrackCount();
+        for (uint32_t index = 0; index < count; index++)
+        {
+            HEIFPP::Track *track = nativeHandle->getTrack(index);
+            if (track->getContext() != nullptr)
+            {
+                uint32_t sampleCount = track->getSampleCount();
+                for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+                {
+                    HEIFPP::Sample *sample = track->getSample(sampleIndex);
+                    if (sample != nullptr && sample->getContext() != nullptr)
+                    {
+                        jobject javaHandle = GET_JAVA_OBJECT(sample);
+                        releaseJavaHandles(env, javaHandle);
+                        env->DeleteGlobalRef(javaHandle);
+                        sample->setContext(nullptr);
+                    }
+                }
+                jobject javaHandle = GET_JAVA_OBJECT(track);
+                releaseJavaHandles(env, javaHandle);
+                env->DeleteGlobalRef(javaHandle);
+                track->setContext(nullptr);
+            }
+        }
+
+        count = nativeHandle->getAlternativeTrackGroupCount();
+        for (uint32_t index = 0; index < count; index++)
+        {
+            HEIFPP::AlternativeTrackGroup *item = nativeHandle->getAlternativeTrackGroup(index);
+            if (item->getContext() != nullptr)
+            {
+                jobject javaHandle = GET_JAVA_OBJECT(item);
                 releaseJavaHandles(env, javaHandle);
                 env->DeleteGlobalRef(javaHandle);
                 item->setContext(nullptr);
@@ -91,12 +134,12 @@ extern "C"
         }
 
         delete nativeHandle;
-        setNativeHandle(env, obj, 0);
+        setNativeHandle(env, self, 0);
     }
 
-    JNI_METHOD(void, loadNative)(JNIEnv *env, jobject obj, jstring filename)
+    JNI_METHOD_ARG(void, loadNative, jstring filename)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
         const char *nativeFilename = env->GetStringUTFChars(filename, 0);
 
         HEIFPP::Result error = nativeHandle->load(nativeFilename);
@@ -104,9 +147,18 @@ extern "C"
         CHECK_ERROR(error, "Loading failed");
     }
 
-    JNI_METHOD(void, saveNative)(JNIEnv *env, jobject obj, jstring filename)
+    JNI_METHOD_ARG(void, loadStreamNative, jobject stream)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
+        InputStream *inputStream = new InputStream(env, stream);
+        HEIFPP::Result error     = nativeHandle->load(inputStream);
+        delete inputStream;
+        CHECK_ERROR(error, "Loading failed");
+    }
+
+    JNI_METHOD_ARG(void, saveNative, jstring filename)
+    {
+        NATIVE_HEIF(nativeHandle, self);
         const char *nativeFilename = env->GetStringUTFChars(filename, 0);
 
         HEIFPP::Result error = nativeHandle->save(nativeFilename);
@@ -115,131 +167,172 @@ extern "C"
         CHECK_ERROR(error, "Saving failed");
     }
 
-    JNI_METHOD(jint, getItemCountNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getItemCountNative)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        return nativeHandle->getItemCount();
+        NATIVE_HEIF(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->getItemCount());
     }
 
-    JNI_METHOD(jobject, getItemNative)(JNIEnv *env, jobject obj, jint itemIndex)
+    JNI_METHOD_ARG(jobject, getItemNative, jint itemIndex)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        HEIFPP::Item *item = nativeHandle->getItem(itemIndex);
-        return getJavaItem(env, obj, item);
+        NATIVE_HEIF(nativeHandle, self);
+        HEIFPP::Item *item = nativeHandle->getItem(static_cast<uint32_t>(itemIndex));
+        return getJavaItem(env, self, item);
     }
 
-    JNI_METHOD(jint, getImageCountNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getImageCountNative)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        return nativeHandle->getImageCount();
+        NATIVE_HEIF(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->getImageCount());
     }
 
-    JNI_METHOD(jobject, getImageNative)(JNIEnv *env, jobject obj, jint itemIndex)
+    JNI_METHOD_ARG(jobject, getImageNative, jint itemIndex)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        HEIFPP::ImageItem *item = nativeHandle->getImage(itemIndex);
-        return getJavaItem(env, obj, item);
+        NATIVE_HEIF(nativeHandle, self);
+        HEIFPP::ImageItem *item = nativeHandle->getImage(static_cast<uint32_t>(itemIndex));
+        return getJavaItem(env, self, item);
     }
 
-    JNI_METHOD(jint, getMasterImageCountNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getMasterImageCountNative)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        return nativeHandle->getMasterImageCount();
+        NATIVE_HEIF(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->getMasterImageCount());
     }
 
-    JNI_METHOD(jobject, getMasterImageNative)(JNIEnv *env, jobject obj, jint itemIndex)
+    JNI_METHOD_ARG(jobject, getMasterImageNative, jint itemIndex)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        HEIFPP::ImageItem *item = nativeHandle->getMasterImage(itemIndex);
-        return getJavaItem(env, obj, item);
+        NATIVE_HEIF(nativeHandle, self);
+        HEIFPP::ImageItem *item = nativeHandle->getMasterImage(static_cast<uint32_t>(itemIndex));
+        return getJavaItem(env, self, item);
     }
 
-    JNI_METHOD(jint, getItemsOfTypeCountNative)(JNIEnv *env, jobject obj, jstring type)
+    JNI_METHOD_ARG(jint, getItemsOfTypeCountNative, jstring type)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
         const char *nativeString = env->GetStringUTFChars(type, 0);
 
-        jint itemCount = nativeHandle->getItemsOfTypeCount(HEIF::FourCC(nativeString));
+        jint itemCount = static_cast<jint>(nativeHandle->getItemsOfTypeCount(HEIF::FourCC(nativeString)));
 
         env->ReleaseStringUTFChars(type, nativeString);
-        return itemCount;
+        return static_cast<jint>(itemCount);
     }
 
-    JNI_METHOD(jobject, getItemOfTypeNative)(JNIEnv *env, jobject obj, jstring type, jint index)
+    JNI_METHOD_ARG(jobject, getItemOfTypeNative, jstring type, jint index)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
         const char *nativeString = env->GetStringUTFChars(type, 0);
-        jobject javaObject = getJavaItem(env, obj, nativeHandle->getItemOfType(HEIF::FourCC(nativeString), index));
+        jobject javaObject = getJavaItem(env, self,
+                                         nativeHandle->getItemOfType(HEIF::FourCC(nativeString),
+                                                                     static_cast<uint32_t>(index)));
         env->ReleaseStringUTFChars(type, nativeString);
         return javaObject;
     }
 
-    JNI_METHOD(jobject, getPrimaryItemNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getPrimaryItemNative)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        return getJavaItem(env, obj, nativeHandle->getPrimaryItem());
+        NATIVE_HEIF(nativeHandle, self);
+        return getJavaItem(env, self, nativeHandle->getPrimaryItem());
     }
 
-    JNI_METHOD(void, setPrimaryItemNative)(JNIEnv *env, jobject obj, jobject item)
+    JNI_METHOD_ARG(void, setPrimaryItemNative, jobject item)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
         NATIVE_IMAGE_ITEM(nativeItem, item);
         nativeHandle->setPrimaryItem(nativeItem);
     }
 
-    JNI_METHOD(jint, getCompatibleBrandsCountNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getCompatibleBrandsCountNative)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        return nativeHandle->compatibleBrands();
+        NATIVE_HEIF(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->compatibleBrands());
     }
 
-    JNI_METHOD(jstring, getCompatibleBrandNative)(JNIEnv *env, jobject obj, jint index)
+    JNI_METHOD_ARG(jstring, getCompatibleBrandNative, jint index)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        HEIF::FourCC brand = nativeHandle->getCompatibleBrand(index);
+        NATIVE_HEIF(nativeHandle, self);
+        HEIF::FourCC brand = nativeHandle->getCompatibleBrand(static_cast<uint32_t>(index));
         return env->NewStringUTF(brand.value);
     }
 
-    JNI_METHOD(void, addCompatibleBrandNative)(JNIEnv *env, jobject obj, jstring brand)
+    JNI_METHOD_ARG(void, addCompatibleBrandNative, jstring brand)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
         const char *nativeBrand = env->GetStringUTFChars(brand, 0);
         nativeHandle->addCompatibleBrand(HEIF::FourCC(nativeBrand));
         env->ReleaseStringUTFChars(brand, nativeBrand);
     }
 
-    JNI_METHOD(void, removeCompatibleBrandNative)(JNIEnv *env, jobject obj, jstring brand)
+    JNI_METHOD_ARG(void, removeCompatibleBrandNative, jstring brand)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
         const char *nativeBrand = env->GetStringUTFChars(brand, 0);
         nativeHandle->removeCompatibleBrand(HEIF::FourCC(nativeBrand));
         env->ReleaseStringUTFChars(brand, nativeBrand);
     }
 
-    JNI_METHOD(jstring, getMajorBrandNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jstring, getMajorBrandNative)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
         HEIF::FourCC brand = nativeHandle->getMajorBrand();
         return env->NewStringUTF(brand.value);
     }
 
-    JNI_METHOD(void, setMajorBrandNative)(JNIEnv *env, jobject obj, jstring brand)
+    JNI_METHOD_ARG(void, setMajorBrandNative, jstring brand)
     {
-        NATIVE_HEIF(nativeHandle, obj);
+        NATIVE_HEIF(nativeHandle, self);
         const char *nativeBrand = env->GetStringUTFChars(brand, 0);
         nativeHandle->setMajorBrand(HEIF::FourCC(nativeBrand));
         env->ReleaseStringUTFChars(brand, nativeBrand);
     }
 
-    JNI_METHOD(jint, getPropertyCountNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getPropertyCountNative)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        return nativeHandle->getPropertyCount();
+        NATIVE_HEIF(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->getPropertyCount());
     }
 
-    JNI_METHOD(jobject, getPropertyNative)(JNIEnv *env, jobject obj, int index)
+    JNI_METHOD_ARG(jobject, getPropertyNative, jint index)
     {
-        NATIVE_HEIF(nativeHandle, obj);
-        return getJavaItemProperty(env, obj, nativeHandle->getProperty(index));
+        NATIVE_HEIF(nativeHandle, self);
+        return getJavaItemProperty(env, self,
+                                   nativeHandle->getProperty(static_cast<uint32_t>(index)));
+    }
+
+    JNI_METHOD(jint, getTrackCountNative)
+    {
+        NATIVE_HEIF(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->getTrackCount());
+    }
+
+    JNI_METHOD_ARG(jobject, getTrackNative, jint index)
+    {
+        NATIVE_HEIF(nativeHandle, self);
+        return getJavaTrack(env, self,
+                            nativeHandle->getTrack(static_cast<uint32_t>(index)));
+    }
+
+    JNI_METHOD(jint, getAlternativeTrackGroupCountNative)
+    {
+        NATIVE_HEIF(nativeSelf, self);
+        return static_cast<jint>(nativeSelf->getAlternativeTrackGroupCount());
+    }
+
+    JNI_METHOD_ARG(jobject, getAlternativeTrackGroupNative, jint index)
+    {
+        NATIVE_HEIF(nativeSelf, self);
+        return getJavaAlternativeTrackGroup(env, self,
+                                            nativeSelf->getAlternativeTrackGroup(static_cast<uint32_t>(index)));
+    }
+
+    JNI_METHOD(jint, getEntityGroupCountNative)
+    {
+        NATIVE_HEIF(nativeSelf, self);
+        return static_cast<jint>(nativeSelf->getGroupCount());
+    }
+
+    JNI_METHOD_ARG(jobject, getEntityGroupNative, jint index)
+    {
+        NATIVE_HEIF(nativeSelf, self);
+        return getJavaEntityGroup(env, self, nativeSelf->getGroup(static_cast<uint32_t>(index)));
     }
 }

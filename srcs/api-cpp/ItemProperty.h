@@ -13,6 +13,7 @@
 #pragma once
 
 #include <Heif.h>
+
 namespace HEIFPP
 {
     class ItemProperty
@@ -47,20 +48,21 @@ namespace HEIFPP
         virtual HEIF::ErrorCode save(HEIF::Writer* aWriter) = 0;
 
         ItemProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, bool aIsTransform);
+        void setIsTransformative(bool aIsTransformative);
 
-
+    private:
         Heif* mHeif;
         HEIF::PropertyId mId;
 
         HEIF::ItemPropertyType mType;
-        std::vector<Item*> mLinks;
+        LinkArray<Item*> mLinks;
         const void* mContext;
         bool mIsTransform;
 
-    private:
         ItemProperty& operator=(const ItemProperty&) = delete;
-        ItemProperty(const ItemProperty&)            = delete;
-        ItemProperty(ItemProperty&&)                 = delete;
-        ItemProperty()                               = delete;
+        ItemProperty& operator=(ItemProperty&&) = delete;
+        ItemProperty(const ItemProperty&)       = delete;
+        ItemProperty(ItemProperty&&)            = delete;
+        ItemProperty()                          = delete;
     };
 }  // namespace HEIFPP

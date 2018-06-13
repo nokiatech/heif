@@ -33,7 +33,7 @@
 #define NATIVE_MIRROR_PROPERTY(handle, object) \
     HEIFPP::MirrorProperty* handle = (HEIFPP::MirrorProperty*) getNativeHandle(env, object)
 #define NATIVE_CLAP(handle, object) \
-    HEIFPP::CleanApertureProperty* nativeHandle = (HEIFPP::CleanApertureProperty*) getNativeHandle(env, obj)
+    HEIFPP::CleanApertureProperty* nativeHandle = (HEIFPP::CleanApertureProperty*) getNativeHandle(env, object)
 #define NATIVE_PIXEL_INFORMATION_PROPERTY(handle, object) \
     HEIFPP::PixelInformationProperty* handle = (HEIFPP::PixelInformationProperty*) getNativeHandle(env, object)
 #define NATIVE_PIXEL_ASPECT_RATIO_PROPERTY(handle, object) \
@@ -50,33 +50,48 @@
 #define NATIVE_DECODER_CONFIG(handle, object) \
     HEIFPP::DecoderConfiguration* handle = (HEIFPP::DecoderConfiguration*) getNativeHandle(env, object)
 #define NATIVE_HEIF(handle, object) HEIFPP::Heif* handle = (HEIFPP::Heif*) getNativeHandle(env, object)
+
+
+#define NATIVE_SELF HEIFPP::CLASS_NAME* nativeSelf = (HEIFPP::CLASS_NAME*) getNativeHandle(env, self)
+
+#define NATIVE_TRACK(handle, object) HEIFPP::Track* handle = (HEIFPP::Track*) getNativeHandle(env, object)
+
+#define NATIVE_AUDIO_TRACK(handle, object) \
+    HEIFPP::AudioTrack* handle = (HEIFPP::AudioTrack*) getNativeHandle(env, object)
+#define NATIVE_VIDEO_TRACK(handle, object) \
+    HEIFPP::VideoTrack* handle = (HEIFPP::VideoTrack*) getNativeHandle(env, object)
+#define NATIVE_ALTERNATIVE_TRACK_GROUP(handle, object) \
+    HEIFPP::AlternativeTrackGroup* handle = (HEIFPP::AlternativeTrackGroup*) getNativeHandle(env, object)
+
+#define NATIVE_SAMPLE(handle, object) HEIFPP::Sample* handle = (HEIFPP::Sample*) getNativeHandle(env, object)
+#define NATIVE_AUDIO_SAMPLE(handle, object) \
+    HEIFPP::AudioSample* handle = (HEIFPP::AudioSample*) getNativeHandle(env, object)
+#define NATIVE_VIDEO_SAMPLE(handle, object) \
+    HEIFPP::VideoSample* handle = (HEIFPP::VideoSample*) getNativeHandle(env, object)
+
+#define NATIVE_ENTITY_GROUP(handle, object) \
+    HEIFPP::EntityGroup* handle = (HEIFPP::EntityGroup*) getNativeHandle(env, object)
+#define NATIVE_EQUIVALENCE_GROUP(handle, object) \
+    HEIFPP::EqivGroup* handle = (HEIFPP::EqivGroup*) getNativeHandle(env, object)
+
 #define CHECK_ERROR(errorCode, errorMessage) checkError(env, errorMessage, (int) errorCode)
-#define GET_JAVA_ITEM(nativeHandle) getJavaItem(env, getJavaHEIF(env, obj), nativeHandle)
-
-static const char* HEVC_DECODER_CONFIG_CLASS_NAME = "com/nokia/heif/HEVCDecoderConfig";
-static const char* AVC_DECODER_CONFIG_CLASS_NAME  = "com/nokia/heif/AVCDecoderConfig";
-
-static const char* HEVC_IMAGE_ITEM_CLASS_NAME     = "com/nokia/heif/HEVCImageItem";
-static const char* AVC_IMAGE_ITEM_CLASS_NAME      = "com/nokia/heif/AVCImageItem";
-static const char* CODED_IMAGE_ITEM_CLASS_NAME    = "com/nokia/heif/CodedImageItem";
-static const char* GRID_IMAGE_ITEM_CLASS_NAME     = "com/nokia/heif/GridImageItem";
-static const char* IDENTITY_IMAGE_ITEM_CLASS_NAME = "com/nokia/heif/IdentityImageItem";
-static const char* OVERLAY_IMAGE_ITEM_CLASS_NAME  = "com/nokia/heif/OverlayImageItem";
-static const char* EXIF_ITEM_CLASS_NAME           = "com/nokia/heif/ExifItem";
-static const char* MPEG7_ITEM_CLASS_NAME          = "com/nokia/heif/MPEG7Item";
-static const char* XMP_ITEM_CLASS_NAME            = "com/nokia/heif/XMPItem";
+#define GET_JAVA_ITEM(nativeHandle) getJavaItem(env, getJavaHEIF(env, self), nativeHandle)
 
 
-static const char* AUXILIARY_PROPERTY_CLASS_NAME          = "com/nokia/heif/AuxiliaryProperty";
-static const char* CLEAN_APERTURE_PROPERTY_CLASS_NAME     = "com/nokia/heif/CleanApertureProperty";
-static const char* ICC_COLOUR_PROPERTY_CLASS_NAME         = "com/nokia/heif/ICCColourProperty";
-static const char* NCLX_COLOUR_PROPERTY_CLASS_NAME        = "com/nokia/heif/NCLXColourProperty";
-static const char* MIRROR_PROPERTY_CLASS_NAME             = "com/nokia/heif/MirrorProperty";
-static const char* ROTATE_PROPERTY_CLASS_NAME             = "com/nokia/heif/RotateProperty";
-static const char* PIXEL_ASPECT_RATIO_PROPERTY_CLASS_NAME = "com/nokia/heif/PixelAspectRatioProperty";
-static const char* PIXEL_INFORMATION_PROPERTY_CLASS_NAME  = "com/nokia/heif/PixelInformationProperty";
-static const char* RELATIVE_LOCATION_PROPERTY_CLASS_NAME  = "com/nokia/heif/RelativeLocationProperty";
+#define IMPL_JNI_METHOD(application_identity, return_type, method_name) \
+    JNIEXPORT return_type JNICALL Java_com_nokia_heif_##application_identity##_##method_name
+#define EVALUATE_JNI_METHOD(application_identity, return_type, method_name) \
+    IMPL_JNI_METHOD(application_identity, return_type, method_name)
 
+#define JNI_METHOD_ARG(return_type, method_name, ...)                                                   \
+    EVALUATE_JNI_METHOD(CLASS_NAME, return_type, method_name)(JNIEnv * env, jobject self, __VA_ARGS__); \
+    EVALUATE_JNI_METHOD(CLASS_NAME, return_type, method_name)(JNIEnv * env, jobject self, __VA_ARGS__)
+
+#define JNI_METHOD(return_type, method_name)                                               \
+    EVALUATE_JNI_METHOD(CLASS_NAME, return_type, method_name)(JNIEnv * env, jobject self); \
+    EVALUATE_JNI_METHOD(CLASS_NAME, return_type, method_name)(JNIEnv * env, jobject self)
+
+#define GET_JAVA_OBJECT(nativeHandle) reinterpret_cast<jobject>(const_cast<void*>(nativeHandle->getContext()))
 
 jobject getDecoderConfig(JNIEnv* env, jobject parentJavaHEIF, void* nativeConfig);
 
@@ -87,6 +102,10 @@ template <class type>
 jobject getJavaObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, type nativeHandle);
 
 jobject getJavaItemProperty(JNIEnv* env, jobject parentJavaHEIF, void* itemProperty);
+jobject getJavaTrack(JNIEnv* env, jobject parentJavaHEIF, void* nativeObject);
+jobject getJavaSample(JNIEnv* env, jobject parentJavaHEIF, void* nativeObject);
+jobject getJavaAlternativeTrackGroup(JNIEnv* env, jobject parentJavaHEIF, void* nativeObject);
+jobject getJavaEntityGroup(JNIEnv* env, jobject parentJavaHEIF, void* nativeObject);
 
 template <class type>
 jobject createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, type nativeHandle);

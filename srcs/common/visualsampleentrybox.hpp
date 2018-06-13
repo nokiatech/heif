@@ -96,12 +96,15 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    virtual void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a VisualSampleEntryBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    virtual void parseBox(ISOBMFF::BitStream& bitstr) override;
 
+    /** @brief Check if this sample entry is a visual sample
+    *  @return TRUE */
+    virtual bool isVisual() const override;
 private:
     std::uint16_t mWidth;                         ///< Sample display width
     std::uint16_t mHeight;                        ///< Sample display height

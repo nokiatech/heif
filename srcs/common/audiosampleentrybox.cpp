@@ -237,3 +237,8 @@ AudioSampleEntryBox* AudioSampleEntryBox::clone() const
 {
     return nullptr;
 }
+
+bool AudioSampleEntryBox::isVisual() const
+{
+    return false;
+}

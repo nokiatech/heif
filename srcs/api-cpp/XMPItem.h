@@ -13,17 +13,18 @@
 #pragma once
 
 #include <MimeItem.h>
+
 namespace HEIFPP
 {
     class XMPItem : public HEIFPP::MimeItem
     {
     public:
         XMPItem(Heif* aHeif);
-        virtual ~XMPItem() = default;
+        ~XMPItem() = default;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         XMPItem& operator=(const XMPItem&) = delete;

@@ -142,6 +142,7 @@ namespace HEIF
             convertRootMetaBoxInformation(mFileProperties.rootLevelMetaBoxProperties);
         mFileInformation.trackInformation = convertTrackInformation(mFileProperties.trackProperties);
         mFileInformation.features         = mFileProperties.fileFeature.getFeatureMask();
+        mFileInformation.movieTimescale   = mFileProperties.movieTimescale;
 
         return ErrorCode::OK;
     }
@@ -276,21 +277,25 @@ namespace HEIF
             trackInformation[i].sampleGroups       = trackProperties.groupedSamples;
             trackInformation[i].equivalences       = trackProperties.equivalences;
             trackInformation[i].metadatas          = trackProperties.metadatas;
+            trackInformation[i].referenceSamples   = trackProperties.referenceSamples;
             trackInformation[i].maxSampleSize      = trackProperties.maxSampleSize;
             trackInformation[i].timeScale          = trackProperties.timeScale;
+            trackInformation[i].editList           = trackProperties.editList;
 
             Array<SampleInformation> sampleInfo(trackProperties.sampleProperties.size());
             unsigned int j = 0;
             for (const auto& entry : trackProperties.sampleProperties)
             {
-                const SampleProperties& sampleProp   = entry.second;
-                sampleInfo[j].sampleId               = sampleProp.sampleId;
-                sampleInfo[j].sampleEntryType        = sampleProp.sampleEntryType;
-                sampleInfo[j].sampleDescriptionIndex = sampleProp.sampleDescriptionIndex;
-                sampleInfo[j].sampleType             = sampleProp.sampleType;
-                sampleInfo[j].codingConstraints      = sampleProp.codingConstraints;
-                sampleInfo[j].hasClap                = sampleProp.hasClap;
-                sampleInfo[j].hasAuxi                = sampleProp.hasAuxi;
+                const SampleProperties& sampleProp      = entry.second;
+                sampleInfo[j].sampleId                  = sampleProp.sampleId;
+                sampleInfo[j].sampleEntryType           = sampleProp.sampleEntryType;
+                sampleInfo[j].sampleDescriptionIndex    = sampleProp.sampleDescriptionIndex;
+                sampleInfo[j].sampleType                = sampleProp.sampleType;
+                sampleInfo[j].sampleDurationTS          = sampleProp.sampleDurationTS;
+                sampleInfo[j].sampleCompositionOffsetTs = sampleProp.sampleCompositionOffsetTs;
+                sampleInfo[j].hasClap                   = sampleProp.hasClap;
+                sampleInfo[j].hasAuxi                   = sampleProp.hasAuxi;
+                sampleInfo[j].codingConstraints         = sampleProp.codingConstraints;
                 ++j;
             }
             trackInformation[i].sampleProperties = sampleInfo;
@@ -447,6 +452,7 @@ namespace HEIF
                         MovieBox moov;
                         moov.parseBox(bitstream);
                         mFileProperties.trackProperties = fillTrackProperties(moov);
+                        mFileProperties.movieTimescale  = moov.getMovieHeaderBox().getTimeScale();
                         mMatrix                         = moov.getMovieHeaderBox().getMatrix();
                     }
                     else if (boxType == "mdat" || boxType == "free" || boxType == "skip")
@@ -462,12 +468,12 @@ namespace HEIF
                 }
             }
         }
-        catch (Exception& exc)
+        catch (const Exception& exc)
         {
             logError() << "readStream Exception Error: " << exc.what() << std::endl;
             error = ErrorCode::FILE_READ_ERROR;
         }
-        catch (std::exception& e)
+        catch (const std::exception& e)
         {
             logError() << "readStream std::exception Error:: " << e.what() << std::endl;
             error = ErrorCode::FILE_READ_ERROR;
@@ -695,35 +701,56 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ParameterSetMap HeifReaderImpl::makeDecoderParameterSetMap(const AvcDecoderConfigurationRecord& record) const
+    ParameterSetMap HeifReaderImpl::makeDecoderParameterSetMap(const DecoderConfigurationRecord& record) const
     {
-        Vector<uint8_t> sps;
-        Vector<uint8_t> pps;
-        record.getOneParameterSet(sps, AvcNalUnitType::SPS);
-        record.getOneParameterSet(pps, AvcNalUnitType::PPS);
-
-        ParameterSetMap parameterSetMap;
-        parameterSetMap.insert(pair<DecoderSpecInfoType, DataVector>(DecoderSpecInfoType::AVC_SPS, move(sps)));
-        parameterSetMap.insert(pair<DecoderSpecInfoType, DataVector>(DecoderSpecInfoType::AVC_PPS, move(pps)));
-
-        return parameterSetMap;
-    }
-
-    ParameterSetMap HeifReaderImpl::makeDecoderParameterSetMap(const HevcDecoderConfigurationRecord& record) const
-    {
-        Vector<uint8_t> sps;
-        Vector<uint8_t> pps;
-        Vector<uint8_t> vps;
-        record.getOneParameterSet(sps, HevcNalUnitType::SPS);
-        record.getOneParameterSet(pps, HevcNalUnitType::PPS);
-        record.getOneParameterSet(vps, HevcNalUnitType::VPS);
-
-        ParameterSetMap parameterSetMap;
-        parameterSetMap.insert(pair<DecoderSpecInfoType, DataVector>(DecoderSpecInfoType::HEVC_SPS, move(sps)));
-        parameterSetMap.insert(pair<DecoderSpecInfoType, DataVector>(DecoderSpecInfoType::HEVC_PPS, move(pps)));
-        parameterSetMap.insert(pair<DecoderSpecInfoType, DataVector>(DecoderSpecInfoType::HEVC_VPS, move(vps)));
-
-        return parameterSetMap;
+        ParameterSetMap pm;
+        DecoderConfigurationRecord::ConfigurationMap tmp;
+        record.getConfigurationMap(tmp);
+        for (auto t : tmp)
+        {
+            DecoderSpecInfoType type;
+            switch (t.first)
+            {
+            case DecoderConfigurationRecord::AVC_SPS:
+            {
+                type = DecoderSpecInfoType::AVC_SPS;
+                break;
+            }
+            case DecoderConfigurationRecord::AVC_PPS:
+            {
+                type = DecoderSpecInfoType::AVC_PPS;
+                break;
+            }
+            case DecoderConfigurationRecord::HEVC_VPS:
+            {
+                type = DecoderSpecInfoType::HEVC_VPS;
+                break;
+            }
+            case DecoderConfigurationRecord::HEVC_SPS:
+            {
+                type = DecoderSpecInfoType::HEVC_SPS;
+                break;
+            }
+            case DecoderConfigurationRecord::HEVC_PPS:
+            {
+                type = DecoderSpecInfoType::HEVC_PPS;
+                break;
+            }
+            case DecoderConfigurationRecord::AudioSpecificConfig:
+            {
+                type = DecoderSpecInfoType::AudioSpecificConfig;
+                break;
+            }
+            default:
+            {
+                type = (DecoderSpecInfoType) t.first;
+                break;
+            }
+            }
+            auto& e = pm[type];
+            e.insert(e.begin(), t.second.begin(), t.second.end());
+        }
+        return pm;
     }
 
     void HeifReaderImpl::getCollectionItems(IdVector& items) const
@@ -778,11 +805,10 @@ namespace HEIF
     {
         uint32_t outputOffset = 0;
         uint32_t byteOffset   = 0;
-        uint32_t nalLength    = 0;
 
         while (outputOffset < memoryBufferSize)
         {
-            nalLength                               = (uint8_t) memoryBuffer[outputOffset + byteOffset];
+            uint32_t nalLength                      = (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 0;
             byteOffset++;
             nalLength = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
@@ -805,11 +831,10 @@ namespace HEIF
     {
         uint32_t outputOffset = 0;
         uint32_t byteOffset   = 0;
-        uint32_t nalLength    = 0;
 
         while (outputOffset < memoryBufferSize)
         {
-            nalLength                               = (uint8_t) memoryBuffer[outputOffset + byteOffset];
+            uint32_t nalLength                      = (uint8_t) memoryBuffer[outputOffset + byteOffset];
             memoryBuffer[outputOffset + byteOffset] = 0;
             byteOffset++;
             nalLength = (nalLength << 8) | (uint8_t) memoryBuffer[outputOffset + byteOffset];
@@ -833,7 +858,7 @@ namespace HEIF
     /* *********************** Meta-specific methods  *********************** */
     /* ********************************************************************** */
 
-    ErrorCode HeifReaderImpl::isValidImageItem(const ImageId imageId) const
+    ErrorCode HeifReaderImpl::isValidImageItem(const ImageId& imageId) const
     {
         ErrorCode error;
         if ((error = isInitialized()) != ErrorCode::OK)
@@ -859,7 +884,7 @@ namespace HEIF
         return ErrorCode::INVALID_ITEM_ID;
     }
 
-    ErrorCode HeifReaderImpl::isValidItem(const ImageId imageId) const
+    ErrorCode HeifReaderImpl::isValidItem(const ImageId& imageId) const
     {
         ErrorCode error;
         if ((error = isInitialized()) != ErrorCode::OK)
@@ -1197,36 +1222,28 @@ namespace HEIF
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::HVCC, imageId.get());
             const std::uint32_t avccIndex =
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::AVCC, imageId.get());
-            if ((hvccIndex == 0) && (avccIndex == 0))
-            {
-                continue;
-            }
 
             FourCCInt type;
             Id configIndex(0, 0);
+            const DecoderConfigurationBox* record = nullptr;
             if (hvccIndex)
             {
                 configIndex = Id(contextId, hvccIndex);
                 type        = "hvc1";
-                if (!mParameterSetMap.count(configIndex))
-                {
-                    const HevcDecoderConfigurationRecord record =
-                        static_cast<const HevcConfigurationBox*>(iprp.getPropertyByIndex(hvccIndex - 1))
-                            ->getConfiguration();
-                    mParameterSetMap[configIndex] = makeDecoderParameterSetMap(record);
-                }
             }
             else if (avccIndex)
             {
                 configIndex = Id(contextId, avccIndex);
                 type        = "avc1";
-                if (!mParameterSetMap.count(configIndex))
-                {
-                    const AvcDecoderConfigurationRecord record =
-                        static_cast<const AvcConfigurationBox*>(iprp.getPropertyByIndex(avccIndex - 1))
-                            ->getConfiguration();
-                    mParameterSetMap[configIndex] = makeDecoderParameterSetMap(record);
-                }
+            }
+            else
+            {
+                continue;
+            }
+            record = static_cast<const DecoderConfigurationBox*>(iprp.getPropertyByIndex(configIndex.second - 1));
+            if (!mParameterSetMap.count(configIndex))
+            {
+                mParameterSetMap[configIndex] = makeDecoderParameterSetMap(record->getConfiguration());
             }
             mImageToParameterSetMap[id] = configIndex;
             mDecoderCodeTypeMap[id]     = type;
@@ -1318,7 +1335,7 @@ namespace HEIF
     }
 
     ErrorCode HeifReaderImpl::getItemLength(const MetaBox& metaBox,
-                                            const ItemId itemId,
+                                            const ItemId& itemId,
                                             std::uint64_t& itemLength) const
     {
         ErrorCode error = isValidItem(itemId);
@@ -1514,7 +1531,7 @@ namespace HEIF
     /* *********************** Track-specific methods  *********************** */
     /* *********************************************************************** */
 
-    ErrorCode HeifReaderImpl::isValidTrack(const SequenceId sequenceId) const
+    ErrorCode HeifReaderImpl::isValidTrack(const SequenceId& sequenceId) const
     {
         ErrorCode error;
         if ((error = isInitialized()) != ErrorCode::OK)
@@ -1528,7 +1545,7 @@ namespace HEIF
         return ErrorCode::INVALID_SEQUENCE_ID;
     }
 
-    ErrorCode HeifReaderImpl::isValidSample(const SequenceId sequenceId, const SequenceImageId sequenceImageId) const
+    ErrorCode HeifReaderImpl::isValidSample(const SequenceId& sequenceId, const SequenceImageId& sequenceImageId) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -1566,11 +1583,12 @@ namespace HEIF
             trackProperties.groupedSamples    = getSampleGroupings(trackBox);
             trackProperties.equivalences      = getEquivalenceGroups(trackBox);
             trackProperties.metadatas         = getSampleToMetadataItemGroups(trackBox);
+            trackProperties.referenceSamples  = getDirectReferenceSamplesGroups(trackBox);
             trackProperties.alternateTrackIds = getAlternateTrackIds(trackBox, moovBox);
             trackProperties.alternateGroupId  = trackBox->getTrackHeaderBox().getAlternateGroup();
             trackProperties.maxSampleSize     = maxSampleSize;
             trackProperties.timeScale         = trackBox->getMediaBox().getMediaHeaderBox().getTimeScale();
-
+            trackProperties.editList          = getEditList(trackBox, trackInfo.repetitions);
 
             trackPropertiesMap[trackProperties.trackId] = trackProperties;
         }
@@ -1704,20 +1722,12 @@ namespace HEIF
 
             if (handlerBox.getHandlerType() != "soun")
             {
-                // hasCodingConstraints - from Coding Constraints Box in AvcSampleEntry/HevcSampleEntry
-                const Vector<AvcSampleEntry*> avcSampleEntries = stsdBox.getSampleEntries<AvcSampleEntry>("avc1");
-                for (const auto& sampleEntry : avcSampleEntries)
+                const auto& sampleEntries = stsdBox.getSampleEntries();
+                for (const auto& sampleEntry : sampleEntries)
                 {
-                    if (sampleEntry->isCodingConstraintsBoxPresent() == true)
-                    {
-                        trackFeature.setFeature(TrackFeatureEnum::HasCodingConstraints);
-                        break;
-                    }
-                }
-                const Vector<HevcSampleEntry*> hevcSampleEntries = stsdBox.getSampleEntries<HevcSampleEntry>("hvc1");
-                for (const auto& sampleEntry : hevcSampleEntries)
-                {
-                    if (sampleEntry->isCodingConstraintsBoxPresent() == true)
+                    const VisualSampleEntryBox* visualSampleEntry =
+                        static_cast<const VisualSampleEntryBox*>(sampleEntry.get());
+                    if (visualSampleEntry->isCodingConstraintsBoxPresent() == true)
                     {
                         trackFeature.setFeature(TrackFeatureEnum::HasCodingConstraints);
                         break;
@@ -1779,6 +1789,93 @@ namespace HEIF
         }
 
         return trackReferenceMap;
+    }
+
+    EditList HeifReaderImpl::getEditList(TrackBox* trackBox, const double repetitions) const
+    {
+        EditList editlist{};
+        const std::shared_ptr<const EditBox> editBox = trackBox->getEditBox();
+        // const auto mediaTimescale                    = trackBox->getMediaBox().getMediaHeaderBox().getTimeScale();
+
+        if (editBox != nullptr)
+        {
+            const EditListBox* editListBox = editBox->getEditListBox();
+            std::uint32_t version          = editListBox->getVersion();
+            if ((editListBox->getFlags() & 1) == 1)
+            {
+                editlist.looping  = true;
+                uint64_t duration = trackBox->getTrackHeaderBox().getDuration();
+                if ((trackBox->getTrackHeaderBox().getVersion() == 0) &&
+                    (duration == std::numeric_limits<uint32_t>::max()))
+                {
+                    editlist.repetitions = 0.0;
+                }
+                else if (duration == std::numeric_limits<uint64_t>::max())
+                {
+                    editlist.repetitions = 0.0;
+                }
+                else
+                {
+                    editlist.repetitions = repetitions;
+                }
+            }
+            else
+            {
+                editlist.repetitions = 1.0;
+            }
+
+            Vector<EditUnit> editUnits;
+            editUnits.reserve(editListBox->numEntry());
+            for (std::uint32_t i = 0; i < editListBox->numEntry(); i++)
+            {
+                EditUnit editUnit{};
+                if (version == 0)
+                {
+                    const EditListBox::EntryVersion0& mEntryVersion0 =
+                        editListBox->getEntry<EditListBox::EntryVersion0>(i);
+                    if (mEntryVersion0.mMediaTime == -1)
+                    {
+                        editUnit.editType           = EditType::EMPTY;
+                        editUnit.mediaTimeInTrackTS = 0;
+                    }
+                    else if (mEntryVersion0.mMediaRateInteger == 0)
+                    {
+                        editUnit.editType           = EditType::DWELL;
+                        editUnit.mediaTimeInTrackTS = mEntryVersion0.mMediaTime;
+                    }
+                    else
+                    {
+                        editUnit.editType           = EditType::SHIFT;
+                        editUnit.mediaTimeInTrackTS = mEntryVersion0.mMediaTime;
+                    }
+                    editUnit.durationInMovieTS = mEntryVersion0.mSegmentDuration;
+                }
+                else
+                {
+                    const EditListBox::EntryVersion1& mEntryVersion1 =
+                        editListBox->getEntry<EditListBox::EntryVersion1>(i);
+                    if (mEntryVersion1.mMediaTime == -1)
+                    {
+                        editUnit.editType           = EditType::EMPTY;
+                        editUnit.mediaTimeInTrackTS = 0;
+                    }
+                    else if (mEntryVersion1.mMediaRateInteger == 0)
+                    {
+                        editUnit.editType           = EditType::DWELL;
+                        editUnit.mediaTimeInTrackTS = mEntryVersion1.mMediaTime;
+                    }
+                    else
+                    {
+                        editUnit.editType           = EditType::SHIFT;
+                        editUnit.mediaTimeInTrackTS = mEntryVersion1.mMediaTime;
+                    }
+                    editUnit.durationInMovieTS = mEntryVersion1.mSegmentDuration;
+                }
+                editUnits.push_back(editUnit);
+            }
+            editlist.editUnits = makeArray<EditUnit>(editUnits);
+        }
+        return editlist;
     }
 
     Array<SampleGrouping> HeifReaderImpl::getSampleGroupings(TrackBox* trackBox) const
@@ -1859,6 +1956,29 @@ namespace HEIF
         return stmiInfos;
     }
 
+    Array<DirectReferenceSamples> HeifReaderImpl::getDirectReferenceSamplesGroups(TrackBox* trackBox) const
+    {
+        const SampleTableBox& stblBox         = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        const SampleGroupDescriptionBox* sgpd = stblBox.getSampleGroupDescriptionBox("refs");
+        if (sgpd == nullptr)
+        {
+            return Array<DirectReferenceSamples>();
+        }
+        const auto entries = sgpd->getEntryCount();
+        Array<DirectReferenceSamples> refsInfos(entries);
+        for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
+        {
+            const DirectReferenceSamplesList* refs =
+                static_cast<const DirectReferenceSamplesList*>(sgpd->getEntry(groupIndex));
+
+            refsInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
+            refsInfos[groupIndex - 1].sampleId                    = refs->getSampleId();
+            refsInfos[groupIndex - 1].referenceItemIds =
+                makeArray<SequenceImageId>(refs->getDirectReferenceSampleIds());
+        }
+        return refsInfos;
+    }
+
     HeifReaderImpl::TrackInfo HeifReaderImpl::extractTrackInfo(TrackBox* trackBox, MovieBox& moovBox) const
     {
         TrackInfo trackInfo;
@@ -1911,6 +2031,7 @@ namespace HEIF
                 DecodePts::PMap repeatingPMap;
                 const int64_t trackDuration    = static_cast<int64_t>(trackInfo.duration * 1000u);
                 const int64_t editListDuration = static_cast<int64_t>(decodePts.getSpan() * 1000u / mediaTimeScale);
+                trackInfo.repetitions          = double(trackDuration) / double(editListDuration);
                 auto iter                      = trackInfo.pMap.cbegin();
                 int64_t nextSampleTimestamp    = iter->first;
                 int64_t offset                 = 0;
@@ -1999,29 +2120,18 @@ namespace HEIF
                 {
                     throw FileReaderException(ErrorCode::FILE_HEADER_ERROR);
                 }
-
-                const AvcSampleEntry* avcSampleEntry =
-                    stsdBox.getSampleEntry<AvcSampleEntry>("avc1", sampleDescriptionIndex);
-                if (avcSampleEntry != nullptr)
+                const VisualSampleEntryBox* sampleEntry =
+                    static_cast<const VisualSampleEntryBox*>(stsdBox.getSampleEntry(sampleDescriptionIndex));
+                if (sampleEntry != nullptr)
                 {
-                    sampleInfo.width  = avcSampleEntry->getWidth();
-                    sampleInfo.height = avcSampleEntry->getHeight();
+                    sampleInfo.width  = sampleEntry->getWidth();
+                    sampleInfo.height = sampleEntry->getHeight();
                 }
                 else
                 {
-                    const HevcSampleEntry* hevcSampleEntry =
-                        stsdBox.getSampleEntry<HevcSampleEntry>("hvc1", sampleDescriptionIndex);
-                    if (hevcSampleEntry != nullptr)
-                    {
-                        sampleInfo.width  = hevcSampleEntry->getWidth();
-                        sampleInfo.height = hevcSampleEntry->getHeight();
-                    }
-                    else
-                    {
-                        // unknown sample entry, set to zero:
-                        sampleInfo.width  = 0;
-                        sampleInfo.height = 0;
-                    }
+                    // unknown sample entry, set to zero:
+                    sampleInfo.width  = 0;
+                    sampleInfo.height = 0;
                 }
             }
             else  // non-visual track
@@ -2073,15 +2183,18 @@ namespace HEIF
         SampleDescriptionBox& stsdBox = stblBox.getSampleDescriptionBox();
         SampleToChunkBox& stscBox     = stblBox.getSampleToChunkBox();
         SampleSizeBox& stszBox        = stblBox.getSampleSizeBox();
+        TimeToSampleBox& sttsBox      = stblBox.getTimeToSampleBox();
         const FourCCInt handlerType   = trackBox->getMediaBox().getHandlerBox().getHandlerType();
 
         const Vector<SampleToGroupBox> sampleToGroupBoxes = stblBox.getSampleToGroupBoxes();
+        const Vector<std::uint32_t> sampleDeltas          = sttsBox.getSampleDeltas();
 
         const unsigned int sampleCount = stszBox.getSampleCount();
         for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex)
         {
             SampleProperties sampleProperties{};
-            sampleProperties.sampleId = sampleIndex;
+            sampleProperties.sampleId         = sampleIndex;
+            sampleProperties.sampleDurationTS = sampleDeltas.at(sampleIndex);
             if (stscBox.getSampleDescriptionIndex(sampleIndex, sampleProperties.sampleDescriptionIndex) == false)
             {
                 throw FileReaderException(ErrorCode::FILE_HEADER_ERROR);
@@ -2089,12 +2202,12 @@ namespace HEIF
 
             if (handlerType == "pict" || handlerType == "vide" || handlerType == "auxv")
             {
-                const AvcSampleEntry* avcSampleEntry =
-                    stsdBox.getSampleEntry<AvcSampleEntry>("avc1", sampleProperties.sampleDescriptionIndex);
-                if (avcSampleEntry != nullptr)
+                const VisualSampleEntryBox* sampleEntry = static_cast<const VisualSampleEntryBox*>(
+                    stsdBox.getSampleEntry(sampleProperties.sampleDescriptionIndex));
+                if (sampleEntry != nullptr)
                 {
-                    sampleProperties.sampleEntryType = FourCC(avcSampleEntry->getType().getUInt32());
-                    auto ccst                        = avcSampleEntry->getCodingConstraintsBox();
+                    sampleProperties.sampleEntryType = FourCC(sampleEntry->getType().getUInt32());
+                    auto ccst                        = sampleEntry->getCodingConstraintsBox();
                     if (ccst)
                     {
                         // Store values from CodingConstraintsBox
@@ -2106,40 +2219,17 @@ namespace HEIF
                     {
                         logError() << "Error: Coding Constraints Box not present in a sample description entry.";
                     }
-                    sampleProperties.hasClap = (avcSampleEntry->getClap() != nullptr);
-                    sampleProperties.hasAuxi = (avcSampleEntry->getAuxi() != nullptr);
+                    sampleProperties.hasClap = (sampleEntry->getClap() != nullptr);
+                    sampleProperties.hasAuxi = (sampleEntry->getAuxi() != nullptr);
                 }
                 else
                 {
-                    const HevcSampleEntry* hevcSampleEntry =
-                        stsdBox.getSampleEntry<HevcSampleEntry>("hvc1", sampleProperties.sampleDescriptionIndex);
-                    if (hevcSampleEntry != nullptr)
-                    {
-                        sampleProperties.sampleEntryType = FourCC(hevcSampleEntry->getType().getUInt32());
-                        auto ccst                        = hevcSampleEntry->getCodingConstraintsBox();
-                        if (ccst)
-                        {
-                            // Store values from CodingConstraintsBox
-                            sampleProperties.codingConstraints.allRefPicsIntra = ccst->getAllRefPicsIntra();
-                            sampleProperties.codingConstraints.intraPredUsed   = ccst->getIntraPredUsed();
-                            sampleProperties.codingConstraints.maxRefPerPic    = ccst->getMaxRefPicUsed();
-                        }
-                        else
-                        {
-                            logError() << "Error: Coding Constraints Box not present in a sample description entry.";
-                        }
-                        sampleProperties.hasClap = (hevcSampleEntry->getClap() != nullptr);
-                        sampleProperties.hasAuxi = (hevcSampleEntry->getAuxi() != nullptr);
-                    }
-                    else
-                    {
-                        sampleProperties.sampleEntryType = FourCC();
-                        sampleProperties.hasClap         = false;
-                        sampleProperties.hasAuxi         = false;
-                    }
+                    sampleProperties.sampleEntryType = FourCC();
+                    sampleProperties.hasClap         = false;
+                    sampleProperties.hasAuxi         = false;
                 }
 
-                if (stblBox.hasSyncSampleBox() && (handlerType == "vide"))
+                if (stblBox.hasSyncSampleBox())
                 {
                     // will be filled later based on sync sample box.
                     sampleProperties.sampleType = OUTPUT_NON_REFERENCE_FRAME;
@@ -2182,8 +2272,8 @@ namespace HEIF
             }
             else if (handlerType == "soun")
             {
-                const MP4AudioSampleEntryBox* sampleEntry =
-                    stsdBox.getSampleEntry<MP4AudioSampleEntryBox>("mp4a", sampleProperties.sampleDescriptionIndex);
+                const SampleEntryBox* sampleEntry =
+                    static_cast<const SampleEntryBox*>(stsdBox.getSampleEntry(sampleProperties.sampleDescriptionIndex));
                 if (sampleEntry)
                 {
                     sampleProperties.sampleEntryType = FourCC(sampleEntry->getType().getUInt32());
@@ -2200,7 +2290,7 @@ namespace HEIF
             mImageToParameterSetMap[Id(trackId, sampleIndex)] = Id(trackId, sampleProperties.sampleDescriptionIndex);
         }
 
-        if (stblBox.hasSyncSampleBox() && (handlerType == "vide"))
+        if (stblBox.hasSyncSampleBox())
         {
             const Vector<std::uint32_t> syncSamples = stblBox.getSyncSampleBox().get()->getSyncSampleIds();
             for (unsigned int i = 0; i < syncSamples.size(); ++i)
@@ -2219,10 +2309,14 @@ namespace HEIF
             const int32_t min             = std::numeric_limits<int32_t>::min();
             for (size_t i = 0; i < offsets.size(); i++)
             {
-                if ((offsets.at(i) == min) && samplePropertiesMap.count(static_cast<uint32_t>(i)))
+                if (samplePropertiesMap.count(static_cast<uint32_t>(i)))
                 {
-                    samplePropertiesMap.at(static_cast<uint32_t>(i)).sampleType =
-                        SampleType::NON_OUTPUT_REFERENCE_FRAME;
+                    samplePropertiesMap.at(static_cast<uint32_t>(i)).sampleCompositionOffsetTs = offsets.at(i);
+                    if (offsets.at(i) == min)
+                    {
+                        samplePropertiesMap.at(static_cast<uint32_t>(i)).sampleType =
+                            SampleType::NON_OUTPUT_REFERENCE_FRAME;
+                    }
                 }
             }
         }
@@ -2288,53 +2382,30 @@ namespace HEIF
         const uint32_t trackId = trackBox->getTrackHeaderBox().getTrackID();
         SampleDescriptionBox& stsdBox =
             trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox().getSampleDescriptionBox();
-
-        // Process HevcSampleEntries
+        const auto& sampleEntries = stsdBox.getSampleEntries();
+        unsigned int index        = 1;
+        for (auto& entryBox : sampleEntries)
         {
-            const Vector<HevcSampleEntry*> sampleEntries = stsdBox.getSampleEntries<HevcSampleEntry>("hvc1");
-            unsigned int index                           = 1;
-            for (auto& entry : sampleEntries)
-            {
-                ParameterSetMap parameterSetMap =
-                    makeDecoderParameterSetMap(entry->getHevcConfigurationBox().getConfiguration());
-                mParameterSetMap[Id(trackId, index)] = parameterSetMap;
+            const SampleEntryBox* entry = entryBox.get();
+            // FourCCInt type = entry->getType();
 
-                const CleanApertureBox* clapBox = entry->getClap();
+            mParameterSetMap[Id(trackId, index)] = makeDecoderParameterSetMap(*entry->getConfigurationRecord());
+
+            if (entry->isVisual())
+            {
+                const VisualSampleEntryBox* visual = static_cast<const VisualSampleEntryBox*>(entry);
+                const CleanApertureBox* clapBox    = visual->getClap();
                 if (clapBox != nullptr)
                 {
                     mTrackInfo.at(trackId).clapProperties.insert(std::make_pair(index, makeClap(clapBox)));
                 }
-                const AuxiliaryTypeInfoBox* auxiBox = entry->getAuxi();
+                const AuxiliaryTypeInfoBox* auxiBox = visual->getAuxi();
                 if (auxiBox != nullptr)
                 {
                     mTrackInfo.at(trackId).auxiProperties.insert(std::make_pair(index, makeAuxi(auxiBox)));
                 }
-                ++index;
             }
-        }
-
-        // Process AvcSampleEntries
-        {
-            const Vector<AvcSampleEntry*> sampleEntries = stsdBox.getSampleEntries<AvcSampleEntry>("avc1");
-            unsigned int index                          = 1;
-            for (auto& entry : sampleEntries)
-            {
-                ParameterSetMap parameterSetMap =
-                    makeDecoderParameterSetMap(entry->getAvcConfigurationBox().getConfiguration());
-                mParameterSetMap[Id(trackId, index)] = parameterSetMap;
-
-                const CleanApertureBox* clapBox = entry->getClap();
-                if (clapBox != nullptr)
-                {
-                    mTrackInfo.at(trackId).clapProperties.insert(std::make_pair(index, makeClap(clapBox)));
-                }
-                const AuxiliaryTypeInfoBox* auxiBox = entry->getAuxi();
-                if (auxiBox != nullptr)
-                {
-                    mTrackInfo.at(trackId).auxiProperties.insert(std::make_pair(index, makeAuxi(auxiBox)));
-                }
-                ++index;
-            }
+            ++index;
         }
     }
 
@@ -2475,5 +2546,6 @@ namespace HEIF
     template Array<std::int64_t> makeArray(const Vector<std::int64_t>& container);
     template Array<std::uint64_t> makeArray(const Vector<std::uint64_t>& container);
     template Array<std::uint8_t> makeArray(const Vector<std::uint8_t>& container);
+    template Array<EditUnit> makeArray(const Vector<EditUnit>& container);
 
 }  // namespace HEIF

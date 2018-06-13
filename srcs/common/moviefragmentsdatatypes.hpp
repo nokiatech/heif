@@ -12,7 +12,7 @@
 #ifndef MOVIEFRAGMENTSDATATYPES_HPP_
 #define MOVIEFRAGMENTSDATATYPES_HPP_
 
-#include <stdint.h>
+#include <cstdint>
 #include "bitstream.hpp"
 #include "customallocator.hpp"
 

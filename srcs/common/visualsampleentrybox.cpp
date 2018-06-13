@@ -195,3 +195,7 @@ void VisualSampleEntryBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
     }
 }
+bool VisualSampleEntryBox::isVisual() const
+{
+    return true;
+}

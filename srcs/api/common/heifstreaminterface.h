@@ -14,7 +14,7 @@
 #ifndef HEIFSTREAMINTERFACE_HPP_
 #define HEIFSTREAMINTERFACE_HPP_
 
-#include <stdint.h>
+#include <cstdint>
 #include "heifexport.h"
 
 namespace HEIF

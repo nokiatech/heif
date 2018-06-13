@@ -19,6 +19,7 @@ project(heif LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if (USE_LIBC++)
   if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -57,7 +58,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Cl
   # Use MATCHES for Clang to also include AppleClang
   # Update if necessary
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wall -Wextra -Wcast-align")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wcast-align")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcast-qual -Wdisabled-optimization")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winit-self")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmissing-declarations -Wmissing-include-dirs")
@@ -140,11 +141,23 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 add_subdirectory(common)
 add_subdirectory(reader)
+
 add_subdirectory(writer)
 if (NOT IOS)
   add_subdirectory(examples)
 endif()
+
 add_subdirectory(api-cpp)
+
+
+if (NOT ANDROID)
+  if (NOT IOS)
+    find_package(JNI)
+    if (JNI_FOUND)
+      add_subdirectory(api-java/cpp)
+      endif()
+  endif()
+endif()
 
 message(STATUS "System name       : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Project Name      : ${PROJECT_NAME}")

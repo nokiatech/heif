@@ -11,7 +11,10 @@
  */
 
 #include "H26xTools.h"
+#include <cstring>
+
 using namespace HEIFPP;
+
 /*
 Byte stream parsing  Rec. ITU-T H.265 v4 (12/2016)  - annex B (matches the H.264 too)
 
@@ -24,7 +27,7 @@ At the beginning of the decoding process, the decoder initializes its current po
 beginning of the byte stream.
 
 */
-bool NAL_State::init_parse(const uint8_t* aData, uint64_t aLength)
+bool NAL_State::init_parse(const std::uint8_t* aData, std::uint64_t aLength)
 {
     /*
     At the beginning of the decoding process, the decoder initializes its current position in the byte stream to the
@@ -51,7 +54,7 @@ bool NAL_State::init_parse(const uint8_t* aData, uint64_t aLength)
     // invalid bytestream.
     return false;
 }
-bool NAL_State::parse_byte_stream(const uint8_t*& nal_unit, uint64_t& nal_unit_length)
+bool NAL_State::parse_byte_stream(const std::uint8_t*& nal_unit, std::uint64_t& nal_unit_length)
 {
     /*
     The decoder then performs the following step-wise process repeatedly to extract and decode each NAL unit syntax
@@ -113,8 +116,8 @@ bool NAL_State::parse_byte_stream(const uint8_t*& nal_unit, uint64_t& nal_unit_l
     � A subsequent byte-aligned three-byte sequence equal to 0x000001,
     � The end of the byte stream, as determined by unspecified means.
     */
-    const uint8_t* src  = mData;
-    uint64_t bytes_left = mLength;
+    const std::uint8_t* src  = mData;
+    std::uint64_t bytes_left = mLength;
     while (bytes_left)
     {
         if ((bytes_left >= 3) && ((src[0] == 0) && (src[1] == 0) && ((src[2] == 0) || (src[2] == 1))))
@@ -177,4 +180,86 @@ bool NAL_State::end_of_stream()
     if (mLength == 0)
         return true;
     return false;
+}
+
+bool NAL_State::convertToByteStream(std::uint8_t* aData, std::uint64_t aLength)
+{
+    // convert nal stream to byte stream
+    // ie. overwrite nal_lengths with byte stream header (use a simple 0 0 0 1 replacement)
+    for (std::uint32_t i = 0; i < aLength;)
+    {
+        if ((aLength - i) < 4)
+        {
+            return false;
+        }
+
+        std::uint32_t len;
+        len = (std::uint32_t)(aData[i + 0] << 24u);
+        len |= (std::uint32_t)(aData[i + 1] << 16u);
+        len |= (std::uint32_t)(aData[i + 2] << 8u);
+        len |= (std::uint32_t)(aData[i + 3]);
+        if ((aLength - i) < len)
+        {
+            return false;
+        }
+        aData[i + 0] = 0;
+        aData[i + 1] = 0;
+        aData[i + 2] = 0;
+        aData[i + 3] = 1;
+        i += len + 4;
+    }
+    return true;
+}
+
+bool NAL_State::convertFromByteStream(uint8_t* aBuffer,
+                                      std::uint64_t aBufferSize,
+                                      uint8_t*& aData,
+                                      std::uint64_t& aSize)
+{
+    // convert nal bytestream to nal unit stream (ie. change start code prefixes to lengths)
+    NAL_State d;
+    d.init_parse(aBuffer, aBufferSize);
+    if (aData == nullptr)
+    {
+        aSize = aBufferSize;
+        aData = new std::uint8_t[aSize];
+    }
+    std::uint64_t curSize = 0;
+    for (;;)
+    {
+        const std::uint8_t* nal_data = nullptr;
+        std::uint64_t nal_len        = 0;
+        if (!d.parse_byte_stream(nal_data, nal_len))
+        {
+            if (!d.end_of_stream())
+            {
+                // We have corrupted data
+                curSize = 0;
+                aSize   = 0;
+                delete[] aData;
+                aData = nullptr;
+                return false;
+            }
+            break;
+        }
+        std::uint64_t required = curSize + 4 + nal_len;
+        if (required > aSize)
+        {
+            std::uint8_t* tmp = new std::uint8_t[required];
+            aSize             = required;
+            std::memcpy(tmp, aData, curSize);
+            delete[] aData;
+            aData = tmp;
+        }
+        // Write length.
+        aData[curSize + 0] = (nal_len >> 24) & 0xFF;
+        aData[curSize + 1] = (nal_len >> 16) & 0xFF;
+        aData[curSize + 2] = (nal_len >> 8) & 0xFF;
+        aData[curSize + 3] = (nal_len >> 0) & 0xFF;
+        // Write payload.
+        std::memcpy(aData + curSize + 4, nal_data, nal_len);
+        curSize += nal_len + 4;
+    }
+    aSize = curSize;
+    return true;
 }

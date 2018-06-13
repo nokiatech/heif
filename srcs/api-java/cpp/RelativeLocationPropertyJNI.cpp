@@ -12,42 +12,43 @@
  *
  */
 
-#include <jni.h>
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_RelativeLocationProperty_##method_name
 #include <DescriptiveProperty.h>
+#include <jni.h>
 #include "Helpers.h"
+
+#define CLASS_NAME RelativeLocationProperty
+
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::RelativeLocationProperty *nativeObject = new HEIFPP::RelativeLocationProperty(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
-    JNI_METHOD(void, setHorizontalOffsetNative)(JNIEnv *env, jobject obj, jint offset)
+    JNI_METHOD_ARG(void, setHorizontalOffsetNative, jint offset)
     {
-        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, obj);
-        nativeHandle->mRelativeLocation.horizontalOffset = offset;
+        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, self);
+        nativeHandle->mRelativeLocation.horizontalOffset = static_cast<uint32_t>(offset);
     }
 
-    JNI_METHOD(void, setVerticalOffsetNative)(JNIEnv *env, jobject obj, jint offset)
+    JNI_METHOD_ARG(void, setVerticalOffsetNative, jint offset)
     {
-        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, obj);
-        nativeHandle->mRelativeLocation.verticalOffset = offset;
+        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, self);
+        nativeHandle->mRelativeLocation.verticalOffset = static_cast<uint32_t>(offset);
     }
 
-    JNI_METHOD(int, getHorizontalOffsetNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(int, getHorizontalOffsetNative)
     {
-        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mRelativeLocation.horizontalOffset;
+        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->mRelativeLocation.horizontalOffset);
     }
 
-    JNI_METHOD(int, getVerticalOffsetNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(int, getVerticalOffsetNative)
     {
-        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mRelativeLocation.verticalOffset;
+        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->mRelativeLocation.verticalOffset);
     }
 }

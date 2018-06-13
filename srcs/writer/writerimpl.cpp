@@ -61,12 +61,17 @@ namespace HEIF
         , mDecoderConfigs()
         , mDecoderConfigIndexToSize()
         , mJpegDimensions()
-        , mMatrix()
+        , mMatrix({0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000})
         , mFileTypeBox()
         , mMetaBox()
         , mMovieBox()
         , mMediaDataBox()
     {
+    }
+
+    WriterImpl::~WriterImpl()
+    {
+        clear();
     }
 
     void WriterImpl::clear()
@@ -85,6 +90,7 @@ namespace HEIF
         mDecoderConfigIndexToSize.clear();
         mJpegDimensions.clear();
         mMatrix.clear();
+        mMatrix = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
 
         mFileTypeBox  = {};
         mMetaBox      = {};
@@ -94,6 +100,13 @@ namespace HEIF
         mMdatOffset     = 0;
         mInitialMdat    = false;
         mPrimaryItemSet = false;
+
+        if (mState == State::WRITING)
+        {
+            mFile.close();
+            std::remove(mFilename.c_str());
+            mFilename.clear();
+        }
 
         mState = State::UNINITIALIZED;
     }
@@ -122,7 +135,8 @@ namespace HEIF
             mInitialMdat = true;
         }
 
-        mFile.open(outputConfig.fileName, std::ofstream::out | std::ofstream::binary);
+        mFilename = outputConfig.fileName;
+        mFile.open(mFilename.c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
         if (!mFile.is_open())
         {
             return ErrorCode::FILE_OPEN_ERROR;

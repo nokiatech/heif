@@ -13,13 +13,15 @@
 #include "JPEGCodedImageItem.h"
 #include <heifreader.h>
 #include <heifwriter.h>
+#include <cstring>
 
 using namespace HEIFPP;
+
 #if 0
 JPEGDecoderConfiguration::JPEGDecoderConfiguration(Heif* aHeif) : DecoderConfiguration(aHeif,HEIF::MediaFormat::JPEG)
 {
 }
-HEIF::ErrorCode JPEGDecoderConfiguration::convertToRawData(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig, uint8_t*& aData, uint32_t& aSize) const
+HEIF::ErrorCode JPEGDecoderConfiguration::convertToRawData(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig, std::uint8_t*& aData, std::uint32_t& aSize) const
 {
     aSize = 0;
     for (int i = 0; i < aConfig.size; i++)
@@ -30,30 +32,30 @@ HEIF::ErrorCode JPEGDecoderConfiguration::convertToRawData(const HEIF::Array<HEI
         }
         aSize += (uint32_t)aConfig[i].decSpecInfoData.size;
     }
-    uint8_t* d = aData = new uint8_t[aSize];
+    std::uint8_t* d = aData = new std::uint8_t[aSize];
     for (int i = 0; i < aConfig.size; i++)
     {
-        memcpy(d, aConfig[i].decSpecInfoData.begin(), aConfig[i].decSpecInfoData.size);
+        std::memcpy(d, aConfig[i].decSpecInfoData.begin(), aConfig[i].decSpecInfoData.size);
         d += aConfig[i].decSpecInfoData.size;
     }
     return HEIF::ErrorCode::OK;
 }
-HEIF::ErrorCode JPEGDecoderConfiguration::convertFromRawData(const uint8_t* aData, uint32_t aSize)
+HEIF::ErrorCode JPEGDecoderConfiguration::convertFromRawData(const std::uint8_t* aData, std::uint32_t aSize)
 {
     //TODO: how to verify that the data contains valid JPEG prefix/config code?
     mConfig.decoderSpecificInfo = HEIF::Array<HEIF::DecoderSpecificInfo>(1);
     mConfig.decoderSpecificInfo[0].decSpecInfoType = HEIF::DecoderSpecInfoType::JPEG;
     mConfig.decoderSpecificInfo[0].decSpecInfoData = HEIF::Array<uint8_t>(aSize);
-    memcpy(mConfig.decoderSpecificInfo[0].decSpecInfoData.elements, aData,aSize);
+    std::memcpy(mConfig.decoderSpecificInfo[0].decSpecInfoData.elements, aData,aSize);
     return HEIF::ErrorCode::OK;
 }
 
 
-HEIF::ErrorCode JPEGDecoderConfiguration::setConfig(const uint8_t* aData, uint32_t aSize)
+HEIF::ErrorCode JPEGDecoderConfiguration::setConfig(const std::uint8_t* aData, std::uint32_t aSize)
 {
     return convertFromRawData(aData, aSize);
 }
-void JPEGDecoderConfiguration::getConfig(uint8_t*& aData, uint32_t& aSize) const
+void JPEGDecoderConfiguration::getConfig(uint8_t*& aData, std::uint32_t& aSize) const
 {
     aData = mBuffer;
     aSize = mBufferSize;
@@ -73,10 +75,11 @@ HEIF::ErrorCode JPEGCodedImageItem::save(HEIF::Writer* aWriter)
     return CodedImageItem::save(aWriter);
 }
 
-void JPEGCodedImageItem::getBitstream(uint8_t*& aData, uint64_t& aSize)
+bool JPEGCodedImageItem::getBitstream(uint8_t*& aData, std::uint64_t& aSize)
 {
     // TODO: nothing to do?
     aSize = mBufferSize;
-    aData = new uint8_t[mBufferSize];
-    memcpy(aData, mBuffer, aSize);
+    aData = new std::uint8_t[mBufferSize];
+    std::memcpy(aData, mBuffer, aSize);
+    return true;
 }

@@ -13,13 +13,16 @@
 #pragma once
 
 #include <ItemProperty.h>
+
 namespace HEIFPP
 {
     class DescriptiveProperty : public HEIFPP::ItemProperty
     {
+    public:
+        ~DescriptiveProperty() = default;
+
     protected:
         DescriptiveProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType);
-        virtual ~DescriptiveProperty() = default;
 
     protected:
         // valid types: 'pasp','colr','pixi','rloc','auxc','lsel'
@@ -27,7 +30,7 @@ namespace HEIFPP
         // hmm: 'hvcC' 'lhvC' 'avcC' 'jpgC' decoder config/init properties not exposed.
         //     'subs'  'oinf' 'tols' decoder properties not exposed here.
         //     'ispe'   not exposed here.
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
 
     private:
         DescriptiveProperty& operator=(const DescriptiveProperty&) = delete;
@@ -41,11 +44,11 @@ namespace HEIFPP
     public:
         HEIF::PixelAspectRatio mPixelAspectRatio;
         PixelAspectRatioProperty(Heif* aHeif);
-        virtual ~PixelAspectRatioProperty() = default;
+        ~PixelAspectRatioProperty() = default;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         PixelAspectRatioProperty& operator=(const PixelAspectRatioProperty&) = delete;
@@ -59,11 +62,11 @@ namespace HEIFPP
     public:
         HEIF::ColourInformation mColourInformation;
         ColourInformationProperty(Heif* aHeif);
-        virtual ~ColourInformationProperty() = default;
+        ~ColourInformationProperty() = default;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         ColourInformationProperty& operator=(const ColourInformationProperty&) = delete;
@@ -77,11 +80,11 @@ namespace HEIFPP
     public:
         HEIF::PixelInformation mPixelInformation;
         PixelInformationProperty(Heif* aHeif);
-        virtual ~PixelInformationProperty() = default;
+        ~PixelInformationProperty() = default;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         PixelInformationProperty& operator=(const PixelInformationProperty&) = delete;
@@ -95,11 +98,11 @@ namespace HEIFPP
     public:
         HEIF::RelativeLocation mRelativeLocation;
         RelativeLocationProperty(Heif* aHeif);
-        virtual ~RelativeLocationProperty() = default;
+        ~RelativeLocationProperty() = default;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         RelativeLocationProperty& operator=(const RelativeLocationProperty&) = delete;
@@ -112,18 +115,18 @@ namespace HEIFPP
     {
     public:
         AuxProperty(Heif* aHeif);
-        virtual ~AuxProperty() = default;
+        ~AuxProperty() = default;
         const std::string& auxType();
         void auxType(const std::string&);
-        const std::vector<uint8_t>& subType();
-        void subType(const std::vector<uint8_t>&);
+        const std::vector<std::uint8_t>& subType();
+        void subType(const std::vector<std::uint8_t>&);
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-        std::string mAuxType;           ///< Type of the associated auxiliary image item. This is not null-terminated.
-        std::vector<uint8_t> mSubType;  ///< Aux subtype, semantics depends on the auxType value
+        std::string mAuxType;  ///< Type of the associated auxiliary image item. This is not null-terminated.
+        std::vector<std::uint8_t> mSubType;  ///< Aux subtype, semantics depends on the auxType value
     private:
         AuxProperty& operator=(const AuxProperty&) = delete;
         AuxProperty(const AuxProperty&)            = delete;

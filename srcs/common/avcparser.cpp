@@ -152,11 +152,11 @@ bool parseSPS(BitStream& bitstr, SPSConfigValues& retSps)
                 {
                     if (i < 6)
                     {
-                        scaling_list( ScalingList4x4[ i ], 16, UseDefaultScalingMatrix4x4Flag[ i ]) ; //0
+                        scaling_list( ScalingList4x4[ i ], 16, UseDefaultScalingMatrix4x4Flag[ i ]);
                     }
                     else
                     {
-                        scaling_list( ScalingList8x8[ i − 6 ], 64, UseDefaultScalingMatrix8x8Flag[ i − 6 ] ) ; //
+                        scaling_list( ScalingList8x8[ i-6 ], 64, UseDefaultScalingMatrix8x8Flag[ i-6 ] );
                     }
                 }
             }

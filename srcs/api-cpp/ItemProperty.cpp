@@ -30,7 +30,7 @@ ItemProperty::~ItemProperty()
 {
     for (; !mLinks.empty();)
     {
-        Item* linkedto = mLinks[0];
+        Item* linkedto = mLinks[0].first;
         if (linkedto)
         {
             linkedto->removeProperty(this);
@@ -72,23 +72,18 @@ bool ItemProperty::isTransformative() const
 {
     return mIsTransform;
 }
-
+void ItemProperty::setIsTransformative(bool aIsTransformative)
+{
+    mIsTransform = aIsTransformative;
+}
 
 void ItemProperty::link(Item* aItem)
 {
-    HEIF_ASSERT(aItem);
-    if (!AddItemTo(mLinks, aItem))
-    {
-        // Tried to link to an already linked item.
-        HEIF_ASSERT(false);
-    }
+    if (aItem)
+        mLinks.addLink(aItem);
 }
 void ItemProperty::unlink(Item* aItem)
 {
-    HEIF_ASSERT(aItem);
-    if (!RemoveItemFrom(mLinks, aItem))
-    {
-        // Tried to unlink a non linked item.
-        HEIF_ASSERT(false);
-    }
+    if (aItem)
+        mLinks.removeLink(aItem);
 }

@@ -15,28 +15,30 @@
 #include <jni.h>
 #include "ExifItem.h"
 #include "Helpers.h"
-#define JNI_METHOD(return_type, method_name) JNIEXPORT return_type JNICALL Java_com_nokia_heif_ExifItem_##method_name
+#define CLASS_NAME ExifItem
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::ExifItem *nativeObject = new HEIFPP::ExifItem(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
-    JNI_METHOD(jobject, getItemDataNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getItemDataNative)
     {
-        NATIVE_EXIF_ITEM(nativeHandle, obj);
-        return env->NewDirectByteBuffer((void *) nativeHandle->getData(), nativeHandle->getDataSize());
+        NATIVE_SELF;
+        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeSelf->getData()),
+                                        static_cast<jlong>(nativeSelf->getDataSize()));
     }
 
-    JNI_METHOD(void, setItemDataNative)(JNIEnv *env, jobject obj, jbyteArray data)
+    JNI_METHOD_ARG(void, setItemDataNative, jbyteArray data)
     {
-        NATIVE_EXIF_ITEM(nativeHandle, obj);
+        NATIVE_SELF;
         jbyte *nativeData = env->GetByteArrayElements(data, 0);
-        nativeHandle->setData((uint8_t *) nativeData, env->GetArrayLength(data));
+        nativeSelf->setData((uint8_t *) nativeData,
+                            static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 }

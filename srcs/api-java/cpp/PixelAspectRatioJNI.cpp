@@ -13,41 +13,42 @@
  */
 
 #include <jni.h>
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_PixelAspectRatioProperty_##method_name
 #include "DescriptiveProperty.h"
 #include "Helpers.h"
+
+#define CLASS_NAME PixelAspectRatioProperty
+
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::PixelAspectRatioProperty *nativeObject = new HEIFPP::PixelAspectRatioProperty(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
-    JNI_METHOD(jint, getRelativeWidthNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getRelativeWidthNative)
     {
-        NATIVE_PIXEL_ASPECT_RATIO_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mPixelAspectRatio.relativeWidth;
+        NATIVE_PIXEL_ASPECT_RATIO_PROPERTY(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->mPixelAspectRatio.relativeWidth);
     }
 
-    JNI_METHOD(jint, getRelativeHeightNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getRelativeHeightNative)
     {
-        NATIVE_PIXEL_ASPECT_RATIO_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mPixelAspectRatio.relativeHeight;
+        NATIVE_PIXEL_ASPECT_RATIO_PROPERTY(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->mPixelAspectRatio.relativeHeight);
     }
 
-    JNI_METHOD(void, setRelativeWidthNative)(JNIEnv *env, jobject obj, jint relativeWidth)
+    JNI_METHOD_ARG(void, setRelativeWidthNative, jint relativeWidth)
     {
-        NATIVE_PIXEL_ASPECT_RATIO_PROPERTY(nativeHandle, obj);
-        nativeHandle->mPixelAspectRatio.relativeWidth = relativeWidth;
+        NATIVE_PIXEL_ASPECT_RATIO_PROPERTY(nativeHandle, self);
+        nativeHandle->mPixelAspectRatio.relativeWidth = static_cast<uint32_t>(relativeWidth);
     }
 
-    JNI_METHOD(void, setRelativeHeightNative)(JNIEnv *env, jobject obj, jint relativeHeight)
+    JNI_METHOD_ARG(void, setRelativeHeightNative, jint relativeHeight)
     {
-        NATIVE_PIXEL_ASPECT_RATIO_PROPERTY(nativeHandle, obj);
-        nativeHandle->mPixelAspectRatio.relativeHeight = relativeHeight;
+        NATIVE_PIXEL_ASPECT_RATIO_PROPERTY(nativeHandle, self);
+        nativeHandle->mPixelAspectRatio.relativeHeight = static_cast<uint32_t >(relativeHeight);
     }
 }

@@ -43,13 +43,15 @@ public final class MirrorProperty extends TransformativeProperty
     /**
      * Creates an MirrorProperty to the given HEIF instance
      * @param heif The parent HEIF instance for the new object
+     * @param
      * @throws Exception Thrown if the parent HEIF instance is invalid
      */
-    public MirrorProperty(HEIF heif)
+    public MirrorProperty(HEIF heif, Mirror direction)
             throws Exception
     {
         super(heif);
         mNativeHandle = createContextNative(heif);
+        setMirror(direction);
     }
 
     /**

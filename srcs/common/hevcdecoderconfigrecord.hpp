@@ -13,6 +13,7 @@
 #define HEVCDECODERCONFIGRECORD_HPP
 
 #include "hevccommondefs.hpp"
+#include "decoderconfigrecord.hpp"
 
 namespace ISOBMFF
 {
@@ -22,7 +23,7 @@ namespace ISOBMFF
 /**
  * @brief HEVC decoder configuration record
  */
-class HevcDecoderConfigurationRecord
+class HevcDecoderConfigurationRecord : public DecoderConfigurationRecord
 {
 public:
     HevcDecoderConfigurationRecord();
@@ -65,7 +66,7 @@ public:
      * @param          nalUnitType NAL unit type to append
      */
     void getOneParameterSet(Vector<std::uint8_t> &byteStream,
-                            HevcNalUnitType nalUnitType) const;
+        HevcNalUnitType nalUnitType) const;
 
     /**
      * @pre makeConfigFromSPS has been called successfully.
@@ -85,6 +86,8 @@ public:
      */
     std::uint16_t getAvgFrameRate() const;
 
+    /* @brief Returns configuration parameter map for this record */
+    virtual void getConfigurationMap(ConfigurationMap& aMap) const override;
 private:
     // Member variables can be found from the High Efficiency Video Coding (HEVC)
     // specification

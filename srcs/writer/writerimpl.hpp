@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef WRITERIMPL_HPP
@@ -28,7 +30,7 @@ namespace HEIF
     {
     public:
         WriterImpl();
-        virtual ~WriterImpl() = default;
+        ~WriterImpl();
 
         virtual ErrorCode initialize(const OutputConfig& outputConfig);
         virtual ErrorCode setMajorBrand(const FourCC& brand);
@@ -40,7 +42,7 @@ namespace HEIF
 
         virtual ErrorCode addImage(const MediaDataId& mediaDataId, ImageId& imageId);
         virtual ErrorCode setPrimaryItem(const ImageId& imageId);
-        virtual ErrorCode addMetadata(const MediaDataId& mediaDataId, const ImageId& imageId);
+        virtual ErrorCode addMetadata(const MediaDataId& mediaDataId, MetadataItemId& metadataIemId);
         virtual ErrorCode addThumbnail(const ImageId& thumbImageId, const ImageId& masterImageId);
         virtual ErrorCode addProperty(const CleanAperture& clap, PropertyId& propertyId);
         virtual ErrorCode addProperty(const Mirror& imir, PropertyId& propertyId);
@@ -51,22 +53,35 @@ namespace HEIF
         virtual ErrorCode addProperty(const ColourInformation& colr, PropertyId& propertyId);
         virtual ErrorCode addProperty(const AuxiliaryType& auxC, PropertyId& propertyId);
         virtual ErrorCode addProperty(const RawProperty& property, const bool isTransformative, PropertyId& propertyId);
-        virtual ErrorCode associateProperty(const ImageId& imageId, const PropertyId& propertyId, const bool isEssential = false);
+        virtual ErrorCode associateProperty(const ImageId& imageId,
+                                            const PropertyId& propertyId,
+                                            const bool isEssential = false);
         virtual ErrorCode addDerivedImage(const ImageId& imageId, ImageId& derivedImageId);
         virtual ErrorCode addDerivedImageItem(const Grid& grid, ImageId& gridId);
         virtual ErrorCode addDerivedImageItem(const Overlay& iovl, ImageId& overlayId);
+
+        virtual ErrorCode addMetadataItemReference(const MetadataItemId& metadataItemId, const ImageId& toImageId);
         virtual ErrorCode addTbasItemReference(const ImageId& fromImageId, const ImageId& toImageId);
         virtual ErrorCode addBaseItemReference(const ImageId& fromImageId, const Array<ImageId>& toImageIds);
         virtual ErrorCode addAuxiliaryReference(const ImageId& fromImageId, const ImageId& toImageId);
         virtual ErrorCode setImageHidden(const ImageId& imageId, const bool hidden);
 
-        virtual ErrorCode addImageSequence(const Rational& timeBase, const CodingConstraints& aCodingConstraints, SequenceId& id);
-        virtual ErrorCode addImage(const SequenceId& sequenceId, const MediaDataId& mediaDataId, const SampleInfo& sampleInfo, SequenceImageId& imageId);
-        virtual ErrorCode addMetadata(const MediaDataId& mediaDataId, const SequenceId& sequenceId, const SequenceImageId& imageId);
+        virtual ErrorCode addImageSequence(const Rational& timeBase,
+                                           const CodingConstraints& aCodingConstraints,
+                                           SequenceId& id);
+        virtual ErrorCode addImage(const SequenceId& sequenceId,
+                                   const MediaDataId& mediaDataId,
+                                   const SampleInfo& sampleInfo,
+                                   SequenceImageId& imageId);
+        virtual ErrorCode addMetadataItemReference(const MetadataItemId& metadataItemId,
+                                                   const SequenceId& sequenceId,
+                                                   const SequenceImageId& imageId);
         virtual ErrorCode addThumbnails(const SequenceId& thumbSequenceId, const SequenceId& sequenceId);
         virtual ErrorCode setImageHidden(const SequenceImageId& sequenceImageId, const bool hidden);
         virtual ErrorCode addProperty(const CleanAperture& clap, const SequenceId& sequenceId);
-        virtual ErrorCode addAuxiliaryReference(const AuxiliaryType& auxC, const SequenceId& auxiliarySequenceId, const SequenceId& sequenceId);
+        virtual ErrorCode addAuxiliaryReference(const AuxiliaryType& auxC,
+                                                const SequenceId& auxiliarySequenceId,
+                                                const SequenceId& sequenceId);
         virtual ErrorCode setEditList(const SequenceId& sequenceId, const EditList& editList);
         virtual ErrorCode setMatrix(const Array<int32_t>& matrix);
         virtual ErrorCode setMatrix(const SequenceId& sequenceId, const Array<int32_t>& matrix);
@@ -76,14 +91,23 @@ namespace HEIF
         virtual ErrorCode createEquivalenceGroup(GroupId& id);
         virtual ErrorCode addToGroup(const GroupId& groupId, const ImageId& id);
         virtual ErrorCode addToGroup(const GroupId& groupId, const SequenceId& id);
-        virtual ErrorCode addToEquivalenceGroup(const GroupId& equivalenceGroupId, const SequenceImageId& id, const EquivalenceTimeOffset& offset = {0, 1 << 8});
+        virtual ErrorCode addToEquivalenceGroup(const GroupId& equivalenceGroupId,
+                                                const SequenceId& sequenceId,
+                                                const SequenceImageId& id,
+                                                const EquivalenceTimeOffset& offset = {0, 1 << 8});
 
-        virtual ErrorCode  setAlternateGrouping(const SequenceId& sequenceId1, const SequenceId& sequenceId2);
+        virtual ErrorCode setAlternateGrouping(const SequenceId& sequenceId1, const SequenceId& sequenceId2);
 
         virtual ErrorCode addVideoTrack(const Rational& timeBase, SequenceId& id);
-        virtual ErrorCode addVideo(const SequenceId& sequenceId, const MediaDataId& mediaDataId, const SampleInfo& sampleInfo);
+        virtual ErrorCode addVideo(const SequenceId& sequenceId,
+                                   const MediaDataId& mediaDataId,
+                                   const SampleInfo& sampleInfo,
+                                   SequenceImageId& sampleid);
         virtual ErrorCode addAudioTrack(const Rational& timeBase, const AudioParams& config, SequenceId& id);
-        virtual ErrorCode addAudio(const SequenceId& sequenceId, const MediaDataId& mediaDataId, const SampleInfo& sampleInfo);
+        virtual ErrorCode addAudio(const SequenceId& sequenceId,
+                                   const MediaDataId& mediaDataId,
+                                   const SampleInfo& sampleInfo,
+                                   SequenceImageId& sampleid);
 
     private:
         ErrorCode isValidSequenceImage(const SequenceId& sequenceId, const SequenceImageId& sequenceImageId) const;
@@ -102,7 +126,7 @@ namespace HEIF
 
         /**
          * Creates new metadataitem & id for given mediaDataId
-        */
+         */
         ErrorCode createMetadataItem(const MediaDataId& mediaDataId, MetadataItemId& metadataItemId);
 
         /**
@@ -112,8 +136,8 @@ namespace HEIF
         bool checkImageIds(const Array<ImageId>& imageIds) const;
 
         /**
-         * @brief getIspe Get index of an 'ispe' property with given dimensions. If matching one does not already exist, a
-         *                new property is created and added to the metabox.
+         * @brief getIspe Get index of an 'ispe' property with given dimensions. If matching one does not already exist,
+         * a new property is created and added to the metabox.
          * @param width  Width of the image in pixels.
          * @param height Height of the image in pixels.
          * @return 1-based 'ispe' property index in the Item Property Container Box.
@@ -121,8 +145,8 @@ namespace HEIF
         std::uint16_t getIspeIndex(std::uint32_t width, std::uint32_t height);
 
         /**
-         * @brief getConfigIndex Get index of an decoder configuration property for given decoder configuration in Media.
-         *                       If matching one does not already exist, a new property is created and added to the metabox.
+         * @brief getConfigIndex Get index of an decoder configuration property for given decoder configuration in
+         * Media. If matching one does not already exist, a new property is created and added to the metabox.
          * @param [in]  configIndex
          * @param [out] propertyIndex 1-based decoder configuration property index in the Item Property Container Box.
          * @return ErrorCode
@@ -135,7 +159,7 @@ namespace HEIF
          * @param mediaTimescale  Timescale of the media on this track.
          * @return New EditBox with EditListBox.
          */
-        EditBox createEditBox(const EditList& editList, uint32_t mediaTimescale) const;
+        EditBox createEditBox(const EditList& editList) const;
 
         /**
          * @brief addEmptyEdit Append a new empty edit to an edit list box.
@@ -147,18 +171,16 @@ namespace HEIF
         /**
          * @brief addDwellEdit   Append a new dwell edit to an edit list box.
          * @param editListBox    Edit List Box where the new entry will be appended.
-         * @param mediaTimescale Timescale of the media on this track.
          * @param editUnit       Edit List entry where edit type is DWELL.
          */
-        void addDwellEdit(EditListBox* editListBox, uint32_t mediaTimescale, const EditUnit& editUnit) const;
+        void addDwellEdit(EditListBox* editListBox, const EditUnit& editUnit) const;
 
         /**
          * @brief addShiftEdit   Append a new shift edit to an edit list box.
          * @param editListBox    Edit List Box where the new entry will be appended.
-         * @param mediaTimescale Timescale of the media on this track.
          * @param editUnit       Edit List entry where edit type is SHIFT.
          */
-        void addShiftEdit(EditListBox* editListBox, uint32_t mediaTimescale, const EditUnit& editUnit) const;
+        void addShiftEdit(EditListBox* editListBox, const EditUnit& editUnit) const;
 
         /**
          * @brief Initialize internal data structures and ID generators of the writer.
@@ -188,10 +210,13 @@ namespace HEIF
         ImageCollection mImageCollection;
         Map<GroupId, EntityGroup> mEntityGroups;
         Map<MediaDataId, MetadataItemId> mMetadataItems;
-        Map<ImageSize, PropertyIndex> mIspeIndexes;               ///< Map of ispe property indexes in the item property container box.
-        Map<DecoderConfigId, PropertyIndex> mDecoderConfigs;      ///< Map of decoder configuration property indexes in the item property container box.
-        Map<PropertyIndex, ImageSize> mDecoderConfigIndexToSize;  ///< Mapping from decoder configuration property index to image size.
-        Map<MediaDataId, ImageSize> mJpegDimensions;              ///< Image dimensions extracted from JPEG file bitstreams.
+        Map<ImageSize, PropertyIndex>
+            mIspeIndexes;  ///< Map of ispe property indexes in the item property container box.
+        Map<DecoderConfigId, PropertyIndex>
+            mDecoderConfigs;  ///< Map of decoder configuration property indexes in the item property container box.
+        Map<PropertyIndex, ImageSize>
+            mDecoderConfigIndexToSize;  ///< Mapping from decoder configuration property index to image size.
+        Map<MediaDataId, ImageSize> mJpegDimensions;  ///< Image dimensions extracted from JPEG file bitstreams.
         Vector<int32_t> mMatrix;
         Map<PropertyId, PropertyInformation> mProperties;  ///< Manually added properties in the metabox.
 
@@ -201,10 +226,13 @@ namespace HEIF
         MediaDataBox mMediaDataBox;
 
         std::ofstream mFile;
+        String mFilename;
         std::uint64_t mMdatOffset    = 0;  ///< 'mdat' offset in the stream
-        std::uint64_t mMediaDataSize = 8;  ///< Data size in 'mdat' box in bytes. Used to check whether 32-bit or 64-bit size field is used.
+        std::uint64_t mMediaDataSize = 8;  ///< Data size in 'mdat' box in bytes.
+                                           ///< Used to check whether 32- or 64-bit size field is used.
 
-        bool mInitialMdat    = false;  ///< True if mdat is written to the file beginning after ftyp. False if it written after meta and moov boxes.
+        bool mInitialMdat = false;  ///< True if mdat is written to the file beginning after ftyp. False if it written
+                                    ///< after meta and moov boxes.
         bool mPrimaryItemSet = false;  ///< True after a primary item has been set.
     };
 

@@ -13,6 +13,7 @@
 #pragma once
 
 #include <MetaItem.h>
+
 namespace HEIFPP
 {
     // generic base for all 'mime' type items. (xmp, mpeg-7, possibly others later.)
@@ -20,7 +21,7 @@ namespace HEIFPP
     {
     public:
         MimeItem(Heif* aHeif);
-        virtual ~MimeItem();
+        ~MimeItem();
 
         /** Gets the content type of the MimeItem */
         const std::string& getContentType() const;
@@ -30,23 +31,23 @@ namespace HEIFPP
         void setContentType(const std::string& aType);
 
         /** Returns the size of the data */
-        uint64_t getDataSize() const;
+        std::uint64_t getDataSize() const;
 
         /** Returns a pointer to the data */
-        const uint8_t* getData() const;
+        const std::uint8_t* getData() const;
 
         /** Sets the data for the MimeItem
          * @param [in] aData: Pointer to the data
          * @param [in] aSize: Size of the data */
-        void setData(const uint8_t* aData, uint64_t aSize);
+        void setData(const std::uint8_t* aData, std::uint64_t aSize);
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
         std::string mContentType;
-        uint64_t mBufferSize;
-        uint8_t* mBuffer;
+        std::uint64_t mBufferSize;
+        std::uint8_t* mBuffer;
 
     private:
         MimeItem& operator=(const MimeItem&) = delete;

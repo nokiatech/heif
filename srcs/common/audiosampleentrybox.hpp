@@ -87,19 +87,22 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    virtual void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a AudioSampleEntryBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    virtual void parseBox(ISOBMFF::BitStream& bitstr) override;
 
     /** @brief Not implemented and returns a null pointer, but the other functionality of
      * this class is used by the tests. Usually one is expected to clone the objects that inherit
      * from this class, but if this changes, feel free to dig the old version of this function
      * from the version history.
      */
-    virtual AudioSampleEntryBox* clone() const;
+    virtual AudioSampleEntryBox* clone() const override;
 
+    /** @brief Check if this sample entry is a visual sample
+    *  @return FALSE */
+    virtual bool isVisual() const override;
 private:
     std::uint16_t mVersion;       ///< Version of box, either 0 or 1
     std::uint16_t mChannelCount;  ///< Number of channels 1 (mono) or 2 (stereo)

@@ -15,6 +15,7 @@
 #include <heifwriter.h>
 
 using namespace HEIFPP;
+
 Grid::Grid(Heif* aHeif)
     : DerivedImageItem(aHeif, HEIF::FourCC("grid"))
     , mColumns(0)
@@ -22,7 +23,7 @@ Grid::Grid(Heif* aHeif)
 {
 }
 
-Grid::Grid(Heif* aHeif, uint32_t aColumns, uint32_t aRows)
+Grid::Grid(Heif* aHeif, std::uint32_t aColumns, std::uint32_t aRows)
     : DerivedImageItem(aHeif, HEIF::FourCC("grid"))
 {
     HEIF_ASSERT(aColumns > 0);
@@ -32,22 +33,21 @@ Grid::Grid(Heif* aHeif, uint32_t aColumns, uint32_t aRows)
     reserveSourceImages(aColumns * aRows);
 }
 
-uint32_t Grid::columns() const
+std::uint32_t Grid::columns() const
 {
     return mColumns;
 }
-uint32_t Grid::rows() const
+std::uint32_t Grid::rows() const
 {
     return mRows;
 }
 
-void Grid::resize(uint32_t aColumns, uint32_t aRows)
+void Grid::resize(uint32_t aColumns, std::uint32_t aRows)
 {
-    uint32_t mx, my;
     std::vector<ImageItem*> tmp;
 
-    mx = aColumns > mColumns ? mColumns : aColumns;
-    my = aRows > mRows ? mRows : aRows;
+    std::uint32_t mx = aColumns > mColumns ? mColumns : aColumns;
+    std::uint32_t my = aRows > mRows ? mRows : aRows;
 
     tmp.resize(aColumns * aRows);
     for (uint32_t y = 0; y < my; ++y)
@@ -70,7 +70,7 @@ void Grid::resize(uint32_t aColumns, uint32_t aRows)
     }
 }
 
-ImageItem* Grid::getImage(uint32_t aColumn, uint32_t aRow)
+ImageItem* Grid::getImage(uint32_t aColumn, std::uint32_t aRow)
 {
     if ((aColumn < mColumns) && (aRow < mRows))
     {
@@ -79,7 +79,7 @@ ImageItem* Grid::getImage(uint32_t aColumn, uint32_t aRow)
     return nullptr;
 }
 
-const ImageItem* Grid::getImage(uint32_t aColumn, uint32_t aRow) const
+const ImageItem* Grid::getImage(uint32_t aColumn, std::uint32_t aRow) const
 {
     if ((aColumn < mColumns) && (aRow < mRows))
     {
@@ -88,7 +88,7 @@ const ImageItem* Grid::getImage(uint32_t aColumn, uint32_t aRow) const
     return nullptr;
 }
 
-Result Grid::getImage(uint32_t aColumn, uint32_t aRow, ImageItem*& aImage)
+Result Grid::getImage(uint32_t aColumn, std::uint32_t aRow, ImageItem*& aImage)
 {
     if (aColumn >= mColumns || aRow >= mRows)
     {
@@ -98,7 +98,7 @@ Result Grid::getImage(uint32_t aColumn, uint32_t aRow, ImageItem*& aImage)
     return Result::OK;
 }
 
-Result Grid::setImage(uint32_t aColumn, uint32_t aRow, ImageItem* aImage)
+Result Grid::setImage(uint32_t aColumn, std::uint32_t aRow, ImageItem* aImage)
 {
     if (aColumn >= mColumns || aRow >= mRows)
     {
@@ -141,13 +141,13 @@ HEIF::ErrorCode Grid::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 
 HEIF::ErrorCode Grid::save(HEIF::Writer* aWriter)
 {
-    HEIF::ErrorCode error;
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
     HEIF::Grid grid;
-    grid.outputWidth  = width();
-    grid.outputHeight = height();
-    grid.columns      = mColumns;
-    grid.rows         = mRows;
-    uint32_t count    = mColumns * mRows;
+    grid.outputWidth    = width();
+    grid.outputHeight   = height();
+    grid.columns        = mColumns;
+    grid.rows           = mRows;
+    std::uint32_t count = mColumns * mRows;
     if (count != getSourceImageCount())
     {
         return HEIF::ErrorCode::INVALID_REFERENCE_COUNT;
@@ -169,7 +169,9 @@ HEIF::ErrorCode Grid::save(HEIF::Writer* aWriter)
         ids[i] = image->getId();
     }
     grid.imageIds = ids;
-    error         = aWriter->addDerivedImageItem(grid, mId);
+    HEIF::ImageId newId;
+    error = aWriter->addDerivedImageItem(grid, newId);
+    setId(newId);
     if (HEIF::ErrorCode::OK != error)
         return error;
     return DerivedImageItem::save(aWriter);

@@ -13,29 +13,31 @@
  */
 
 #include <jni.h>
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_RotateProperty_##method_name
+
 #include "Helpers.h"
 #include "TransformativeProperty.h"
+
+#define CLASS_NAME RotateProperty
+
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::RotateProperty *nativeObject = new HEIFPP::RotateProperty(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
-    JNI_METHOD(void, setRotationNative)(JNIEnv *env, jobject obj, jint rotation)
+    JNI_METHOD_ARG(void, setRotationNative, jint rotation)
     {
-        NATIVE_ROTATE_PROPERTY(nativeHandle, obj);
-        nativeHandle->mRotate.angle = rotation;
+        NATIVE_ROTATE_PROPERTY(nativeHandle, self);
+        nativeHandle->mRotate.angle = static_cast<uint32_t>(rotation);
     }
 
-    JNI_METHOD(jint, getRotationNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getRotationNative)
     {
-        NATIVE_ROTATE_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mRotate.angle;
+        NATIVE_ROTATE_PROPERTY(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->mRotate.angle);
     }
 }

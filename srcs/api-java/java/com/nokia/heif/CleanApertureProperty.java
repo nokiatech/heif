@@ -30,8 +30,23 @@ public final class CleanApertureProperty extends TransformativeProperty
             this.denominator = denominator;
         }
 
-        public int numerator;
-        public int denominator;
+        public final int numerator;
+        public final int denominator;
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (obj instanceof Fraction)
+            {
+                Fraction compareTo = (Fraction) obj;
+                return compareTo.denominator == this.denominator
+                        && compareTo.numerator == this.numerator;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     /**

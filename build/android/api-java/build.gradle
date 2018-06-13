@@ -8,23 +8,23 @@ def javaApiJavaPath = file(javaApiSourcePath + "/java/").path
 def javaApiNativePath = file(javaApiSourcePath + "/cpp/").path
 
 android {
-    compileSdkVersion 26
-    defaultConfig {
+    compileSdkVersion rootProject.ext.compileSdkVersion
 
-        minSdkVersion 24
-        targetSdkVersion 26
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
         externalNativeBuild {
             cmake {
                 targets "heifjni"
-                abiFilters "armeabi-v7a", "arm64-v8a", "x86"
+                abiFilters = rootProject.ext.chosenAbiFilters
                 arguments "-DANDROID_STL=c++_shared", "-DNO_TESTS=true"
                 cppFlags "-std=c++11"
             }
         }
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a", "x86"
+            abiFilters = rootProject.ext.chosenAbiFilters
         }
     }
 

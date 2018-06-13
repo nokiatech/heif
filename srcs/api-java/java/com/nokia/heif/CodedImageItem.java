@@ -67,7 +67,7 @@ public abstract class CodedImageItem extends ImageItem
             throws Exception
     {
         checkState();
-        ByteBuffer output = getItemDataNative();
+        ByteBuffer output = getItemData();
         byte[] data = new byte[output.remaining()];
         output.get(data);
         return data;
@@ -97,6 +97,7 @@ public abstract class CodedImageItem extends ImageItem
             throws Exception
     {
         checkState();
+        checkParameter(data);
         setItemDataNative(data);
     }
 
@@ -111,6 +112,10 @@ public abstract class CodedImageItem extends ImageItem
     {
         checkState();
         checkParameter(config);
+        if (!checkDecoderConfigType(config))
+        {
+            throw new Exception(ErrorHandler.INVALID_PARAMETER, "Incorrect decoder config type");
+        }
         setDecoderConfigNative(config);
     }
 
@@ -212,17 +217,7 @@ public abstract class CodedImageItem extends ImageItem
         setBaseImageNative(oldImage, newImage);
     }
 
-    /**
-     * Reserves base images
-     * @param count Amount of base images to be reserved
-     * @throws Exception
-     */
-    public void reserveBaseImages(int count)
-            throws Exception
-    {
-        checkState();
-        reserveBaseImagesNative(count);
-    }
+    abstract protected boolean checkDecoderConfigType(DecoderConfig config);
 
     private native String getDecoderCodeTypeNative();
 

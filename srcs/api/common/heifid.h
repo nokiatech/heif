@@ -23,11 +23,11 @@ namespace HEIF
         Y mId;                                                            \
                                                                           \
     public:                                                               \
-        X()                                                               \
+        constexpr X()                                                     \
             : mId(0)                                                      \
         {                                                                 \
         }                                                                 \
-        X(Y a)                                                            \
+        constexpr X(Y a)                                                  \
             : mId(a)                                                      \
         {                                                                 \
         }                                                                 \

@@ -12,31 +12,32 @@
 #ifndef AVCCONFIGURATIONBOX_HPP
 #define AVCCONFIGURATIONBOX_HPP
 
-#include "avcdecoderconfigrecord.hpp"
-#include "bbox.hpp"
 #include "customallocator.hpp"
+#include "decoderconfigurationbox.hpp"
+#include "avcdecoderconfigrecord.hpp"
 
 /// @brief AVC Configuration Box class
 /// @details 'avcC' box implementation. This is used by tracks as a part of AVC Sample Entry implementation, and by
 ///          items as a decoder configuration property.
-class AvcConfigurationBox : public Box
+class AvcConfigurationBox : public DecoderConfigurationBox
 {
 public:
     AvcConfigurationBox();
     AvcConfigurationBox(const AvcConfigurationBox& box);
     virtual ~AvcConfigurationBox() = default;
 
-    /// @return Contained AvcDecoderConfigurationRecord
-    const AvcDecoderConfigurationRecord& getConfiguration() const;
+    /// @return Contained DecoderConfigurationRecord
+    const AvcDecoderConfigurationRecord& getAvcConfiguration() const;
+    const DecoderConfigurationRecord& getConfiguration() const override;
 
     /// @param [in] config New AVC decoder configuration.
     void setConfiguration(const AvcDecoderConfigurationRecord& config);
 
     /// @see Box::writeBox()
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    virtual void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /// @see Box::parseBox()
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    virtual void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     AvcDecoderConfigurationRecord mAvcConfig;  ///< AVCConfigurationBox field AVCConfig

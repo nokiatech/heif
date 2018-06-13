@@ -13,6 +13,9 @@
 
 package com.nokia.heif;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Base class for several different HEIF items
  */
@@ -52,6 +55,40 @@ public abstract class Item extends Base
         return new FourCC(getTypeNative(), true);
     }
 
+    public boolean isEssentialProperty(ItemProperty property)
+            throws Exception
+    {
+        checkState();
+        checkParameter(property);
+        return isEssentialPropertyNative(property);
+    }
+
+    public void setEssentialProperty(ItemProperty property, boolean essential)
+            throws Exception
+    {
+        checkState();
+        checkParameter(property);
+        setEssentialPropertyNative(property, essential);
+    }
+
+    /**
+     * Returns a list of all the EntityGroups this item belongs to
+     * @return A list of the EntityGroups
+     * @throws Exception
+     */
+    public List<EntityGroup> getEntityGroups()
+            throws Exception
+    {
+        checkState();
+        int count = getGroupCountNative();
+        List<EntityGroup> result = new ArrayList<>(count);
+        for (int index = 0; index < count; index++)
+        {
+            result.add(getGroupNative(index));
+        }
+        return result;
+    }
+
     @Override
     protected void destroyNative()
     {
@@ -62,4 +99,9 @@ public abstract class Item extends Base
 
     native private void destroyContextNative();
 
+    native private boolean isEssentialPropertyNative(ItemProperty item);
+    native private void setEssentialPropertyNative(ItemProperty item, boolean essential);
+
+    native private int getGroupCountNative();
+    native private EntityGroup getGroupNative(int index);
 }

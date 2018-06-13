@@ -12,31 +12,32 @@
 #ifndef HEVCCONFIGURATIONBOX_HPP
 #define HEVCCONFIGURATIONBOX_HPP
 
-#include "bbox.hpp"
 #include "customallocator.hpp"
+#include "decoderconfigurationbox.hpp"
 #include "hevcdecoderconfigrecord.hpp"
 
 /// @brief HEVC Configuration Box class
 /// @details 'hvcC' box implementation. This is used by tracks as a part of HEVC Sample Entry implementation, and by
 ///          items as a decoder configuration property.
-class HevcConfigurationBox : public Box
+class HevcConfigurationBox : public DecoderConfigurationBox
 {
 public:
     HevcConfigurationBox();
     HevcConfigurationBox(const HevcConfigurationBox& box);
     virtual ~HevcConfigurationBox() = default;
 
-    /// @return Contained HevcDecoderConfigurationRecord
-    const HevcDecoderConfigurationRecord& getConfiguration() const;
+    /// @return Contained DecoderConfigurationRecord
+    const HevcDecoderConfigurationRecord& getHevcConfiguration() const;
+    const DecoderConfigurationRecord& getConfiguration() const override;
 
     /// @param [in] config New HEVC decoder configuration.
     void setConfiguration(const HevcDecoderConfigurationRecord& config);
 
     /// @see Box::writeBox()
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    virtual void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /// @see Box::parseBox()
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    virtual void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     HevcDecoderConfigurationRecord mHevcConfig;  ///< HEVCConfigurationBox field HEVCConfig

@@ -21,20 +21,6 @@ public final class AVCImageItem extends CodedImageItem
 {
 
     /**
-     * Creates a new AVCImageItem to the given HEIF instance
-     * @param heif The parent HEIF instance for the new object
-     * @param size Size of the image
-     * @throws Exception Thrown if the parent HEIF instance is invalid
-     */
-    public AVCImageItem(HEIF heif, Size size)
-            throws Exception
-    {
-        super(heif);
-        mNativeHandle = createContextNative(heif);
-        setSize(size);
-    }
-
-    /**
      * Creates a new AVCImageItem to the given HEIF instance with the given image data
      * Also creates a corresponding AVCDecoderConfig object with the given decoder config
      * @param heif The parent HEIF instance for the new object
@@ -47,12 +33,18 @@ public final class AVCImageItem extends CodedImageItem
             throws Exception
     {
         this(heif, size);
-        DecoderConfig decConfig = new AVCDecoderConfig(heif);
+        try
+        {
+            DecoderConfig decConfig = new AVCDecoderConfig(heif, decoderConfig);
 
-        decConfig.setConfig(decoderConfig);
-
-        setDecoderConfig(decConfig);
-        setItemData(imageData);
+            setDecoderConfig(decConfig);
+            setItemData(imageData);
+        }
+        catch (Exception ex)
+        {
+            destroy();
+            throw ex;
+        }
     }
 
     /**
@@ -67,9 +59,39 @@ public final class AVCImageItem extends CodedImageItem
             throws Exception
     {
         this(heif, size);
-        checkParameter(decoderConfig);
-        setDecoderConfig(decoderConfig);
-        setItemData(imageData);
+        try
+        {
+            setDecoderConfig(decoderConfig);
+            setItemData(imageData);
+        }
+        catch (Exception ex)
+        {
+            destroy();
+            throw ex;
+        }
+    }
+
+
+    /**
+     * Creates a new AVCImageItem to the given HEIF instance
+     * @param heif The parent HEIF instance for the new object
+     * @param size Size of the image
+     * @throws Exception Thrown if the parent HEIF instance is invalid
+     */
+    private AVCImageItem(HEIF heif, Size size)
+            throws Exception
+    {
+        super(heif);
+        try
+        {
+            mNativeHandle = createContextNative(heif);
+            setSize(size);
+        }
+        catch (Exception ex)
+        {
+            destroy();
+            throw ex;
+        }
     }
 
     /**
@@ -80,6 +102,24 @@ public final class AVCImageItem extends CodedImageItem
     protected AVCImageItem(HEIF heif, long nativeHandle)
     {
         super(heif, nativeHandle);
+    }
+
+    /**
+     * Returns the decoder config of the image
+     *
+     * @return AVCDecoderConfig
+     * @throws Exception
+     */
+    public AVCDecoderConfig getDecoderConfig()
+            throws Exception
+    {
+        return (AVCDecoderConfig) super.getDecoderConfig();
+    }
+
+    @Override
+    protected boolean checkDecoderConfigType(DecoderConfig config)
+    {
+        return config instanceof AVCDecoderConfig;
     }
 
     private native long createContextNative(HEIF heif);

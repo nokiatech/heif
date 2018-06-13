@@ -13,9 +13,6 @@
 
 package com.nokia.heif;
 
-
-import android.util.Log;
-
 /**
  * Custom exception used with the HEIF library
  */
@@ -35,7 +32,6 @@ public final class Exception extends java.lang.Exception
     {
         super(info + " " + ErrorHandler.nativeErrorToString(nativeErrorCode));
         mNativeErrorCode = nativeErrorCode;
-        Log.e(TAG, super.getMessage());
     }
 
     /**

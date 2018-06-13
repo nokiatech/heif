@@ -15,66 +15,67 @@
 #include <jni.h>
 #include "Helpers.h"
 #include "OverlayImageItem.h"
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_OverlayImageItem_##method_name
+
+#define CLASS_NAME OverlayImageItem
+
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::Overlay *nativeObject = new HEIFPP::Overlay(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
-    JNI_METHOD(jint, imageCountNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, imageCountNative)
     {
-        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, obj);
-        return nativeHandle->imageCount();
+        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, self);
+        return static_cast<jint>(nativeHandle->imageCount());
     }
 
-    JNI_METHOD(jobject, getImageNative)(JNIEnv *env, jobject obj, int index)
+    JNI_METHOD_ARG(jobject, getImageNative, jint index)
     {
-        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, self);
 
 
-        const jclass javaClass = env->GetObjectClass(obj);
+        const jclass javaClass = env->GetObjectClass(self);
 
         const jmethodID createMethodId =
             env->GetMethodID(javaClass, "createOverlayedImage",
                              "(Lcom/nokia/heif/ImageItem;II)Lcom/nokia/heif/OverlayImageItem$OverlayedImage;");
         HEIF::Overlay::Offset overlayOffset;
-        HEIFPP::ImageItem *image = nativeHandle->getImage(index, overlayOffset);
+        HEIFPP::ImageItem *image = nativeHandle->getImage(static_cast<uint32_t>(index), overlayOffset);
         env->DeleteLocalRef(javaClass);
-        return env->CallObjectMethod(obj, createMethodId, getJavaItem(env, getJavaHEIF(env, obj), image),
+        return env->CallObjectMethod(self, createMethodId, getJavaItem(env, getJavaHEIF(env, self), image),
                                      overlayOffset.horizontal, overlayOffset.vertical);
     }
 
-    JNI_METHOD(jobject, getBackgroundColourNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getBackgroundColourNative)
     {
-        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, obj);
-        const jclass javaClass = env->GetObjectClass(obj);
+        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, self);
+        const jclass javaClass = env->GetObjectClass(self);
 
         const jmethodID createMethodId = env->GetMethodID(javaClass, "createBackgroundColour",
                                                           "(IIII)Lcom/nokia/heif/OverlayImageItem$BackgroundColour;");
 
         env->DeleteLocalRef(javaClass);
-        return env->CallObjectMethod(obj, createMethodId, nativeHandle->r(), nativeHandle->g(), nativeHandle->b(),
+        return env->CallObjectMethod(self, createMethodId, nativeHandle->r(), nativeHandle->g(), nativeHandle->b(),
                                      nativeHandle->a());
     }
 
-    JNI_METHOD(void, setBackgroundColourNative)(JNIEnv *env, jobject obj, jint r, jint g, jint b, jint a)
+    JNI_METHOD_ARG(void, setBackgroundColourNative, jint r, jint g, jint b, jint a)
     {
-        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, obj);
-        nativeHandle->setR(r);
-        nativeHandle->setG(g);
-        nativeHandle->setB(b);
-        nativeHandle->setA(a);
+        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, self);
+        nativeHandle->setR(static_cast<uint16_t>(r));
+        nativeHandle->setG(static_cast<uint16_t>(g));
+        nativeHandle->setB(static_cast<uint16_t>(b));
+        nativeHandle->setA(static_cast<uint16_t>(a));
     }
 
-    JNI_METHOD(void, addImageNative)(JNIEnv *env, jobject obj, jobject image, int horizontalOffset, int verticalOffset)
+    JNI_METHOD_ARG(void, addImageNative, jobject image, jint horizontalOffset, jint verticalOffset)
     {
-        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, self);
         NATIVE_IMAGE_ITEM(nativeImage, image);
         HEIF::Overlay::Offset offset;
         offset.vertical   = verticalOffset;
@@ -82,26 +83,26 @@ extern "C"
         nativeHandle->addImage(nativeImage, offset);
     }
 
-    JNI_METHOD(void, setImageNative)
-    (JNIEnv *env, jobject obj, int index, jobject image, int horizontalOffset, int verticalOffset)
+    JNI_METHOD_ARG(void, setImageNative, jint index, jobject image, jint horizontalOffset, jint verticalOffset)
     {
-        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, self);
         NATIVE_IMAGE_ITEM(nativeImage, image);
         HEIF::Overlay::Offset offset;
         offset.vertical   = verticalOffset;
         offset.horizontal = horizontalOffset;
-        CHECK_ERROR(nativeHandle->setImage(index, nativeImage, offset), "setImage failed");
+        CHECK_ERROR(nativeHandle->setImage(static_cast<uint32_t>(index),
+                                           nativeImage, offset), "setImage failed");
     }
 
-    JNI_METHOD(void, removeImageByIndexNative)(JNIEnv *env, jobject obj, int index)
+    JNI_METHOD_ARG(void, removeImageByIndexNative, jint index)
     {
-        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, obj);
-        CHECK_ERROR(nativeHandle->removeImage(index), "removeImage failed");
+        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, self);
+        CHECK_ERROR(nativeHandle->removeImage(static_cast<uint32_t>(index)), "removeImage failed");
     }
 
-    JNI_METHOD(void, removeImageNative)(JNIEnv *env, jobject obj, jobject image)
+    JNI_METHOD_ARG(void, removeImageNative, jobject image)
     {
-        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_OVERLAY_IMAGE_ITEM(nativeHandle, self);
         NATIVE_IMAGE_ITEM(nativeImage, image);
         nativeHandle->removeImage(nativeImage);
     }

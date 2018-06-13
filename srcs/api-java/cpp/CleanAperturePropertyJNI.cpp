@@ -16,13 +16,11 @@
 #include "Helpers.h"
 #include "TransformativeProperty.h"
 
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_CleanApertureProperty_##method_name
-#define NATIVE_HANDLE \
-    HEIFPP::CleanApertureProperty *nativeHandle = (HEIFPP::CleanApertureProperty *) getNativeHandle(env, obj)
+#define CLASS_NAME CleanApertureProperty
 
 extern "C"
 {
+    jobject createFraction(JNIEnv *env, jobject obj, int numerator, int denominator);
     jobject createFraction(JNIEnv *env, jobject obj, int numerator, int denominator)
     {
         const jclass javaClass = env->GetObjectClass(obj);
@@ -34,83 +32,91 @@ extern "C"
     }
 
 
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::CleanApertureProperty *nativeObject = new HEIFPP::CleanApertureProperty(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
-    JNI_METHOD(jobject, getWidthNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getWidthNative)
     {
-        NATIVE_CLAP(nativeHandle, obj);
-        return createFraction(env, obj, nativeHandle->mClap.widthN, nativeHandle->mClap.widthD);
+        NATIVE_CLAP(nativeHandle, self);
+        return createFraction(env, self,
+                              static_cast<jint>(nativeHandle->mClap.widthN),
+                              static_cast<jint>(nativeHandle->mClap.widthD));
     }
 
-    JNI_METHOD(void, setWidthNumNative)(JNIEnv *env, jobject obj, jint value)
+    JNI_METHOD_ARG(void, setWidthNumNative, jint value)
     {
-        NATIVE_HANDLE;
-        nativeHandle->mClap.widthN = value;
+        NATIVE_CLAP(nativeHandle, self);
+        nativeHandle->mClap.widthN = static_cast<uint32_t>(value);
     }
 
-    JNI_METHOD(void, setWidthDenNative)(JNIEnv *env, jobject obj, jint value)
+    JNI_METHOD_ARG(void, setWidthDenNative, jint value)
     {
-        NATIVE_HANDLE;
-        nativeHandle->mClap.widthD = value;
+        NATIVE_CLAP(nativeHandle, self);
+        nativeHandle->mClap.widthD = static_cast<uint32_t>(value);
     }
 
-    JNI_METHOD(jobject, getHeightNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getHeightNative)
     {
-        NATIVE_CLAP(nativeHandle, obj);
-        return createFraction(env, obj, nativeHandle->mClap.heightN, nativeHandle->mClap.heightD);
+        NATIVE_CLAP(nativeHandle, self);
+        return createFraction(env, self,
+                              static_cast<jint>(nativeHandle->mClap.heightN),
+                              static_cast<jint>(nativeHandle->mClap.heightD));
     }
 
-    JNI_METHOD(void, setHeightNumNative)(JNIEnv *env, jobject obj, jint value)
+    JNI_METHOD_ARG(void, setHeightNumNative, jint value)
     {
-        NATIVE_HANDLE;
-        nativeHandle->mClap.heightN = value;
+        NATIVE_CLAP(nativeHandle, self);
+        nativeHandle->mClap.heightN = static_cast<uint32_t>(value);
     }
 
-    JNI_METHOD(void, setHeightDenNative)(JNIEnv *env, jobject obj, jint value)
+    JNI_METHOD_ARG(void, setHeightDenNative, jint value)
     {
-        NATIVE_HANDLE;
-        nativeHandle->mClap.heightD = value;
+        NATIVE_CLAP(nativeHandle, self);
+        nativeHandle->mClap.heightD = static_cast<uint32_t>(value);
     }
 
-    JNI_METHOD(jobject, getHorizontalOffsetNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getHorizontalOffsetNative)
     {
-        NATIVE_CLAP(nativeHandle, obj);
-        return createFraction(env, obj, nativeHandle->mClap.horizontalOffsetN, nativeHandle->mClap.horizontalOffsetD);
+        NATIVE_CLAP(nativeHandle, self);
+        return createFraction(env, self,
+                              static_cast<jint>(nativeHandle->mClap.horizontalOffsetN),
+                              static_cast<jint>(nativeHandle->mClap.horizontalOffsetD));
     }
 
-    JNI_METHOD(void, setHorizontalOffsetNumNative)(JNIEnv *env, jobject obj, jint value)
+    JNI_METHOD_ARG(void, setHorizontalOffsetNumNative, jint value)
     {
-        NATIVE_HANDLE;
-        nativeHandle->mClap.horizontalOffsetN = value;
+        NATIVE_CLAP(nativeHandle, self);
+        nativeHandle->mClap.horizontalOffsetN = static_cast<uint32_t>(value);
     }
 
-    JNI_METHOD(void, setHorizontalOffsetDenNative)(JNIEnv *env, jobject obj, jint value)
+    JNI_METHOD_ARG(void, setHorizontalOffsetDenNative, jint value)
     {
-        NATIVE_HANDLE;
-        nativeHandle->mClap.horizontalOffsetD = value;
+        NATIVE_CLAP(nativeHandle, self);
+        nativeHandle->mClap.horizontalOffsetD = static_cast<uint32_t>(value);
     }
 
-    JNI_METHOD(jobject, getVerticalOffsetNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getVerticalOffsetNative)
     {
-        NATIVE_CLAP(nativeHandle, obj);
-        return createFraction(env, obj, nativeHandle->mClap.verticalOffsetN, nativeHandle->mClap.verticalOffsetD);
+        NATIVE_CLAP(nativeHandle, self);
+        return createFraction(env, self,
+                              static_cast<jint>(nativeHandle->mClap.verticalOffsetN),
+                              static_cast<jint>(nativeHandle->mClap.verticalOffsetD));
     }
 
-    JNI_METHOD(void, setVerticalOffsetNumNative)(JNIEnv *env, jobject obj, jint value)
+    JNI_METHOD_ARG(void, setVerticalOffsetNumNative, jint value)
     {
-        NATIVE_HANDLE;
-        nativeHandle->mClap.verticalOffsetN = value;
+        NATIVE_CLAP(nativeHandle, self);
+        nativeHandle->mClap.verticalOffsetN = static_cast<uint32_t>(value);
     }
 
-    JNI_METHOD(void, setVerticalOffsetDenNative)(JNIEnv *env, jobject obj, jint value)
+    JNI_METHOD_ARG(void, setVerticalOffsetDenNative, jint value)
     {
-        NATIVE_HANDLE;
-        nativeHandle->mClap.verticalOffsetD = value;
+        NATIVE_CLAP(nativeHandle, self);
+        nativeHandle->mClap.verticalOffsetD = static_cast<uint32_t>(value);
     }
 }

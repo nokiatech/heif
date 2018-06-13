@@ -13,96 +13,97 @@
  */
 
 #include <jni.h>
+#include <cstring>
 #include "DescriptiveProperty.h"
 #include "Helpers.h"
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_ColourInformationProperty_##method_name
+
+#define CLASS_NAME ColourInformationProperty
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::ColourInformationProperty *nativeObject = new HEIFPP::ColourInformationProperty(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
-    JNI_METHOD(jstring, getColourTypeNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jstring, getColourTypeNative)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        return env->NewStringUTF(nativeHandle->mColourInformation.colourType.value);
+        NATIVE_SELF;
+        return env->NewStringUTF(nativeSelf->mColourInformation.colourType.value);
     }
 
-    JNI_METHOD(void, setColourTypeNative)(JNIEnv *env, jobject obj, jstring javaString)
+    JNI_METHOD_ARG(void, setColourTypeNative, jstring javaString)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
+        NATIVE_SELF;
         const char *nativeString                    = env->GetStringUTFChars(javaString, 0);
-        nativeHandle->mColourInformation.colourType = HEIF::FourCC(nativeString);
+        nativeSelf->mColourInformation.colourType = HEIF::FourCC(nativeString);
         env->ReleaseStringUTFChars(javaString, nativeString);
     }
 
-    JNI_METHOD(jint, getColourPrimariesNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getColourPrimariesNative)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mColourInformation.colourPrimaries;
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->mColourInformation.colourPrimaries);
     }
 
-    JNI_METHOD(void, setColourPrimariesNative)(JNIEnv *env, jobject obj, jint primaries)
+    JNI_METHOD_ARG(void, setColourPrimariesNative, jint primaries)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        nativeHandle->mColourInformation.colourPrimaries = primaries;
+        NATIVE_SELF;
+        nativeSelf->mColourInformation.colourPrimaries = static_cast<uint16_t>(primaries);
     }
 
-    JNI_METHOD(jint, getTransferCharacteristicsNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getTransferCharacteristicsNative)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mColourInformation.transferCharacteristics;
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->mColourInformation.transferCharacteristics);
     }
 
-    JNI_METHOD(void, setTransferCharacteristicsNative)(JNIEnv *env, jobject obj, jint characteristics)
+    JNI_METHOD_ARG(void, setTransferCharacteristicsNative, jint characteristics)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        nativeHandle->mColourInformation.transferCharacteristics = characteristics;
+        NATIVE_SELF;
+        nativeSelf->mColourInformation.transferCharacteristics = static_cast<uint16_t>(characteristics);
     }
 
-    JNI_METHOD(jint, getMatrixCoefficientsNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jint, getMatrixCoefficientsNative)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mColourInformation.matrixCoefficients;
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->mColourInformation.matrixCoefficients);
     }
 
-    JNI_METHOD(void, setMatrixCoefficientsNative)(JNIEnv *env, jobject obj, jint matrixCoefficients)
+    JNI_METHOD_ARG(void, setMatrixCoefficientsNative, jint matrixCoefficients)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        nativeHandle->mColourInformation.matrixCoefficients = matrixCoefficients;
+        NATIVE_SELF;
+        nativeSelf->mColourInformation.matrixCoefficients = static_cast<uint16_t>(matrixCoefficients);
     }
 
-    JNI_METHOD(jboolean, getFullRangeFlagNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jboolean, getFullRangeFlagNative)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mColourInformation.fullRangeFlag;
+        NATIVE_SELF;
+        return static_cast<jboolean>(nativeSelf->mColourInformation.fullRangeFlag);
     }
 
-    JNI_METHOD(void, setFullRangeFlagNative)(JNIEnv *env, jobject obj, jboolean flag)
+    JNI_METHOD_ARG(void, setFullRangeFlagNative, jboolean flag)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        nativeHandle->mColourInformation.fullRangeFlag = flag;
+        NATIVE_SELF;
+        nativeSelf->mColourInformation.fullRangeFlag = flag;
     }
 
-    JNI_METHOD(jobject, getICCProfileNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getICCProfileNative)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
-        return env->NewDirectByteBuffer(nativeHandle->mColourInformation.iccProfile.elements,
-                                        nativeHandle->mColourInformation.iccProfile.size);
+        NATIVE_SELF;
+        return env->NewDirectByteBuffer(nativeSelf->mColourInformation.iccProfile.elements,
+                                        static_cast<jlong>(nativeSelf->mColourInformation.iccProfile.size));
     }
 
-    JNI_METHOD(void, setICCProfileNative)(JNIEnv *env, jobject obj, jbyteArray data)
+    JNI_METHOD_ARG(void, setICCProfileNative, jbyteArray data)
     {
-        NATIVE_COLOUR_INFORMATION_PROPERTY(nativeHandle, obj);
+        NATIVE_SELF;
         jbyte *nativeData                           = env->GetByteArrayElements(data, 0);
-        uint32_t dataSize                           = env->GetArrayLength(data);
-        nativeHandle->mColourInformation.iccProfile = HEIF::Array<uint8_t>(dataSize);
-        memcpy(nativeHandle->mColourInformation.iccProfile.elements, nativeData, dataSize);
+        uint32_t dataSize                           = static_cast<uint32_t>(env->GetArrayLength(data));
+        nativeSelf->mColourInformation.iccProfile = HEIF::Array<uint8_t>(dataSize);
+        std::memcpy(nativeSelf->mColourInformation.iccProfile.elements, nativeData, dataSize);
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 }

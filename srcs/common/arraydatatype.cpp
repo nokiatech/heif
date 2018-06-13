@@ -118,9 +118,12 @@ namespace HEIF
     instance(SampleInformation);
     instance(SampleVisualEquivalence);
     instance(SampleToMetadataItem);
+    instance(DirectReferenceSamples);
     instance(SequenceId);
     instance(TimestampIDPair);
     instance(TrackInformation);
+    instance(EditUnit);
+
 #endif
 #if HEIF_WRITER_LIB
     instance(EditUnit);

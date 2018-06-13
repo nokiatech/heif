@@ -13,6 +13,7 @@
 #pragma once
 
 #include <Item.h>
+
 namespace HEIFPP
 {
     /** @brief Image item abstraction*/
@@ -24,7 +25,7 @@ namespace HEIFPP
         friend class CodedImageItem;
 
     public:
-        virtual ~ImageItem();
+        ~ImageItem();
 
         /** Returns if the image is a derived image. */
         bool isDerivedImage() const;
@@ -79,7 +80,7 @@ namespace HEIFPP
         void setHidden(bool aHidden);
 
         /** Returns the count of transformative properties (0-3) */
-        uint32_t transformativePropertyCount() const;
+        std::uint32_t transformativePropertyCount() const;
 
         /** Returns a transformative property with the given index
          * @param [in] id: The index for the item */
@@ -90,15 +91,15 @@ namespace HEIFPP
         const TransformativeProperty* getTransformativeProperty(uint32_t id) const;
 
         /** Returns the width of the image in pixels */
-        uint32_t width() const;
+        std::uint32_t width() const;
 
         /** Returns the height of the image in pixels */
-        uint32_t height() const;
+        std::uint32_t height() const;
 
         /** Sets the size of the image
          * @param [in] aWidth: The width of the image in pixels.
          * @param [in] aHeight: The height of the image in pixels. */
-        void setSize(uint32_t aWidth, uint32_t aHeight);
+        void setSize(uint32_t aWidth, std::uint32_t aHeight);
 
         /** Returns the Pixel Aspect Ratio property if it exists */
         PixelAspectRatioProperty* pixelAspectRatio();
@@ -121,7 +122,7 @@ namespace HEIFPP
         const AuxProperty* aux() const;
 
         /** Returns the amount of metadata items */
-        uint32_t getMetadataCount() const;
+        std::uint32_t getMetadataCount() const;
 
         /** Gets a Meta item with the given index
          * @param [in] aIndex: The index of the meta item. */
@@ -137,7 +138,7 @@ namespace HEIFPP
         void removeMetadata(MetaItem* aItem);
 
         /** Return count of thumbnails associated with this image. */
-        uint32_t getThumbnailCount() const;
+        std::uint32_t getThumbnailCount() const;
 
         /** Gets the thumbnail with the given index.
          * @param [in] aIndex: Index of the thumbnail. */
@@ -153,7 +154,7 @@ namespace HEIFPP
         void removeThumbnail(ImageItem* aThumbnail);
 
         /** Return count of auxiliary images associated with this image. */
-        uint32_t getAuxCount() const;
+        std::uint32_t getAuxCount() const;
 
         /** Gets an auxiliary image from the image.
          * @param [in] aIndex: Index of the auxiliary image. */
@@ -169,8 +170,8 @@ namespace HEIFPP
         void removeAuxImage(ImageItem* aImage);
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
         ImageItem(Heif* aHeif, const HEIF::FourCC& aType, bool aDerived, bool aCoded);
 
@@ -195,13 +196,14 @@ namespace HEIFPP
         std::vector<ImageItem*> mAuxImages;
         std::vector<MetaItem*> mMetaItems;
 
-        uint32_t mWidth;
-        uint32_t mHeight;
+        std::uint32_t mWidth;
+        std::uint32_t mHeight;
 
 
         ImageItem& operator=(const ImageItem&) = delete;
-        ImageItem(const ImageItem&)            = delete;
-        ImageItem(ImageItem&&)                 = delete;
-        ImageItem()                            = delete;
+        ImageItem& operator=(ImageItem&&) = delete;
+        ImageItem(const ImageItem&)       = delete;
+        ImageItem(ImageItem&&)            = delete;
+        ImageItem()                       = delete;
     };
 }  // namespace HEIFPP

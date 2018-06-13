@@ -14,8 +14,8 @@
 #ifndef HEIFCOMMONDATATYPES_H
 #define HEIFCOMMONDATATYPES_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include "heifexport.h"
 #include "heifid.h"
@@ -46,6 +46,7 @@ namespace HEIF
         INVALID_GROUP_ID,
         INVALID_ITEM_ID,
         INVALID_MEDIADATA_ID,
+        INVALID_METADATAITEM_ID,
         INVALID_MEDIA_FORMAT,
         INVALID_PROPERTY_INDEX,
         INVALID_REFERENCE_COUNT,
@@ -193,6 +194,7 @@ namespace HEIF
     IdType(std::uint32_t, SequenceId);
     IdType(std::uint32_t, DecoderConfigId);
     IdType(std::uint32_t, PropertyId);
+    IdType(std::uint32_t, MetadataItemId);
 
     struct HEIF_DLL_PUBLIC Rational
     {
@@ -356,6 +358,33 @@ namespace HEIF
                              ///< indicates that intra prediction may or may not be used in the inter predicted images.
         uint8_t maxRefPerPic;  ///< Maximum number of reference images that may be used for decoding any single image
                                ///< within an image sequence. (value 15 = any number)
+    };
+
+    enum class EditType
+    {
+        EMPTY,
+        DWELL,
+        SHIFT
+    };
+
+    /**
+     * @brief A single edit EditList unit */
+    struct HEIF_DLL_PUBLIC EditUnit
+    {
+        EditType editType;                ///< Edit unit type (empty, dwell, shift)
+        std::int64_t mediaTimeInTrackTS;  ///< Edit time in media in timescale units of track
+        std::uint64_t durationInMovieTS;  ///< Edit unit length in timescale units of movie (writer uses value 1000 for
+                                          ///< movie timescale)
+    };
+
+    /**
+     * @brief Edit list for tracks */
+    struct HEIF_DLL_PUBLIC EditList
+    {
+        bool looping       = false;  ///< True if the edit list should be repeated indefinitely.
+        double repetitions = 0.0;    ///< Edit list repetitions, a non-negative value. Only affects when looping is set
+                                     ///< true. Zero means infinite looping.
+        Array<EditUnit> editUnits;   ///< Edit units in the order they should be applied.
     };
 }  // namespace HEIF
 

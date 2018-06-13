@@ -29,8 +29,7 @@
 
 class CleanApertureBox;
 class AuxiliaryTypeInfoBox;
-class AvcDecoderConfigurationRecord;
-class HevcDecoderConfigurationRecord;
+class DecoderConfigurationRecord;
 
 namespace HEIF
 {
@@ -63,159 +62,162 @@ namespace HEIF
         virtual ErrorCode getFileInformation(FileInformation& fileinfo) const;
 
         /// @see Reader::getDisplayWidth()
-        virtual ErrorCode getDisplayWidth(SequenceId sequenceId, uint32_t& displayWidth) const;
+        virtual ErrorCode getDisplayWidth(const SequenceId& sequenceId, uint32_t& displayWidth) const;
 
         /// @see Reader::getDisplayHeight()
-        virtual ErrorCode getDisplayHeight(SequenceId sequenceId, uint32_t& displayHeight) const;
+        virtual ErrorCode getDisplayHeight(const SequenceId& sequenceId, uint32_t& displayHeight) const;
 
         /// @see Reader::getWidth()
-        virtual ErrorCode getWidth(ImageId itemId, uint32_t& width) const;
-        virtual ErrorCode getWidth(SequenceId sequenceId, SequenceImageId itemId, uint32_t& width) const;
+        virtual ErrorCode getWidth(const ImageId& itemId, uint32_t& width) const;
+        virtual ErrorCode getWidth(const SequenceId& sequenceId, const SequenceImageId& itemId, uint32_t& width) const;
 
         /// @see Reader::getHeight()
-        virtual ErrorCode getHeight(ImageId itemId, uint32_t& width) const;
-        virtual ErrorCode getHeight(SequenceId sequenceId, SequenceImageId itemId, uint32_t& width) const;
+        virtual ErrorCode getHeight(const ImageId& itemId, uint32_t& width) const;
+        virtual ErrorCode getHeight(const SequenceId& sequenceId, const SequenceImageId& itemId, uint32_t& width) const;
 
         /// @see Reader::getMatrix()
         virtual ErrorCode getMatrix(Array<std::int32_t>& matrix) const;
 
         /// @see Reader::getMatrix()
-        virtual ErrorCode getMatrix(SequenceId sequenceId, Array<int32_t>& matrix) const;
+        virtual ErrorCode getMatrix(const SequenceId& sequenceId, Array<int32_t>& matrix) const;
 
         /// @see Reader::getPlaybackDurationInSecs()
-        virtual ErrorCode getPlaybackDurationInSecs(SequenceId sequenceId, double& durationInSecs) const;
+        virtual ErrorCode getPlaybackDurationInSecs(const SequenceId& sequenceId, double& durationInSecs) const;
 
         /// @see Reader::getMasterImages()
         virtual ErrorCode getMasterImages(Array<ImageId>& itemIds) const;
-        virtual ErrorCode getMasterImages(SequenceId contextId, Array<SequenceImageId>& itemIds) const;
+        virtual ErrorCode getMasterImages(const SequenceId& contextId, Array<SequenceImageId>& itemIds) const;
 
         /// @see Reader::getItemListByType()
         virtual ErrorCode getItemListByType(const FourCC& itemType, Array<ImageId>& itemIds) const;
 
         /// @see Reader::getItemListByType()
-        virtual ErrorCode getItemListByType(SequenceId sequenceId,
-                                            TrackSampleType itemType,
+        virtual ErrorCode getItemListByType(const SequenceId& sequenceId,
+                                            const TrackSampleType& itemType,
                                             Array<SequenceImageId>& itemIds) const;
 
         /// @see Reader::getItemType()
-        virtual ErrorCode getItemType(ImageId itemId, FourCC& type) const;
+        virtual ErrorCode getItemType(const ImageId& itemId, FourCC& type) const;
 
         /// @see Reader::getItemType()
-        virtual ErrorCode getItemType(SequenceId sequenceId, SequenceImageId itemId, FourCC& type) const;
+        virtual ErrorCode getItemType(const SequenceId& sequenceId, const SequenceImageId& itemId, FourCC& type) const;
 
         /// @see Reader::getReferencedFromItemListByType()
-        virtual ErrorCode getReferencedFromItemListByType(ImageId, FourCC referenceType, Array<ImageId>& itemIds) const;
+        virtual ErrorCode getReferencedFromItemListByType(const ImageId& id,
+                                                          const FourCC& referenceType,
+                                                          Array<ImageId>& itemIds) const;
 
         /// @see Reader::getReferencedToItemListByType()
-        virtual ErrorCode getReferencedToItemListByType(ImageId toItemId,
-                                                        FourCC referenceType,
+        virtual ErrorCode getReferencedToItemListByType(const ImageId& toItemId,
+                                                        const FourCC& referenceType,
                                                         Array<ImageId>& itemIds) const;
 
         /// @see Reader::getPrimaryItem()
         virtual ErrorCode getPrimaryItem(ImageId& itemId) const;
 
-        virtual ErrorCode getItemLength(const MetaBox& metaBox, const ItemId itemId, std::uint64_t& itemLength) const;
-
         /// @see Reader::getItemData()
-        virtual ErrorCode getItemData(ImageId itemId,
+        virtual ErrorCode getItemData(const ImageId& itemId,
                                       uint8_t* memoryBuffer,
                                       uint64_t& memoryBufferSize,
                                       bool bytestreamHeaders = true) const;
 
         /// @see Reader::getItemData()
-        virtual ErrorCode getItemData(SequenceId sequenceId,
-                                      SequenceImageId itemId,
+        virtual ErrorCode getItemData(const SequenceId& sequenceId,
+                                      const SequenceImageId& itemId,
                                       uint8_t* memoryBuffer,
                                       uint64_t& memoryBufferSize,
                                       bool bytestreamHeaders = true) const;
 
         /// @see Reader::getItem()
-        virtual ErrorCode getItem(ImageId itemId, Overlay& iovlItem) const;
+        virtual ErrorCode getItem(const ImageId& itemId, Overlay& iovlItem) const;
 
         /// @see Reader::getItem()
-        virtual ErrorCode getItem(ImageId itemId, Grid& gridItem) const;
+        virtual ErrorCode getItem(const ImageId& itemId, Grid& gridItem) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(PropertyId index, Mirror& imir) const;
+        virtual ErrorCode getProperty(const PropertyId& index, Mirror& imir) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(PropertyId index, Rotate& irot) const;
+        virtual ErrorCode getProperty(const PropertyId& index, Rotate& irot) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(PropertyId index, AuxiliaryType& auxC) const;
+        virtual ErrorCode getProperty(const PropertyId& index, AuxiliaryType& auxC) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(SequenceId trackId, std::uint32_t index, AuxiliaryType& auxC) const;
+        virtual ErrorCode getProperty(const SequenceId& trackId, const std::uint32_t index, AuxiliaryType& auxC) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(PropertyId index, RelativeLocation& rloc) const;
+        virtual ErrorCode getProperty(const PropertyId& index, RelativeLocation& rloc) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(PropertyId index, PixelInformation& pixi) const;
+        virtual ErrorCode getProperty(const PropertyId& index, PixelInformation& pixi) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(PropertyId index, PixelAspectRatio& pasp) const;
+        virtual ErrorCode getProperty(const PropertyId& index, PixelAspectRatio& pasp) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(PropertyId index, ColourInformation& colr) const;
+        virtual ErrorCode getProperty(const PropertyId& index, ColourInformation& colr) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(PropertyId index, CleanAperture& clap) const;
+        virtual ErrorCode getProperty(const PropertyId& index, CleanAperture& clap) const;
 
         /// @see Reader::getProperty()
-        virtual ErrorCode getProperty(SequenceId trackId, std::uint32_t index, CleanAperture& clap) const;
+        virtual ErrorCode getProperty(const SequenceId& trackId, const std::uint32_t index, CleanAperture& clap) const;
 
         /// @see Reader::getItemProperties()
-        virtual ErrorCode getItemProperties(ImageId itemId, Array<ItemPropertyInfo>& propertyTypes) const;
+        virtual ErrorCode getItemProperties(const ImageId& itemId, Array<ItemPropertyInfo>& propertyTypes) const;
 
         /// @see Reader::getItemProperties()
-        virtual ErrorCode getProperty(PropertyId index, RawProperty& property) const;
+        virtual ErrorCode getProperty(const PropertyId& index, RawProperty& property) const;
 
         /// @see Reader::getItemDataWithDecoderParameters()
-        virtual ErrorCode getItemDataWithDecoderParameters(ImageId itemId,
+        virtual ErrorCode getItemDataWithDecoderParameters(const ImageId& itemId,
                                                            uint8_t* memoryBuffer,
                                                            uint64_t& memoryBufferSize) const;
 
         /// @see Reader::getItemDataWithDecoderParameters()
-        virtual ErrorCode getItemDataWithDecoderParameters(SequenceId sequenceId,
-                                                           SequenceImageId itemId,
+        virtual ErrorCode getItemDataWithDecoderParameters(const SequenceId& sequenceId,
+                                                           const SequenceImageId& itemId,
                                                            uint8_t* memoryBuffer,
                                                            uint64_t& memoryBufferSize) const;
 
         /// @see Reader::getItemProtectionScheme()
-        virtual ErrorCode getItemProtectionScheme(ImageId itemId,
+        virtual ErrorCode getItemProtectionScheme(const ImageId& itemId,
                                                   uint8_t* memoryBuffer,
                                                   uint64_t& memoryBufferSize) const;
 
         /// @see Reader::getItemTimestamps()
-        virtual ErrorCode getItemTimestamps(SequenceId sequenceId, Array<TimestampIDPair>& timestamps) const;
+        virtual ErrorCode getItemTimestamps(const SequenceId& sequenceId, Array<TimestampIDPair>& timestamps) const;
 
         /// @see Reader::getTimestampsOfItem()
-        virtual ErrorCode getTimestampsOfItem(SequenceId sequenceId,
-                                              SequenceImageId itemId,
+        virtual ErrorCode getTimestampsOfItem(const SequenceId& sequenceId,
+                                              const SequenceImageId& itemId,
                                               Array<int64_t>& timestamps) const;
 
         /// @see Reader::getItemsInDecodingOrder()
-        virtual ErrorCode getItemsInDecodingOrder(SequenceId sequenceId, Array<TimestampIDPair>& decodingOrder) const;
+        virtual ErrorCode getItemsInDecodingOrder(const SequenceId& sequenceId,
+                                                  Array<TimestampIDPair>& decodingOrder) const;
 
         /// @see Reader::getDecodeDependencies()
-        virtual ErrorCode getDecodeDependencies(SequenceId sequenceId,
-                                                SequenceImageId itemId,
+        virtual ErrorCode getDecodeDependencies(const SequenceId& sequenceId,
+                                                const SequenceImageId& itemId,
                                                 Array<SequenceImageId>& dependencies) const;
 
         /// @see Reader::getDecoderCodeType()
-        virtual ErrorCode getDecoderCodeType(ImageId itemId, FourCC& type) const;
+        virtual ErrorCode getDecoderCodeType(const ImageId& itemId, FourCC& type) const;
 
         /// @see Reader::getDecoderCodeType()
-        virtual ErrorCode getDecoderCodeType(SequenceId sequenceId, SequenceImageId itemId, FourCC& type) const;
+        virtual ErrorCode getDecoderCodeType(const SequenceId& sequenceId,
+                                             const SequenceImageId& itemId,
+                                             FourCC& type) const;
 
         /// @see Reader::getDecoderParameterSets()
-        virtual ErrorCode getDecoderParameterSets(ImageId itemId, DecoderConfiguration& decoderInfos) const;
+        virtual ErrorCode getDecoderParameterSets(const ImageId& itemId, DecoderConfiguration& decoderInfos) const;
 
         /// @see Reader::getDecoderParameterSets()
-        virtual ErrorCode getDecoderParameterSets(SequenceId sequenceId,
-                                                  SequenceImageId itemId,
-                                                  Array<DecoderSpecificInfo>& decoderInfos) const;
+        virtual ErrorCode getDecoderParameterSets(const SequenceId& sequenceId,
+                                                  const SequenceImageId& itemId,
+                                                  DecoderConfiguration& decoderInfos) const;
 
     private:
         enum class State
@@ -278,6 +280,9 @@ namespace HEIF
         ErrorCode readBox(BitStream& bitstream);
         ErrorCode skipBox();
 
+        ErrorCode getItemLength(const MetaBox& metaBox, const ItemId& itemId, std::uint64_t& itemLength) const;
+
+
         /**
          * @brief Read bytes from stream to an integer value.
          * @param count  Number of bytes to read (0-8).
@@ -294,14 +299,9 @@ namespace HEIF
         void seekInput(std::int64_t pos) const;
 
         /** Move decoder configuration parameter data to ParamSetMap
-         * @param record AVC decoder configuration
+         * @param record decoder configuration
          * @return Decoder parameters */
-        ParameterSetMap makeDecoderParameterSetMap(const AvcDecoderConfigurationRecord& record) const;
-
-        /** Move decoder configuration parameter data to ParamSetMap
-         * @param record HEVC decoder configuration
-         * @return Decoder parameters */
-        ParameterSetMap makeDecoderParameterSetMap(const HevcDecoderConfigurationRecord& record) const;
+        ParameterSetMap makeDecoderParameterSetMap(const DecoderConfigurationRecord& record) const;
 
         /**
          * Get ids of all items of a image collection.
@@ -496,6 +496,7 @@ namespace HEIF
                 clapProperties;  ///< Clean aperture data from sample description entries
             Map<SampleDescriptionIndex, AuxiliaryType>
                 auxiProperties;  ///< Clean aperture data from sample description entries
+            double repetitions;
         };
         Map<SequenceId, TrackInfo> mTrackInfo;  ///< Reader internal information about each TrackBox
 
@@ -504,7 +505,7 @@ namespace HEIF
          * @return OK if sequenceId is a valid track ID in this file, INVALID_SEQUENCE_ID if not.
          *         UNINITIALIZED if initialize() had not been called.
          */
-        ErrorCode isValidTrack(SequenceId sequenceId) const;
+        ErrorCode isValidTrack(const SequenceId& sequenceId) const;
 
         /**
          * @param sequenceId      ID of the track containing the sample.
@@ -512,21 +513,21 @@ namespace HEIF
          * @return OK if the image/sample is a valid sample on the sequenceId given.  INVALID_SEQUENCE_IMAGE_ID or
          * INVALID_SEQUENCE_ID otherwise. UNINITIALIZED if initialize() had not been called.
          */
-        ErrorCode isValidSample(SequenceId sequenceId, SequenceImageId sequenceImageId) const;
+        ErrorCode isValidSample(const SequenceId& sequenceId, const SequenceImageId& sequenceImageId) const;
 
         /**
          * @param imageId ImageId to check.
          * @return OK if itemId is a valid image item in the root-level meta box, INVALID_ITEM_ID if not.
          *         UNINITIALIZED if initialize() had not been called.
          */
-        ErrorCode isValidImageItem(ImageId imageId) const;
+        ErrorCode isValidImageItem(const ImageId& imageId) const;
 
         /**
          * @param itemId ImageId to check.
          * @return OK if itemId is a valid item in the root-level meta box, INVALID_ITEM_ID if not.
          *         UNINITIALIZED if initialize() had not been called.
          */
-        ErrorCode isValidItem(ImageId itemId) const;
+        ErrorCode isValidItem(const ImageId& itemId) const;
 
         /**
          * @brief Create a TrackPropertiesMap struct for the reader interface
@@ -578,6 +579,12 @@ namespace HEIF
         TypeToIdsMap getReferenceTrackIds(TrackBox* trackBox) const;
 
         /**
+         * @brief Extract information about reference tracks for the reader interface
+         * @param [in] trackBox TrackBox to extract data from
+         * @return Reference track information */
+        EditList getEditList(TrackBox* trackBox, const double repetitions) const;
+
+        /**
          * @brief Extract information about sample groups for the reader interface
          * @param [in] trackBox TrackBox to extract data from
          * @return Sample grouping information */
@@ -594,6 +601,13 @@ namespace HEIF
          * @param [in] trackBox TrackBox to extract data from.
          * @return Sample to Metadata information. */
         Array<SampleToMetadataItem> getSampleToMetadataItemGroups(TrackBox* trackBox) const;
+
+        /**
+         * @brief Extract information about sample DirectReferenceSamplesList() groups ('refs') for the reader
+         * interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return Sample to Metadata information. */
+        Array<DirectReferenceSamples> getDirectReferenceSamplesGroups(TrackBox* trackBox) const;
 
         /**
          * @brief Extract information about alternate track IDs for a track for the reader interface
@@ -656,17 +670,18 @@ namespace HEIF
         class FileReaderException : public Exception
         {
         public:
-            FileReaderException(ErrorCode status, const String& message = "")
-                : mErrorCode(status)
-                , mMessage(message)
+            FileReaderException(ErrorCode status, const char* message = nullptr)
+                : Exception(message)
+                , mErrorCode(status)
             {
             }
 
             const char* what() const throw()
             {
-                if (mMessage != "")
+                const char* msgptr = Exception::what();
+                if (msgptr != nullptr)
                 {
-                    return mMessage.c_str();
+                    return msgptr;
                 }
 
                 switch (mErrorCode)
@@ -692,7 +707,7 @@ namespace HEIF
                 case ErrorCode::PROTECTED_ITEM:
                     return "The item is unaccessible because it is protected.";
                 case ErrorCode::UNPROTECTED_ITEM:
-                    return "The item is unaccessible because it is protected.";
+                    return "The item is not protected.";
                 case ErrorCode::UNINITIALIZED:
                     return "Reader not initialized. Call initialize() first.";
                 case ErrorCode::NOT_APPLICABLE:
@@ -708,7 +723,6 @@ namespace HEIF
 
         private:
             ErrorCode mErrorCode;
-            String mMessage;
         };
     };
 

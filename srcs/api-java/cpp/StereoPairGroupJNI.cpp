@@ -11,3 +11,21 @@
  *
  *
  */
+
+#include <jni.h>
+
+#include "EntityGroup.h"
+#include "Helpers.h"
+
+#define CLASS_NAME StereoPairGroup
+
+extern "C"
+{
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
+    {
+        NATIVE_HEIF(nativeHeif, javaHEIF);
+        HEIFPP::EntityGroup *nativeObject = new HEIFPP::EntityGroup(nativeHeif, HEIF::FourCC("ster"));
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
+    }
+}

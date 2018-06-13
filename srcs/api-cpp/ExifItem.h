@@ -13,31 +13,32 @@
 #pragma once
 
 #include <MetaItem.h>
+
 namespace HEIFPP
 {
     class ExifItem : public HEIFPP::MetaItem
     {
     public:
         ExifItem(Heif* aHeif);
-        virtual ~ExifItem();
+        ~ExifItem();
 
         /** Returns the size of the data */
-        uint64_t getDataSize() const;
+        std::uint64_t getDataSize() const;
 
         /** Returns the data. */
-        const uint8_t* getData() const;
+        const std::uint8_t* getData() const;
 
         /** Sets the data for the item
          * @param [in] aData: Pointer to the data
          * @param [in] aSize: Size of the data */
-        void setData(const uint8_t* aData, uint64_t aSize);
+        void setData(const std::uint8_t* aData, std::uint64_t aSize);
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-        uint64_t mBufferSize;
-        uint8_t* mBuffer;
+        std::uint64_t mBufferSize;
+        std::uint8_t* mBuffer;
 
     private:
         ExifItem& operator=(const ExifItem&) = delete;

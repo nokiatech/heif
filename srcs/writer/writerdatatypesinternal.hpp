@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef WRITERDATATYPESINTERNAL_HPP
@@ -18,9 +20,8 @@
 
 namespace HEIF
 {
-    IdType(std::uint32_t,TrackId);
-    IdType(std::uint16_t,AlternateGroupId);
-    IdType(std::uint32_t,MetadataItemId);
+    IdType(std::uint32_t, TrackId);
+    IdType(std::uint16_t, AlternateGroupId);
 
     /// Data of one image/sample/frame
     struct MediaData
@@ -28,7 +29,8 @@ namespace HEIF
         MediaDataId id;
         MediaFormat mediaFormat;
         DecoderConfigId decoderConfigId;
-        uint64_t offset;  ///< Data offset. When mdat is after ftyp this is fileoffset. When mdat is lcoated after moov this is offset from mdat start.
+        uint64_t offset;  ///< Data offset. When mdat is after ftyp this is fileoffset. When mdat is lcoated after moov
+                          ///< this is offset from mdat start.
         size_t size;
     };
 

@@ -13,6 +13,8 @@
 
 package com.nokia.heif;
 
+import com.nokia.heif.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,14 +35,18 @@ public final class HEIF
     public static final FourCC FOURCC_OVERLAY = new FourCC("iovl", true);
     public static final FourCC FOURCC_GRID = new FourCC("grid", true);
     public static final FourCC FOURCC_EXIF = new FourCC("Exif", true);
+    public static final FourCC FOURCC_AAC = new FourCC("mp4a", true);
 
     public static final FourCC BRAND_MIF1 = new FourCC("mif1", true);
     public static final FourCC BRAND_HEIC = new FourCC("heic", true);
     public static final FourCC BRAND_HEIX = new FourCC("heix", true);
     public static final FourCC BRAND_HEVC = new FourCC("hevc", true);
     public static final FourCC BRAND_AVCS = new FourCC("avcs", true);
-    public static final FourCC BRAND_AVIC = new FourCC("avic", true);
+    public static final FourCC BRAND_AVCI = new FourCC("avci", true);
     public static final FourCC BRAND_JPEG = new FourCC("jpeg", true);
+    public static final FourCC BRAND_ISO8 = new FourCC("iso8", true);
+    public static final FourCC BRAND_MSF1 = new FourCC("msf1", true);
+    public static final FourCC BRAND_MP41 = new FourCC("mp41", true);
 
     /**
      * Creates a HEIF instance which can be used to read and write HEIF files
@@ -48,6 +54,46 @@ public final class HEIF
     public HEIF()
     {
         createInstanceNative();
+    }
+
+    /**
+     * Creates a HEIF instance from the given file
+     * @param filename Path to the file to be opened
+     * @throws Exception Thrown if the loading fails
+     */
+    public HEIF(String filename)
+            throws Exception
+    {
+        this();
+        try
+        {
+            load(filename);
+        }
+        catch (Exception ex)
+        {
+            release();
+            throw ex;
+        }
+    }
+
+    /**
+     * Creates a HEIF instance from the given input stream
+     * @param inputStream Input stream
+     * @throws Exception Thrown if the loading fails
+     */
+    public HEIF(InputStream inputStream)
+            throws Exception
+    {
+        this();
+        try
+        {
+            load(inputStream);
+        }
+        catch (Exception ex)
+        {
+            release();
+            throw ex;
+        }
     }
 
     /**
@@ -85,6 +131,19 @@ public final class HEIF
         checkState();
         checkParameter(filename);
         loadNative(filename);
+    }
+
+    /**
+     * Loads a HEIF file from a stream
+     * @param inputStream The input stream for the file
+     * @throws Exception
+     */
+    public void load(InputStream inputStream)
+            throws Exception
+    {
+        checkState();
+        checkParameter(inputStream);
+        loadStreamNative(inputStream);
     }
 
     /**
@@ -240,7 +299,7 @@ public final class HEIF
      * @param brand The brand FourCC as a String
      * @throws Exception
      */
-    public void removeComptibleBrand(FourCC brand)
+    public void removeCompatibleBrand(FourCC brand)
             throws Exception
     {
         checkState();
@@ -294,6 +353,61 @@ public final class HEIF
     }
 
     /**
+     * Returns all the EntityGroups in the HEIF instance
+     * @return List of all the EntityGroups
+     * @throws Exception
+     */
+    public List<EntityGroup> getEntityGroups()
+            throws Exception
+    {
+        checkState();
+        int entityGroupCount = getEntityGroupCountNative();
+        List<EntityGroup> entityGroups = new ArrayList<>(entityGroupCount);
+        for (int index = 0; index < entityGroupCount; index++)
+        {
+            entityGroups.add(getEntityGroupNative(index));
+        }
+        return entityGroups;
+    }
+
+
+    /**
+     * Returns all the tracks in the HEIF file
+     * @return List of the tracks
+     * @throws Exception
+     */
+    public List<Track> getTracks()
+            throws Exception
+    {
+        checkState();
+        int trackCount = getTrackCountNative();
+        List<Track> tracks = new ArrayList<>(trackCount);
+        for (int index = 0; index < trackCount; index++)
+        {
+            tracks.add(getTrackNative(index));
+        }
+        return tracks;
+    }
+
+    /**
+     * Returns a list of all the alternative track groups in the HEIF file
+     * @return List of all the alternative track groups
+     * @throws Exception
+     */
+    public List<AlternativeTrackGroup> getAlternativeTrackGroups()
+            throws Exception
+    {
+        checkState();
+        int count = getAlternativeTrackGroupCountNative();
+        List<AlternativeTrackGroup> result = new ArrayList<>(count);
+        for (int index = 0; index < count; index++)
+        {
+            result.add(getAlternativeTrackGroupNative(index));
+        }
+        return result;
+    }
+
+    /**
      * Verifies that the HEIF instance hasn't already been released and throws an exception if it has been.
      * @throws Exception
      */
@@ -302,7 +416,7 @@ public final class HEIF
     {
         if (mNativeHandle == 0)
         {
-            ErrorHandler.checkError(ErrorHandler.INVALID_HANDLE, "Object already deleted");
+            throw new Exception(ErrorHandler.OBJECT_ALREADY_DELETED, "Object already deleted");
         }
     }
 
@@ -311,18 +425,18 @@ public final class HEIF
     {
         if (parameter == null)
         {
-            ErrorHandler.checkError(ErrorHandler.INVALID_HANDLE, "Parameter is null");
+            throw new Exception(ErrorHandler.INVALID_PARAMETER, "Parameter is null");
         }
         else if (parameter instanceof Base)
         {
             Base parameterAsBase = (Base) parameter;
             if (parameterAsBase.mNativeHandle == 0)
             {
-                ErrorHandler.checkError(ErrorHandler.INVALID_HANDLE, "Object already deleted");
+                throw new Exception(ErrorHandler.OBJECT_ALREADY_DELETED, "Object already deleted");
             }
             else if (parameterAsBase.getParentHEIF() != this)
             {
-                ErrorHandler.checkError(ErrorHandler.WRONG_HEIF_INSTANCE, "Incorrect HEIF instance");
+                throw new Exception(ErrorHandler.WRONG_HEIF_INSTANCE, "Incorrect HEIF instance");
             }
         }
     }
@@ -341,6 +455,8 @@ public final class HEIF
     private native void destroyInstanceNative();
 
     private native void loadNative(String filename);
+
+    private native void loadStreamNative(InputStream stream);
 
     private native void saveNative(String filename);
 
@@ -380,4 +496,13 @@ public final class HEIF
 
     private native ItemProperty getPropertyNative(int index);
 
+    private native int getTrackCountNative();
+
+    private native Track getTrackNative(int index);
+
+    private native int getAlternativeTrackGroupCountNative();
+    private native AlternativeTrackGroup getAlternativeTrackGroupNative(int index);
+
+    private native int getEntityGroupCountNative();
+    private native EntityGroup getEntityGroupNative(int index);
 }

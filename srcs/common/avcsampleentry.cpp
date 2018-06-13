@@ -35,6 +35,11 @@ AvcConfigurationBox& AvcSampleEntry::getAvcConfigurationBox()
     return mAvcConfigurationBox;
 }
 
+const AvcConfigurationBox& AvcSampleEntry::getAvcConfigurationBox() const
+{
+    return mAvcConfigurationBox;
+}
+
 void AvcSampleEntry::createCodingConstraintsBox()
 {
     mIsCodingConstraintsPresent = true;
@@ -95,4 +100,14 @@ void AvcSampleEntry::parseBox(ISOBMFF::BitStream& bitstr)
 AvcSampleEntry* AvcSampleEntry::clone() const
 {
     return CUSTOM_NEW(AvcSampleEntry, (*this));
+}
+
+const DecoderConfigurationRecord* AvcSampleEntry::getConfigurationRecord() const
+{
+    return &mAvcConfigurationBox.getConfiguration();
+}
+
+const Box* AvcSampleEntry::getConfigurationBox() const
+{
+    return &mAvcConfigurationBox;
 }

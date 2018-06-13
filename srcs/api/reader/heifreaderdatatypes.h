@@ -14,8 +14,8 @@
 #ifndef HEIFFILEDATATYPES_H
 #define HEIFFILEDATATYPES_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include "heifcommondatatypes.h"
 #include "heifexport.h"
 
@@ -269,6 +269,20 @@ namespace HEIF
         Array<ImageId> metadataItemIds;        ///< Item Ids to linked metadata.
     };
 
+    /**
+     * Information from DirectReferenceSamplesList sample group description entry.
+     * This information is used to find Item IDs of reference samples linked to this entry.
+     */
+    struct HEIF_DLL_PUBLIC DirectReferenceSamples
+    {
+        uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
+        uint32_t sampleId;  ///< When entry corresponds to a reference sample, the value is a positive integer.
+                            ///< The value for this field shall be zero for non-reference samples.
+        Array<SequenceImageId> referenceItemIds;  ///< sample_id values of the direct reference samples that a sample
+                                                  ///< belonging to this group may be predicted from.
+    };
+
+
     /** @brief SampleType enumeration to indicate the type of the frame. */
     enum SampleType
     {
@@ -279,11 +293,12 @@ namespace HEIF
 
     struct HEIF_DLL_PUBLIC SampleInformation
     {
-        SequenceImageId sampleId;             ///< based on the sample's entry order in the sample table
-        FourCC sampleEntryType;               ///< coming from SampleDescriptionBox (codingname)
-        uint32_t sampleDescriptionIndex;      ///< coming from SampleDescriptionBox index (sample_description_index)
-        SampleType sampleType;                ///< coming from sample groupings
-        uint64_t sampleDurationTS;            ///< Sample duration in time scale units
+        SequenceImageId sampleId;         ///< based on the sample's entry order in the sample table
+        FourCC sampleEntryType;           ///< coming from SampleDescriptionBox (codingname)
+        uint32_t sampleDescriptionIndex;  ///< coming from SampleDescriptionBox index (sample_description_index)
+        SampleType sampleType;            ///< coming from sample groupings
+        uint64_t sampleDurationTS;        ///< Sample duration in time scale units
+        int64_t sampleCompositionOffsetTs;
         bool hasClap;                         ///< CleanApertureBox is present in the sample entry
         bool hasAuxi;                         ///< AuxiliaryTypeInfoBox is present in the sample entry
         CodingConstraints codingConstraints;  ///< CodingConstraints for sample
@@ -303,9 +318,13 @@ namespace HEIF
                            ///< using sampleGroupDescriptionIndex.
         Array<SampleToMetadataItem> metadatas;  ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries
                                                 ///< of this track. Indexed using sampleGroupDescriptionIndex.
+        Array<DirectReferenceSamples>
+            referenceSamples;    ///< Data from  DirectReferenceSamplesList ('refs') sample group entries
+                                 ///< of this track. Indexed using sampleGroupDescriptionIndex
         uint64_t maxSampleSize;  ///< Size of largest sample inside the track (can be used to allocate client side read
                                  ///< buffer).
         uint32_t timeScale;      ///< Time scale of the track; useful for video stream procsesing purposes
+        EditList editList;       ///< Editlist for this track.
     };
 
     struct HEIF_DLL_PUBLIC FileInformation
@@ -313,6 +332,8 @@ namespace HEIF
         FeatureBitMask features;  ///< bitmask of FileFeatureEnum's
         MetaBoxInformation rootMetaBoxInformation;
         Array<TrackInformation> trackInformation;
+        uint32_t movieTimescale = 0;  ///< In case of Image Sequences/tracks the Movie timescale that can be used in
+                                      ///< edit list processing where it is used for EditUnit.durationInMovieTS
     };
 
 }  // namespace HEIF

@@ -13,13 +13,14 @@
 #pragma once
 
 #include <DerivedImageItem.h>
+
 namespace HEIFPP
 {
     class Identity : public HEIFPP::DerivedImageItem
     {
     public:
         Identity(Heif* aHeif);
-        virtual ~Identity() = default;
+        ~Identity() = default;
 
         /** Returns the origin image of the derived image */
         ImageItem* getImage();
@@ -31,11 +32,11 @@ namespace HEIFPP
 
         /** Removes the given image from the origin
          * @param [in] aImage: Image to be removed */
-        Result removeImage(ImageItem* aImage);
+        Result removeImage(ImageItem* aImage) override;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         Identity& operator=(const Identity&) = delete;

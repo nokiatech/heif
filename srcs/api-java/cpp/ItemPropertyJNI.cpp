@@ -11,18 +11,19 @@
  */
 
 #include <jni.h>
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_ItemProperty_##method_name
 #include "Helpers.h"
 #include "ItemProperty.h"
+
+#define CLASS_NAME ItemProperty
+
 extern "C"
 {
-    JNI_METHOD(void, destroyContextNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(void, destroyContextNative)
     {
-        NATIVE_ITEM_PROPERTY(nativeItem, obj);
-        jobject javaHandle = (jobject) nativeItem->getContext();
+        NATIVE_ITEM_PROPERTY(nativeItem, self);
+        jobject javaHandle = GET_JAVA_OBJECT(nativeItem);
         env->DeleteGlobalRef(javaHandle);
-        setNativeHandle(env, obj, 0);
+        setNativeHandle(env, self, 0);
         delete nativeItem;
     }
 }

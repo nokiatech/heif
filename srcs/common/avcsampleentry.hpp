@@ -32,8 +32,12 @@ public:
     virtual ~AvcSampleEntry() = default;
 
     /** @brief Gets the AvcConfigurationBox
-     *  @return Reference to the AvcConfigurationBox */
+    *  @return Reference to the AvcConfigurationBox */
     AvcConfigurationBox& getAvcConfigurationBox();
+
+    /** @brief Gets the AvcConfigurationBox
+    *  @return Reference to the AvcConfigurationBox */
+    const AvcConfigurationBox& getAvcConfigurationBox() const;
 
     /** @brief Create CodingConstraintsBox */
     virtual void createCodingConstraintsBox() override;
@@ -57,6 +61,12 @@ public:
 
     /* @brief Make a copy of this box that has dynamically the same type as this */
     virtual AvcSampleEntry* clone() const override;
+
+    /* @brief Returns the configuration record for this sample */
+    virtual const DecoderConfigurationRecord* getConfigurationRecord() const override;
+
+    /* @brief Returns the configuration box for this sample */
+    virtual const Box* getConfigurationBox() const override;
 
 private:
     AvcConfigurationBox mAvcConfigurationBox;

@@ -13,36 +13,38 @@
  */
 
 #include <jni.h>
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_PixelInformationProperty_##method_name
+#include <cstring>
 #include "DescriptiveProperty.h"
 #include "Helpers.h"
+
+#define CLASS_NAME PixelInformationProperty
+
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::PixelInformationProperty *nativeObject = new HEIFPP::PixelInformationProperty(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
 
-    JNI_METHOD(jobject, getPixelInformationNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getPixelInformationNative)
     {
-        NATIVE_PIXEL_INFORMATION_PROPERTY(nativeHandle, obj);
-        return env->NewDirectByteBuffer(nativeHandle->mPixelInformation.bitsPerChannel.elements,
-                                        nativeHandle->mPixelInformation.bitsPerChannel.size);
+        NATIVE_SELF;
+        return env->NewDirectByteBuffer(nativeSelf->mPixelInformation.bitsPerChannel.elements,
+                                        static_cast<jlong>(nativeSelf->mPixelInformation.bitsPerChannel.size));
     }
 
-    JNI_METHOD(void, setPixelInformationNative)(JNIEnv *env, jobject obj, jbyteArray data)
+    JNI_METHOD_ARG(void, setPixelInformationNative, jbyteArray data)
     {
-        NATIVE_PIXEL_INFORMATION_PROPERTY(nativeHandle, obj);
+        NATIVE_PIXEL_INFORMATION_PROPERTY(nativeHandle, self);
         jbyte *nativeData = env->GetByteArrayElements(data, 0);
-        uint32_t dataSize = env->GetArrayLength(data);
+        uint32_t dataSize = static_cast<uint32_t>(env->GetArrayLength(data));
 
         nativeHandle->mPixelInformation.bitsPerChannel = HEIF::Array<uint8_t>(dataSize);
-        memcpy(nativeHandle->mPixelInformation.bitsPerChannel.elements, nativeData, dataSize);
+        std::memcpy(nativeHandle->mPixelInformation.bitsPerChannel.elements, nativeData, dataSize);
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 }

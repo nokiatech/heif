@@ -13,11 +13,13 @@
 #pragma once
 
 #include <Heif.h>
+
 namespace HEIFPP
 {
     /** @brief Item abstraction*/
     class Item
     {
+        friend class EntityGroup;
         friend class Heif;
         friend class ImageItem;
 
@@ -56,7 +58,7 @@ namespace HEIFPP
         void removeProperty(ItemProperty* aProperty);
 
         /** Returns the property count for the item. */
-        uint32_t propertyCount() const;
+        std::uint32_t propertyCount() const;
 
         /** Returns a property with the given index
          * @param [in] aIndex: Index of the property */
@@ -69,7 +71,7 @@ namespace HEIFPP
 
         /** Returns if the property is essential
          * @param [in] aProperty: The property */
-        bool isEssential(ItemProperty* aProperty) const;
+        bool isEssential(const ItemProperty* aProperty) const;
 
         /** Sets the essential flag for the property
          * @param [in] aIndex: Index of the property
@@ -79,13 +81,23 @@ namespace HEIFPP
         /** Sets the essential flag for the property
          * @param [in] aProperty: The property
          * @param [in] aEssential: If the property is essential */
-        void setEssential(ItemProperty* aProperty, bool aEssential);
+        void setEssential(const ItemProperty* aProperty, bool aEssential);
 
         /** Returns the parent HEIF object of the item */
         Heif* getHeif();
         const Heif* getHeif() const;
 
+        // groups
+        std::uint32_t getGroupCount() const;
+        EntityGroup* getGroup(uint32_t aId);
+
+        std::uint32_t getGroupByTypeCount(const HEIF::FourCC& aType);
+        EntityGroup* getGroupByType(const HEIF::FourCC& aType, uint32_t aId);
+        EntityGroup* getGroupById(const HEIF::GroupId& aId);
+
     protected:
+        void addToGroup(EntityGroup* aGroup);
+        void removeFromGroup(EntityGroup* aGroup);
         // serialization methods.
         virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
         virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
@@ -93,21 +105,22 @@ namespace HEIFPP
         void setId(const HEIF::ImageId&);
 
         Item(Heif* aHeif, const HEIF::FourCC& aType, bool aIsImage);
+
+    private:
         Heif* mHeif;
         HEIF::ImageId mId;
         HEIF::FourCC mType;
         bool mIsProtected;
         bool mIsImageItem;
         const void* mContext;
-
-        uint32_t mFirstTransform;
-        uint32_t mTransformCount;
+        std::uint32_t mTransformCount;
         std::vector<std::pair<ItemProperty*, bool>> mProps;
+        std::vector<EntityGroup*> mGroups;
 
-    private:
         Item& operator=(const Item&) = delete;
-        Item(const Item&)            = delete;
-        Item(Item&&)                 = delete;
-        Item()                       = delete;
+        Item& operator=(Item&&) = delete;
+        Item(const Item&)       = delete;
+        Item(Item&&)            = delete;
+        Item()                  = delete;
     };
 }  // namespace HEIFPP

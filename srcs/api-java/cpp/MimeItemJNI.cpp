@@ -15,20 +15,23 @@
 #include <jni.h>
 #include "Helpers.h"
 #include "MimeItem.h"
-#define JNI_METHOD(return_type, method_name) JNIEXPORT return_type JNICALL Java_com_nokia_heif_MimeItem_##method_name
+
+#define CLASS_NAME MimeItem
+
 extern "C"
 {
-    JNI_METHOD(jobject, getItemDataNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getItemDataNative)
     {
-        NATIVE_MIME_ITEM(nativeHandle, obj);
-        return env->NewDirectByteBuffer((void *) nativeHandle->getData(), nativeHandle->getDataSize());
+        NATIVE_SELF;
+        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeSelf->getData()),
+                                        static_cast<jlong>(nativeSelf->getDataSize()));
     }
 
-    JNI_METHOD(void, setItemDataNative)(JNIEnv *env, jobject obj, jbyteArray data)
+    JNI_METHOD_ARG(void, setItemDataNative, jbyteArray data)
     {
-        NATIVE_MIME_ITEM(nativeHandle, obj);
+        NATIVE_SELF;
         jbyte *nativeData = env->GetByteArrayElements(data, 0);
-        nativeHandle->setData((uint8_t *) nativeData, env->GetArrayLength(data));
+        nativeSelf->setData((uint8_t *) nativeData, static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 }

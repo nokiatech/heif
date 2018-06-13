@@ -13,13 +13,54 @@
 #include "MetaItem.h"
 #include <heifreader.h>
 #include <heifwriter.h>
+#include "ImageItem.h"
+#include "Sample.h"
 
 using namespace HEIFPP;
+
 MetaItem::MetaItem(Heif* aHeif, const HEIF::FourCC& aType)
     : Item(aHeif, aType, false)
 {
 }
+MetaItem::~MetaItem()
+{
+    for (; !mIsMetaToItem.empty();)
+    {
+        const auto& p    = mIsMetaToItem[0];
+        ImageItem* image = p.first;
+        if (image)
+        {
+            image->removeMetadata(this);
+        }
+    }
+    for (; !mIsMetaToSample.empty();)
+    {
+        const auto& p  = mIsMetaToSample[0];
+        Sample* sample = p.first;
+        if (sample)
+        {
+            sample->removeMetadata(this);
+        }
+    }
+}
 HEIF::ErrorCode MetaItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 {
     return Item::load(aReader, aId);
+}
+
+void MetaItem::link(ImageItem* aImage)
+{
+    mIsMetaToItem.addLink(aImage);
+}
+void MetaItem::unlink(ImageItem* aImage)
+{
+    mIsMetaToItem.removeLink(aImage);
+}
+void MetaItem::link(Sample* aSample)
+{
+    mIsMetaToSample.addLink(aSample);
+}
+void MetaItem::unlink(Sample* aSample)
+{
+    mIsMetaToSample.removeLink(aSample);
 }

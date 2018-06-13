@@ -13,98 +13,10 @@
 #include "CodedImageItem.h"
 #include <heifreader.h>
 #include <heifwriter.h>
+#include <cstring>
+#include "DecoderConfiguration.h"
+
 using namespace HEIFPP;
-
-DecoderConfiguration::DecoderConfiguration(Heif* aHeif, const HEIF::MediaFormat& aFormat)
-    : mHeif(aHeif)
-    , mContext(nullptr)
-    , mFormat(aFormat)
-    , mConfig{Heif::InvalidDecoderConfig, {0}}
-    , mBuffer(nullptr)
-    , mBufferSize()
-{
-    mHeif->addDecoderConfig(this);
-}
-DecoderConfiguration::~DecoderConfiguration()
-{
-    for (; !mLinks.empty();)
-    {
-        const auto& p         = mLinks[0];
-        CodedImageItem* image = p.first;
-        if (image)
-        {
-            image->setDecoderConfiguration(nullptr);
-        }
-    }
-    mHeif->removeDecoderConfig(this);
-    delete[] mBuffer;
-    mBuffer     = 0;
-    mBufferSize = 0;
-}
-
-void DecoderConfiguration::setContext(const void* aContext)
-{
-    mContext = aContext;
-}
-
-const void* DecoderConfiguration::getContext() const
-{
-    return mContext;
-}
-
-void DecoderConfiguration::setId(const HEIF::DecoderConfigId& aId)
-{
-    mConfig.decoderConfigId = aId;
-}
-const HEIF::DecoderConfigId& DecoderConfiguration::getId() const
-{
-    return mConfig.decoderConfigId;
-}
-
-const HEIF::Array<HEIF::DecoderSpecificInfo>& DecoderConfiguration::getConfig() const
-{
-    return mConfig.decoderSpecificInfo;
-}
-
-HEIF::ErrorCode DecoderConfiguration::setConfig(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig)
-{
-    if (mBuffer)
-    {
-        delete[] mBuffer;
-        mBuffer     = nullptr;
-        mBufferSize = 0;
-    }
-    HEIF::ErrorCode error;
-    error = convertToRawData(aConfig, mBuffer, mBufferSize);
-    if (HEIF::ErrorCode::OK == error)
-    {
-        error = convertFromRawData(mBuffer, mBufferSize);
-    }
-
-    return error;
-}
-const HEIF::MediaFormat& DecoderConfiguration::getMediaFormat() const
-{
-    return mFormat;
-}
-
-HEIF::ErrorCode DecoderConfiguration::save(HEIF::Writer* aWriter)
-{
-    return aWriter->feedDecoderConfig(mConfig.decoderSpecificInfo, mConfig.decoderConfigId);
-}
-
-void DecoderConfiguration::link(CodedImageItem* aImage)
-{
-    mLinks.addLink(aImage);
-}
-void DecoderConfiguration::unlink(CodedImageItem* aImage)
-{
-    if (!mLinks.removeLink(aImage))
-    {
-        // Tried to remove a non-existant link.
-        HEIF_ASSERT(false);
-    }
-}
 
 CodedImageItem::CodedImageItem(Heif* aHeif, const HEIF::FourCC& aType, const HEIF::MediaFormat& aFormat)
     : ImageItem(aHeif, aType, false, true)
@@ -119,7 +31,7 @@ CodedImageItem::~CodedImageItem()
 {
     setDecoderConfiguration(nullptr);
     delete[] mBuffer;
-    for (uint32_t i = 0; i < getBaseImageCount(); ++i)
+    for (std::uint32_t i = 0; i < getBaseImageCount(); ++i)
     {
         setBaseImage(i, nullptr);
     }
@@ -153,18 +65,22 @@ void CodedImageItem::setDecoderConfiguration(DecoderConfiguration* aConfig)
 }
 const HEIF::FourCC& CodedImageItem::getDecoderCodeType() const
 {
-    return mType;
+    if (mConfig)
+    {
+        return mConfig->getMediaType();
+    }
+    return getType();
 }
-const HEIF::MediaFormat& CodedImageItem::getMediaFormat() const
+HEIF::MediaFormat CodedImageItem::getMediaFormat() const
 {
-    return mFormat;
+    return Heif::mediaFormatFromFourCC(getDecoderCodeType());
 }
 
-uint32_t CodedImageItem::getBaseImageCount() const
+std::uint32_t CodedImageItem::getBaseImageCount() const
 {
-    return (uint32_t) mBaseImages.size();
+    return (std::uint32_t) mBaseImages.size();
 }
-ImageItem* CodedImageItem::getBaseImage(uint32_t aId)
+ImageItem* CodedImageItem::getBaseImage(std::uint32_t aId)
 {
     if (aId < mBaseImages.size())
     {
@@ -172,7 +88,7 @@ ImageItem* CodedImageItem::getBaseImage(uint32_t aId)
     }
     return nullptr;
 }
-const ImageItem* CodedImageItem::getBaseImage(uint32_t aId) const
+const ImageItem* CodedImageItem::getBaseImage(std::uint32_t aId) const
 {
     if (aId < mBaseImages.size())
     {
@@ -182,7 +98,7 @@ const ImageItem* CodedImageItem::getBaseImage(uint32_t aId) const
 }
 
 
-void CodedImageItem::setBaseImage(uint32_t aId, ImageItem* aImage)
+void CodedImageItem::setBaseImage(std::uint32_t aId, ImageItem* aImage)
 {
     if (aId < mBaseImages.size())
     {
@@ -232,12 +148,11 @@ void CodedImageItem::addBaseImage(ImageItem* aImage)
     mBaseImages.push_back(aImage);
 }
 
-
-void CodedImageItem::removeBaseImage(uint32_t aId)
+void CodedImageItem::removeBaseImage(std::uint32_t aId)
 {
     if (aId < mBaseImages.size())
     {
-        auto it = mBaseImages.begin() + (int32_t) aId;
+        auto it = mBaseImages.begin() + (std::int32_t) aId;
         if (*it)
         {
             if (!removeBaseLink(*it, this))
@@ -270,11 +185,11 @@ void CodedImageItem::removeBaseImage(ImageItem* aImage)
     }
 }
 
-void CodedImageItem::reserveBaseImages(uint32_t aCount)
+void CodedImageItem::reserveBaseImages(std::uint32_t aCount)
 {
     if (aCount < mBaseImages.size())
     {
-        for (auto it = mBaseImages.begin() + (int32_t) aCount; it != mBaseImages.end(); ++it)
+        for (auto it = mBaseImages.begin() + (std::int32_t) aCount; it != mBaseImages.end(); ++it)
         {
             if (!removeBaseLink(*it, this))
             {
@@ -286,21 +201,21 @@ void CodedImageItem::reserveBaseImages(uint32_t aCount)
     mBaseImages.resize(aCount);
 }
 
-uint64_t CodedImageItem::getItemDataSize() const
+std::uint64_t CodedImageItem::getItemDataSize() const
 {
     return mBufferSize;
 }
-const uint8_t* CodedImageItem::getItemData() const
+const std::uint8_t* CodedImageItem::getItemData() const
 {
     return mBuffer;
 }
 
-void CodedImageItem::setItemData(const uint8_t* aData, uint64_t aSize)
+void CodedImageItem::setItemData(const std::uint8_t* aData, std::uint64_t aSize)
 {
     mBufferSize = aSize;
     delete[] mBuffer;
-    mBuffer = new uint8_t[aSize];
-    memcpy(mBuffer, aData, mBufferSize);
+    mBuffer = new std::uint8_t[aSize];
+    std::memcpy(mBuffer, aData, mBufferSize);
 }
 
 HEIF::ErrorCode CodedImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
@@ -312,20 +227,20 @@ HEIF::ErrorCode CodedImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId&
         return error;
     }
 
-    const auto* info = mHeif->getImageInformation(aId);
+    const auto* info = getHeif()->getImageInformation(aId);
     HEIF_ASSERT(info);  // Images MUST have image information
     if (info->features & HEIF::ImageFeatureEnum::IsPreComputedDerivedImage)
     {
         HEIF::Array<HEIF::ImageId> baseIds;
         // base images for pre-derived images..
-        error = aReader->getReferencedToItemListByType(aId, "base", baseIds);
+        error = aReader->getReferencedFromItemListByType(aId, "base", baseIds);
         if (HEIF::ErrorCode::OK != error)
             return error;
         // construct base images.
-        mBaseImages.reserve((uint32_t) baseIds.size);
+        mBaseImages.reserve((std::uint32_t) baseIds.size);
         for (const auto& baseId : baseIds)
         {
-            ImageItem* tmp = static_cast<ImageItem*>(mHeif->constructItem(aReader, baseId, error));
+            ImageItem* tmp = static_cast<ImageItem*>(getHeif()->constructItem(aReader, baseId, error));
             if (HEIF::ErrorCode::OK != error)
             {
                 return error;
@@ -334,68 +249,45 @@ HEIF::ErrorCode CodedImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId&
         }
     }
 
-    HEIF::FourCC codeType;
-    error = aReader->getDecoderCodeType(aId, codeType);
-    if (HEIF::ErrorCode::OK == error)
-    {
-        if (codeType != mType)
-        {
-            return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
-        }
-        setDecoderConfiguration(mHeif->constructDecoderConfig(aReader, mFormat, aId, error));
-        if (HEIF::ErrorCode::OK != error)
-        {
-            return error;
-        }
-    }
-    else
+    DecoderConfiguration* config = getHeif()->constructDecoderConfig(aReader, aId, error);
+    if (HEIF::ErrorCode::OK != error)
     {
         // Corrupted image? OR a jpeg? (jpegs have optional decoder config...)
         if (mMandatoryConfiguration)
         {
             return error;
         }
+        // Ignore the error since DecoderConfiguration is not mandatory for this item.
+        error = HEIF::ErrorCode::OK;
+    }
+    if (config)
+    {
+        setDecoderConfiguration(config);
     }
 
     mBufferSize = info->size;
-    mBuffer     = new uint8_t[mBufferSize];
-    error       = aReader->getItemData(aId, mBuffer, mBufferSize);
+    if (mBufferSize == 0)
+    {
+        // Umm.. no actual data in file?
+        // TODO: add warnings for user.
+        mBuffer = nullptr;
+    }
+    else
+    {
+        mBuffer = new std::uint8_t[mBufferSize];
+        error   = aReader->getItemData(aId, mBuffer, mBufferSize, false);
+    }
     return error;
 }
 
 HEIF::ErrorCode CodedImageItem::save(HEIF::Writer* aWriter)
 {
-    HEIF::ErrorCode error;
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
     if (mBuffer == nullptr)
     {
         // TODO: actual error is NO_MEDIA
         return HEIF::ErrorCode::BUFFER_SIZE_TOO_SMALL;
     }
-    // save all base images first... if we have any
-    if (!mBaseImages.empty())
-    {
-        HEIF::Array<HEIF::ImageId> toImageIds(mBaseImages.size());
-        uint32_t count = 0;
-        for (ImageItem* image : mBaseImages)
-        {
-            if (image == nullptr)
-            {
-                return HEIF::ErrorCode::INVALID_ITEM_ID;
-            }
-            if (image->getId() == Heif::InvalidItem)
-            {
-                error = image->save(aWriter);
-                if (HEIF::ErrorCode::OK != error)
-                    return error;
-            }
-            toImageIds[count] = image->getId();
-            ++count;
-        }
-        error = aWriter->addBaseItemReference(mId, toImageIds);
-        if (HEIF::ErrorCode::OK != error)
-            return error;
-    }
-
     HEIF::Data fr;
     HEIF::MediaDataId mediaDataId;
     if (mConfig)
@@ -419,10 +311,13 @@ HEIF::ErrorCode CodedImageItem::save(HEIF::Writer* aWriter)
     }
 
 
-    uint64_t size = 0;
-    uint8_t* data = nullptr;
+    std::uint64_t size = 0;
+    std::uint8_t* data = nullptr;
 
-    getBitstream(data, size);
+    if (!getBitstream(data, size))
+    {
+        return HEIF::ErrorCode::INVALID_MEDIA_FORMAT;
+    }
     fr.size        = size;
     fr.data        = data;
     fr.mediaFormat = mFormat;
@@ -435,11 +330,42 @@ HEIF::ErrorCode CodedImageItem::save(HEIF::Writer* aWriter)
 
     // TOODO: should mediadata reuse be possible (technically yes, but do it later?)
     error = aWriter->feedMediaData(fr, mediaDataId);
-    if (HEIF::ErrorCode::OK != error)
-        return error;
-    error = aWriter->addImage(mediaDataId, mId);
-    if (HEIF::ErrorCode::OK != error)
-        return error;
+
+    // free temporary data.
     delete[] fr.data;
+
+    if (HEIF::ErrorCode::OK != error)
+        return error;
+    HEIF::ImageId newId;
+    error = aWriter->addImage(mediaDataId, newId);
+    setId(newId);
+    if (HEIF::ErrorCode::OK != error)
+        return error;
+
+    // save base images.. needs to be done here since we only get the correct mId AFTER aWriter->addImage.
+    if (!mBaseImages.empty())
+    {
+        HEIF::Array<HEIF::ImageId> toImageIds(mBaseImages.size());
+        std::uint32_t count = 0;
+        for (ImageItem* image : mBaseImages)
+        {
+            if (image == nullptr)
+            {
+                return HEIF::ErrorCode::INVALID_ITEM_ID;
+            }
+            if (image->getId() == Heif::InvalidItem)
+            {
+                error = image->save(aWriter);
+                if (HEIF::ErrorCode::OK != error)
+                    return error;
+            }
+            toImageIds[count] = image->getId();
+            ++count;
+        }
+        error = aWriter->addBaseItemReference(getId(), toImageIds);
+        if (HEIF::ErrorCode::OK != error)
+            return error;
+    }
+
     return ImageItem::save(aWriter);
 }

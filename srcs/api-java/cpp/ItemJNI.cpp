@@ -15,21 +15,47 @@
 #include <jni.h>
 #include "Helpers.h"
 #include "Item.h"
-#define JNI_METHOD(return_type, method_name) JNIEXPORT return_type JNICALL Java_com_nokia_heif_Item_##method_name
+#define CLASS_NAME Item
 extern "C"
 {
-    JNI_METHOD(jstring, getTypeNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jstring, getTypeNative)
     {
-        HEIFPP::Item *instance = (HEIFPP::Item *) getNativeHandle(env, obj);
+        HEIFPP::Item *instance = (HEIFPP::Item *) getNativeHandle(env, self);
         return env->NewStringUTF(instance->getType().value);
     }
 
-    JNI_METHOD(void, destroyContextNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(void, destroyContextNative)
     {
-        NATIVE_ITEM(nativeItem, obj);
-        jobject javaHandle = (jobject) nativeItem->getContext();
+        NATIVE_SELF;
+        jobject javaHandle = GET_JAVA_OBJECT(nativeSelf);
         env->DeleteGlobalRef(javaHandle);
-        setNativeHandle(env, obj, 0);
-        delete nativeItem;
+        setNativeHandle(env, self, 0);
+        delete nativeSelf;
+    }
+
+    JNI_METHOD_ARG(jboolean, isEssentialPropertyNative, jobject property)
+    {
+        NATIVE_SELF;
+        NATIVE_ITEM_PROPERTY(nativeProperty, property);
+        return static_cast<jboolean>(nativeSelf->isEssential(nativeProperty));
+    }
+
+    JNI_METHOD_ARG(void, setEssentialPropertyNative, jobject property, jboolean essential)
+    {
+        NATIVE_SELF;
+        NATIVE_ITEM_PROPERTY(nativeProperty, property);
+        nativeSelf->setEssential(nativeProperty, essential);
+    }
+
+    JNI_METHOD(jint, getGroupCountNative)
+    {
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->getGroupCount());
+    }
+
+    JNI_METHOD_ARG(jobject, getGroupNative, jint index)
+    {
+        NATIVE_SELF;
+        return getJavaEntityGroup(env, getJavaHEIF(env, self), nativeSelf->getGroup(static_cast<uint32_t>(index)));
     }
 }

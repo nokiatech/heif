@@ -15,6 +15,7 @@
 #include <heifwriter.h>
 
 using namespace HEIFPP;
+
 DerivedImageItem::DerivedImageItem(Heif* aHeif, const HEIF::FourCC& aType)
     : ImageItem(aHeif, aType, true, false)
 {
@@ -44,10 +45,10 @@ HEIF::ErrorCode DerivedImageItem::load(HEIF::Reader* aReader, const HEIF::ImageI
         error = aReader->getReferencedFromItemListByType(aId, "dimg", dimgIds);
         if (HEIF::ErrorCode::OK == error)
         {
-            mSourceImages.reserve((uint32_t) dimgIds.size);
+            mSourceImages.reserve((std::uint32_t) dimgIds.size);
             for (const auto& dimgId : dimgIds)
             {
-                ImageItem* image = static_cast<ImageItem*>(mHeif->constructItem(aReader, dimgId, error));
+                ImageItem* image = static_cast<ImageItem*>(getHeif()->constructItem(aReader, dimgId, error));
                 if (HEIF::ErrorCode::OK != error)
                 {
                     return error;
@@ -58,11 +59,11 @@ HEIF::ErrorCode DerivedImageItem::load(HEIF::Reader* aReader, const HEIF::ImageI
     }
     return error;
 }
-uint32_t DerivedImageItem::getSourceImageCount() const
+std::uint32_t DerivedImageItem::getSourceImageCount() const
 {
-    return (uint32_t) mSourceImages.size();
+    return (std::uint32_t) mSourceImages.size();
 }
-ImageItem* DerivedImageItem::getSourceImage(uint32_t aId)
+ImageItem* DerivedImageItem::getSourceImage(std::uint32_t aId)
 {
     if (aId < mSourceImages.size())
     {
@@ -70,7 +71,7 @@ ImageItem* DerivedImageItem::getSourceImage(uint32_t aId)
     }
     return nullptr;
 }
-const ImageItem* DerivedImageItem::getSourceImage(uint32_t aId) const
+const ImageItem* DerivedImageItem::getSourceImage(std::uint32_t aId) const
 {
     if (aId < mSourceImages.size())
     {
@@ -78,11 +79,11 @@ const ImageItem* DerivedImageItem::getSourceImage(uint32_t aId) const
     }
     return nullptr;
 }
-void DerivedImageItem::setSourceImage(uint32_t aId, ImageItem* aImage)
+void DerivedImageItem::setSourceImage(std::uint32_t aId, ImageItem* aImage)
 {
     if (aId < mSourceImages.size())
     {
-        auto it = mSourceImages.begin() + (int32_t) aId;
+        auto it = mSourceImages.begin() + (std::int32_t) aId;
         if (*it)
         {
             if (!removeSourceLink(*it, this))
@@ -122,11 +123,11 @@ bool DerivedImageItem::setSourceImage(ImageItem* aOldImage, ImageItem* aNewImage
     return found;
 }
 
-void DerivedImageItem::removeSourceImage(uint32_t aId)
+void DerivedImageItem::removeSourceImage(std::uint32_t aId)
 {
     if (aId < mSourceImages.size())
     {
-        auto it = mSourceImages.begin() + (int32_t) aId;
+        auto it = mSourceImages.begin() + (std::int32_t) aId;
         if (*it)
         {
             if (!removeSourceLink(*it, this))
@@ -172,11 +173,11 @@ bool DerivedImageItem::removeSourceImage(ImageItem* aImage)
     return found;
 }
 
-void DerivedImageItem::reserveSourceImages(uint32_t aCount)
+void DerivedImageItem::reserveSourceImages(std::uint32_t aCount)
 {
     if (aCount < mSourceImages.size())
     {
-        for (auto it = mSourceImages.begin() + (int32_t) aCount; it != mSourceImages.end(); ++it)
+        for (auto it = mSourceImages.begin() + (std::int32_t) aCount; it != mSourceImages.end(); ++it)
         {
             if (!removeSourceLink(*it, this))
             {

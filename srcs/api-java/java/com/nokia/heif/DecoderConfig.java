@@ -49,6 +49,7 @@ public abstract class DecoderConfig extends Base
             throws Exception
     {
         checkState();
+        checkParameter(config);
         setConfigNative(config);
     }
 

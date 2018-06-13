@@ -13,6 +13,7 @@
 #pragma once
 
 #include <MimeItem.h>
+
 namespace HEIFPP
 {
     // generic base for all 'mime' type items. (xmp, mpeg-7, possibly others later.)
@@ -20,11 +21,11 @@ namespace HEIFPP
     {
     public:
         MPEG7Item(Heif* aHeif);
-        virtual ~MPEG7Item() = default;
+        ~MPEG7Item() = default;
 
     protected:
-        virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId);
-        virtual HEIF::ErrorCode save(HEIF::Writer* aWriter);
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         MPEG7Item& operator=(const MPEG7Item&) = delete;

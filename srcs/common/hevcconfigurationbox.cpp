@@ -15,18 +15,23 @@
 #include "bitstream.hpp"
 
 HevcConfigurationBox::HevcConfigurationBox()
-    : Box("hvcC")
+    : DecoderConfigurationBox("hvcC")
     , mHevcConfig()
 {
 }
 
 HevcConfigurationBox::HevcConfigurationBox(const HevcConfigurationBox& box)
-    : Box(box.getType())
+    : DecoderConfigurationBox(box.getType())
     , mHevcConfig(box.mHevcConfig)
 {
 }
 
-const HevcDecoderConfigurationRecord& HevcConfigurationBox::getConfiguration() const
+const HevcDecoderConfigurationRecord& HevcConfigurationBox::getHevcConfiguration() const
+{
+    return mHevcConfig;
+}
+
+const DecoderConfigurationRecord& HevcConfigurationBox::getConfiguration() const
 {
     return mHevcConfig;
 }

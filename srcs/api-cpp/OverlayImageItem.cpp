@@ -15,6 +15,7 @@
 #include <heifwriter.h>
 
 using namespace HEIFPP;
+
 Overlay::Overlay(Heif* aHeif)
     : DerivedImageItem(aHeif, HEIF::FourCC("iovl"))
 {
@@ -23,41 +24,41 @@ Overlay::Overlay(Heif* aHeif)
     mB = 0;
     mA = 65535;
 }
-uint16_t Overlay::r() const
+std::uint16_t Overlay::r() const
 {
     return mR;
 }
-uint16_t Overlay::g() const
+std::uint16_t Overlay::g() const
 {
     return mG;
 }
-uint16_t Overlay::b() const
+std::uint16_t Overlay::b() const
 {
     return mB;
 }
-uint16_t Overlay::a() const
+std::uint16_t Overlay::a() const
 {
     return mA;
 }
 
-void Overlay::setR(uint16_t aR)
+void Overlay::setR(std::uint16_t aR)
 {
     mR = aR;
 }
-void Overlay::setG(uint16_t aG)
+void Overlay::setG(std::uint16_t aG)
 {
     mG = aG;
 }
-void Overlay::setB(uint16_t aB)
+void Overlay::setB(std::uint16_t aB)
 {
     mB = aB;
 }
-void Overlay::setA(uint16_t aA)
+void Overlay::setA(std::uint16_t aA)
 {
     mA = aA;
 }
 
-ImageItem* Overlay::getImage(uint32_t aId, HEIF::Overlay::Offset& aOffset)
+ImageItem* Overlay::getImage(std::uint32_t aId, HEIF::Overlay::Offset& aOffset)
 {
     if (aId < getSourceImageCount())
     {
@@ -66,7 +67,7 @@ ImageItem* Overlay::getImage(uint32_t aId, HEIF::Overlay::Offset& aOffset)
     }
     return nullptr;
 }
-const ImageItem* Overlay::getImage(uint32_t aId, HEIF::Overlay::Offset& aOffset) const
+const ImageItem* Overlay::getImage(std::uint32_t aId, HEIF::Overlay::Offset& aOffset) const
 {
     if (aId < getSourceImageCount())
     {
@@ -75,12 +76,12 @@ const ImageItem* Overlay::getImage(uint32_t aId, HEIF::Overlay::Offset& aOffset)
     }
     return nullptr;
 }
-uint32_t Overlay::imageCount() const
+std::uint32_t Overlay::imageCount() const
 {
     return getSourceImageCount();
 }
 
-Result Overlay::setImage(uint32_t aId, ImageItem* aImage, const HEIF::Overlay::Offset& aOffset)
+Result Overlay::setImage(std::uint32_t aId, ImageItem* aImage, const HEIF::Overlay::Offset& aOffset)
 {
     if (aId >= getSourceImageCount())
     {
@@ -96,14 +97,14 @@ void Overlay::addImage(ImageItem* aImage, const HEIF::Overlay::Offset& aOffset)
     mOffsets.push_back(aOffset);
 }
 
-Result Overlay::removeImage(uint32_t aId)
+Result Overlay::removeImage(std::uint32_t aId)
 {
     if (aId >= getSourceImageCount())
     {
         return Result::INDEX_OUT_OF_BOUNDS;
     }
     removeSourceImage(aId);
-    mOffsets.erase(mOffsets.begin() + (int32_t) aId);
+    mOffsets.erase(mOffsets.begin() + (std::int32_t) aId);
     return Result::OK;
 }
 Result Overlay::removeImage(ImageItem* aImage)
@@ -114,8 +115,8 @@ Result Overlay::removeImage(ImageItem* aImage)
         const auto& it = FindItemIn(mSourceImages, aImage);
         if (it == mSourceImages.end())
             break;
-        intptr_t id = it - mSourceImages.begin();
-        removeSourceImage((uint32_t) id);
+        std::intptr_t id = it - mSourceImages.begin();
+        removeSourceImage((std::uint32_t) id);
         mOffsets.erase(mOffsets.begin() + id);
         found = true;
     }
@@ -162,7 +163,8 @@ HEIF::ErrorCode Overlay::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 
 HEIF::ErrorCode Overlay::save(HEIF::Writer* aWriter)
 {
-    HEIF::ErrorCode error;
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+    ;
     HEIF::Overlay overlay;
     overlay.outputWidth  = width();
     overlay.outputHeight = height();
@@ -172,7 +174,7 @@ HEIF::ErrorCode Overlay::save(HEIF::Writer* aWriter)
     overlay.a            = mA;
     HEIF::Array<HEIF::ImageId> ids(imageCount());
     HEIF::Array<HEIF::Overlay::Offset> offsets(imageCount());
-    for (uint32_t i = 0; i < imageCount(); ++i)
+    for (std::uint32_t i = 0; i < imageCount(); ++i)
     {
         ImageItem* image = getImage(i, offsets[i]);
         if (image == nullptr)
@@ -189,7 +191,9 @@ HEIF::ErrorCode Overlay::save(HEIF::Writer* aWriter)
     }
     overlay.imageIds = ids;
     overlay.offsets  = offsets;
-    error            = aWriter->addDerivedImageItem(overlay, mId);
+    HEIF::ImageId newId;
+    error = aWriter->addDerivedImageItem(overlay, newId);
+    setId(newId);
     if (HEIF::ErrorCode::OK != error)
         return error;
     return DerivedImageItem::save(aWriter);

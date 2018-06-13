@@ -35,6 +35,11 @@ HevcConfigurationBox& HevcSampleEntry::getHevcConfigurationBox()
     return mHevcConfigurationBox;
 }
 
+const HevcConfigurationBox& HevcSampleEntry::getHevcConfigurationBox() const
+{
+    return mHevcConfigurationBox;
+}
+
 void HevcSampleEntry::createCodingConstraintsBox()
 {
     mIsCodingConstraintsPresent = true;
@@ -95,4 +100,14 @@ void HevcSampleEntry::parseBox(ISOBMFF::BitStream& bitstr)
 HevcSampleEntry* HevcSampleEntry::clone() const
 {
     return CUSTOM_NEW(HevcSampleEntry, (*this));
+}
+
+const Box* HevcSampleEntry::getConfigurationBox() const
+{
+    return &mHevcConfigurationBox;
+}
+
+const DecoderConfigurationRecord* HevcSampleEntry::getConfigurationRecord() const
+{
+    return &mHevcConfigurationBox.getConfiguration();
 }

@@ -16,38 +16,39 @@
 #include <jni.h>
 #include "DescriptiveProperty.h"
 #include "Helpers.h"
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_AuxiliaryProperty_##method_name
+
+#define CLASS_NAME AuxiliaryProperty
+
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::AuxProperty *nativeObject = new HEIFPP::AuxProperty(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
 
-    JNI_METHOD(void, setTypeNative)(JNIEnv *env, jobject obj, jstring javaString)
+    JNI_METHOD_ARG(void, setTypeNative, jstring javaString)
     {
-        NATIVE_AUXILIARY_PROPERTY(nativeHandle, obj);
+        NATIVE_AUXILIARY_PROPERTY(nativeHandle, self);
         const char *nativeString = env->GetStringUTFChars(javaString, 0);
         nativeHandle->auxType(nativeString);
         env->ReleaseStringUTFChars(javaString, nativeString);
     }
 
-    JNI_METHOD(jstring, getTypeNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jstring, getTypeNative)
     {
-        NATIVE_AUXILIARY_PROPERTY(nativeHandle, obj);
+        NATIVE_AUXILIARY_PROPERTY(nativeHandle, self);
         return env->NewStringUTF(nativeHandle->auxType().data());
     }
 
-    JNI_METHOD(void, setSubTypeNative)(JNIEnv *env, jobject obj, jbyteArray subType)
+    JNI_METHOD_ARG(void, setSubTypeNative, jbyteArray subType)
     {
-        NATIVE_AUXILIARY_PROPERTY(nativeHandle, obj);
+        NATIVE_AUXILIARY_PROPERTY(nativeHandle, self);
         jbyte *nativeData = env->GetByteArrayElements(subType, 0);
-        uint32_t dataSize = env->GetArrayLength(subType);
+        uint32_t dataSize = static_cast<uint32_t>(env->GetArrayLength(subType));
         std::vector<uint8_t> dataAsVector;
         dataAsVector.reserve(dataSize);
         dataAsVector.assign(nativeData, nativeData + dataSize);
@@ -55,9 +56,10 @@ extern "C"
         env->ReleaseByteArrayElements(subType, nativeData, 0);
     }
 
-    JNI_METHOD(jobject, getSubTypeNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getSubTypeNative)
     {
-        NATIVE_AUXILIARY_PROPERTY(nativeHandle, obj);
-        return env->NewDirectByteBuffer((void *) nativeHandle->subType().data(), nativeHandle->subType().size());
+        NATIVE_AUXILIARY_PROPERTY(nativeHandle, self);
+        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeHandle->subType().data()),
+                                        static_cast<jlong>(nativeHandle->subType().size()));
     }
 }

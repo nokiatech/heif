@@ -15,28 +15,28 @@
 #include <jni.h>
 #include "Helpers.h"
 #include "IdentityImageItem.h"
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_IdentityImageItem_##method_name
+
+#define CLASS_NAME IdentityImageItem
 
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::Identity *nativeObject = new HEIFPP::Identity(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
-    JNI_METHOD(jobject, getImageNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jobject, getImageNative)
     {
-        NATIVE_IDENTITY_IMAGE_ITEM(nativeHandle, obj);
-        return getJavaItem(env, getJavaHEIF(env, obj), nativeHandle->getImage());
+        NATIVE_IDENTITY_IMAGE_ITEM(nativeHandle, self);
+        return getJavaItem(env, getJavaHEIF(env, self), nativeHandle->getImage());
     }
 
-    JNI_METHOD(void, setImageNative)(JNIEnv *env, jobject obj, jobject image)
+    JNI_METHOD_ARG(void, setImageNative, jobject image)
     {
-        NATIVE_IDENTITY_IMAGE_ITEM(nativeHandle, obj);
+        NATIVE_IDENTITY_IMAGE_ITEM(nativeHandle, self);
         NATIVE_IMAGE_ITEM(nativeImage, image);
         nativeHandle->setImage(nativeImage);
     }

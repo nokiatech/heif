@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef CUSTOMALLOCATOR_HPP_
@@ -106,25 +108,28 @@ public:
     using value_type = T;
 
 #if HEIF_GCC_ALLOCATOR_FIX == 1
-    //GCC versions prior to 6 had incomplete, non-compliant c++11 allocator support.
-    //and require declaring all of these, which in turn causes compliant implementations to work non-optimally.
-    //Also if using 'libc++' we should not do this.
-    using size_type = std::size_t;
-    using pointer = T * ;
-    using const_pointer = const T*;
-    using reference = T&;
-    using const_reference =const T&;
+    // GCC versions prior to 6 had incomplete, non-compliant c++11 allocator support.
+    // and require declaring all of these, which in turn causes compliant implementations to work non-optimally.
+    // Also if using 'libc++' we should not do this.
+    using size_type       = std::size_t;
+    using pointer         = T*;
+    using const_pointer   = const T*;
+    using reference       = T&;
+    using const_reference = const T&;
+    using difference_type = std::ptrdiff_t;
     template <typename U>
     struct rebind
     {
         using other = Allocator<U>;
     };
 
-    template< class U, class... Args > void construct( U* p, Args&&... args )
+    template <class U, class... Args>
+    void construct(U* p, Args&&... args)
     {
-        ::new((void *)p) U(std::forward<Args>(args)...);
+        ::new ((void*) p) U(std::forward<Args>(args)...);
     }
-    template< class U > void destroy( U* p )
+    template <class U>
+    void destroy(U* p)
     {
         p->~U();
     }
@@ -148,7 +153,7 @@ public:
 
     void deallocate(T* const p, std::size_t) const noexcept
     {
-        return customDeallocate((void*)p);
+        return customDeallocate((void*) p);
     }
 
     template <class U>
@@ -207,22 +212,26 @@ public:
     Exception()
     {
     }
-    Exception(const String&)
+    Exception(const char* msg)
+        : mMessage(msg)
     {
     }
     virtual const char* what() const
     {
-        return "";
+        return mMessage;
     }
     virtual ~Exception()
     {
     }
+
+private:
+    const char* mMessage;
 };
 
 class RuntimeError : public Exception
 {
 public:
-    RuntimeError(const String& str)
+    RuntimeError(const char* str)
         : Exception(str)
     {
     }
@@ -231,7 +240,7 @@ public:
 class LogicError : public Exception
 {
 public:
-    LogicError(const String& str)
+    LogicError(const char* str)
         : Exception(str)
     {
     }

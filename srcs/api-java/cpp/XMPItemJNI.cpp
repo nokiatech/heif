@@ -15,14 +15,14 @@
 #include <jni.h>
 #include "Helpers.h"
 #include "XMPItem.h"
-#define JNI_METHOD(return_type, method_name) JNIEXPORT return_type JNICALL Java_com_nokia_heif_XMPItem_##method_name
+#define CLASS_NAME XMPItem
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv* env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::XMPItem* nativeObject = new HEIFPP::XMPItem(nativeHeif);
-        nativeObject->setContext((void*) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 }

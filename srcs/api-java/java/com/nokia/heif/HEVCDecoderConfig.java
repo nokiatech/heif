@@ -18,17 +18,27 @@ package com.nokia.heif;
  */
 public final class HEVCDecoderConfig extends DecoderConfig
 {
-
     /**
      * Creates a new HEVCDecoderConfig to the given HEIF instance
+     *
      * @param heif The parent HEIF instance for the new object
+     * @param config Byte array containing the config data
      * @throws Exception Thrown if the parent HEIF instance is invalid
      */
-    public HEVCDecoderConfig(HEIF heif)
+    public HEVCDecoderConfig(HEIF heif, byte[] config)
             throws Exception
     {
         super(heif);
         mNativeHandle = createContextNative(heif);
+        try
+        {
+            setConfig(config);
+        }
+        catch (Exception ex)
+        {
+            destroy();
+            throw ex;
+        }
     }
 
     /**

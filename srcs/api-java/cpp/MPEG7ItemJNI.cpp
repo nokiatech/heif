@@ -15,14 +15,14 @@
 #include <jni.h>
 #include "Helpers.h"
 #include "MPEG7Item.h"
-#define JNI_METHOD(return_type, method_name) JNIEXPORT return_type JNICALL Java_com_nokia_heif_MPEG7Item_##method_name
+#define CLASS_NAME MPEG7Item
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv* env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::MPEG7Item* nativeObject = new HEIFPP::MPEG7Item(nativeHeif);
-        nativeObject->setContext((void*) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 }

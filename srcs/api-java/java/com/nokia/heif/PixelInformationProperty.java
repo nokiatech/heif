@@ -64,6 +64,7 @@ public final class PixelInformationProperty extends DescriptiveProperty
             throws Exception
     {
         checkState();
+        checkParameter(pixelInformation);
         setPixelInformationNative(pixelInformation);
     }
 

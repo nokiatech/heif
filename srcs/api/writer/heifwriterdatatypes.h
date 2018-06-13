@@ -14,8 +14,8 @@
 #ifndef WRITERAPIDATATYPES_HPP
 #define WRITERAPIDATATYPES_HPP
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include "heifcommondatatypes.h"
 #include "heifexport.h"
@@ -69,10 +69,10 @@ namespace HEIF
 
     struct HEIF_DLL_PUBLIC Data
     {
-        MediaFormat mediaFormat;
+        MediaFormat mediaFormat = MediaFormat::INVALID;
 
-        uint8_t* data;
-        uint64_t size;
+        uint8_t* data = nullptr;
+        uint64_t size = 0;
 
         DecoderConfigId decoderConfigId =
             0;  // required for MediaFormat values: AVC, HEVC, JPEG and AAC. Not needed for EXIF,XMP or MPEG7 metadata.
@@ -88,32 +88,6 @@ namespace HEIF
          * decoding. Direct reference samples list 'refs' is a sample group that identifies all the direct reference
          * samples for a sample. **/
         Array<SequenceImageId> referenceSamples;  ///< list of samples that this sample has direct decode dependency on.
-    };
-
-    enum class EditType
-    {
-        EMPTY,
-        DWELL,
-        SHIFT
-    };
-
-    /**
-     * @brief A single edit EditList unit */
-    struct HEIF_DLL_PUBLIC EditUnit
-    {
-        EditType editType;        ///< Edit unit type (empty, dwell, shift)
-        std::uint32_t mediaTime;  ///< Edit time in media in milliseconds
-        std::uint32_t duration;   ///< Edit unit length in milliseconds
-    };
-
-    /**
-     * @brief Edit list for tracks */
-    struct HEIF_DLL_PUBLIC EditList
-    {
-        bool looping       = false;  ///< True if the edit list should be repeated indefinitely.
-        double repetitions = 0.0;    ///< Edit list repetitions, a non-negative value. Only affects when looping is set
-                                     ///< true. Zero means infinite looping.
-        Array<EditUnit> editUnits;   ///< Edit units in the order they should be applied.
     };
 
     struct HEIF_DLL_PUBLIC EquivalenceTimeOffset

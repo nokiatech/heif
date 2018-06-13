@@ -18,15 +18,17 @@ public final class RotateProperty extends TransformativeProperty
 {
 
     /**
-     * Creates a RotateProperty to the given HEIF instance
+     * Creates a RotateProperty to the given HEIF instance with the given rotation value
      * @param heif The parent HEIF instance for the new object
+     * @param rotation The rotation value
      * @throws Exception Thrown if the parent HEIF instance is invalid
      */
-    public RotateProperty(HEIF heif)
+    public RotateProperty(HEIF heif, Rotation rotation)
             throws Exception
     {
         super(heif);
         mNativeHandle = createContextNative(heif);
+        setRotation(rotation);
     }
 
     /**

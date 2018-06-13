@@ -14,7 +14,7 @@
 #ifndef HEIFREADER_H
 #define HEIFREADER_H
 
-#include <stdint.h>
+#include <cstdint>
 #include "heifallocator.h"
 #include "heifexport.h"
 #include "heifreaderdatatypes.h"
@@ -98,21 +98,21 @@ namespace HEIF
          *  @param [out] displayWidth  Maximum display width in pixels.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID */
-        virtual ErrorCode getDisplayWidth(SequenceId sequenceId, uint32_t& displayWidth) const = 0;
+        virtual ErrorCode getDisplayWidth(const SequenceId& sequenceId, uint32_t& displayWidth) const = 0;
 
         /** Get maximum display height from track headers.
          *  @param [in]  sequenceId     Image sequence ID (track ID).
          *  @param [out] displayHeight  Maximum display height in pixels.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID */
-        virtual ErrorCode getDisplayHeight(SequenceId sequenceId, uint32_t& displayHeight) const = 0;
+        virtual ErrorCode getDisplayHeight(const SequenceId& sequenceId, uint32_t& displayHeight) const = 0;
 
         /** Get width of an image item.
          *  @param [in]   imageId An image item in the metabox
          *  @param [out]  width  Width in pixels.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
-        virtual ErrorCode getWidth(ImageId imageId, uint32_t& width) const = 0;
+        virtual ErrorCode getWidth(const ImageId& imageId, uint32_t& width) const = 0;
 
         /** Get width of an image/sample.
          *  @param [in]  sequenceId Image sequence ID (track ID).
@@ -120,14 +120,16 @@ namespace HEIF
          *  @param [out] width      Width in pixels.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID */
-        virtual ErrorCode getWidth(SequenceId sequenceId, SequenceImageId imageId, uint32_t& width) const = 0;
+        virtual ErrorCode getWidth(const SequenceId& sequenceId,
+                                   const SequenceImageId& imageId,
+                                   uint32_t& width) const = 0;
 
         /** Get height of an image item.
          *  @param [in]  imageId An image item in the metabox
          *  @param [out] height  Height in pixels.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
-        virtual ErrorCode getHeight(ImageId imageId, uint32_t& height) const = 0;
+        virtual ErrorCode getHeight(const ImageId& imageId, uint32_t& height) const = 0;
 
         /** Get height of an image/sample.
          *  @param [in]  sequenceId Image sequence ID (track ID).
@@ -135,11 +137,14 @@ namespace HEIF
          *  @param [out] height     Height in pixels.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID */
-        virtual ErrorCode getHeight(SequenceId sequenceId, SequenceImageId imageId, uint32_t& height) const = 0;
+        virtual ErrorCode getHeight(const SequenceId& sequenceId,
+                                    const SequenceImageId& imageId,
+                                    uint32_t& height) const = 0;
 
         /** Get transformation matrix for the video, from the Movie Header Box of the file (if present).
          *  @param [out] matrix The transformation matrix, consisting of 9 32-bit integers.
-         *                      An empty Array if a Movie Header Box is not present in the file.
+         *                      Returns error code NOT_APPLICABLE if a Movie Header Box is not present in
+         *                      the file.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED */
         virtual ErrorCode getMatrix(Array<int32_t>& matrix) const = 0;
@@ -149,14 +154,14 @@ namespace HEIF
          *  @param [out] matrix     The transformation matrix, consisting of 9 32-bit integers.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, INVALID_SEQUENCE_ID, UNINITIALIZED */
-        virtual ErrorCode getMatrix(SequenceId sequenceId, Array<int32_t>& matrix) const = 0;
+        virtual ErrorCode getMatrix(const SequenceId& sequenceId, Array<int32_t>& matrix) const = 0;
 
         /** Get playback duration of image sequence or media track in seconds.
          *  This considers also edit lists.
          *  @param [in]  sequenceId Image sequence ID (track ID).
          *  @param [out] duration   The playback duration of track in seconds.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID */
-        virtual ErrorCode getPlaybackDurationInSecs(SequenceId sequenceId, double& duration) const = 0;
+        virtual ErrorCode getPlaybackDurationInSecs(const SequenceId& sequenceId, double& duration) const = 0;
 
         /** Get an array of items in MetaBox having the requested type.
          *  @param [in]  itemType  Four-character code of the item type (e.g. 'hvc1', 'iovl', 'grid', 'Exif', 'mime',
@@ -174,8 +179,8 @@ namespace HEIF
          *                          An empty Array if no items are found.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_FUNCTION_PARAMETER, INVALID_SEQUENCE_ID */
-        virtual ErrorCode getItemListByType(SequenceId sequenceId,
-                                            TrackSampleType itemType,
+        virtual ErrorCode getItemListByType(const SequenceId& sequenceId,
+                                            const TrackSampleType& itemType,
                                             Array<SequenceImageId>& imageIds) const = 0;
 
         /** Get an array of master image items of the image collection.
@@ -189,15 +194,15 @@ namespace HEIF
          *  @param [out] imageIds   Found items, if any. The order of the item ids are as present in the file.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID */
-        virtual ErrorCode getMasterImages(SequenceId sequenceId, Array<SequenceImageId>& imageIds) const = 0;
+        virtual ErrorCode getMasterImages(const SequenceId& sequenceId, Array<SequenceImageId>& imageIds) const = 0;
 
         /** Get type of an item.
          *  @param [in]  itemId Id of an item in the image collection.
          *  @param [out] type   Four-character code of the item type (e.g. 'hvc1', 'iovl', 'grid', 'Exif', 'mime',
-         * 'hvt1', 'iden')
+         *                      'hvt1', 'iden')
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
-        virtual ErrorCode getItemType(ImageId itemId, FourCC& type) const = 0;
+        virtual ErrorCode getItemType(const ImageId& itemId, FourCC& type) const = 0;
 
         /** Get sample description entry type of a sample / sequence image.
          *  @param [in]  sequenceId Image sequence ID (track ID).
@@ -205,7 +210,9 @@ namespace HEIF
          *  @param [out] type       Sample description entry type is returned.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID */
-        virtual ErrorCode getItemType(SequenceId sequenceId, SequenceImageId imageId, FourCC& type) const = 0;
+        virtual ErrorCode getItemType(const SequenceId& sequenceId,
+                                      const SequenceImageId& imageId,
+                                      FourCC& type) const = 0;
 
         /** Get items which are referenced by the given item with a certain type of reference.
          *  @param [in]  fromItemId    Item id (reference from).
@@ -215,8 +222,8 @@ namespace HEIF
          *                             An empty Array if no items are found.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
-        virtual ErrorCode getReferencedFromItemListByType(ImageId fromItemId,
-                                                          FourCC referenceType,
+        virtual ErrorCode getReferencedFromItemListByType(const ImageId& fromItemId,
+                                                          const FourCC& referenceType,
                                                           Array<ImageId>& itemIds) const = 0;
 
         /** Get items which are referencing the given item with a certain type of reference.
@@ -227,8 +234,8 @@ namespace HEIF
          *                             An empty Array if no items are found.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
-        virtual ErrorCode getReferencedToItemListByType(ImageId toItemId,
-                                                        FourCC referenceType,
+        virtual ErrorCode getReferencedToItemListByType(const ImageId& toItemId,
+                                                        const FourCC& referenceType,
                                                         Array<ImageId>& itemIds) const = 0;
 
         /** Get the ID of the primary item of the metabox/file.
@@ -250,7 +257,7 @@ namespace HEIF
          * values with bytestream header (0001).
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, FILE_READ_ERROR */
-        virtual ErrorCode getItemData(ImageId imageId,
+        virtual ErrorCode getItemData(const ImageId& imageId,
                                       uint8_t* memoryBuffer,
                                       uint64_t& memoryBufferSize,
                                       bool bytestreamHeaders = true) const = 0;
@@ -269,8 +276,8 @@ namespace HEIF
          * values with bytestream header (0001).
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_ITEM_ID */
-        virtual ErrorCode getItemData(SequenceId sequenceId,
-                                      SequenceImageId imageId,
+        virtual ErrorCode getItemData(const SequenceId& sequenceId,
+                                      const SequenceImageId& imageId,
                                       uint8_t* memoryBuffer,
                                       uint64_t& memoryBufferSize,
                                       bool bytestreamHeaders = true) const = 0;
@@ -280,76 +287,76 @@ namespace HEIF
          *  @param [out] iovlItem  Overlay derived item struct with requested data.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, PROTECTED_ITEM */
-        virtual ErrorCode getItem(ImageId imageId, Overlay& iovlItem) const = 0;
+        virtual ErrorCode getItem(const ImageId& imageId, Overlay& iovlItem) const = 0;
 
         /** Get data of an image grid item (item type 'grid').
          *  @param [in]  imageId   Id of Image overlay item
          *  @param [out] gridItem  Grid derived item struct with requested data.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, PROTECTED_ITEM */
-        virtual ErrorCode getItem(ImageId imageId, Grid& gridItem) const = 0;
+        virtual ErrorCode getItem(const ImageId& imageId, Grid& gridItem) const = 0;
 
         /** Get item property Image Mirror ('imir')
          *  @param [in]  index  Id of the property. @see getItemProperties()
          *  @param [out] imir   Data of the property.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
-        virtual ErrorCode getProperty(PropertyId index, Mirror& imir) const = 0;
+        virtual ErrorCode getProperty(const PropertyId& index, Mirror& imir) const = 0;
 
         /** Get item property Image Rotation ('irot')
          *  @param [in]  index  Id of the property. @see getItemProperties()
          *  @param [out] irot   Data of the property.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
-        virtual ErrorCode getProperty(PropertyId index, Rotate& irot) const = 0;
+        virtual ErrorCode getProperty(const PropertyId& index, Rotate& irot) const = 0;
 
         /** Get item property Relative Location ('rloc')
          *  @param [in]  index  Id of the property. @see getItemProperties()
          *  @param [out] rloc   Data of the property.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
-        virtual ErrorCode getProperty(PropertyId index, RelativeLocation& rloc) const = 0;
+        virtual ErrorCode getProperty(const PropertyId& index, RelativeLocation& rloc) const = 0;
 
         /** Get item property Pixel information ('pixi')
          *  @param [in]  index  Id of the property. @see getItemProperties()
          *  @param [out] pixi   Data of the property.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
-        virtual ErrorCode getProperty(PropertyId index, PixelInformation& pixi) const = 0;
+        virtual ErrorCode getProperty(const PropertyId& index, PixelInformation& pixi) const = 0;
 
         /** Get item property Colour information ('colr')
          *  @param [in]  index  Id of the property. @see getItemProperties()
          *  @param [out] colr   Data of the property.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
-        virtual ErrorCode getProperty(PropertyId index, ColourInformation& colr) const = 0;
+        virtual ErrorCode getProperty(const PropertyId& index, ColourInformation& colr) const = 0;
 
         /** Get item property Pixel aspect ratio ('pasp')
          *  @param [in]  index  Id of the property. @see getItemProperties()
          *  @param [out] pasp   Data of the property.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
-        virtual ErrorCode getProperty(PropertyId index, PixelAspectRatio& pasp) const = 0;
+        virtual ErrorCode getProperty(const PropertyId& index, PixelAspectRatio& pasp) const = 0;
 
         /** Get property Clean aperture ('clap')
          *  @param [in]  index  Id of the property. @see getItemProperties()
          *  @param [out] clap   Data of the property.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
-        virtual ErrorCode getProperty(PropertyId index, CleanAperture& clap) const = 0;
+        virtual ErrorCode getProperty(const PropertyId& index, CleanAperture& clap) const = 0;
 
         /** Get image properties for auxiliary images ('auxC')
          *  @param [in]  index  Id of the property. @see getItemProperties()
          *  @param [out] auxC   Data of the property.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
-        virtual ErrorCode getProperty(PropertyId index, AuxiliaryType& auxC) const = 0;
+        virtual ErrorCode getProperty(const PropertyId& index, AuxiliaryType& auxC) const = 0;
 
         /** Get raw data of an item property.
          *  @param [in]  index     Id of the property. @see getItemProperties()
          *  @param [out] property  Property data.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
-        virtual ErrorCode getProperty(PropertyId index, RawProperty& property) const = 0;
+        virtual ErrorCode getProperty(const PropertyId& index, RawProperty& property) const = 0;
 
         /** Get Clean aperture ('clap') information from a sample description entry of a track.
          *  @param [in]  sequenceId Image sequence ID (track ID).
@@ -357,7 +364,9 @@ namespace HEIF
          *  @param [out] clap       Requested clean aperture data.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SAMPLE_DESCRIPTION_INDEX */
-        virtual ErrorCode getProperty(SequenceId sequenceId, uint32_t index, CleanAperture& clap) const = 0;
+        virtual ErrorCode getProperty(const SequenceId& sequenceId,
+                                      const uint32_t index,
+                                      CleanAperture& clap) const = 0;
 
         /** Get Auxiliary type info box ('auxi') information from a sample description entry of a track.
          *  @param [in]  sequenceId Image sequence ID (track ID).
@@ -365,14 +374,16 @@ namespace HEIF
          *  @param [out] auxi       Requested auxiliary data.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SAMPLE_DESCRIPTION_INDEX */
-        virtual ErrorCode getProperty(SequenceId sequenceId, uint32_t index, AuxiliaryType& auxi) const = 0;
+        virtual ErrorCode getProperty(const SequenceId& sequenceId,
+                                      const uint32_t index,
+                                      AuxiliaryType& auxi) const = 0;
 
         /** Get properties of an item.
          *  @param [in]  imageId       Item ID which properties to get.
          *  @param [out] propertyTypes Properties of an item.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
-        virtual ErrorCode getItemProperties(ImageId imageId, Array<ItemPropertyInfo>& propertyTypes) const = 0;
+        virtual ErrorCode getItemProperties(const ImageId& imageId, Array<ItemPropertyInfo>& propertyTypes) const = 0;
 
         /** Get data of an encoded image item.
          *  This method shall not be used if the item is not of 'hvc1', 'avc1' or 'master' type. @see getItemData()
@@ -382,7 +393,7 @@ namespace HEIF
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, PROTECTED_ITEM, UNSUPPORTED_CODE_TYPE,
          *                     BUFFER_SIZE_TOO_SMALL */
-        virtual ErrorCode getItemDataWithDecoderParameters(ImageId imageId,
+        virtual ErrorCode getItemDataWithDecoderParameters(const ImageId& imageId,
                                                            uint8_t* memoryBuffer,
                                                            uint64_t& memoryBufferSize) const = 0;
 
@@ -395,8 +406,8 @@ namespace HEIF
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID, UNSUPPORTED_CODE_TYPE,
          *                     BUFFER_SIZE_TOO_SMALL */
-        virtual ErrorCode getItemDataWithDecoderParameters(SequenceId sequenceId,
-                                                           SequenceImageId imageId,
+        virtual ErrorCode getItemDataWithDecoderParameters(const SequenceId& sequenceId,
+                                                           const SequenceImageId& imageId,
                                                            uint8_t* memoryBuffer,
                                                            uint64_t& memoryBufferSize) const = 0;
 
@@ -407,7 +418,7 @@ namespace HEIF
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID, UNPROTECTED_ITEM, BUFFER_SIZE_TOO_SMALL]
          */
-        virtual ErrorCode getItemProtectionScheme(ImageId imageId,
+        virtual ErrorCode getItemProtectionScheme(const ImageId& imageId,
                                                   uint8_t* memoryBuffer,
                                                   uint64_t& memoryBufferSize) const = 0;
 
@@ -417,7 +428,7 @@ namespace HEIF
          *                          For non-output samples, an empty Array.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID */
-        virtual ErrorCode getItemTimestamps(SequenceId sequenceId, Array<TimestampIDPair>& timestamps) const = 0;
+        virtual ErrorCode getItemTimestamps(const SequenceId& sequenceId, Array<TimestampIDPair>& timestamps) const = 0;
 
         /** Get display timestamps of an image. An image may be displayed many times based on the edit list.
          *  @param [in]  sequenceId Image sequence ID (track ID).
@@ -425,8 +436,8 @@ namespace HEIF
          *  @param [out] timestamps Array of timestamps. For non-output samples, an empty Array.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID */
-        virtual ErrorCode getTimestampsOfItem(SequenceId sequenceId,
-                                              SequenceImageId imageId,
+        virtual ErrorCode getTimestampsOfItem(const SequenceId& sequenceId,
+                                              const SequenceImageId& imageId,
                                               Array<int64_t>& timestamps) const = 0;
 
         /** Get items in decoding order.
@@ -437,7 +448,7 @@ namespace HEIF
          *                                 Timestamps in milliseconds. Timestamp truncated integer from float.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID */
-        virtual ErrorCode getItemsInDecodingOrder(SequenceId sequenceId,
+        virtual ErrorCode getItemsInDecodingOrder(const SequenceId& sequenceId,
                                                   Array<TimestampIDPair>& decodingOrder) const = 0;
 
         /** Retrieve decoding dependencies for given imageId, in decoding order.
@@ -448,8 +459,8 @@ namespace HEIF
          *                             For images that has no dependencies, this method returns imageId itself.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID */
-        virtual ErrorCode getDecodeDependencies(SequenceId sequenceId,
-                                                SequenceImageId imageId,
+        virtual ErrorCode getDecodeDependencies(const SequenceId& sequenceId,
+                                                const SequenceImageId& imageId,
                                                 Array<SequenceImageId>& dependencies) const = 0;
 
         /** Get coding type for image collection image.
@@ -458,7 +469,7 @@ namespace HEIF
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID. INVALID_ITEM_ID is also returned in case the item ID
          * exists, but it is a grid or overlay image item without own encoded data. */
-        virtual ErrorCode getDecoderCodeType(ImageId imageId, FourCC& type) const = 0;
+        virtual ErrorCode getDecoderCodeType(const ImageId& imageId, FourCC& type) const = 0;
 
         /** Get decoder code type for an image/sample.
          *  @param [in]  sequenceId Image sequence ID (track ID).
@@ -466,7 +477,9 @@ namespace HEIF
          *  @param [out] type       Decoder code type, e.g. "hvc1" or "avc1".
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID. */
-        virtual ErrorCode getDecoderCodeType(SequenceId sequenceId, SequenceImageId imageId, FourCC& type) const = 0;
+        virtual ErrorCode getDecoderCodeType(const SequenceId& sequenceId,
+                                             const SequenceImageId& imageId,
+                                             FourCC& type) const = 0;
 
         /** Get decoder configuration record parameter sets.
          *  The item must be a decodable image item, e.g. 'hvc1', 'avc1'.
@@ -480,19 +493,20 @@ namespace HEIF
          * DecoderSpecInfoType and actual payload for each.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
-        virtual ErrorCode getDecoderParameterSets(ImageId imageId, DecoderConfiguration& decoderInfos) const = 0;
+        virtual ErrorCode getDecoderParameterSets(const ImageId& imageId, DecoderConfiguration& decoderInfos) const = 0;
 
         /** Get decoder configuration record parameter sets.
          *  @param [in]  sequenceId    Image sequence ID (track ID).
          *  @param [in]  imageId       Identifier of an image in the sequence (a sample).
-         *  @param [out] decoderInfos  Decoder configuration record information stored in dynamic array containing
-         *                             DecoderSpecificInfo struct inside which decSpecInfoType is DecSpecInfoType enum:
-         *                             AVC_SPS, AVC_PPS, HEVC_VPS, HEVC_SPS, HEVC_PPS
+         *  @param [out] decoderInfos  DecoderConfiguration struct containing:
+         *                             DecoderConfigId             Property Id for decoder configs (only unique within
+         *                                                         same SequenceId)
+         *                             Array<DecoderSpecificInfo>  Array of decoder configs with type
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_SEQUENCE_IMAGE_ID */
-        virtual ErrorCode getDecoderParameterSets(SequenceId sequenceId,
-                                                  SequenceImageId imageId,
-                                                  Array<DecoderSpecificInfo>& decoderInfos) const = 0;
+        virtual ErrorCode getDecoderParameterSets(const SequenceId& sequenceId,
+                                                  const SequenceImageId& imageId,
+                                                  DecoderConfiguration& decoderInfos) const = 0;
 
     protected:
         virtual ~Reader() = default;

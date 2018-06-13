@@ -13,7 +13,7 @@
 #define AVCDECODERCONFIGRECORD_HPP
 
 #include "avccommondefs.hpp"
-#include "customallocator.hpp"
+#include "decoderconfigrecord.hpp"
 
 namespace ISOBMFF
 {
@@ -24,7 +24,7 @@ namespace ISOBMFF
  * @brief AVC decoder configuration record
  * @details Member variable descriptions can be found from the Advanced Video Coding (AVC) specification.
  */
-class AvcDecoderConfigurationRecord
+class AvcDecoderConfigurationRecord : public DecoderConfigurationRecord
 {
 public:
     AvcDecoderConfigurationRecord();
@@ -109,6 +109,9 @@ public:
 
     std::uint8_t getBitDepthChromaMinus8() const;
     void setBitDepthChromaMinus8(std::uint8_t bitDepthChromaMinus8);
+
+    /* @brief Returns configuration parameter map for this record */
+    virtual void getConfigurationMap(ConfigurationMap& aMap) const override;
 
 private:
     // Member variable descriptions can be found from the Advanced Video Coding (AVC) specification.

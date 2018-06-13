@@ -13,29 +13,30 @@
  */
 
 #include <jni.h>
-#define JNI_METHOD(return_type, method_name) \
-    JNIEXPORT return_type JNICALL Java_com_nokia_heif_MirrorProperty_##method_name
 #include "Helpers.h"
 #include "TransformativeProperty.h"
+
+#define CLASS_NAME MirrorProperty
+
 extern "C"
 {
-    JNI_METHOD(jlong, createContextNative)(JNIEnv *env, jobject obj, jobject javaHEIF)
+    JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::MirrorProperty *nativeObject = new HEIFPP::MirrorProperty(nativeHeif);
-        nativeObject->setContext((void *) env->NewGlobalRef(obj));
-        return (jlong) nativeObject;
+        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        return reinterpret_cast<jlong>(nativeObject);
     }
 
-    JNI_METHOD(jboolean, getMirrorNative)(JNIEnv *env, jobject obj)
+    JNI_METHOD(jboolean, getMirrorNative)
     {
-        NATIVE_MIRROR_PROPERTY(nativeHandle, obj);
-        return nativeHandle->mMirror.horizontalAxis;
+        NATIVE_MIRROR_PROPERTY(nativeHandle, self);
+        return static_cast<jboolean >(nativeHandle->mMirror.horizontalAxis);
     }
 
-    JNI_METHOD(void, setMirrorNative)(JNIEnv *env, jobject obj, jboolean mirror)
+    JNI_METHOD_ARG(void, setMirrorNative, jboolean mirror)
     {
-        NATIVE_MIRROR_PROPERTY(nativeHandle, obj);
+        NATIVE_MIRROR_PROPERTY(nativeHandle, self);
         nativeHandle->mMirror.horizontalAxis = mirror;
     }
 }

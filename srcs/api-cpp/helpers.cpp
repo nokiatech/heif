@@ -12,7 +12,7 @@
 
 #include "helpers.h"
 #include "Heif.h"
-using namespace HEIFPP;
+
 namespace HEIFPP
 {
     template <class T>
@@ -57,19 +57,59 @@ namespace HEIFPP
         return mList.empty();
     }
     template <class T>
-    uint32_t LinkArray<T>::size() const
+    std::uint32_t LinkArray<T>::size() const
     {
         return (uint32_t) mList.size();
     }
     template <class T>
-    std::pair<T, uint32_t>& LinkArray<T>::operator[](uint32_t aId)
+    std::pair<T, std::uint32_t>& LinkArray<T>::operator[](uint32_t aId)
+    {
+        return mList[aId];
+    }
+    template <class T>
+    const std::pair<T, std::uint32_t>& LinkArray<T>::operator[](uint32_t aId) const
     {
         return mList[aId];
     }
     // instantiate templates here.
-    template class LinkArray<ExifItem*>;
+    template class LinkArray<Item*>;
+    template class LinkArray<Track*>;
+    template class LinkArray<Sample*>;
+    template class LinkArray<MetaItem*>;
     template class LinkArray<ImageItem*>;
     template class LinkArray<CodedImageItem*>;
     template class LinkArray<DerivedImageItem*>;
     template class LinkArray<DecoderConfiguration*>;
+
+
+    BitStream::BitStream(const std::uint8_t* aData, std::uint32_t aLen)
+            : mSrc(aData)
+            , mLen(aLen)
+            , mCBit(0)
+    {
+    }
+    std::uint32_t BitStream::getBits(std::uint32_t bits)
+    {
+        std::uint32_t res = 0;
+        for (std::uint32_t i = 0; i < bits; i++)
+        {
+            std::uint32_t index = mCBit / 8;
+            std::uint32_t cbit   = (std::uint8_t)(mCBit - (index * 8));
+            res |= ((((std::uint32_t)mSrc[index]) >> (7u - cbit)) & 1u) << (bits - i - 1u);
+            mCBit++;
+        }
+        return res;
+    }
+    bool BitStream::isByteAligned()
+    {
+        return (mCBit & 7u);
+    }
+    std::uint64_t BitStream::bitpos()
+    {
+        return mCBit;
+    }
+    std::uint64_t BitStream::bits_to_decode()
+    {
+        return (mLen * 8) - mCBit;
+    }
 }  // namespace HEIFPP

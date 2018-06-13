@@ -13,6 +13,7 @@
 #include "Item.h"
 #include <heifreader.h>
 #include <heifwriter.h>
+#include "EntityGroup.h"
 #include "ItemProperty.h"
 #include "MimeItem.h"
 #include "RawProperty.h"
@@ -26,7 +27,6 @@ Item::Item(Heif* aHeif, const HEIF::FourCC& aType, bool aIsImageItem)
     , mIsProtected(false)
     , mIsImageItem(aIsImageItem)
     , mContext(nullptr)
-    , mFirstTransform(0)
     , mTransformCount(0)
 {
     mHeif->addItem(this);
@@ -45,6 +45,13 @@ Item::~Item()
     {
         removeProperty(mProps.begin()->first);
     }
+
+    //disconnect from groups
+    for (; !mGroups.empty();)
+    {
+        (*mGroups.begin())->removeItem(this);
+    }
+
     mHeif->removeItem(this);
 }
 
@@ -126,20 +133,23 @@ const HEIF::ImageId& Item::getId() const
 
 HEIF::ErrorCode Item::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 {
-    HEIF::ErrorCode error;
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+    ;
     HEIF::FourCC type;
     mId   = aId;
     error = aReader->getItemType(aId, type);
     if (HEIF::ErrorCode::OK != error)
         return error;
     HEIF_ASSERT(mType == type);
-    const auto* i = mHeif->getItemInformation(aId);  // not all items have this. some have only ImageInformation, and others have both..
+    const auto* i = mHeif->getItemInformation(
+        aId);  // not all items have this. some have only ImageInformation, and others have both..
     if (i)
     {
         mIsProtected = (bool) (i->features & HEIF::ItemFeatureEnum::IsProtected);
     }
 
-    const auto* i2 = mHeif->getImageInformation(aId);  // not all items have this. some have only ItemInformation, and others have both..
+    const auto* i2 = mHeif->getImageInformation(
+        aId);  // not all items have this. some have only ItemInformation, and others have both..
     if (i2)
     {
         if (i)
@@ -210,7 +220,7 @@ void Item::removeProperty(ItemProperty* aProp)
         }
     }
 }
-uint32_t Item::propertyCount() const
+std::uint32_t Item::propertyCount() const
 {
     return (uint32_t) mProps.size();
 }
@@ -223,7 +233,7 @@ bool Item::isEssential(uint32_t aId) const
     }
     return false;
 }
-bool Item::isEssential(ItemProperty* aProperty) const
+bool Item::isEssential(const ItemProperty* aProperty) const
 {
     // find matching property from list
     for (const auto& it : mProps)
@@ -242,7 +252,7 @@ void Item::setEssential(uint32_t aId, bool aEssential)
         mProps[aId].second = aEssential;
     }
 }
-void Item::setEssential(ItemProperty* aProperty, bool aEssential)
+void Item::setEssential(const ItemProperty* aProperty, bool aEssential)
 {
     // find matching property from list
     for (auto& it : mProps)
@@ -335,33 +345,38 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
             case HEIF::ItemPropertyType::PIXI:  ///< Pixel information
             case HEIF::ItemPropertyType::RLOC:  ///< Relative location
             {
-                //Allow only one.
+                // Allow only one.
                 invalidProp = true;
                 break;
             }
-            case HEIF::ItemPropertyType::RAW:  ///< Property of an unrecognized/unknown type. It is accessible only as raw data.
+            case HEIF::ItemPropertyType::RAW:  ///< Property of an unrecognized/unknown type. It is accessible only as
+                                               ///< raw data.
             {
-                //Low level reader does not currently support these types and returns them as raw props.
-                //Although 'lhv1' is not a valid image either.
-                RawProperty* raw  = static_cast<RawProperty*>(it->first);
-                RawProperty* raw2 = static_cast<RawProperty*>(aProp);
+                // Low level reader does not currently support these types and returns them as raw props.
+                // Although 'lhv1' is not a valid image either.
+                const RawProperty* raw  = static_cast<const RawProperty*>(it->first);
+                const RawProperty* raw2 = static_cast<const RawProperty*>(aProp);
                 if (raw->rawType() == raw2->rawType())
                 {
-                    if ((raw->rawType() == "lsel") ||  //Layer selection                               (zero or one)
-                        (raw->rawType() == "lhvC") ||  // Layered HEVC configuration item property     ('lhv1' items only, MUST have one)
-                        (raw->rawType() == "oinf") ||  // Operating points information property        ('lhv1' items only, MUST have one)
-                        (raw->rawType() == "tols"))    // Target output layer set property             ('lhv1' items only, MUST have one)
+                    if ((raw->rawType() == "lsel") ||  // Layer selection          (zero or one)
+                        (raw->rawType() ==
+                         "lhvC") ||  // Layered HEVC configuration item property   ('lhv1' items only, MUST have one)
+                        (raw->rawType() ==
+                         "oinf") ||  // Operating points information property      ('lhv1' items only, MUST have one)
+                        (raw->rawType() ==
+                         "tols"))  // Target output layer set property             ('lhv1' items only, MUST have one)
                     {
-                        //allow only one.
+                        // allow only one.
                         invalidProp = true;
                     }
-                    else if (raw->rawType() == "subs")  // Sub-sample item property                    (zero or more for HEVC item and 'avc1'.)
+                    else if (raw->rawType() ==
+                             "subs")  // Sub-sample item property (zero or more for HEVC item and 'avc1'.)
                     {
                         // Zero or more.
                     }
                     else
                     {
-                        //really unknown. so allow multiples.
+                        // really unknown. so allow multiples.
                     }
                 }
                 else
@@ -398,27 +413,83 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
     }
 
     // check type.
+    // keep list ordered, descriptives first then transformatives.
     if (aProp->isTransformative())
     {
-        if (mTransformCount == 0)
-            mFirstTransform = (uint32_t) mProps.size();
         mProps.push_back({aProp, aEssential});
         mTransformCount++;
     }
     else
     {
-        // descriptive properties
-        if (mTransformCount == 0)
+        //find first transform, insert before it
+        auto it = mProps.begin();
+        for (; it != mProps.end(); it++)
         {
-            // No transforms, so add to end
-            mProps.push_back({aProp, aEssential});
+            if (it->first->isTransformative())
+            {
+                break;
+            }
         }
-        else
-        {
-            // Insert before first transform.
-            mProps.insert(mProps.begin() + (int64_t) mFirstTransform, {aProp, aEssential});
-            mFirstTransform++;
-        }
+        mProps.insert(it,{aProp, aEssential});
     }
     aProp->link(this);
+}
+
+
+void Item::addToGroup(EntityGroup* aGroup)
+{
+    AddItemTo(mGroups, aGroup);
+}
+void Item::removeFromGroup(EntityGroup* aGroup)
+{
+    RemoveItemFrom(mGroups, aGroup);
+}
+std::uint32_t Item::getGroupCount() const
+{
+    return (std::uint32_t) mGroups.size();
+}
+EntityGroup* Item::getGroup(uint32_t aId)
+{
+    if (aId < mGroups.size())
+    {
+        return mGroups[aId];
+    }
+    return nullptr;
+}
+std::uint32_t Item::getGroupByTypeCount(const HEIF::FourCC& aType)
+{
+    std::uint32_t cnt = 0;
+    for (auto grp : mGroups)
+    {
+        if (grp->getType() == aType)
+        {
+            cnt++;
+        }
+    }
+    return cnt;
+}
+EntityGroup* Item::getGroupByType(const HEIF::FourCC& aType, std::uint32_t aId)
+{
+    std::uint32_t cnt = 0;
+    for (auto grp : mGroups)
+    {
+        if (grp->getType() == aType)
+        {
+            if (aId == cnt)
+                return grp;
+            cnt++;
+        }
+    }
+    return nullptr;
+}
+EntityGroup* Item::getGroupById(const HEIF::GroupId& aId)
+{
+    for (auto grp : mGroups)
+    {
+        if (grp->getId() == aId)
+        {
+            return grp;
+        }
+    }
+    return nullptr;
 }

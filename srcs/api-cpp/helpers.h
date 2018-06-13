@@ -12,13 +12,12 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
 #include <map>
 #include <vector>
 #if (defined(_DEBUG) || defined(DEBUG)) || (!defined(NDEBUG))
 #define HEIF_DEBUG
-#include <assert.h>
+#include <cassert>
 #define HEIF_ASSERT(x) assert(x)
 #else
 #define HEIF_ASSERT(x)
@@ -49,7 +48,6 @@ namespace HEIFPP
                 return true;
             }
         }
-        HEIF_ASSERT(false);
         return false;
     }
     template <class type>
@@ -59,7 +57,6 @@ namespace HEIFPP
         {
             if (item == *it)
             {
-                HEIF_ASSERT(false);
                 return false;
             }
         }
@@ -75,18 +72,35 @@ namespace HEIFPP
         LinkArray()  = default;
         ~LinkArray() = default;
         bool empty() const;
-        uint32_t size() const;
+        std::uint32_t size() const;
         void addLink(T aTarget);
         bool removeLink(T aTarget);
-        std::pair<T, uint32_t>& operator[](uint32_t);
+        std::pair<T, std::uint32_t>& operator[](uint32_t);
+        const std::pair<T, std::uint32_t>& operator[](uint32_t) const;
 
     protected:
-        std::vector<std::pair<T, uint32_t>> mList;
+        std::vector<std::pair<T, std::uint32_t>> mList;
 
     private:
         LinkArray<T>& operator=(const LinkArray<T>&) = delete;
         LinkArray<T>(const LinkArray<T>&)            = delete;
         LinkArray<T>(LinkArray<T>&&)                 = delete;
     };
+
+
+    class BitStream
+    {
+    public:
+        BitStream(const std::uint8_t* aData, std::uint32_t aLen);
+        std::uint32_t getBits(std::uint32_t bits);
+        bool isByteAligned();
+        std::uint64_t bitpos();
+        std::uint64_t bits_to_decode();
+    protected:
+        const std::uint8_t* mSrc;
+        std::uint32_t mLen;
+        std::uint8_t mCBit;
+    };
+
 
 }  // namespace HEIFPP

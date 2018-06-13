@@ -19,10 +19,10 @@ package com.nokia.heif;
 public final class Size
 {
     /** Width in pixels */
-    public int width;
+    public final int width;
 
     /** Height in pixels */
-    public int height;
+    public final int height;
 
     public Size(int width, int height)
     {

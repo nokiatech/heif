@@ -16,6 +16,7 @@
 #include <cstring>
 
 using namespace HEIFPP;
+
 DescriptiveProperty::DescriptiveProperty(Heif* aHeif, const HEIF::ItemPropertyType& aProp)
     : ItemProperty(aHeif, aProp, false){};
 HEIF::ErrorCode DescriptiveProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
@@ -40,7 +41,14 @@ HEIF::ErrorCode PixelAspectRatioProperty::load(HEIF::Reader* aReader, const HEIF
 };
 HEIF::ErrorCode PixelAspectRatioProperty::save(HEIF::Writer* aWriter)
 {
-    return aWriter->addProperty(mPixelAspectRatio, mId);
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mPixelAspectRatio, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
 }
 
 ColourInformationProperty::ColourInformationProperty(Heif* aHeif)
@@ -60,7 +68,14 @@ HEIF::ErrorCode ColourInformationProperty::load(HEIF::Reader* aReader, const HEI
 };
 HEIF::ErrorCode ColourInformationProperty::save(HEIF::Writer* aWriter)
 {
-    return aWriter->addProperty(mColourInformation, mId);
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mColourInformation, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
 }
 
 PixelInformationProperty::PixelInformationProperty(Heif* aHeif)
@@ -80,7 +95,14 @@ HEIF::ErrorCode PixelInformationProperty::load(HEIF::Reader* aReader, const HEIF
 };
 HEIF::ErrorCode PixelInformationProperty::save(HEIF::Writer* aWriter)
 {
-    return aWriter->addProperty(mPixelInformation, mId);
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mPixelInformation, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
 }
 
 RelativeLocationProperty::RelativeLocationProperty(Heif* aHeif)
@@ -100,7 +122,14 @@ HEIF::ErrorCode RelativeLocationProperty::load(HEIF::Reader* aReader, const HEIF
 }
 HEIF::ErrorCode RelativeLocationProperty::save(HEIF::Writer* aWriter)
 {
-    return aWriter->addProperty(mRelativeLocation, mId);
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mRelativeLocation, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
 }
 
 AuxProperty::AuxProperty(Heif* aHeif)
@@ -126,7 +155,7 @@ HEIF::ErrorCode AuxProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId&
 
 HEIF::ErrorCode AuxProperty::save(HEIF::Writer* aWriter)
 {
-    HEIF::ErrorCode error;
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
     HEIF::AuxiliaryType p;
 
     if (mAuxType.length() > 0)
@@ -139,7 +168,12 @@ HEIF::ErrorCode AuxProperty::save(HEIF::Writer* aWriter)
         p.subType = HEIF::Array<uint8_t>(mSubType.size());
         std::memcpy(p.subType.elements, mSubType.data(), p.subType.size);
     }
-    error = aWriter->addProperty(p, mId);
+    HEIF::PropertyId newId;
+    error = aWriter->addProperty(p, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
     return error;
 };
 

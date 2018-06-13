@@ -177,10 +177,10 @@ void SampleTableBox::writeBox(ISOBMFF::BitStream& bitstr) const
 
     // Write other boxes contained in the movie box
     mSampleDescriptionBox.writeBox(bitstr);
+    mSampleSizeBox.writeBox(bitstr);
     mTimeToSampleBox.writeBox(bitstr);
     mSampleToChunkBox.writeBox(bitstr);
     mChunkOffsetBox.writeBox(bitstr);
-    mSampleSizeBox.writeBox(bitstr);
 
     if (mSyncSampleBox != nullptr)
     {

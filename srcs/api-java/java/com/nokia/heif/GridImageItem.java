@@ -32,9 +32,16 @@ public final class GridImageItem extends DerivedImageItem
     {
         super(heif);
         mNativeHandle = createContextNative(heif);
-        resizeNative(columns, rows);
-        setSize(size);
-        super.setSize(size);
+        try
+        {
+            setDimensions(columns, rows);
+            setSize(size);
+        }
+        catch (Exception ex)
+        {
+            destroy();
+            throw ex;
+        }
     }
 
     /**
@@ -57,6 +64,10 @@ public final class GridImageItem extends DerivedImageItem
             throws Exception
     {
         checkState();
+        if (columns == 0 || rows == 0)
+        {
+            throw new Exception(ErrorHandler.INVALID_PARAMETER, "Column or row count cannot be 0");
+        }
         resizeNative(columns, rows);
     }
 

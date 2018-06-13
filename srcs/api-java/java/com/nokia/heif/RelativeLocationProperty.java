@@ -24,11 +24,13 @@ public final class RelativeLocationProperty extends DescriptiveProperty
      * @param heif The parent HEIF instance for the new object
      * @throws Exception Thrown if the parent HEIF instance is invalid
      */
-    public RelativeLocationProperty(HEIF heif)
+    public RelativeLocationProperty(HEIF heif, int horizontalOffset, int verticalOffset)
             throws Exception
     {
         super(heif);
         mNativeHandle = createContextNative(heif);
+        setVerticallOffset(verticalOffset);
+        setHorizontalOffset(horizontalOffset);
     }
 
     /**

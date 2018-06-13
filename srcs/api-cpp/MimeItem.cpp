@@ -13,8 +13,10 @@
 #include "MimeItem.h"
 #include <heifreader.h>
 #include <heifwriter.h>
+#include <cstring>
 
 using namespace HEIFPP;
+
 MimeItem::MimeItem(Heif* aHeif)
     : MetaItem(aHeif, HEIF::FourCC("mime"))
     , mBufferSize(0)
@@ -43,21 +45,34 @@ HEIF::ErrorCode MimeItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
     error = MetaItem::load(aReader, aId);
     if (HEIF::ErrorCode::OK != error)
         return error;
-    const HEIF::ItemInformation* info = mHeif->getItemInformation(aId);
+    const HEIF::ItemInformation* info = getHeif()->getItemInformation(aId);
 
     // TODO: when reader exposes the item content-type, use that.
     // contentType(info->contentType);
 
     mBufferSize = info->size;
-    mBuffer     = new uint8_t[mBufferSize];
-    error       = aReader->getItemData(aId, mBuffer, mBufferSize);
-    if (HEIF::ErrorCode::OK != error)
-        return error;
+    mBuffer     = new std::uint8_t[mBufferSize];
+    if (mBufferSize == 0)
+    {
+        mBuffer = nullptr;
+    }
+    else
+    {
+        error = aReader->getItemData(aId, mBuffer, mBufferSize, false);
+        if (HEIF::ErrorCode::OK != error)
+            return error;
+    }
     return HEIF::ErrorCode::OK;
 }
 HEIF::ErrorCode MimeItem::save(HEIF::Writer* aWriter)
 {
-    HEIF::ErrorCode error;
+    if (mBuffer == nullptr)
+    {
+        // TODO: actual error is NO_MEDIA
+        return HEIF::ErrorCode::BUFFER_SIZE_TOO_SMALL;
+    }
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+    ;
     HEIF::MediaDataId mediaDataId;
     HEIF::Data fr;
     if (mContentType == "application/rdf+xml")
@@ -76,25 +91,29 @@ HEIF::ErrorCode MimeItem::save(HEIF::Writer* aWriter)
     error = aWriter->feedMediaData(fr, mediaDataId);
     if (HEIF::ErrorCode::OK != error)
         return error;
-    mId = mediaDataId.get();
+
+    HEIF::MetadataItemId metadataItemId;
+    error = aWriter->addMetadata(mediaDataId, metadataItemId);
+
+    setId(metadataItemId.get());
     return MetaItem::save(aWriter);
 }
 
 
-const uint8_t* MimeItem::getData() const
+const std::uint8_t* MimeItem::getData() const
 {
     return mBuffer;
 }
-uint64_t MimeItem::getDataSize() const
+std::uint64_t MimeItem::getDataSize() const
 {
     return mBufferSize;
 }
 
-void MimeItem::setData(const uint8_t* aData, uint64_t aDataSize)
+void MimeItem::setData(const std::uint8_t* aData, std::uint64_t aDataSize)
 {
     delete[] mBuffer;
     mBuffer = nullptr;
-    mBuffer = new uint8_t[aDataSize];
-    memcpy(mBuffer, aData, aDataSize);
+    mBuffer = new std::uint8_t[aDataSize];
+    std::memcpy(mBuffer, aData, aDataSize);
     mBufferSize = aDataSize;
 }

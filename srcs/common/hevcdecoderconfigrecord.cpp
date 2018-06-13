@@ -325,3 +325,17 @@ uint16_t HevcDecoderConfigurationRecord::getAvgFrameRate() const
 {
     return mAvgFrameRate;
 }
+
+void HevcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap &aMap) const
+{
+    Vector<std::uint8_t> sps;
+    Vector<std::uint8_t> pps;
+    Vector<std::uint8_t> vps;
+    getOneParameterSet(sps, HevcNalUnitType::SPS);
+    getOneParameterSet(pps, HevcNalUnitType::PPS);
+    getOneParameterSet(vps, HevcNalUnitType::VPS);
+
+    aMap.insert({DecoderParameterType::HEVC_SPS, move(sps)});
+    aMap.insert({DecoderParameterType::HEVC_PPS, move(pps)});
+    aMap.insert({DecoderParameterType::HEVC_VPS, move(vps)});
+}

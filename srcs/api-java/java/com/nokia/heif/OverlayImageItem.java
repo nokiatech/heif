@@ -65,10 +65,10 @@ public final class OverlayImageItem extends DerivedImageItem
             }
         }
 
-        public int r;
-        public int g;
-        public int b;
-        public int a;
+        public final int r;
+        public final int g;
+        public final int b;
+        public final int a;
     }
 
 
@@ -85,13 +85,13 @@ public final class OverlayImageItem extends DerivedImageItem
         }
 
         /** ImageItem */
-        public ImageItem image;
+        public final ImageItem image;
 
         /** Horizontal offset in pixels */
-        public int horizontalOffset;
+        public final int horizontalOffset;
 
         /** Vertical offset in pixels */
-        public int verticalOffset;
+        public final int verticalOffset;
     }
 
     /**
@@ -164,8 +164,10 @@ public final class OverlayImageItem extends DerivedImageItem
             throws Exception
     {
         checkState();
-        setBackgroundColourNative(
-                clamptoRange(r), clamptoRange(g), clamptoRange(b), clamptoRange(a));
+        setBackgroundColour(new BackgroundColour(clamptoRange(r),
+                                                 clamptoRange(g),
+                                                 clamptoRange(b),
+                                                 clamptoRange(a)));
     }
 
     /**

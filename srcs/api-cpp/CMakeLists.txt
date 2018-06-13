@@ -19,6 +19,40 @@ add_library(${HEIFPP_LIB_NAME} STATIC
     ${PROJECT_SOURCE_DIR}/Heif.h
     ${PROJECT_SOURCE_DIR}/Heif.cpp
 
+    ${PROJECT_SOURCE_DIR}/EntityGroup.h
+    ${PROJECT_SOURCE_DIR}/EntityGroup.cpp
+    ${PROJECT_SOURCE_DIR}/EqivGroup.h
+    ${PROJECT_SOURCE_DIR}/EqivGroup.cpp
+
+    ${PROJECT_SOURCE_DIR}/AlternativeTrackGroup.h
+    ${PROJECT_SOURCE_DIR}/AlternativeTrackGroup.cpp
+
+    ${PROJECT_SOURCE_DIR}/DecoderConfiguration.h
+    ${PROJECT_SOURCE_DIR}/DecoderConfiguration.cpp
+    ${PROJECT_SOURCE_DIR}/AACDecoderConfiguration.h
+    ${PROJECT_SOURCE_DIR}/AACDecoderConfiguration.cpp
+    ${PROJECT_SOURCE_DIR}/AVCDecoderConfiguration.h
+    ${PROJECT_SOURCE_DIR}/AVCDecoderConfiguration.cpp
+    ${PROJECT_SOURCE_DIR}/HEVCDecoderConfiguration.h
+    ${PROJECT_SOURCE_DIR}/HEVCDecoderConfiguration.cpp
+
+    ${PROJECT_SOURCE_DIR}/Track.h
+    ${PROJECT_SOURCE_DIR}/Track.cpp
+    ${PROJECT_SOURCE_DIR}/AudioTrack.h
+    ${PROJECT_SOURCE_DIR}/AudioTrack.cpp
+    ${PROJECT_SOURCE_DIR}/VideoTrack.h
+    ${PROJECT_SOURCE_DIR}/VideoTrack.cpp
+
+    ${PROJECT_SOURCE_DIR}/ImageSequence.h
+    ${PROJECT_SOURCE_DIR}/ImageSequence.cpp
+
+    ${PROJECT_SOURCE_DIR}/Sample.h
+    ${PROJECT_SOURCE_DIR}/Sample.cpp
+    ${PROJECT_SOURCE_DIR}/AudioSample.h
+    ${PROJECT_SOURCE_DIR}/AudioSample.cpp
+    ${PROJECT_SOURCE_DIR}/VideoSample.h
+    ${PROJECT_SOURCE_DIR}/VideoSample.cpp
+
     ${PROJECT_SOURCE_DIR}/ItemProperty.h
     ${PROJECT_SOURCE_DIR}/ItemProperty.cpp
     ${PROJECT_SOURCE_DIR}/RawProperty.h

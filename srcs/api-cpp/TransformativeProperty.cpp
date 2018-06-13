@@ -15,6 +15,7 @@
 #include <heifwriter.h>
 
 using namespace HEIFPP;
+
 TransformativeProperty::TransformativeProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType)
     : ItemProperty(aHeif, aType, true){};
 HEIF::ErrorCode TransformativeProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
@@ -39,7 +40,14 @@ HEIF::ErrorCode CleanApertureProperty::load(HEIF::Reader* aReader, const HEIF::P
 };
 HEIF::ErrorCode CleanApertureProperty::save(HEIF::Writer* aWriter)
 {
-    return aWriter->addProperty(mClap, mId);
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mClap, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
 }
 
 RotateProperty::RotateProperty(Heif* aHeif)
@@ -59,7 +67,13 @@ HEIF::ErrorCode RotateProperty::load(HEIF::Reader* aReader, const HEIF::Property
 };
 HEIF::ErrorCode RotateProperty::save(HEIF::Writer* aWriter)
 {
-    return aWriter->addProperty(mRotate, mId);
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error = aWriter->addProperty(mRotate, newId);
+    if (error == HEIF::ErrorCode::OK)
+    {
+        setId(newId);
+    }
+    return error;
 }
 
 MirrorProperty::MirrorProperty(Heif* aHeif)
@@ -80,5 +94,12 @@ HEIF::ErrorCode MirrorProperty::load(HEIF::Reader* aReader, const HEIF::Property
 
 HEIF::ErrorCode MirrorProperty::save(HEIF::Writer* aWriter)
 {
-    return aWriter->addProperty(mMirror, mId);
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mMirror, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
 }
