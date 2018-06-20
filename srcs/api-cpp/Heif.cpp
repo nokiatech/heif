@@ -44,13 +44,13 @@
 
 using namespace HEIFPP;
 
-constexpr HEIF::GroupId Heif::InvalidGroup((std::uint32_t) 0);
-constexpr HEIF::ImageId Heif::InvalidItem((std::uint32_t) 0);
-constexpr HEIF::SequenceId Heif::InvalidSequence((std::uint32_t) ~0);
-constexpr HEIF::SequenceImageId Heif::InvalidSequenceImage((std::uint32_t) ~0);
-constexpr HEIF::PropertyId Heif::InvalidProperty((std::uint32_t) 0);
-constexpr HEIF::DecoderConfigId Heif::InvalidDecoderConfig((std::uint32_t) 0);
-constexpr HEIF::MediaDataId Heif::InvalidMediaData((std::uint32_t) 0);
+const HEIF::GroupId Heif::InvalidGroup((std::uint32_t) 0);
+const HEIF::ImageId Heif::InvalidItem((std::uint32_t) 0);
+const HEIF::SequenceId Heif::InvalidSequence((std::uint32_t) ~0);
+const HEIF::SequenceImageId Heif::InvalidSequenceImage((std::uint32_t) ~0);
+const HEIF::PropertyId Heif::InvalidProperty((std::uint32_t) 0);
+const HEIF::DecoderConfigId Heif::InvalidDecoderConfig((std::uint32_t) 0);
+const HEIF::MediaDataId Heif::InvalidMediaData((std::uint32_t) 0);
 
 #define ISPE_AS_RAW_PROPERTY 0
 #define DECODER_CONFIG_AS_RAW_PROPERTY 0
