@@ -49,7 +49,7 @@ Prerequisites: **[cmake](https://cmake.org/)** and compiler supporting C++11 in 
 cd heif/build
 cmake --help
 cmake ../srcs -G"<Generator listed by above command for your target platform>"
-cmake --build 
+cmake --build .
 ```
 
 ## Building Java API for Windows or Linux
