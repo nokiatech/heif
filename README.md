@@ -23,10 +23,10 @@ You can also check the **[Wiki](https://github.com/nokiatech/heif/wiki)** pages 
 HEIF is a media container format. It is not an image or video encoder per se. Hence, the quality of the visual media depends highly on the proper usage of visual media encoder (e.g. HEVC). Current standard allows containing HEVC/AVC/JPEG encoded bitstreams. This can be easily extended to future visual media codecs. It has many powerful features which are currently not present in other image file formats. Some of these features are:
 * Encapsulate images coded using HEVC/SHVC/MV-HEVC/AVC/JPEG.
 * Encapsulate image sequences coded using HEVC/SHVC/MV-HEVC/AVC.
-* Storage based on widely adopted ISO Base Media File Format (ISOBMFF)
-* Supports efficient storage of image bursts and cinemagraphs
-* Supports computational photography use cases
-* Supports both lossy and lossless image data storage
+* Storage based on widely adopted ISO Base Media File Format (ISOBMFF).
+* Supports efficient storage of image bursts and cinemagraphs.
+* Supports computational photography use cases.
+* Supports both lossy and lossless image data storage.
 * A better and easy way to distribute still images, image collections and related metadata.
 
 Please follow this **[link](https://nokiatech.github.io/heif/examples.html)** to see HEIF file examples.
@@ -49,12 +49,12 @@ Prerequisites: **[cmake](https://cmake.org/)** and compiler supporting C++11 in 
 cd heif/build
 cmake --help
 cmake ../srcs -G"<Generator listed by above command for your target platform>"
-cmake --build .
+cmake --build 
 ```
 
 ## Building Java API for Windows or Linux
-Prerequisites: Java version 8 or newer, Gradle
-First build the C/C++ library as described above
+Prerequisites: Java version 8 or newer, Gradle.
+First build the C/C++ library as described above.
 After that
 ```
 cd heif/build/java-desktop
@@ -63,8 +63,8 @@ gradle build
 Note that in order to run the Java API you need to have the HEIF JNI library built in the earlier step (heifjni.dll or heifjni.so) in the Java library search path.
 
 ## Building Java API for Android:
-Prerequisites: Android SDK & NDK
-Import the project files under heif/build/android into Android Studio and build the library
+Prerequisites: Android SDK & NDK.
+Import the project files under heif/build/android into Android Studio and build the library.
 
 See **[wiki page](https://github.com/nokiatech/heif/wiki/I.-How-to-build-HEIF-Source-Code)** for more information and platform specific instructions.
 
