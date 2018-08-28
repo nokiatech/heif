@@ -193,3 +193,61 @@ void AuxProperty::subType(const std::vector<uint8_t>& aType)
 {
     mSubType = aType;
 }
+
+ProjectionFormatProperty::ProjectionFormatProperty(Heif* aHeif)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::PRFR)
+    , mFormat{}
+{
+}
+HEIF::ErrorCode ProjectionFormatProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
+{
+    HEIF::ErrorCode error;
+    error = DescriptiveProperty::load(aReader, aId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        HEIF::ProjectionFormatProperty mHeifProp;
+        error   = aReader->getProperty(aId, mHeifProp);
+        mFormat = mHeifProp.format;
+    }
+    return error;
+}
+HEIF::ErrorCode ProjectionFormatProperty::save(HEIF::Writer* aWriter)
+{
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    HEIF::ProjectionFormatProperty mHeifProp;
+    mHeifProp.format = mFormat;
+    error            = aWriter->addProperty(mHeifProp, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
+}
+
+FramePackingProperty::FramePackingProperty(Heif* aHeif)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::STVI)
+    , mHeifFramePackingProperty{}
+{
+}
+HEIF::ErrorCode FramePackingProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
+{
+    HEIF::ErrorCode error;
+    error = DescriptiveProperty::load(aReader, aId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        error = aReader->getProperty(aId, mHeifFramePackingProperty);
+    }
+    return error;
+}
+HEIF::ErrorCode FramePackingProperty::save(HEIF::Writer* aWriter)
+{
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mHeifFramePackingProperty, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
+}

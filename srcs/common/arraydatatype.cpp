@@ -97,6 +97,8 @@ namespace HEIF
     instance(ImageId);
     instance(Overlay::Offset);
     instance(SequenceImageId);
+    instance(RegionWisePackingRegion);
+    instance(CoverageSphereRegion);
     instance(char);
     instance(int8_t);
     instance(int16_t);

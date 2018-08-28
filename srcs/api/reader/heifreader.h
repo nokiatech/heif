@@ -352,6 +352,54 @@ namespace HEIF
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
         virtual ErrorCode getProperty(const PropertyId& index, AuxiliaryType& auxC) const = 0;
 
+        /** Get frame packing item property ('stvi')
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.2
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] stvi   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, FramePackingProperty& stvi) const = 0;
+
+        /** Get projection format item property ('prfr')
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.3
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] prfr   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, ProjectionFormatProperty& prfr) const = 0;
+
+        /** Get region wise packing item property ('rwpk')
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.6
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] rwpk   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, RegionWisePackingProperty& rwpk) const = 0;
+
+        /** Get rotation item property ('rotn')
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.7
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] rotn   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, Rotation& rotn) const = 0;
+
+        /** Get coverage information item property ('covi')
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.8
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] covi   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, CoverageInformationProperty& covi) const = 0;
+
+        /** Get initial viewing orientation item property ('iivo')
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.9
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] iivo   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, InitialViewingOrientation& iivo) const = 0;
+
         /** Get raw data of an item property.
          *  @param [in]  index     Id of the property. @see getItemProperties()
          *  @param [out] property  Property data.

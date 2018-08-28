@@ -10,13 +10,15 @@
  * of this material requires the prior written consent of Nokia.
  */
 
-#pragma once
+#ifndef HEIF_H
+#define HEIF_H
 
 #include <heifcommondatatypes.h>
 #include <heifreaderdatatypes.h>
 #include <heifwriterdatatypes.h>
 
 #include <helpers.h>
+#include <string>
 #include "ErrorCodes.h"
 
 namespace HEIF
@@ -110,7 +112,6 @@ namespace HEIFPP
          *  @param [in] fileName File to open.
          *  @return Result: Possible error code*/
         Result save(const char* aFileName);
-
 
         /** Clears the container to initial state. */
         void reset();
@@ -396,3 +397,5 @@ namespace HEIFPP
         Heif(Heif&&)                 = delete;
     };
 }  // namespace HEIFPP
+
+#endif

@@ -28,6 +28,13 @@
 #include "pixelinformationproperty.hpp"
 #include "rawpropertybox.hpp"
 
+#include "coverageinformationbox.hpp"
+#include "initialviewingorientationbox.hpp"
+#include "projectionformatbox.hpp"
+#include "regionwisepackingbox.hpp"
+#include "rotationbox.hpp"
+#include "stereovideobox.hpp"
+
 ItemPropertyContainer::ItemPropertyContainer()
     : Box("ipco")
 {
@@ -126,6 +133,30 @@ void ItemPropertyContainer::parseBox(BitStream& bitstream)
         else if (boxType == "pasp")
         {
             property = makeCustomShared<PixelAspectRatioBox>();
+        }
+        else if (boxType == "stvi")
+        {
+            property = makeCustomShared<StereoVideoBox>();
+        }
+        else if (boxType == "prfr")
+        {
+            property = makeCustomShared<ProjectionFormatBox>();
+        }
+        else if (boxType == "rwpk")
+        {
+            property = makeCustomShared<RegionWisePackingBox>();
+        }
+        else if (boxType == "rotn")
+        {
+            property = makeCustomShared<RotationBox>();
+        }
+        else if (boxType == "covi")
+        {
+            property = makeCustomShared<CoverageInformationBox>();
+        }
+        else if (boxType == "iivo")
+        {
+            property = makeCustomShared<InitialViewingOrientationBox>();
         }
         else if (boxType == "free" || boxType == "skip")
         {

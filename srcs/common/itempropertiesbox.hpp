@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef ITEMPROPERTIESBOX_HPP
@@ -53,7 +55,14 @@ public:
         JPGC,  ///< JPEG configuration item property. @see JpegConfigurationBox
         PASP,  ///< Pixel aspect ratio. @see PixelAspectRatioBox
         PIXI,  ///< Pixel information. @see PixelInformationProperty
-        RLOC   ///< Relative location. @see RelativeLocationProperty
+        RLOC,  ///< Relative location. @see RelativeLocationProperty
+
+        STVI,  ///< Frame packing. @see StereoVideoBox (from OMAF spec ISO/IEC FDIS 23090-2)
+        PRFR,  ///< Projection format. @see ProjectionFormatBox (from OMAF spec ISO/IEC FDIS 23090-2)
+        RWPK,  ///< Region wise packing. @see RegionWisePackingBox (from OMAF spec ISO/IEC FDIS 23090-2)
+        ROTN,  ///< Rotation. @see RotationBox (from OMAF spec ISO/IEC FDIS 23090-2)
+        COVI,  ///< Coverage information. @see CoverageInformationBox (from OMAF spec ISO/IEC FDIS 23090-2)
+        IIVO   ///< Initial viewing orientation. @see InitialViewingOrientationBox (from OMAF spec ISO/IEC FDIS 23090-2)
     };
 
     /** Information about a property associated to an item. Information here comes from both contained boxes
@@ -62,7 +71,8 @@ public:
     {
         PropertyType type;    ///< Type of the property.
         std::uint32_t index;  ///< Index of the property in the Item Property Container (0-based).
-        bool essential;       ///< True if this property is marked as 'essential' meaning the reader is required to process it.
+        bool essential;  ///< True if this property is marked as 'essential' meaning the reader is required to process
+                         ///< it.
     };
 
     typedef Vector<PropertyInfo> PropertyInfos;

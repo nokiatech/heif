@@ -133,4 +133,45 @@ namespace HEIFPP
         AuxProperty(AuxProperty&&)                 = delete;
         AuxProperty()                              = delete;
     };
+
+    class ProjectionFormatProperty : public HEIFPP::DescriptiveProperty
+    {
+    public:
+        HEIF::OmafProjectionType mFormat;
+
+        ProjectionFormatProperty(Heif* aHeif);
+        ~ProjectionFormatProperty() = default;
+
+    protected:
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
+
+    private:
+        ProjectionFormatProperty& operator=(const ProjectionFormatProperty&) = delete;
+        ProjectionFormatProperty& operator=(ProjectionFormatProperty&&) = delete;
+        ProjectionFormatProperty(const ProjectionFormatProperty&)       = delete;
+        ProjectionFormatProperty(ProjectionFormatProperty&&)            = delete;
+        ProjectionFormatProperty()                                      = delete;
+    };
+
+    class FramePackingProperty : public HEIFPP::DescriptiveProperty
+    {
+    public:
+        HEIF::FramePackingProperty mHeifFramePackingProperty;
+
+        FramePackingProperty(Heif* aHeif);
+        ~FramePackingProperty() = default;
+
+    protected:
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
+
+    private:
+        FramePackingProperty& operator=(const FramePackingProperty&) = delete;
+        FramePackingProperty& operator=(FramePackingProperty&&) = delete;
+        FramePackingProperty(const FramePackingProperty&)       = delete;
+        FramePackingProperty(FramePackingProperty&&)            = delete;
+        FramePackingProperty()                                  = delete;
+    };
+
 }  // namespace HEIFPP

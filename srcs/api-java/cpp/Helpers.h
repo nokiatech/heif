@@ -19,7 +19,7 @@
     HEIFPP::DerivedImageItem* handle = (HEIFPP::DerivedImageItem*) getNativeHandle(env, object)
 #define NATIVE_CODED_IMAGE_ITEM(handle, object) \
     HEIFPP::CodedImageItem* handle = (HEIFPP::CodedImageItem*) getNativeHandle(env, object)
-#define NATIVE_GRID_IMAGE_ITEM(handle, object) HEIFPP::Grid* handle = (HEIFPP::Grid*) getNativeHandle(env, object)
+#define NATIVE_GRID_IMAGE_ITEM(handle, object) HEIFPP::GridImageItem* handle = (HEIFPP::GridImageItem*) getNativeHandle(env, object)
 #define NATIVE_OVERLAY_IMAGE_ITEM(handle, object) \
     HEIFPP::Overlay* handle = (HEIFPP::Overlay*) getNativeHandle(env, object)
 #define NATIVE_IDENTITY_IMAGE_ITEM(handle, object) \

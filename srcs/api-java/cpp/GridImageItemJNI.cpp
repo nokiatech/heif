@@ -22,7 +22,7 @@ extern "C"
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::Grid *nativeObject = new HEIFPP::Grid(nativeHeif);
+        HEIFPP::GridImageItem *nativeObject = new HEIFPP::GridImageItem(nativeHeif);
         nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }

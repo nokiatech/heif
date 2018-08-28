@@ -144,6 +144,24 @@ namespace HEIF
         virtual ErrorCode getProperty(const PropertyId& index, AuxiliaryType& auxC) const;
 
         /// @see Reader::getProperty()
+        virtual ErrorCode getProperty(const PropertyId& index, FramePackingProperty& stvi) const;
+
+        /// @see Reader::getProperty()
+        virtual ErrorCode getProperty(const PropertyId& index, ProjectionFormatProperty& prfr) const;
+
+        /// @see Reader::getProperty()
+        virtual ErrorCode getProperty(const PropertyId& index, RegionWisePackingProperty& rwpk) const;
+
+        /// @see Reader::getProperty()
+        virtual ErrorCode getProperty(const PropertyId& index, Rotation& rotn) const;
+
+        /// @see Reader::getProperty()
+        virtual ErrorCode getProperty(const PropertyId& index, CoverageInformationProperty& covi) const;
+
+        /// @see Reader::getProperty()
+        virtual ErrorCode getProperty(const PropertyId& index, InitialViewingOrientation& iivo) const;
+
+        /// @see Reader::getProperty()
         virtual ErrorCode getProperty(const SequenceId& trackId, const std::uint32_t index, AuxiliaryType& auxC) const;
 
         /// @see Reader::getProperty()

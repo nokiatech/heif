@@ -835,7 +835,7 @@ Item* Heif::constructItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, H
         }
         else if (type == HEIF::FourCC("grid"))
         {
-            item = new Grid(this);
+            item = new GridImageItem(this);
         }
         else if (type == HEIF::FourCC("Exif"))
         {

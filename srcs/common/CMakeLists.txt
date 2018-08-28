@@ -34,6 +34,7 @@ set(COMMON_SRCS
     colourinformationbox.cpp
     compositionoffsetbox.cpp
     compositiontodecodebox.cpp
+    coverageinformationbox.cpp
     datainformationbox.cpp
     datareferencebox.cpp
     decodepts.cpp
@@ -56,6 +57,7 @@ set(COMMON_SRCS
     imagerelativelocationproperty.cpp
     imagegrid.cpp
     imageoverlay.cpp
+    initialviewingorientationbox.cpp
     itemdatabox.cpp
     iteminfobox.cpp
     itemlocationbox.cpp
@@ -81,8 +83,11 @@ set(COMMON_SRCS
     pixelaspectratiobox.cpp
     pixelinformationproperty.cpp
     primaryitembox.cpp
+    projectionformatbox.cpp
     protectionschemeinfobox.cpp
     rawpropertybox.cpp
+    regionwisepackingbox.cpp
+    rotationbox.cpp
     sampledescriptionbox.cpp
     sampleentrybox.cpp
     samplegroupdescriptionentry.cpp
@@ -94,6 +99,7 @@ set(COMMON_SRCS
     samplegroupdescriptionbox.cpp
     samplingratebox.cpp
     soundmediaheaderbox.cpp
+    stereovideobox.cpp
     syncsamplebox.cpp
     timetosamplebox.cpp
     trackbox.cpp
@@ -122,8 +128,10 @@ set(COMMON_HDRS
     cleanaperturebox.hpp
     codingconstraintsbox.hpp
     colourinformationbox.hpp
+    commontypes.hpp
     compositionoffsetbox.hpp
     compositiontodecodebox.hpp
+    coverageinformationbox.hpp
     datainformationbox.hpp
     datareferencebox.hpp
     decodepts.hpp
@@ -149,6 +157,7 @@ set(COMMON_HDRS
     imagerelativelocationproperty.hpp
     imagerotation.hpp
     imagespatialextentsproperty.hpp
+    initialviewingorientationbox.hpp
     itemdatabox.hpp
     iteminfobox.hpp
     itemlocationbox.hpp
@@ -175,8 +184,11 @@ set(COMMON_HDRS
     pixelaspectratiobox.hpp
     pixelinformationproperty.hpp
     primaryitembox.hpp
+    projectionformatbox.hpp
     protectionschemeinfobox.hpp
     rawpropertybox.hpp
+    regionwisepackingbox.hpp
+    rotationbox.hpp
     sampledescriptionbox.hpp
     sampleentrybox.hpp
     samplegroupdescriptionbox.hpp
@@ -189,6 +201,7 @@ set(COMMON_HDRS
     samplingratebox.hpp
     smallvector.hpp
     soundmediaheaderbox.hpp
+    stereovideobox.hpp
     syncsamplebox.hpp
     timetosamplebox.hpp
     trackbox.hpp

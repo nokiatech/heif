@@ -328,7 +328,7 @@ HEIF::ErrorCode CodedImageItem::save(HEIF::Writer* aWriter)
         return HEIF::ErrorCode::INVALID_MEDIA_FORMAT;
     }
 
-    // TOODO: should mediadata reuse be possible (technically yes, but do it later?)
+    // TODO: should mediadata reuse be possible (technically yes, but do it later?)
     error = aWriter->feedMediaData(fr, mediaDataId);
 
     // free temporary data.

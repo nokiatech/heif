@@ -1144,6 +1144,10 @@ namespace HEIF
         {
             return ItemPropertyType::COLR;
         }
+        if (aType == ItemPropertiesBox::PropertyType::COVI)
+        {
+            return ItemPropertyType::COVI;
+        }
         if (aType == ItemPropertiesBox::PropertyType::HVCC)
         {
             return ItemPropertyType::HVCC;
@@ -1151,6 +1155,10 @@ namespace HEIF
         if (aType == ItemPropertiesBox::PropertyType::IMIR)
         {
             return ItemPropertyType::IMIR;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::IIVO)
+        {
+            return ItemPropertyType::IIVO;
         }
         if (aType == ItemPropertiesBox::PropertyType::IROT)
         {
@@ -1172,9 +1180,25 @@ namespace HEIF
         {
             return ItemPropertyType::PIXI;
         }
+        if (aType == ItemPropertiesBox::PropertyType::PRFR)
+        {
+            return ItemPropertyType::PRFR;
+        }
         if (aType == ItemPropertiesBox::PropertyType::RLOC)
         {
             return ItemPropertyType::RLOC;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::ROTN)
+        {
+            return ItemPropertyType::ROTN;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::RWPK)
+        {
+            return ItemPropertyType::RWPK;
+        }
+        if (aType == ItemPropertiesBox::PropertyType::STVI)
+        {
+            return ItemPropertyType::STVI;
         }
         return ItemPropertyType::RAW;
     }

@@ -75,6 +75,10 @@ ItemPropertiesBox::PropertyType ItemPropertiesBox::getPropertyType(const Box* pr
     {
         type = PropertyType::COLR;
     }
+    else if (boxType == "covi")
+    {
+        type = PropertyType::COVI;
+    }
     else if (boxType == "free")
     {
         type = PropertyType::FREE;
@@ -82,6 +86,10 @@ ItemPropertiesBox::PropertyType ItemPropertiesBox::getPropertyType(const Box* pr
     else if (boxType == "hvcC")
     {
         type = PropertyType::HVCC;
+    }
+    else if (boxType == "iivo")
+    {
+        type = PropertyType::IIVO;
     }
     else if (boxType == "imir")
     {
@@ -107,13 +115,29 @@ ItemPropertiesBox::PropertyType ItemPropertiesBox::getPropertyType(const Box* pr
     {
         type = PropertyType::PIXI;
     }
+    else if (boxType == "prfr")
+    {
+        type = PropertyType::PRFR;
+    }
     else if (boxType == "rloc")
     {
         type = PropertyType::RLOC;
     }
+    else if (boxType == "rotn")
+    {
+        type = PropertyType::ROTN;
+    }
+    else if (boxType == "rwpk")
+    {
+        type = PropertyType::RWPK;
+    }
     else if (boxType == "skip")
     {
         type = PropertyType::FREE;
+    }
+    else if (boxType == "stvi")
+    {
+        type = PropertyType::STVI;
     }
     return type;
 }

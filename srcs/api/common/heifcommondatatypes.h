@@ -386,6 +386,131 @@ namespace HEIF
                                      ///< true. Zero means infinite looping.
         Array<EditUnit> editUnits;   ///< Edit units in the order they should be applied.
     };
+
+
+    enum OmafProjectionType
+    {
+        EQUIRECTANGULAR = 0,
+        CUBEMAP
+    };
+
+    /**********************************************************************************************
+     *
+     * Omaf related datatypes (ISO/IEC FDIS 23090-2 : 7.9 Storage of omnidirectional images)
+     *
+     **********************************************************************************************/
+
+    enum class ViewIdc : uint8_t
+    {
+        MONOSCOPIC     = 0,
+        LEFT           = 1,
+        RIGHT          = 2,
+        LEFT_AND_RIGHT = 3,
+        INVALID        = 0xff
+    };
+
+    enum class RegionWisePackingType : uint8_t
+    {
+        RECTANGULAR = 0
+    };
+
+    enum class CoverageShapeType : uint8_t
+    {
+        FOUR_GREAT_CIRCLES = 0,
+        TWO_AZIMUTH_AND_TWO_ELEVATION_CIRCLES
+    };
+
+    enum FramePackingProperty
+    {
+        TOP_BOTTOM_PACKING   = 3,
+        SIDE_BY_SIDE_PACKING = 4,
+        MONOSCOPIC           = 0x8f  ///< special value for indicating that stvi box was not found
+    };
+
+    struct HEIF_DLL_PUBLIC RectRegionPacking
+    {
+        uint32_t projRegWidth;
+        uint32_t projRegHeight;
+        uint32_t projRegTop;
+        uint32_t projRegLeft;
+        uint8_t transformType;
+        uint16_t packedRegWidth;
+        uint16_t packedRegHeight;
+        uint16_t packedRegTop;
+        uint16_t packedRegLeft;
+
+        uint8_t leftGbWidth;
+        uint8_t rightGbWidth;
+        uint8_t topGbHeight;
+        uint8_t bottomGbHeight;
+        bool gbNotUsedForPredFlag;
+        uint8_t gbType0;
+        uint8_t gbType1;
+        uint8_t gbType2;
+        uint8_t gbType3;
+    };
+
+    struct HEIF_DLL_PUBLIC RegionWisePackingRegion
+    {
+        bool guardBandFlag;
+        RegionWisePackingType packingType;
+        union Region {
+            RectRegionPacking rectangular;
+        } region;
+    };
+
+    struct HEIF_DLL_PUBLIC RegionWisePackingProperty
+    {
+        bool constituentPictureMatchingFlag = false;
+        uint32_t projPictureWidth;
+        uint32_t projPictureHeight;
+        uint16_t packedPictureWidth;
+        uint16_t packedPictureHeight;
+        Array<RegionWisePackingRegion> regions;
+    };
+
+    struct HEIF_DLL_PUBLIC SphereRegionProperty
+    {
+        int32_t centreAzimuth;
+        int32_t centreElevation;
+        int32_t centreTilt;
+        uint32_t azimuthRange;    // not used with iivo (dynamic_range 0)
+        uint32_t elevationRange;  // not used with iivo (dynamic_range 0)
+        bool interpolate;         // not used with iivo (always 0)
+    };
+
+    struct HEIF_DLL_PUBLIC CoverageSphereRegion
+    {
+        ViewIdc viewIdc;  // only valid if CoverageInformationProperty.viewIdcPresenceFlag is set
+        SphereRegionProperty region;
+    };
+
+
+    struct HEIF_DLL_PUBLIC CoverageInformationProperty
+    {
+        CoverageShapeType coverageShapeType;
+        bool viewIdcPresenceFlag;
+        ViewIdc defaultViewIdc;
+        Array<CoverageSphereRegion> sphereRegions;
+    };
+
+    struct HEIF_DLL_PUBLIC ProjectionFormatProperty
+    {
+        OmafProjectionType format;
+    };
+
+    struct HEIF_DLL_PUBLIC Rotation
+    {
+        int32_t yaw;
+        int32_t pitch;
+        int32_t roll;
+    };
+
+    struct HEIF_DLL_PUBLIC InitialViewingOrientation
+    {
+        SphereRegionProperty region = {};
+    };
+
 }  // namespace HEIF
 
 #endif /* HEIFCOMMONDATATYPES_H */

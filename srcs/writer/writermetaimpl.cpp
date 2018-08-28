@@ -32,6 +32,14 @@
 #include "pixelaspectratiobox.hpp"
 #include "pixelinformationproperty.hpp"
 #include "rawpropertybox.hpp"
+
+#include "coverageinformationbox.hpp"
+#include "initialviewingorientationbox.hpp"
+#include "projectionformatbox.hpp"
+#include "regionwisepackingbox.hpp"
+#include "rotationbox.hpp"
+#include "stereovideobox.hpp"
+
 #include "writerimpl.hpp"
 
 using namespace std;
@@ -335,8 +343,8 @@ namespace HEIF
         clapBox->setVertOffset(value);
 
         PropertyInformation info;
-        info.isTransformative   = true;
-        propertyId              = PropertyId(mMetaBox.addProperty(clapBox, {}, false));
+        info.isTransformative = true;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(clapBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -353,8 +361,8 @@ namespace HEIF
         imirBox->setHorizontalAxis(imir.horizontalAxis);
 
         PropertyInformation info;
-        info.isTransformative   = true;
-        propertyId              = PropertyId(mMetaBox.addProperty(imirBox, {}, false));
+        info.isTransformative = true;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(imirBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -371,8 +379,8 @@ namespace HEIF
         irotBox->setAngle(irot.angle);
 
         PropertyInformation info;
-        info.isTransformative   = true;
-        propertyId              = PropertyId(mMetaBox.addProperty(irotBox, {}, false));
+        info.isTransformative = true;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(irotBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -390,8 +398,8 @@ namespace HEIF
         rlocBox->setVerticalOffset(rloc.verticalOffset);
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(rlocBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(rlocBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -410,8 +418,8 @@ namespace HEIF
         paspBox->setRelativeHeight(pasp.relativeHeight);
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(paspBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(paspBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -433,8 +441,8 @@ namespace HEIF
         pixiBox->setBitsPerChannels(bitsPerChannelVector);
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(pixiBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(pixiBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -470,8 +478,8 @@ namespace HEIF
         colrBox->setIccProfile(iccProfileVector);
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(colrBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(colrBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -494,8 +502,200 @@ namespace HEIF
         }
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(auxCBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(auxCBox), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const FramePackingProperty& stvi, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto stviBox = makeCustomShared<StereoVideoBox>();
+
+        // enum values should match
+        stviBox->setStereoScheme(StereoVideoBox::StereoSchemeType::Povd);
+
+        StereoVideoBox::StereoIndicationType stereoIndication{};
+        stereoIndication.Povd.compositionType = (StereoVideoBox::PovdFrameCompositionType) stvi;
+        stviBox->setStereoIndicationType(stereoIndication);
+
+        PropertyInformation info;
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(stviBox), {}, true));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const ProjectionFormatProperty& prfr, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto prfrBox = makeCustomShared<ProjectionFormatBox>();
+
+        // enum values should match
+        prfrBox->setProjectionType((ProjectionFormatBox::ProjectionType) prfr.format);
+
+        PropertyInformation info;
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(prfrBox), {}, true));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const RegionWisePackingProperty& rwpk, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto rwpkBox = makeCustomShared<RegionWisePackingBox>();
+
+        // enum values should match
+        rwpkBox->setConstituentPictureMatchingFlag(rwpk.constituentPictureMatchingFlag);
+        rwpkBox->setPackedPictureHeight(rwpk.packedPictureHeight);
+        rwpkBox->setPackedPictureWidth(rwpk.packedPictureWidth);
+        rwpkBox->setProjPictureHeight(rwpk.projPictureHeight);
+        rwpkBox->setProjPictureWidth(rwpk.projPictureWidth);
+
+        for (auto& region : rwpk.regions)
+        {
+            auto boxRegion = makeCustomUnique<RegionWisePackingBox::Region, RegionWisePackingBox::Region>();
+
+            boxRegion->guardBandFlag = region.guardBandFlag;
+            boxRegion->packingType   = (RegionWisePackingBox::PackingType) region.packingType;
+
+            if (boxRegion->packingType == RegionWisePackingBox::PackingType::RECTANGULAR)
+            {
+                boxRegion->rectangularPacking = makeCustomUnique<RegionWisePackingBox::RectangularRegionWisePacking,
+                                                                 RegionWisePackingBox::RectangularRegionWisePacking>();
+
+                boxRegion->rectangularPacking->packedRegHeight = region.region.rectangular.packedRegHeight;
+                boxRegion->rectangularPacking->packedRegLeft   = region.region.rectangular.packedRegLeft;
+                boxRegion->rectangularPacking->packedRegTop    = region.region.rectangular.packedRegTop;
+                boxRegion->rectangularPacking->packedRegWidth  = region.region.rectangular.packedRegWidth;
+
+                boxRegion->rectangularPacking->transformType = region.region.rectangular.transformType;
+
+                boxRegion->rectangularPacking->projRegHeight = region.region.rectangular.projRegHeight;
+                boxRegion->rectangularPacking->projRegLeft   = region.region.rectangular.projRegLeft;
+                boxRegion->rectangularPacking->projRegTop    = region.region.rectangular.projRegTop;
+                boxRegion->rectangularPacking->projRegWidth  = region.region.rectangular.projRegWidth;
+
+                boxRegion->rectangularPacking->gbNotUsedForPredFlag = region.region.rectangular.gbNotUsedForPredFlag;
+
+                boxRegion->rectangularPacking->topGbHeight    = region.region.rectangular.topGbHeight;
+                boxRegion->rectangularPacking->leftGbWidth    = region.region.rectangular.leftGbWidth;
+                boxRegion->rectangularPacking->rightGbWidth   = region.region.rectangular.rightGbWidth;
+                boxRegion->rectangularPacking->bottomGbHeight = region.region.rectangular.bottomGbHeight;
+
+                boxRegion->rectangularPacking->gbType0 = region.region.rectangular.gbType0;
+                boxRegion->rectangularPacking->gbType1 = region.region.rectangular.gbType1;
+                boxRegion->rectangularPacking->gbType2 = region.region.rectangular.gbType2;
+                boxRegion->rectangularPacking->gbType3 = region.region.rectangular.gbType3;
+            }
+
+            rwpkBox->addRegion(std::move(boxRegion));
+        }
+
+        PropertyInformation info;
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(rwpkBox), {}, true));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const Rotation& rotn, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto rotnBox = makeCustomShared<RotationBox>();
+        RotationBox::Rotation rotation;
+        rotation.yaw   = rotn.yaw;
+        rotation.pitch = rotn.pitch;
+        rotation.roll  = rotn.roll;
+        rotnBox->setRotation(rotation);
+
+        PropertyInformation info;
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(rotnBox), {}, true));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const CoverageInformationProperty& covi, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto coviBox = makeCustomShared<CoverageInformationBox>();
+
+        coviBox->setCoverageShapeType((CoverageInformationBox::CoverageShapeType) covi.coverageShapeType);
+        coviBox->setDefaultViewIdc((ViewIdcType) covi.defaultViewIdc);
+        coviBox->setViewIdcPresenceFlag(covi.viewIdcPresenceFlag);
+
+        for (auto& region : covi.sphereRegions)
+        {
+            auto boxRegion = makeCustomUnique<CoverageInformationBox::CoverageSphereRegion,
+                                              CoverageInformationBox::CoverageSphereRegion>();
+
+            boxRegion->viewIdc                = (ViewIdcType) region.viewIdc;
+            boxRegion->region.centreAzimuth   = region.region.centreAzimuth;
+            boxRegion->region.centreElevation = region.region.centreElevation;
+            boxRegion->region.centreTilt      = region.region.centreTilt;
+
+            boxRegion->region.azimuthRange   = region.region.azimuthRange;
+            boxRegion->region.elevationRange = region.region.elevationRange;
+            boxRegion->region.interpolate    = region.region.interpolate;
+
+            coviBox->addSphereRegion(std::move(boxRegion));
+        }
+
+        PropertyInformation info;
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(coviBox), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const InitialViewingOrientation& iivo, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto iivoBox = makeCustomShared<InitialViewingOrientationBox>();
+
+        auto& initialOrientation                         = iivoBox->getVrInitialOrientation();
+        initialOrientation.regions.at(0).centreAzimuth   = iivo.region.centreAzimuth;
+        initialOrientation.regions.at(0).centreElevation = iivo.region.centreElevation;
+        initialOrientation.regions.at(0).centreTilt      = iivo.region.centreTilt;
+        initialOrientation.regions.at(0).interpolate     = false;
+        initialOrientation.refreshFlag                   = false;
+
+        PropertyInformation info;
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(iivoBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -514,8 +714,8 @@ namespace HEIF
         customBox->setData(data);
 
         PropertyInformation info;
-        info.isTransformative   = isTransformative;
-        propertyId              = PropertyId(mMetaBox.addProperty(customBox, {}, false));
+        info.isTransformative = isTransformative;
+        propertyId = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(customBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -626,7 +826,7 @@ namespace HEIF
             mMetaBox.addItemReference("dimg", gridId.get(), toImageId.get());
         }
         const auto ispeIndex = getIspeIndex(gridItem.outputWidth, gridItem.outputHeight);
-        mMetaBox.addProperty(ispeIndex, {gridId.get()}, false);
+        mMetaBox.addProperty(static_cast<uint16_t>(ispeIndex), {gridId.get()}, false);
 
         return ErrorCode::OK;
     }
@@ -684,7 +884,7 @@ namespace HEIF
             mMetaBox.addItemReference("dimg", overlayId.get(), toImageId.get());
         }
         const auto ispeIndex = getIspeIndex(iovlItem.outputWidth, iovlItem.outputHeight);
-        mMetaBox.addProperty(ispeIndex, {overlayId.get()}, false);
+        mMetaBox.addProperty(static_cast<uint16_t>(ispeIndex), {overlayId.get()}, false);
 
         return ErrorCode::OK;
     }
@@ -848,8 +1048,9 @@ namespace HEIF
 
         if (mIspeIndexes.count(size) == 0)
         {
-            mIspeIndexes[size] =
-                mMetaBox.addProperty(makeCustomShared<ImageSpatialExtentsProperty>(width, height), {}, false);
+            mIspeIndexes[size] = mMetaBox.addProperty(
+                static_cast<std::shared_ptr<Box>>(makeCustomShared<ImageSpatialExtentsProperty>(width, height)), {},
+                false);
         }
 
         return mIspeIndexes[size];
@@ -876,7 +1077,7 @@ namespace HEIF
                     }
 
                     configBox->setConfiguration(configRecord);
-                    const auto index                 = mMetaBox.addProperty(configBox, {}, true);
+                    const auto index = mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(configBox), {}, true);
                     mDecoderConfigs[decoderConfigId] = index;
                     mDecoderConfigIndexToSize[index] = {configRecord.getPicWidth(), configRecord.getPicHeight()};
                 }
@@ -892,7 +1093,7 @@ namespace HEIF
                         return error;
                     }
                     configBox->setConfiguration(configRecord);
-                    const auto index                 = mMetaBox.addProperty(configBox, {}, true);
+                    const auto index = mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(configBox), {}, true);
                     mDecoderConfigs[decoderConfigId] = index;
                     mDecoderConfigIndexToSize[index] = {configRecord.getPicWidth(), configRecord.getPicHeight()};
                 }

@@ -31,6 +31,7 @@ namespace HEIFPP
         void setDecoderConfiguration(DecoderConfiguration* aConfig);
 
         /** Sets the item data for the image
+         * Makes copy of the data.
          * @param [in] aData: A pointer to the data.
          * @param [in] aLength: The amount of data. */
         void setItemData(const std::uint8_t* aData, std::uint64_t aLength);

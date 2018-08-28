@@ -54,7 +54,14 @@ namespace HEIF
         JPGC,  ///< JPEG configuration
         PASP,  ///< Pixel aspect ratio
         PIXI,  ///< Pixel information
-        RLOC   ///< Relative location
+        RLOC,  ///< Relative location
+
+        STVI,  ///< Frame packing
+        PRFR,  ///< Projection format
+        RWPK,  ///< Region wise packing
+        ROTN,  ///< Rotation
+        COVI,  ///< Coverage information
+        IIVO   ///< Initial viewing orientation
     };
 
     /// Information about a single property associated to an image item
@@ -302,6 +309,7 @@ namespace HEIF
         bool hasClap;                         ///< CleanApertureBox is present in the sample entry
         bool hasAuxi;                         ///< AuxiliaryTypeInfoBox is present in the sample entry
         CodingConstraints codingConstraints;  ///< CodingConstraints for sample
+        uint64_t size;                        ///< size of sample data in bytes
     };
 
     struct HEIF_DLL_PUBLIC TrackInformation

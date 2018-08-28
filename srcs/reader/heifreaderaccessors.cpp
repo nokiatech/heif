@@ -39,6 +39,13 @@
 #include "pixelinformationproperty.hpp"
 #include "rawpropertybox.hpp"
 
+#include "coverageinformationbox.hpp"
+#include "initialviewingorientationbox.hpp"
+#include "projectionformatbox.hpp"
+#include "regionwisepackingbox.hpp"
+#include "rotationbox.hpp"
+#include "stereovideobox.hpp"
+
 #include <algorithm>
 #include <bitset>
 #include <cassert>
@@ -757,6 +764,186 @@ namespace HEIF
         }
         return ErrorCode::OK;
     }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, FramePackingProperty& stvi) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
+        const auto* boxPtr   = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "stvi")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+
+        auto stviPtr = static_cast<const StereoVideoBox*>(boxPtr);
+        stvi         = (FramePackingProperty) stviPtr->getStereoIndicationType().Povd.compositionType;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, ProjectionFormatProperty& prfr) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
+        const auto* boxPtr   = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "prfr")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+
+        auto prfrPtr = static_cast<const ProjectionFormatBox*>(boxPtr);
+        prfr.format  = (OmafProjectionType) prfrPtr->getProjectionType();
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, RegionWisePackingProperty& rwpk) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
+        const auto* boxPtr   = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "rwpk")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+
+        auto rwpkPtr                        = static_cast<const RegionWisePackingBox*>(boxPtr);
+        rwpk.constituentPictureMatchingFlag = rwpkPtr->getConstituentPictureMatchingFlag();
+        rwpk.packedPictureHeight            = rwpkPtr->getPackedPictureHeight();
+        rwpk.packedPictureWidth             = rwpkPtr->getPackedPictureWidth();
+        rwpk.projPictureHeight              = rwpkPtr->getProjPictureHeight();
+        rwpk.projPictureWidth               = rwpkPtr->getProjPictureWidth();
+
+        const auto& boxRegions = rwpkPtr->getRegions();
+        rwpk.regions           = Array<RegionWisePackingRegion>(boxRegions.size());
+
+        for (size_t i = 0; i < boxRegions.size(); i++)
+        {
+            auto& boxRegion               = boxRegions.at(i);
+            rwpk.regions[i].guardBandFlag = boxRegion->guardBandFlag;
+            rwpk.regions[i].packingType   = (RegionWisePackingType) boxRegion->packingType;
+
+            rwpk.regions[i].region.rectangular.projRegHeight = boxRegion->rectangularPacking->projRegHeight;
+            rwpk.regions[i].region.rectangular.projRegLeft   = boxRegion->rectangularPacking->projRegLeft;
+            rwpk.regions[i].region.rectangular.projRegTop    = boxRegion->rectangularPacking->projRegTop;
+            rwpk.regions[i].region.rectangular.projRegWidth  = boxRegion->rectangularPacking->projRegWidth;
+
+            rwpk.regions[i].region.rectangular.transformType = boxRegion->rectangularPacking->transformType;
+
+            rwpk.regions[i].region.rectangular.packedRegHeight = boxRegion->rectangularPacking->packedRegHeight;
+            rwpk.regions[i].region.rectangular.packedRegLeft   = boxRegion->rectangularPacking->packedRegLeft;
+            rwpk.regions[i].region.rectangular.packedRegTop    = boxRegion->rectangularPacking->packedRegTop;
+            rwpk.regions[i].region.rectangular.packedRegWidth  = boxRegion->rectangularPacking->packedRegWidth;
+
+            rwpk.regions[i].region.rectangular.topGbHeight    = boxRegion->rectangularPacking->topGbHeight;
+            rwpk.regions[i].region.rectangular.bottomGbHeight = boxRegion->rectangularPacking->bottomGbHeight;
+            rwpk.regions[i].region.rectangular.leftGbWidth    = boxRegion->rectangularPacking->leftGbWidth;
+            rwpk.regions[i].region.rectangular.rightGbWidth   = boxRegion->rectangularPacking->rightGbWidth;
+
+            rwpk.regions[i].region.rectangular.gbNotUsedForPredFlag =
+                boxRegion->rectangularPacking->gbNotUsedForPredFlag;
+
+            rwpk.regions[i].region.rectangular.gbType0 = boxRegion->rectangularPacking->gbType0;
+            rwpk.regions[i].region.rectangular.gbType1 = boxRegion->rectangularPacking->gbType1;
+            rwpk.regions[i].region.rectangular.gbType2 = boxRegion->rectangularPacking->gbType2;
+            rwpk.regions[i].region.rectangular.gbType3 = boxRegion->rectangularPacking->gbType3;
+        }
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, Rotation& rotn) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
+        const auto* boxPtr   = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "rotn")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+
+        auto rotnPtr = static_cast<const RotationBox*>(boxPtr);
+        rotn.yaw     = rotnPtr->getRotation().yaw;
+        rotn.pitch   = rotnPtr->getRotation().pitch;
+        rotn.roll    = rotnPtr->getRotation().roll;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, CoverageInformationProperty& covi) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
+        const auto* boxPtr   = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "covi")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+
+        auto coviPtr             = static_cast<const CoverageInformationBox*>(boxPtr);
+        covi.coverageShapeType   = (CoverageShapeType) coviPtr->getCoverageShapeType();
+        covi.defaultViewIdc      = (ViewIdc) coviPtr->getDefaultViewIdc();
+        covi.viewIdcPresenceFlag = coviPtr->getViewIdcPresenceFlag();
+
+        const auto& boxRegions = coviPtr->getSphereRegions();
+        covi.sphereRegions     = Array<CoverageSphereRegion>(boxRegions.size());
+
+        for (size_t i = 0; i < boxRegions.size(); i++)
+        {
+            auto& boxRegion = boxRegions.at(i);
+
+            covi.sphereRegions[i].viewIdc = (ViewIdc) boxRegion->viewIdc;
+
+            covi.sphereRegions[i].region.centreAzimuth   = boxRegion->region.centreAzimuth;
+            covi.sphereRegions[i].region.centreElevation = boxRegion->region.centreElevation;
+            covi.sphereRegions[i].region.centreTilt      = boxRegion->region.centreTilt;
+            covi.sphereRegions[i].region.azimuthRange    = boxRegion->region.azimuthRange;
+            covi.sphereRegions[i].region.elevationRange  = boxRegion->region.elevationRange;
+            covi.sphereRegions[i].region.interpolate     = boxRegion->region.interpolate;
+        }
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, InitialViewingOrientation& iivo) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
+        const auto* boxPtr   = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "iivo")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+
+        auto iivoPtr                = static_cast<const InitialViewingOrientationBox*>(boxPtr);
+        iivo.region.centreAzimuth   = iivoPtr->getVrInitialOrientation().regions.at(0).centreAzimuth;
+        iivo.region.centreElevation = iivoPtr->getVrInitialOrientation().regions.at(0).centreElevation;
+        iivo.region.centreTilt      = iivoPtr->getVrInitialOrientation().regions.at(0).centreTilt;
+        iivo.region.azimuthRange    = iivoPtr->getVrInitialOrientation().regions.at(0).azimuthRange;
+        iivo.region.elevationRange  = iivoPtr->getVrInitialOrientation().regions.at(0).elevationRange;
+        iivo.region.interpolate     = iivoPtr->getVrInitialOrientation().regions.at(0).interpolate;
+
+        return ErrorCode::OK;
+    }
+
 
     ErrorCode HeifReaderImpl::getProperty(const SequenceId& sequenceId,
                                           const std::uint32_t index,

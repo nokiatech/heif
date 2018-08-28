@@ -232,6 +232,60 @@ namespace HEIF
         virtual ErrorCode addProperty(const AuxiliaryType& auxC, PropertyId& propertyId) = 0;
 
         /**
+         * Add frame packing 'stvi' descriptive property.
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.2
+         * @param stvi       [in]  Frame packing of stereo image content.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const FramePackingProperty& stvi, PropertyId& propertyId) = 0;
+
+        /**
+         * Add projection format 'prfr' descriptive property.
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.3
+         * @param prfr       [in]  Projection format property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const ProjectionFormatProperty& prfr, PropertyId& propertyId) = 0;
+
+        /**
+         * Add region wise packing 'rwpk' descriptive property.
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.6
+         * @param rwpk       [in]  Region wise packing property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const RegionWisePackingProperty& rwpk, PropertyId& propertyId) = 0;
+
+        /**
+         * Add rotation 'rotn' descriptive property.
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.7
+         * @param rotn       [in]  Rotation property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const Rotation& rotn, PropertyId& propertyId) = 0;
+
+        /**
+         * Add coverage information 'covi' descriptive property.
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.8
+         * @param covi       [in]  Coverage information property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const CoverageInformationProperty& covi, PropertyId& propertyId) = 0;
+
+        /**
+         * Add initial viewing orientation 'iivo' descriptive property.
+         * Specified in OMAF ISO/IEC FDIS 23090-2 chapter 7.9.9
+         * @param iivo       [in]  Initial viewing orientation property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const InitialViewingOrientation& covi, PropertyId& propertyId) = 0;
+
+        /**
          * Add a new property from binary data.
          * Note that complete property data including box or full box header must be supplied.
          * This can be used to add properties which are not supported by the writer, or for other

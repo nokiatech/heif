@@ -99,7 +99,7 @@ createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEI
 template jobject
 createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::CodedImageItem* nativeHandle);
 template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::Grid* nativeHandle);
+createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::GridImageItem* nativeHandle);
 template jobject
 createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::Overlay* nativeHandle);
 template jobject

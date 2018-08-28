@@ -52,6 +52,12 @@ namespace HEIF
         virtual ErrorCode addProperty(const PixelInformation& pixi, PropertyId& propertyId);
         virtual ErrorCode addProperty(const ColourInformation& colr, PropertyId& propertyId);
         virtual ErrorCode addProperty(const AuxiliaryType& auxC, PropertyId& propertyId);
+        virtual ErrorCode addProperty(const FramePackingProperty& stvi, PropertyId& propertyId);
+        virtual ErrorCode addProperty(const ProjectionFormatProperty& prfr, PropertyId& propertyId);
+        virtual ErrorCode addProperty(const RegionWisePackingProperty& rwpk, PropertyId& propertyId);
+        virtual ErrorCode addProperty(const Rotation& rotn, PropertyId& propertyId);
+        virtual ErrorCode addProperty(const CoverageInformationProperty& covi, PropertyId& propertyId);
+        virtual ErrorCode addProperty(const InitialViewingOrientation& covi, PropertyId& propertyId);
         virtual ErrorCode addProperty(const RawProperty& property, const bool isTransformative, PropertyId& propertyId);
         virtual ErrorCode associateProperty(const ImageId& imageId,
                                             const PropertyId& propertyId,

@@ -20,7 +20,7 @@ namespace HEIFPP
     class ImageItem : public HEIFPP::Item
     {
         friend class Identity;
-        friend class Grid;
+        friend class GridImageItem;
         friend class Overlay;
         friend class CodedImageItem;
 
