@@ -29,6 +29,7 @@ namespace HEIFPP
 
     private:
         MPEG7Item& operator=(const MPEG7Item&) = delete;
+        MPEG7Item& operator=(MPEG7Item&&)      = delete;
         MPEG7Item(const MPEG7Item&)            = delete;
         MPEG7Item(MPEG7Item&&)                 = delete;
         MPEG7Item()                            = delete;

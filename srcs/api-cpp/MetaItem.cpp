@@ -20,8 +20,11 @@ using namespace HEIFPP;
 
 MetaItem::MetaItem(Heif* aHeif, const HEIF::FourCC& aType)
     : Item(aHeif, aType, false)
+    , mIsMetaToItem()
+    , mIsMetaToSample()
 {
 }
+
 MetaItem::~MetaItem()
 {
     for (; !mIsMetaToItem.empty();)

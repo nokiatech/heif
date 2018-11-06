@@ -225,6 +225,14 @@ namespace HEIF
         Array<uint8_t> decSpecInfoData;
     };
 
+    struct HEIF_DLL_PUBLIC ItemDescription
+    {
+        Array<char> name;             ///< string in UTF-8 characters containing a symbolic name of the item
+        Array<char> contentType;      ///< string in UTF-8 characters with the MIME type of the item
+        Array<char> contentEncoding;  ///< an optional string in UTF-8 characters used to indicate that
+                                      ///< the binary file is encoded and needs to be decoded before interpreted
+    };
+
     // HEIF item Properties
 
     /// Data of transformative item property Image mirroring 'imir'.

@@ -55,6 +55,7 @@ namespace HEIFPP
 
     private:
         ImageSequence& operator=(const ImageSequence&) = delete;
+        ImageSequence& operator=(ImageSequence&&)      = delete;
         ImageSequence(const ImageSequence&)            = delete;
         ImageSequence(ImageSequence&&)                 = delete;
         ImageSequence()                                = delete;

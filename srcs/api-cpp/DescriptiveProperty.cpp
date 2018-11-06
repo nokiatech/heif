@@ -17,15 +17,15 @@
 
 using namespace HEIFPP;
 
-DescriptiveProperty::DescriptiveProperty(Heif* aHeif, const HEIF::ItemPropertyType& aProp)
-    : ItemProperty(aHeif, aProp, false){};
+DescriptiveProperty::DescriptiveProperty(Heif* aHeif, const HEIF::ItemPropertyType& aProp, const HEIF::FourCC& aRawType)
+    : ItemProperty(aHeif, aProp, aRawType, false){};
 HEIF::ErrorCode DescriptiveProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
 {
     return ItemProperty::load(aReader, aId);
 }
 
 PixelAspectRatioProperty::PixelAspectRatioProperty(Heif* aHeif)
-    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::PASP)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::PASP,"pasp")
     , mPixelAspectRatio{}
 {
 }
@@ -52,7 +52,7 @@ HEIF::ErrorCode PixelAspectRatioProperty::save(HEIF::Writer* aWriter)
 }
 
 ColourInformationProperty::ColourInformationProperty(Heif* aHeif)
-    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::COLR)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::COLR,"colr")
     , mColourInformation{}
 {
 }
@@ -79,7 +79,7 @@ HEIF::ErrorCode ColourInformationProperty::save(HEIF::Writer* aWriter)
 }
 
 PixelInformationProperty::PixelInformationProperty(Heif* aHeif)
-    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::PIXI)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::PIXI,"pixi")
     , mPixelInformation{0}
 {
 }
@@ -106,7 +106,7 @@ HEIF::ErrorCode PixelInformationProperty::save(HEIF::Writer* aWriter)
 }
 
 RelativeLocationProperty::RelativeLocationProperty(Heif* aHeif)
-    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::RLOC)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::RLOC,"rloc")
     , mRelativeLocation{}
 {
 }
@@ -132,11 +132,11 @@ HEIF::ErrorCode RelativeLocationProperty::save(HEIF::Writer* aWriter)
     return error;
 }
 
-AuxProperty::AuxProperty(Heif* aHeif)
-    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::AUXC)
+AuxiliaryProperty::AuxiliaryProperty(Heif* aHeif)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::AUXC,"auxc")
 {
 }
-HEIF::ErrorCode AuxProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
+HEIF::ErrorCode AuxiliaryProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
 {
     HEIF::ErrorCode error;
     error = DescriptiveProperty::load(aReader, aId);
@@ -153,7 +153,7 @@ HEIF::ErrorCode AuxProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId&
     return error;
 }
 
-HEIF::ErrorCode AuxProperty::save(HEIF::Writer* aWriter)
+HEIF::ErrorCode AuxiliaryProperty::save(HEIF::Writer* aWriter)
 {
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
     HEIF::AuxiliaryType p;
@@ -177,19 +177,19 @@ HEIF::ErrorCode AuxProperty::save(HEIF::Writer* aWriter)
     return error;
 };
 
-const std::string& AuxProperty::auxType()
+const std::string& AuxiliaryProperty::auxType()
 {
     return mAuxType;
 }
-void AuxProperty::auxType(const std::string& aType)
+void AuxiliaryProperty::auxType(const std::string& aType)
 {
     mAuxType = aType;
 }
-const std::vector<uint8_t>& AuxProperty::subType()
+const std::vector<uint8_t>& AuxiliaryProperty::subType()
 {
     return mSubType;
 }
-void AuxProperty::subType(const std::vector<uint8_t>& aType)
+void AuxiliaryProperty::subType(const std::vector<uint8_t>& aType)
 {
     mSubType = aType;
 }

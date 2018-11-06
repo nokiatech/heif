@@ -20,22 +20,19 @@
 
 extern "C"
 {
-
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF, jstring javaFourCC)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        const char *nativeString = env->GetStringUTFChars(javaFourCC, 0);
+        const char* nativeString          = env->GetStringUTFChars(javaFourCC, 0);
         HEIFPP::EntityGroup* nativeObject = new HEIFPP::EntityGroup(nativeHeif, HEIF::FourCC(nativeString));
         env->ReleaseStringUTFChars(javaFourCC, nativeString);
-        nativeObject->setContext((void*) env->NewGlobalRef(self));
         return (jlong) nativeObject;
     }
 
     JNI_METHOD(void, destroyContextNative)
     {
         NATIVE_SELF;
-        jobject javaHandle = GET_JAVA_OBJECT(nativeSelf);
-        env->DeleteGlobalRef(javaHandle);
         setNativeHandle(env, self, 0);
         delete nativeSelf;
     }
@@ -61,8 +58,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getItemNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaItem(env, getJavaHEIF(env, self),
-                           nativeSelf->getItem(static_cast<uint32_t>(index)));
+        return getJavaItem(env, getJavaHEIF(env, self), nativeSelf->getItem(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addItemNative, jobject item)
@@ -88,8 +84,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getTrackNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaTrack(env, getJavaHEIF(env, self),
-                            nativeSelf->getTrack(static_cast<uint32_t>(index)));
+        return getJavaTrack(env, getJavaHEIF(env, self), nativeSelf->getTrack(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addTrackNative, jobject track)
@@ -115,8 +110,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getSampleNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaSample(env, getJavaHEIF(env, self),
-                             nativeSelf->getSample(static_cast<uint32_t>(index)));
+        return getJavaSample(env, getJavaHEIF(env, self), nativeSelf->getSample(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addSampleNative, jobject sample)

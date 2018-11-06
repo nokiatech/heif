@@ -83,6 +83,7 @@ namespace HEIFPP
 
     private:
         LinkArray<T>& operator=(const LinkArray<T>&) = delete;
+        LinkArray<T>& operator=(LinkArray<T>&&)      = delete;
         LinkArray<T>(const LinkArray<T>&)            = delete;
         LinkArray<T>(LinkArray<T>&&)                 = delete;
     };

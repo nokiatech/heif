@@ -91,8 +91,8 @@ namespace HEIFPP
         };
         std::vector<Entity> mItems;
         const void* mContext;
-        EntityGroup& operator=(const EntityGroup&) = delete;
-        EntityGroup& operator=(const EntityGroup&&) = delete;
+        EntityGroup& operator=(const EntityGroup&)  = delete;
+        EntityGroup& operator=(EntityGroup&&)       = delete;
         EntityGroup(const EntityGroup&)             = delete;
         EntityGroup(EntityGroup&&)                  = delete;
     };

@@ -26,7 +26,7 @@ namespace HEIFPP
         std::uint64_t getDataSize() const;
 
         /** Returns the data. */
-        const std::uint8_t* getData() const;
+        const std::uint8_t* getData();
 
         /** Sets the data for the item
          * @param [in] aData: Pointer to the data
@@ -41,9 +41,13 @@ namespace HEIFPP
         std::uint8_t* mBuffer;
 
     private:
+        HEIF::ErrorCode loadData();
+
+    private:
         ExifItem& operator=(const ExifItem&) = delete;
-        ExifItem(const ExifItem&)            = delete;
-        ExifItem(ExifItem&&)                 = delete;
-        ExifItem()                           = delete;
+        ExifItem& operator=(ExifItem&&) = delete;
+        ExifItem(const ExifItem&)       = delete;
+        ExifItem(ExifItem&&)            = delete;
+        ExifItem()                      = delete;
     };
 }  // namespace HEIFPP

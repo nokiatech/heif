@@ -20,12 +20,12 @@ namespace HEIFPP
     {
     public:
         RawProperty(Heif* aHeif);
+        RawProperty(Heif* aHeif, const HEIF::FourCC& aType, bool aIsTransform);
         ~RawProperty();
-        const HEIF::FourCC& rawType() const;
         /*
             Currently rawtype / istransform should not be changed if the property is attached to an item.
         */
-        void setRawType(const HEIF::FourCC& aType, bool aIsTransform);
+        HEIFPP::Result setRawType(const HEIF::FourCC& aType, bool aIsTransform);
 
         /* returns and sets the box payload. */
         void getData(const std::uint8_t*& aData, std::uint64_t& aLength) const;
@@ -34,12 +34,12 @@ namespace HEIFPP
     protected:
         HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
-
-        HEIF::FourCC mRawType;
+        
         HEIF::RawProperty mRaw;
 
     private:
         RawProperty& operator=(const RawProperty&) = delete;
+        RawProperty& operator=(RawProperty&&)      = delete;
         RawProperty(const RawProperty&)            = delete;
         RawProperty(RawProperty&&)                 = delete;
         RawProperty()                              = delete;

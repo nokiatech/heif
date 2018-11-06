@@ -25,25 +25,23 @@ extern "C"
     JNI_METHOD(void, destroyContextNative)
     {
         NATIVE_DECODER_CONFIG(nativeItem, self);
-        jobject javaHandle = GET_JAVA_OBJECT(nativeItem);
-        env->DeleteGlobalRef(javaHandle);
         setNativeHandle(env, self, 0);
         delete nativeItem;
     }
 
     JNI_METHOD_ARG(void, setConfigNative, jbyteArray configdata)
     {
-        NATIVE_DECODER_CONFIG(nativeHandle, self);
+        NATIVE_SELF;
         jbyte* nativeData = env->GetByteArrayElements(configdata, 0);
-        nativeHandle->setConfig((uint8_t*) nativeData,
+        nativeSelf->setConfig((uint8_t*) nativeData,
                                 static_cast<uint32_t>(env->GetArrayLength(configdata)));
         env->ReleaseByteArrayElements(configdata, nativeData, 0);
     }
 
     JNI_METHOD(jobject, getConfigNative)
     {
-        NATIVE_DECODER_CONFIG(nativeHandle, self);
-        const HEIF::Array<HEIF::DecoderSpecificInfo>& codecInfo = nativeHandle->getConfig();
+        NATIVE_SELF;
+        const HEIF::Array<HEIF::DecoderSpecificInfo>& codecInfo = nativeSelf->getConfig();
         size_t totalSize                                        = 0;
         for (size_t index = 0; index < codecInfo.size; index++)
         {

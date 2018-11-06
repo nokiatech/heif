@@ -44,9 +44,9 @@ namespace HEIFPP
 
 
         /** Returns the DecoderConfiguration of the image */
-        DecoderConfiguration* getDecoderConfiguration();
-        const DecoderConfiguration* getDecoderConfiguration() const;
-        void setDecoderConfiguration(DecoderConfiguration* aConfig);
+        DecoderConfig* getDecoderConfiguration();
+        const DecoderConfig* getDecoderConfiguration() const;
+        HEIF::ErrorCode setDecoderConfiguration(DecoderConfig* aConfig);
 
         void setSampleType(const HEIF::SampleType&);
         const HEIF::SampleType& getSampleType() const;
@@ -70,7 +70,7 @@ namespace HEIFPP
         std::uint64_t getSampleDataSize() const;
 
         /** Returns a pointer to the sample data */
-        const std::uint8_t* getSampleData() const;
+        const std::uint8_t* getSampleData();
 
         /** Returns the amount of metadata items */
         std::uint32_t getMetadataCount() const;
@@ -125,7 +125,7 @@ namespace HEIFPP
         std::uint64_t mDuration;
         std::int64_t mCompositionOffset;
         std::vector<std::uint64_t> mTimeStamps;
-        DecoderConfiguration* mConfig;
+        DecoderConfig* mConfig;
         // HEIF::MediaFormat mFormat;
         bool mIsAudio;
         bool mIsVideo;
@@ -146,10 +146,14 @@ namespace HEIFPP
         const void* mContext;
 
     private:
+        HEIF::ErrorCode loadSampleData(const HEIF::SequenceId& aTrackId);
+
+    private:
         Sample& operator=(const Sample&) = delete;
-        Sample(const Sample&)            = delete;
-        Sample(Sample&&)                 = delete;
-        Sample()                         = delete;
+        Sample& operator=(Sample&&) = delete;
+        Sample(const Sample&)       = delete;
+        Sample(Sample&&)            = delete;
+        Sample()                    = delete;
     };
 
 }  // namespace HEIFPP

@@ -29,6 +29,7 @@ namespace HEIFPP
         HEIF::ErrorCode convertFromRawData(const std::uint8_t* aData, std::uint32_t aSize);       
     private:
         JPEGDecoderConfiguration & operator=(const JPEGDecoderConfiguration&) = delete;
+        JPEGDecoderConfiguration & operator=(JPEGDecoderConfiguration&&) = delete;
         JPEGDecoderConfiguration(const JPEGDecoderConfiguration&) = delete;
         JPEGDecoderConfiguration(JPEGDecoderConfiguration&&) = delete;
         JPEGDecoderConfiguration() = delete;
@@ -49,6 +50,7 @@ namespace HEIFPP
 
     private:
         JPEGCodedImageItem& operator=(const JPEGCodedImageItem&) = delete;
+        JPEGCodedImageItem& operator=(JPEGCodedImageItem&&)      = delete;
         JPEGCodedImageItem(const JPEGCodedImageItem&)            = delete;
         JPEGCodedImageItem(JPEGCodedImageItem&&)                 = delete;
         JPEGCodedImageItem()                                     = delete;

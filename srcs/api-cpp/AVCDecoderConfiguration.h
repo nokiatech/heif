@@ -16,7 +16,7 @@
 
 namespace HEIFPP
 {
-    class AVCDecoderConfiguration : public HEIFPP::DecoderConfiguration
+    class AVCDecoderConfiguration : public HEIFPP::DecoderConfig
     {
     public:
         AVCDecoderConfiguration(Heif* aHeif);
@@ -41,6 +41,7 @@ namespace HEIFPP
 
     private:
         AVCDecoderConfiguration& operator=(const AVCDecoderConfiguration&) = delete;
+        AVCDecoderConfiguration& operator=(AVCDecoderConfiguration&&)      = delete;
         AVCDecoderConfiguration(const AVCDecoderConfiguration&)            = delete;
         AVCDecoderConfiguration(AVCDecoderConfiguration&&)                 = delete;
         AVCDecoderConfiguration()                                          = delete;

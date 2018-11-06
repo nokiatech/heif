@@ -22,13 +22,24 @@ public final class IdentityImageItem extends DerivedImageItem
     /**
      * Creates an IdentityImageItem to the given HEIF instance
      * @param heif The parent HEIF instance for the new object
+     * @param imageItem The imageItem this Identity image is based on
      * @throws Exception Thrown if the parent HEIF instance is invalid
      */
-    public IdentityImageItem(HEIF heif)
+    public IdentityImageItem(HEIF heif, ImageItem imageItem)
             throws Exception
     {
         super(heif);
         mNativeHandle = createContextNative(heif);
+        try
+        {
+            setImage(imageItem);
+            setSize(imageItem.getSize());
+        }
+        catch (Exception ex)
+        {
+            destroy();
+            throw ex;
+        }
     }
 
     /**

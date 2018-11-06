@@ -10,10 +10,10 @@
  * of this material requires the prior written consent of Nokia.
  */
 
-#include "Item.h"
 #include <heifreader.h>
 #include <heifwriter.h>
 #include "EntityGroup.h"
+#include "Item.h"
 #include "ItemProperty.h"
 #include "MimeItem.h"
 #include "RawProperty.h"
@@ -46,7 +46,7 @@ Item::~Item()
         removeProperty(mProps.begin()->first);
     }
 
-    //disconnect from groups
+    // disconnect from groups
     for (; !mGroups.empty();)
     {
         (*mGroups.begin())->removeItem(this);
@@ -130,34 +130,72 @@ const HEIF::ImageId& Item::getId() const
 {
     return mId;
 }
+const std::string& Item::getName() const
+{
+    return mName;
+}
+void Item::setName(const std::string& aName)
+{
+    mName = aName;
+}
+const std::string& Item::getContentType() const
+{
+    return mContentType;
+}
+HEIFPP::Result Item::setContentType(const std::string& aType)
+{
+    if (mContentType.empty())
+    {
+        mContentType = aType;
+    }
+    else
+    {
+        if (mContentType != aType)
+        {
+            //Error.
+            return HEIFPP::Result::ALREADY_SET;
+        }
+    }
+    return HEIFPP::Result::OK;
+}
+const std::string& Item::getContentEncoding() const
+{
+    return mContentEncoding;
+}
+HEIFPP::Result Item::setContentEncoding(const std::string& aType)
+{
+    if (mContentEncoding.empty())
+    {
+        mContentEncoding = aType;
+    }
+    return HEIFPP::Result::OK;
+}
 
 HEIF::ErrorCode Item::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 {
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
-    ;
+
     HEIF::FourCC type;
     mId   = aId;
     error = aReader->getItemType(aId, type);
     if (HEIF::ErrorCode::OK != error)
         return error;
     HEIF_ASSERT(mType == type);
-    const auto* i = mHeif->getItemInformation(
-        aId);  // not all items have this. some have only ImageInformation, and others have both..
+    const auto* i = mHeif->getItemInformation(aId);
     if (i)
     {
-        mIsProtected = (bool) (i->features & HEIF::ItemFeatureEnum::IsProtected);
+        mIsProtected = (i->features & HEIF::ItemFeatureEnum::IsProtected) != 0;
+    }
+    else
+    {
+        return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
     }
 
-    const auto* i2 = mHeif->getImageInformation(
-        aId);  // not all items have this. some have only ItemInformation, and others have both..
-    if (i2)
-    {
-        if (i)
-        {
-            HEIF_ASSERT(mIsProtected == (bool) (i2->features & HEIF::ImageFeatureEnum::IsProtected));
-        }
-        mIsProtected = (bool) (i2->features & HEIF::ImageFeatureEnum::IsProtected);
-    }
+    mName            = std::string(i->description.name.begin(), i->description.name.end());
+    mContentType     = std::string(i->description.contentType.begin(), i->description.contentType.end());
+    mContentEncoding = std::string(i->description.contentEncoding.begin(), i->description.contentEncoding.end());
+
+
     HEIF::Array<HEIF::ItemPropertyInfo> propertyInfos;
 
     error = aReader->getItemProperties(aId, propertyInfos);
@@ -197,8 +235,34 @@ HEIF::ErrorCode Item::save(HEIF::Writer* aWriter)
                 return error;
         }
     }
+    HEIF::ItemDescription d;
+    if (mName.size())
+    {
+        d.name = HEIF::Array<char>(mName.size());
+        for (size_t i = 0; i < d.name.size; i++)
+        {
+            d.name.elements[i] = mName[i];
+        }
+    }
+    if (mContentType.size())
+    {
+        d.contentType = HEIF::Array<char>(mContentType.size());
+        for (size_t i = 0; i < d.contentType.size; i++)
+        {
+            d.contentType.elements[i] = mContentType[i];
+        }
+    }
+    if (mContentEncoding.size())
+    {
+        d.contentEncoding = HEIF::Array<char>(mContentEncoding.size());
+        for (size_t i = 0; i < d.contentEncoding.size; i++)
+        {
+            d.contentEncoding.elements[i] = mContentEncoding[i];
+        }
+    }
 
-    return HEIF::ErrorCode::OK;
+    error = aWriter->setItemDescription(mId, d);
+    return error;
 }
 
 void Item::removeProperty(ItemProperty* aProp)
@@ -421,7 +485,7 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
     }
     else
     {
-        //find first transform, insert before it
+        // find first transform, insert before it
         auto it = mProps.begin();
         for (; it != mProps.end(); it++)
         {
@@ -430,7 +494,7 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
                 break;
             }
         }
-        mProps.insert(it,{aProp, aEssential});
+        mProps.insert(it, {aProp, aEssential});
     }
     aProp->link(this);
 }

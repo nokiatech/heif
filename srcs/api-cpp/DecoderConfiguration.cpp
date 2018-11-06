@@ -18,7 +18,7 @@
 
 using namespace HEIFPP;
 
-DecoderConfiguration::DecoderConfiguration(Heif* aHeif, const HEIF::FourCC& aType)
+DecoderConfig::DecoderConfig(Heif* aHeif, const HEIF::FourCC& aType)
     : mHeif(aHeif)
     , mContext(nullptr)
     , mType(aType)
@@ -29,7 +29,7 @@ DecoderConfiguration::DecoderConfiguration(Heif* aHeif, const HEIF::FourCC& aTyp
     mHeif->addDecoderConfig(this);
 }
 
-DecoderConfiguration::~DecoderConfiguration()
+DecoderConfig::~DecoderConfig()
 {
     for (; !mLinks.empty();)
     {
@@ -55,31 +55,31 @@ DecoderConfiguration::~DecoderConfiguration()
     mBufferSize = 0;
 }
 
-void DecoderConfiguration::setContext(const void* aContext)
+void DecoderConfig::setContext(const void* aContext)
 {
     mContext = aContext;
 }
 
-const void* DecoderConfiguration::getContext() const
+const void* DecoderConfig::getContext() const
 {
     return mContext;
 }
 
-void DecoderConfiguration::setId(const HEIF::DecoderConfigId& aId)
+void DecoderConfig::setId(const HEIF::DecoderConfigId& aId)
 {
     mConfig.decoderConfigId = aId;
 }
-const HEIF::DecoderConfigId& DecoderConfiguration::getId() const
+const HEIF::DecoderConfigId& DecoderConfig::getId() const
 {
     return mConfig.decoderConfigId;
 }
 
-const HEIF::Array<HEIF::DecoderSpecificInfo>& DecoderConfiguration::getConfig() const
+const HEIF::Array<HEIF::DecoderSpecificInfo>& DecoderConfig::getConfig() const
 {
     return mConfig.decoderSpecificInfo;
 }
 
-HEIF::ErrorCode DecoderConfiguration::setConfig(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig)
+HEIF::ErrorCode DecoderConfig::setConfig(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig)
 {
     HEIF::ErrorCode error;
     std::uint8_t* aData;
@@ -92,25 +92,25 @@ HEIF::ErrorCode DecoderConfiguration::setConfig(const HEIF::Array<HEIF::DecoderS
     }
     return error;
 }
-const HEIF::FourCC& DecoderConfiguration::getMediaType() const
+const HEIF::FourCC& DecoderConfig::getMediaType() const
 {
     return mType;
 }
-HEIF::MediaFormat DecoderConfiguration::getMediaFormat() const
+HEIF::MediaFormat DecoderConfig::getMediaFormat() const
 {
     return Heif::mediaFormatFromFourCC(mType);
 }
 
-HEIF::ErrorCode DecoderConfiguration::save(HEIF::Writer* aWriter)
+HEIF::ErrorCode DecoderConfig::save(HEIF::Writer* aWriter)
 {
     return aWriter->feedDecoderConfig(mConfig.decoderSpecificInfo, mConfig.decoderConfigId);
 }
 
-void DecoderConfiguration::link(CodedImageItem* aImage)
+void DecoderConfig::link(CodedImageItem* aImage)
 {
     mLinks.addLink(aImage);
 }
-void DecoderConfiguration::unlink(CodedImageItem* aImage)
+void DecoderConfig::unlink(CodedImageItem* aImage)
 {
     if (!mLinks.removeLink(aImage))
     {
@@ -119,11 +119,11 @@ void DecoderConfiguration::unlink(CodedImageItem* aImage)
     }
 }
 
-void DecoderConfiguration::link(Sample* aImage)
+void DecoderConfig::link(Sample* aImage)
 {
     mSampleLinks.addLink(aImage);
 }
-void DecoderConfiguration::unlink(Sample* aImage)
+void DecoderConfig::unlink(Sample* aImage)
 {
     if (!mSampleLinks.removeLink(aImage))
     {

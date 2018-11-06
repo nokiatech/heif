@@ -41,7 +41,8 @@ namespace HEIFPP
         LinkArray<Sample*> mIsMetaToSample;
 
     private:
-        MetaItem& operator=(const MetaItem&) = delete;
+        MetaItem & operator=(const MetaItem&) = delete;
+        MetaItem& operator=(MetaItem&&)      = delete;
         MetaItem(const MetaItem&)            = delete;
         MetaItem(MetaItem&&)                 = delete;
         MetaItem()                           = delete;

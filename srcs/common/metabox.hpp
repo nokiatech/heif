@@ -4,9 +4,11 @@
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef METABOX_HPP
@@ -65,6 +67,12 @@ public:
     const ItemInfoBox& getItemInfoBox() const;
 
     /**
+     * @return Reference to the contained ItemInfoBox (Item Information Box. If a parsed file did not contain
+     *         an ItemInfoBox, the box is an empty one.
+     */
+    ItemInfoBox& getItemInfoBox();
+
+    /**
      * Set contained ItemInfoBox
      * @param itemInfoBox ItemInfoBox to copy to MetaBox
      */
@@ -99,7 +107,8 @@ public:
 
     /**
      * Associate itemIds to an existing Property or FullProperty.
-     * @param index     Index of an existing item in the ItemPropertyContainer of the ItemPropertiesBox contained by MetaBox.
+     * @param index     Index of an existing item in the ItemPropertyContainer of the ItemPropertiesBox contained by
+     * MetaBox.
      * @param itemIds   Item IDs to associate with the property.
      * @param essential True if the property is essential for items, meaning that a reader is required to process it.
      */
@@ -145,7 +154,8 @@ public:
      * @param itemId     Item ID for which the ItemLocation is added
      * @param offset     Data offset (from baseOffset)
      * @param length     Length of the data
-     * @param baseOffset Base offset of the data. This can be used during dual-pass file writing, to give location of the MediaDataBox on the second pass.
+     * @param baseOffset Base offset of the data. This can be used during dual-pass file writing, to give location of
+     * the MediaDataBox on the second pass.
      */
     void addIloc(std::uint32_t itemId, std::uint64_t offset, std::uint64_t length, std::uint64_t baseOffset);
 
@@ -180,8 +190,7 @@ public:
      * @param name   item_name field in ItemInfoEntry, a symbolic name of the item.
      * @param data   Data of the item which will be added to the contained ItemDataBox.
      */
-    void addIdatItem(std::uint32_t itemId, FourCCInt type, const String& name,
-                     const Vector<uint8_t>& data);
+    void addIdatItem(std::uint32_t itemId, FourCCInt type, const String& name, const Vector<uint8_t>& data);
 
     /**
      * Add data to ItemDataBox and the related ItemLocationExtent for an already existing item.
@@ -200,8 +209,7 @@ public:
      * @param baseOffset Base offset of the data. This can be used during dual-pass file writing, to give location of
      *                   the MediaDataBox on the second pass.
      */
-    void addMdatItem(std::uint32_t itemId, FourCCInt type, const String& name,
-                     std::uint64_t baseOffset);
+    void addMdatItem(std::uint32_t itemId, FourCCInt type, const String& name, std::uint64_t baseOffset);
 
     /**
      * Add an extent to an existing item which is located in ItemDataBox.

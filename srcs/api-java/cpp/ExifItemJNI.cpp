@@ -20,16 +20,16 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::ExifItem *nativeObject = new HEIFPP::ExifItem(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD(jobject, getItemDataNative)
     {
         NATIVE_SELF;
-        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeSelf->getData()),
+        return env->NewDirectByteBuffer(const_cast<uint8_t *>(nativeSelf->getData()),
                                         static_cast<jlong>(nativeSelf->getDataSize()));
     }
 
@@ -37,8 +37,7 @@ extern "C"
     {
         NATIVE_SELF;
         jbyte *nativeData = env->GetByteArrayElements(data, 0);
-        nativeSelf->setData((uint8_t *) nativeData,
-                            static_cast<uint64_t>(env->GetArrayLength(data)));
+        nativeSelf->setData((uint8_t *) nativeData, static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 }

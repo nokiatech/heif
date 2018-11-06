@@ -16,15 +16,15 @@
 
 using namespace HEIFPP;
 
-TransformativeProperty::TransformativeProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType)
-    : ItemProperty(aHeif, aType, true){};
+TransformativeProperty::TransformativeProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, const HEIF::FourCC& aRawType)
+    : ItemProperty(aHeif, aType, aRawType, true){};
 HEIF::ErrorCode TransformativeProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
 {
     return ItemProperty::load(aReader, aId);
 }
 
 CleanApertureProperty::CleanApertureProperty(Heif* aHeif)
-    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::CLAP)
+    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::CLAP,"clap")
     , mClap{}
 {
 }
@@ -51,7 +51,7 @@ HEIF::ErrorCode CleanApertureProperty::save(HEIF::Writer* aWriter)
 }
 
 RotateProperty::RotateProperty(Heif* aHeif)
-    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::IROT)
+    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::IROT,"irot")
     , mRotate{0}
 {
 }
@@ -77,7 +77,7 @@ HEIF::ErrorCode RotateProperty::save(HEIF::Writer* aWriter)
 }
 
 MirrorProperty::MirrorProperty(Heif* aHeif)
-    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::IMIR)
+    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::IMIR,"imir")
     , mMirror{0}
 {
 }

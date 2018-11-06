@@ -28,13 +28,20 @@ namespace HEIFPP
 
         /** Sets the content type of the MimeItem
          * @param [in] aType: Content type */
-        void setContentType(const std::string& aType);
+        HEIFPP::Result setContentType(const std::string& aType);
+
+        /** Gets the content encoding of the MimeItem */
+        const std::string& getContentEncoding() const;
+
+        /** Sets the content encoding of the MimeItem
+         * @param [in] aType: Encoding type */
+        HEIFPP::Result setContentEncoding(const std::string& aType);
 
         /** Returns the size of the data */
         std::uint64_t getDataSize() const;
 
         /** Returns a pointer to the data */
-        const std::uint8_t* getData() const;
+        const std::uint8_t* getData();
 
         /** Sets the data for the MimeItem
          * @param [in] aData: Pointer to the data
@@ -45,14 +52,17 @@ namespace HEIFPP
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-        std::string mContentType;
         std::uint64_t mBufferSize;
         std::uint8_t* mBuffer;
 
     private:
+        HEIF::ErrorCode loadData();
+
+    private:
         MimeItem& operator=(const MimeItem&) = delete;
-        MimeItem(const MimeItem&)            = delete;
-        MimeItem(MimeItem&&)                 = delete;
-        MimeItem()                           = delete;
+        MimeItem& operator=(MimeItem&&) = delete;
+        MimeItem(const MimeItem&)       = delete;
+        MimeItem(MimeItem&&)            = delete;
+        MimeItem()                      = delete;
     };
 }  // namespace HEIFPP

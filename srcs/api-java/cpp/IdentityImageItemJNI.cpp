@@ -22,22 +22,22 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::Identity *nativeObject = new HEIFPP::Identity(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        HEIFPP::IdentityImageItem *nativeObject = new HEIFPP::IdentityImageItem(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD(jobject, getImageNative)
     {
-        NATIVE_IDENTITY_IMAGE_ITEM(nativeHandle, self);
-        return getJavaItem(env, getJavaHEIF(env, self), nativeHandle->getImage());
+        NATIVE_SELF;
+        return getJavaItem(env, getJavaHEIF(env, self), nativeSelf->getImage());
     }
 
     JNI_METHOD_ARG(void, setImageNative, jobject image)
     {
-        NATIVE_IDENTITY_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeImage, image);
-        nativeHandle->setImage(nativeImage);
+        nativeSelf->setImage(nativeImage);
     }
 }

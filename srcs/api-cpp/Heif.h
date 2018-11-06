@@ -10,13 +10,15 @@
  * of this material requires the prior written consent of Nokia.
  */
 
-#pragma once
+#ifndef HEIF_H
+#define HEIF_H
 
 #include <heifcommondatatypes.h>
 #include <heifreaderdatatypes.h>
 #include <heifwriterdatatypes.h>
 
 #include <helpers.h>
+#include <string>
 #include "ErrorCodes.h"
 
 namespace HEIF
@@ -48,10 +50,10 @@ namespace HEIFPP
     class ColourInformationProperty;
     class PixelInformationProperty;
     class RelativeLocationProperty;
-    class AuxProperty;
+    class AuxiliaryProperty;
     class RawProperty;
     class Heif;
-    class DecoderConfiguration;
+    class DecoderConfig;
     class EntityGroup;
     class AlternativeTrackGroup;
     /** @brief HEIF file abstraction*/
@@ -69,7 +71,7 @@ namespace HEIFPP
         friend class CodedImageItem;
         friend class DerivedImageItem;
         friend class ImageItem;
-        friend class DecoderConfiguration;
+        friend class DecoderConfig;
         friend class MimeItem;
         friend class AlternativeTrackGroup;
 
@@ -81,6 +83,14 @@ namespace HEIFPP
         static const HEIF::PropertyId InvalidProperty;
         static const HEIF::DecoderConfigId InvalidDecoderConfig;
         static const HEIF::MediaDataId InvalidMediaData;
+
+        enum PreloadMode
+        {
+            LOAD_ALL_DATA = 0,  // Loads all item data to memory.
+            LOAD_PREVIEW_DATA,  // Load preview data to memory (thumbnail/meta). Fast to preview file, but actual item
+                                // data loaded on demand.
+            LOAD_ON_DEMAND      // Preload none of the sample/image/metadata to memory. Fastest to load.
+        };
 
         /** Create an empty instance
          */
@@ -99,18 +109,22 @@ namespace HEIFPP
         /** Load content from file.
          *  @param [in] fileName File to open.
          *  @return Result: Possible error code */
-        Result load(const char* aFilename);
+        Result load(const char* aFilename, PreloadMode loadMode = LOAD_ALL_DATA);
 
         /** Load content from a stream.
          *  @param [in] aStream Stream to read the file from.
          *  @return Result: Possible error code */
-        Result load(HEIF::StreamInterface* aStream);
+        Result load(HEIF::StreamInterface* aStream, PreloadMode loadMode = LOAD_ALL_DATA);
 
         /** Save content to file.
          *  @param [in] fileName File to open.
          *  @return Result: Possible error code*/
         Result save(const char* aFileName);
 
+        /** Save content to file.
+         *  @param [in] fileName File to open.
+         *  @return Result: Possible error code*/
+        Result save(HEIF::OutputStreamInterface* aStream);
 
         /** Clears the container to initial state. */
         void reset();
@@ -266,17 +280,17 @@ namespace HEIFPP
 
         /** Remove decoder config from the file
          * @param [in] aDecoderConfig: The config to be removed. */
-        void removeDecoderConfig(DecoderConfiguration* aDecoderConfig);
+        void removeDecoderConfig(DecoderConfig* aDecoderConfig);
 
         /** Returns a decoder config with the given index
          * @param [in] aIndex: The index of the decoder config
          * @return DecoderConfig: The config. */
-        DecoderConfiguration* getDecoderConfig(std::uint32_t aIndex);
+        DecoderConfig* getDecoderConfig(std::uint32_t aIndex);
 
         /** Returns a decoder config with the given index
          * @param [in] aIndex: The index of the decoder config
          * @return DecoderConfig: The config. */
-        const DecoderConfiguration* getDecoderConfig(std::uint32_t aIndex) const;
+        const DecoderConfig* getDecoderConfig(std::uint32_t aIndex) const;
 
         /** Returns the amount of ItemProperties in the file
          *  @return std::uint32_t: The property count. */
@@ -323,28 +337,28 @@ namespace HEIFPP
                                 const HEIF::SequenceId& aTrack,
                                 const HEIF::SampleInformation& aId,
                                 HEIF::ErrorCode& aErrorCode);
-        Item* constructItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, HEIF::ErrorCode& aErrorCode);
+        ImageItem* constructImageItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, HEIF::ErrorCode& aErrorCode);
+        MetaItem* constructMetaItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, HEIF::ErrorCode& aErrorCode);
         ItemProperty* constructItemProperty(HEIF::Reader* aReader,
                                             const HEIF::ItemPropertyInfo& aItemInfo,
                                             HEIF::ErrorCode& aErrorCode);
 
-        DecoderConfiguration* constructDecoderConfig(HEIF::Reader* aReader,
-                                                     const HEIF::SequenceId& aTrackId,
-                                                     const HEIF::SequenceImageId& aTrackImageId,
-                                                     HEIF::ErrorCode& aErrorCode);
-        DecoderConfiguration* constructDecoderConfig(HEIF::Reader* aReader,
-                                                     const HEIF::ImageId& aItemId,
-                                                     HEIF::ErrorCode& aErrorCode);
-        DecoderConfiguration* constructDecoderConfig(HEIF::Reader* aReader,
-                                                     const HEIF::ImageId& aItemId,
-                                                     const HEIF::SequenceId& aTrackId,
-                                                     const HEIF::SequenceImageId& aTrackImageId,
-                                                     HEIF::ErrorCode& aErrorCode);
+        DecoderConfig* constructDecoderConfig(HEIF::Reader* aReader,
+                                              const HEIF::SequenceId& aTrackId,
+                                              const HEIF::SequenceImageId& aTrackImageId,
+                                              HEIF::ErrorCode& aErrorCode);
+        DecoderConfig* constructDecoderConfig(HEIF::Reader* aReader,
+                                              const HEIF::ImageId& aItemId,
+                                              HEIF::ErrorCode& aErrorCode);
+        DecoderConfig* constructDecoderConfig(HEIF::Reader* aReader,
+                                              const HEIF::ImageId& aItemId,
+                                              const HEIF::SequenceId& aTrackId,
+                                              const HEIF::SequenceImageId& aTrackImageId,
+                                              HEIF::ErrorCode& aErrorCode);
 
         EntityGroup* constructGroup(const HEIF::FourCC& aType);
         const HEIF::FileInformation* getFileInformation() const;
         const HEIF::ItemInformation* getItemInformation(const HEIF::ImageId& aItemId) const;
-        const HEIF::ImageInformation* getImageInformation(const HEIF::ImageId& aItemId) const;
         const HEIF::TrackInformation* getTrackInformation(const HEIF::SequenceId& aItemId) const;
 
 
@@ -352,10 +366,11 @@ namespace HEIFPP
         void addItem(Item* aItem);
         void addSample(Sample* aItem);
         void addTrack(Track* aItem);
-        void addDecoderConfig(DecoderConfiguration* aDecoderConfig);
+        void addDecoderConfig(DecoderConfig* aDecoderConfig);
         void addProperty(ItemProperty* aProperty);
         void addGroup(EntityGroup* aGroup);
         void addAlternativeTrackGroup(AlternativeTrackGroup* aGroup);
+        HEIF::Reader* getReaderInstance();
 
     protected:
         HEIF::FileInformation mFileinfo;
@@ -368,31 +383,37 @@ namespace HEIFPP
         std::vector<Sample*> mSamples;
         std::map<HEIF::FourCC, std::vector<Item*>> mItemsOfType;
         std::vector<ItemProperty*> mProperties;
-        std::vector<DecoderConfiguration*> mDecoderConfigs;
+        std::vector<DecoderConfig*> mDecoderConfigs;
         std::vector<EntityGroup*> mGroups;
         std::vector<AlternativeTrackGroup*> mAltGroups;
         std::map<HEIF::FourCC, std::vector<EntityGroup*>> mGroupsOfType;
         ImageItem* mPrimaryItem;
-
         std::int32_t mMatrix[9];  // movie matrix.
+
+        PreloadMode mPreLoadMode;
 
         // temporary objects, part of serialization.
         std::map<HEIF::ImageId, Item*> mItemsLoad;
         std::map<HEIF::SequenceId, Track*> mTracksLoad;
         std::map<HEIF::PropertyId, ItemProperty*> mPropertiesLoad;
-        std::map<std::pair<HEIF::SequenceId, HEIF::DecoderConfigId>, DecoderConfiguration*> mDecoderConfigsLoad;
+        std::map<std::pair<HEIF::SequenceId, HEIF::DecoderConfigId>, DecoderConfig*> mDecoderConfigsLoad;
         std::map<std::pair<HEIF::SequenceId, HEIF::SequenceImageId>, Sample*> mSamplesLoad;
         std::map<HEIF::GroupId, EntityGroup*> mGroupsLoad;
         std::map<std::uint32_t, AlternativeTrackGroup*> mAltGroupsLoad;
 
     private:
-        Result load(const char* aFilename, HEIF::StreamInterface* aStream);
+        Result load(const char* aFilename, HEIF::StreamInterface* aStream, PreloadMode loadMode);
+        Result save(const char* aFilename, HEIF::OutputStreamInterface* aStream);
         HEIF::ErrorCode load(HEIF::Reader* aReader);
         const void* mContext;
+        HEIF::Reader* mReader;
 
     private:
         Heif& operator=(const Heif&) = delete;
-        Heif(const Heif&)            = delete;
-        Heif(Heif&&)                 = delete;
+        Heif& operator=(Heif&&) = delete;
+        Heif(const Heif&)       = delete;
+        Heif(Heif&&)            = delete;
     };
 }  // namespace HEIFPP
+
+#endif //HEIF_H

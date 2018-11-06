@@ -48,6 +48,11 @@ void SampleToGroupBox::setEntryCount(std::uint32_t entryCount)
     mEntryCount = entryCount;
 }
 
+std::uint32_t SampleToGroupBox::getEntryCount() const
+{
+    return mEntryCount;
+}
+
 void SampleToGroupBox::addSampleRun(std::uint32_t sampleCount, std::uint32_t groupDescriptionIndex)
 {
     SampleRun sampleRun;

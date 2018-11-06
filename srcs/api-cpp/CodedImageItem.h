@@ -16,19 +16,19 @@
 
 namespace HEIFPP
 {
-    class DecoderConfiguration;
+    class DecoderConfig;
     class CodedImageItem : public HEIFPP::ImageItem
     {
     public:
         ~CodedImageItem();
 
         /** Returns the DecoderConfiguration of the image */
-        DecoderConfiguration* getDecoderConfiguration();
-        const DecoderConfiguration* getDecoderConfiguration() const;
+        DecoderConfig* getDecoderConfiguration();
+        const DecoderConfig* getDecoderConfiguration() const;
 
         /** Sets a decoder configuration for the image
          * @param [in] aConfig: The decoder configuration to be added. */
-        void setDecoderConfiguration(DecoderConfiguration* aConfig);
+        Result setDecoderConfiguration(DecoderConfig* aConfig);
 
         /** Sets the item data for the image
          * @param [in] aData: A pointer to the data.
@@ -39,7 +39,7 @@ namespace HEIFPP
         std::uint64_t getItemDataSize() const;
 
         /** Returns a pointer to the item data */
-        const std::uint8_t* getItemData() const;
+        const std::uint8_t* getItemData();
 
         /** Returns the decoder code type of the image. */
         const HEIF::FourCC& getDecoderCodeType() const;
@@ -89,17 +89,20 @@ namespace HEIFPP
         virtual bool getBitstream(std::uint8_t*& aData, std::uint64_t& aSize) = 0;
         CodedImageItem(Heif* aHeif, const HEIF::FourCC& aType, const HEIF::MediaFormat& aFormat);
         HEIF::MediaFormat mFormat;
-        DecoderConfiguration* mConfig;
+        DecoderConfig* mConfig;
         std::uint64_t mBufferSize;
         std::uint8_t* mBuffer;
         std::vector<ImageItem*> mBaseImages;
         bool mMandatoryConfiguration;
 
+    private:
+        HEIF::ErrorCode loadItemData();
 
     private:
         CodedImageItem& operator=(const CodedImageItem&) = delete;
-        CodedImageItem(const CodedImageItem&)            = delete;
-        CodedImageItem(CodedImageItem&&)                 = delete;
-        CodedImageItem()                                 = delete;
+        CodedImageItem& operator=(CodedImageItem&&) = delete;
+        CodedImageItem(const CodedImageItem&)       = delete;
+        CodedImageItem(CodedImageItem&&)            = delete;
+        CodedImageItem()                            = delete;
     };
 }  // namespace HEIFPP

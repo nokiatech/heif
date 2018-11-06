@@ -40,14 +40,9 @@ const MovieHeaderBox& MovieBox::getMovieHeaderBox() const
     return mMovieHeaderBox;
 }
 
-Vector<TrackBox*> MovieBox::getTrackBoxes()
+const Vector<UniquePtr<TrackBox>>& MovieBox::getTrackBoxes() const
 {
-    Vector<TrackBox*> trackBoxes;
-    for (auto& track : mTracks)
-    {
-        trackBoxes.push_back(track.get());
-    }
-    return trackBoxes;
+    return mTracks;
 }
 
 TrackBox* MovieBox::getTrackBox(uint32_t trackId)
@@ -106,7 +101,7 @@ void MovieBox::parseBox(ISOBMFF::BitStream& bitstr)
             // Ignore box if the handler type is not pict
             FourCCInt handlerType = trackBox->getMediaBox().getHandlerBox().getHandlerType();
             if (handlerType == "pict" ||  // Image Sequence track
-                handlerType == "auxv" ||  // Auxiliary Image Sequence rack
+                handlerType == "auxv" ||  // Auxiliary Image Sequence track
                 handlerType == "soun" ||  // Audio track
                 handlerType == "vide")    // Video track
             {
@@ -130,7 +125,7 @@ void MovieBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping an unsupported box '" << boxType << "' inside movie box." << std::endl;
+            logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside movie box." << std::endl;
         }
     }
 }

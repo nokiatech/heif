@@ -18,7 +18,14 @@
 using namespace HEIFPP;
 
 RawProperty::RawProperty(Heif* aHeif)
-    : ItemProperty(aHeif, HEIF::ItemPropertyType::RAW, false){};
+    : ItemProperty(aHeif, HEIF::ItemPropertyType::RAW, HEIF::FourCC((std::uint32_t)0), false)
+{
+}
+RawProperty::RawProperty(Heif* aHeif, const HEIF::FourCC& aType, bool aIsTransform)
+    : ItemProperty(aHeif, HEIF::ItemPropertyType::RAW, aType,aIsTransform)
+{
+}
+
 RawProperty::~RawProperty()
 {
 }
@@ -29,27 +36,28 @@ void RawProperty::getData(const std::uint8_t*& aData, std::uint64_t& aLength) co
 }
 void RawProperty::setData(const std::uint8_t* aData, std::uint64_t aLength)
 {
-    mRaw.data    = HEIF::Array<uint8_t>(aLength + 8);
-    mRaw.data[0] = (aLength >> 24) & 0xFF;
-    mRaw.data[1] = (aLength >> 16) & 0xFF;
-    mRaw.data[2] = (aLength >> 8) & 0xFF;
-    mRaw.data[3] = (aLength) &0xFF;
-    mRaw.data[4] = static_cast<std::uint8_t>(mRawType.value[0]);
-    mRaw.data[5] = static_cast<std::uint8_t>(mRawType.value[1]);
-    mRaw.data[6] = static_cast<std::uint8_t>(mRawType.value[2]);
-    mRaw.data[7] = static_cast<std::uint8_t>(mRawType.value[3]);
-    std::memcpy(mRaw.data.elements + 8, aData, aLength);
+    const int offset = 8;//offset to payload (size of box type and size)
+    mRaw.data    = HEIF::Array<uint8_t>((aLength + offset));
+    mRaw.data[0] = ((aLength + offset) >> 24) & 0xFF;
+    mRaw.data[1] = ((aLength + offset) >> 16) & 0xFF;
+    mRaw.data[2] = ((aLength + offset) >> 8) & 0xFF;
+    mRaw.data[3] = ((aLength + offset)) &0xFF;    
+    mRaw.data[4] = static_cast<std::uint8_t>(rawType().value[0]);
+    mRaw.data[5] = static_cast<std::uint8_t>(rawType().value[1]);
+    mRaw.data[6] = static_cast<std::uint8_t>(rawType().value[2]);
+    mRaw.data[7] = static_cast<std::uint8_t>(rawType().value[3]);
+    std::memcpy(mRaw.data.elements + offset, aData, aLength);
 }
-const HEIF::FourCC& RawProperty::rawType() const
+HEIFPP::Result RawProperty::setRawType(const HEIF::FourCC& aType, bool aIsTransform)
 {
-    return mRawType;
-}
-void RawProperty::setRawType(const HEIF::FourCC& aType, bool aIsTransform)
-{
-    setIsTransformative(aIsTransform);
-    mRawType = aType;
-    // TODO: if mIsTransform changes AFTER the property is associated with an item,
-    // we should move it to correct place in the props list. (declarative properties first, then transformative).
+    HEIFPP::Result res=ItemProperty::setRawType(aType);
+    if (res == HEIFPP::Result::OK)
+    {
+        setIsTransformative(aIsTransform);
+        // TODO: if mIsTransform changes AFTER the property is associated with an item,
+        // we should move it to correct place in the props list. (declarative properties first, then transformative).
+    }
+    return res;
 }
 HEIF::ErrorCode RawProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
 {
@@ -67,16 +75,18 @@ HEIF::ErrorCode RawProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId&
         size |= static_cast<uint32_t>(mRaw.data[1]) << 16;
         size |= static_cast<uint32_t>(mRaw.data[2]) << 8;
         size |= static_cast<uint32_t>(mRaw.data[3]);
-        mRawType.value[0] = static_cast<char>(mRaw.data[4]);
-        mRawType.value[1] = static_cast<char>(mRaw.data[5]);
-        mRawType.value[2] = static_cast<char>(mRaw.data[6]);
-        mRawType.value[3] = static_cast<char>(mRaw.data[7]);
-        mRawType.value[4] = 0;
+        HEIF::FourCC fc;
+        fc.value[0] = static_cast<char>(mRaw.data[4]);
+        fc.value[1] = static_cast<char>(mRaw.data[5]);
+        fc.value[2] = static_cast<char>(mRaw.data[6]);
+        fc.value[3] = static_cast<char>(mRaw.data[7]);
+        fc.value[4] = 0;
+        setRawType(fc,false);
         if (size != mRaw.data.size)
         {
             return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
-        }
-        if (mRawType != mRaw.type)
+        }        
+        if (rawType() != mRaw.type)
         {
             return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
         }

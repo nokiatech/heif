@@ -84,7 +84,7 @@ void MovieHeaderBox::setMatrix(const Vector<int32_t>& matrix)
     mMatrix = matrix;
 }
 
-Vector<int32_t> MovieHeaderBox::getMatrix() const
+const Vector<int32_t>& MovieHeaderBox::getMatrix() const
 {
     return mMatrix;
 }

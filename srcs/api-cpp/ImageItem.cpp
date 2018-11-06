@@ -102,6 +102,7 @@ ImageItem::~ImageItem()
     {
         std::pair<DerivedImageItem*, std::uint32_t>& p = mIsSourceImageTo[0];
         DerivedImageItem* image                        = p.first;
+
         if (image)
         {
             image->removeImage(this);
@@ -137,9 +138,9 @@ RelativeLocationProperty* ImageItem::relativeLocation()
 {
     return static_cast<RelativeLocationProperty*>(getFirstPropertyOfType(HEIF::ItemPropertyType::RLOC));
 }
-AuxProperty* ImageItem::aux()
+AuxiliaryProperty* ImageItem::aux()
 {
-    return static_cast<AuxProperty*>(getFirstPropertyOfType(HEIF::ItemPropertyType::AUXC));
+    return static_cast<AuxiliaryProperty*>(getFirstPropertyOfType(HEIF::ItemPropertyType::AUXC));
 }
 
 const PixelAspectRatioProperty* ImageItem::pixelAspectRatio() const
@@ -158,9 +159,9 @@ const RelativeLocationProperty* ImageItem::relativeLocation() const
 {
     return static_cast<const RelativeLocationProperty*>(getFirstPropertyOfType(HEIF::ItemPropertyType::RLOC));
 }
-const AuxProperty* ImageItem::aux() const
+const AuxiliaryProperty* ImageItem::aux() const
 {
-    return static_cast<const AuxProperty*>(getFirstPropertyOfType(HEIF::ItemPropertyType::AUXC));
+    return static_cast<const AuxiliaryProperty*>(getFirstPropertyOfType(HEIF::ItemPropertyType::AUXC));
 }
 
 void ImageItem::setSize(std::uint32_t aWidth, std::uint32_t aHeight)
@@ -185,7 +186,7 @@ std::uint32_t ImageItem::transformativePropertyCount() const
 TransformativeProperty* ImageItem::getTransformativeProperty(std::uint32_t aId)
 {
     std::uint32_t index = 0;
-    auto it = mProps.begin();
+    auto it             = mProps.begin();
     for (; it != mProps.end(); it++)
     {
         if (it->first->isTransformative())
@@ -202,7 +203,7 @@ TransformativeProperty* ImageItem::getTransformativeProperty(std::uint32_t aId)
 const TransformativeProperty* ImageItem::getTransformativeProperty(std::uint32_t aId) const
 {
     std::uint32_t index = 0;
-    auto it = mProps.begin();
+    auto it             = mProps.begin();
     for (; it != mProps.end(); it++)
     {
         if (it->first->isTransformative())
@@ -382,9 +383,9 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 
     HEIF::Array<HEIF::ImageId> ids;
     {
-        const auto* i = mHeif->getImageInformation(aId);
+        const auto* i = mHeif->getItemInformation(aId);
         HEIF_ASSERT(i);  // ImageItems MUST have this.
-        mIsHidden = (bool) (i->features & HEIF::ImageFeatureEnum::IsHiddenImage);
+        mIsHidden = (i->features & HEIF::ItemFeatureEnum::IsHiddenImage) != 0;
 
         error = aReader->getReferencedToItemListByType(aId, "thmb", ids);
         if (HEIF::ErrorCode::OK != error)
@@ -394,7 +395,7 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
             mThumbnailImages.reserve(ids.size);
             for (const auto& thumbId : ids)
             {
-                ImageItem* image = static_cast<ImageItem*>(mHeif->constructItem(aReader, thumbId, error));
+                ImageItem* image = mHeif->constructImageItem(aReader, thumbId, error);
                 if (HEIF::ErrorCode::OK != error)
                 {
                     return error;
@@ -411,7 +412,7 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
             mAuxImages.reserve(ids.size);
             for (const auto& auxId : ids)
             {
-                ImageItem* image = static_cast<ImageItem*>(mHeif->constructItem(aReader, auxId, error));
+                ImageItem* image = mHeif->constructImageItem(aReader, auxId, error);
                 if (HEIF::ErrorCode::OK != error)
                 {
                     return error;
@@ -428,7 +429,7 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
             mMetaItems.reserve(ids.size);
             for (const auto& metaId : ids)
             {
-                MetaItem* meta = static_cast<MetaItem*>(mHeif->constructItem(aReader, metaId, error));
+                MetaItem* meta = mHeif->constructMetaItem(aReader, metaId, error);
                 if (HEIF::ErrorCode::OK != error)
                 {
                     return error;
@@ -465,8 +466,8 @@ void ImageItem::addThumbnail(ImageItem* aImage)
     if (aImage)
     {
         aImage->mIsThumbnailTo.addLink(this);
+        mThumbnailImages.push_back(aImage);
     }
-    mThumbnailImages.push_back(aImage);
 }
 void ImageItem::removeThumbnail(ImageItem* aImage)
 {
@@ -516,8 +517,8 @@ void ImageItem::addAuxImage(ImageItem* aImage)
     if (aImage)
     {
         aImage->mIsAuxiliaryTo.addLink(this);
+        mAuxImages.push_back(aImage);
     }
-    mAuxImages.push_back(aImage);
 }
 void ImageItem::removeAuxImage(ImageItem* aImage)
 {

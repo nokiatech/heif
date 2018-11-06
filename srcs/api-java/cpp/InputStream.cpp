@@ -46,7 +46,7 @@ HEIF::StreamInterface::offset_t InputStream::read(char* buffer, offset_t size)
 
 bool InputStream::absoluteSeek(HEIF::StreamInterface::offset_t offset)
 {
-    return mJNIEnv->CallBooleanMethod(mJavaStream, mSeekMethodId, offset);
+    return mJNIEnv->CallBooleanMethod(mJavaStream, mSeekMethodId, offset) != 0;
 }
 
 HEIF::StreamInterface::offset_t InputStream::tell()

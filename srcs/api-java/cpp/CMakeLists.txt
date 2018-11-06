@@ -36,6 +36,7 @@ set(sources
     DerivedImageItemJNI.cpp
     DecoderConfigJNI.cpp
     HEVCImageItemJNI.cpp
+    RawPropertyJNI.cpp
     RotatePropertyJNI.cpp
     PixelInformationPropertyJNI.cpp
     PixelAspectRatioJNI.cpp
@@ -53,6 +54,7 @@ set(sources
     MimeItemJNI.cpp
     ExifItemJNI.cpp
     InputStream.cpp
+    OutputStream.cpp
     AudioTrackJNI.cpp
     VideoTrackJNI.cpp
     TrackJNI.cpp

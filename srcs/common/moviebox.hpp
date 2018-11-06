@@ -38,7 +38,7 @@ public:
     const MovieHeaderBox& getMovieHeaderBox() const;
 
     /** @return Pointers to all contained TrackBoxes. */
-    Vector<TrackBox*> getTrackBoxes();
+    const Vector<UniquePtr<TrackBox>>& getTrackBoxes() const;
 
     /** @return Pointer to contained TrackBox with given track id. */
     TrackBox* getTrackBox(uint32_t trackId);

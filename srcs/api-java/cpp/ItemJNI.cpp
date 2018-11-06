@@ -27,8 +27,6 @@ extern "C"
     JNI_METHOD(void, destroyContextNative)
     {
         NATIVE_SELF;
-        jobject javaHandle = GET_JAVA_OBJECT(nativeSelf);
-        env->DeleteGlobalRef(javaHandle);
         setNativeHandle(env, self, 0);
         delete nativeSelf;
     }
@@ -44,7 +42,7 @@ extern "C"
     {
         NATIVE_SELF;
         NATIVE_ITEM_PROPERTY(nativeProperty, property);
-        nativeSelf->setEssential(nativeProperty, essential);
+        nativeSelf->setEssential(nativeProperty, essential != 0);
     }
 
     JNI_METHOD(jint, getGroupCountNative)
@@ -58,4 +56,17 @@ extern "C"
         NATIVE_SELF;
         return getJavaEntityGroup(env, getJavaHEIF(env, self), nativeSelf->getGroup(static_cast<uint32_t>(index)));
     }
+
+    JNI_METHOD(jint, getPropertyCountNative)
+    {
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->propertyCount());
+    }
+
+    JNI_METHOD_ARG(jobject, getPropertyNative, jint index)
+    {
+        NATIVE_SELF;
+        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeSelf->getProperty(static_cast<uint32_t>(index)));
+    }
+
 }

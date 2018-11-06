@@ -30,6 +30,7 @@ namespace HEIFPP
 
     private:
         AudioSample& operator=(const AudioSample&) = delete;
+        AudioSample& operator=(AudioSample&&)      = delete;
         AudioSample(const AudioSample&)            = delete;
         AudioSample(AudioSample&&)                 = delete;
         AudioSample()                              = delete;

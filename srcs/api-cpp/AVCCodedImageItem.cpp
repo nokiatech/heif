@@ -24,13 +24,7 @@ AVCCodedImageItem::AVCCodedImageItem(Heif* aHeif)
 }
 HEIF::ErrorCode AVCCodedImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 {
-    HEIF::ErrorCode error = CodedImageItem::load(aReader, aId);
-    if (HEIF::ErrorCode::OK != error)
-    {
-        return error;
-    }
-    return NAL_State::convertToByteStream(mBuffer, mBufferSize) ? HEIF::ErrorCode::OK
-                                                                : HEIF::ErrorCode::MEDIA_PARSING_ERROR;
+    return CodedImageItem::load(aReader, aId);
 }
 HEIF::ErrorCode AVCCodedImageItem::save(HEIF::Writer* aWriter)
 {

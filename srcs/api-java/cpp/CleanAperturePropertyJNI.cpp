@@ -34,89 +34,85 @@ extern "C"
 
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::CleanApertureProperty *nativeObject = new HEIFPP::CleanApertureProperty(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD(jobject, getWidthNative)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        return createFraction(env, self,
-                              static_cast<jint>(nativeHandle->mClap.widthN),
-                              static_cast<jint>(nativeHandle->mClap.widthD));
+        NATIVE_SELF;
+        return createFraction(env, self, static_cast<jint>(nativeSelf->mClap.widthN),
+                              static_cast<jint>(nativeSelf->mClap.widthD));
     }
 
     JNI_METHOD_ARG(void, setWidthNumNative, jint value)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        nativeHandle->mClap.widthN = static_cast<uint32_t>(value);
+        NATIVE_SELF;
+        nativeSelf->mClap.widthN = static_cast<uint32_t>(value);
     }
 
     JNI_METHOD_ARG(void, setWidthDenNative, jint value)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        nativeHandle->mClap.widthD = static_cast<uint32_t>(value);
+        NATIVE_SELF;
+        nativeSelf->mClap.widthD = static_cast<uint32_t>(value);
     }
 
     JNI_METHOD(jobject, getHeightNative)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        return createFraction(env, self,
-                              static_cast<jint>(nativeHandle->mClap.heightN),
-                              static_cast<jint>(nativeHandle->mClap.heightD));
+        NATIVE_SELF;
+        return createFraction(env, self, static_cast<jint>(nativeSelf->mClap.heightN),
+                              static_cast<jint>(nativeSelf->mClap.heightD));
     }
 
     JNI_METHOD_ARG(void, setHeightNumNative, jint value)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        nativeHandle->mClap.heightN = static_cast<uint32_t>(value);
+        NATIVE_SELF;
+        nativeSelf->mClap.heightN = static_cast<uint32_t>(value);
     }
 
     JNI_METHOD_ARG(void, setHeightDenNative, jint value)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        nativeHandle->mClap.heightD = static_cast<uint32_t>(value);
+        NATIVE_SELF;
+        nativeSelf->mClap.heightD = static_cast<uint32_t>(value);
     }
 
     JNI_METHOD(jobject, getHorizontalOffsetNative)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        return createFraction(env, self,
-                              static_cast<jint>(nativeHandle->mClap.horizontalOffsetN),
-                              static_cast<jint>(nativeHandle->mClap.horizontalOffsetD));
+        NATIVE_SELF;
+        return createFraction(env, self, static_cast<jint>(nativeSelf->mClap.horizontalOffsetN),
+                              static_cast<jint>(nativeSelf->mClap.horizontalOffsetD));
     }
 
     JNI_METHOD_ARG(void, setHorizontalOffsetNumNative, jint value)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        nativeHandle->mClap.horizontalOffsetN = static_cast<uint32_t>(value);
+        NATIVE_SELF;
+        nativeSelf->mClap.horizontalOffsetN = static_cast<uint32_t>(value);
     }
 
     JNI_METHOD_ARG(void, setHorizontalOffsetDenNative, jint value)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        nativeHandle->mClap.horizontalOffsetD = static_cast<uint32_t>(value);
+        NATIVE_SELF;
+        nativeSelf->mClap.horizontalOffsetD = static_cast<uint32_t>(value);
     }
 
     JNI_METHOD(jobject, getVerticalOffsetNative)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        return createFraction(env, self,
-                              static_cast<jint>(nativeHandle->mClap.verticalOffsetN),
-                              static_cast<jint>(nativeHandle->mClap.verticalOffsetD));
+        NATIVE_SELF;
+        return createFraction(env, self, static_cast<jint>(nativeSelf->mClap.verticalOffsetN),
+                              static_cast<jint>(nativeSelf->mClap.verticalOffsetD));
     }
 
     JNI_METHOD_ARG(void, setVerticalOffsetNumNative, jint value)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        nativeHandle->mClap.verticalOffsetN = static_cast<uint32_t>(value);
+        NATIVE_SELF;
+        nativeSelf->mClap.verticalOffsetN = static_cast<uint32_t>(value);
     }
 
     JNI_METHOD_ARG(void, setVerticalOffsetDenNative, jint value)
     {
-        NATIVE_CLAP(nativeHandle, self);
-        nativeHandle->mClap.verticalOffsetD = static_cast<uint32_t>(value);
+        NATIVE_SELF;
+        nativeSelf->mClap.verticalOffsetD = static_cast<uint32_t>(value);
     }
 }

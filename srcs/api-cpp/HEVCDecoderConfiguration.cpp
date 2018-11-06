@@ -19,11 +19,11 @@
 using namespace HEIFPP;
 
 HEVCDecoderConfiguration::HEVCDecoderConfiguration(Heif* aHeif)
-    : DecoderConfiguration(aHeif, HEIF::FourCC("hvc1"))
+    : DecoderConfig(aHeif, HEIF::FourCC("hvc1"))
 {
 }
 HEVCDecoderConfiguration::HEVCDecoderConfiguration(Heif* aHeif, const HEIF::FourCC& aType)
-    : DecoderConfiguration(aHeif, aType)
+    : DecoderConfig(aHeif, aType)
 {
 }
 HEIF::ErrorCode HEVCDecoderConfiguration::convertToRawData(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig,

@@ -22,16 +22,16 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::AudioTrack* nativeObject = new HEIFPP::AudioTrack(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD_ARG(void, addSampleNative, jobject sample)
     {
-        NATIVE_AUDIO_TRACK(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_AUDIO_SAMPLE(nativeSample, sample);
-        nativeHandle->addSample(nativeSample);
+        nativeSelf->addSample(nativeSample);
     }
 }

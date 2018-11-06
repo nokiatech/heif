@@ -23,43 +23,43 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::AuxProperty *nativeObject = new HEIFPP::AuxProperty(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        HEIFPP::AuxiliaryProperty *nativeObject = new HEIFPP::AuxiliaryProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
 
     JNI_METHOD_ARG(void, setTypeNative, jstring javaString)
     {
-        NATIVE_AUXILIARY_PROPERTY(nativeHandle, self);
+        NATIVE_SELF;
         const char *nativeString = env->GetStringUTFChars(javaString, 0);
-        nativeHandle->auxType(nativeString);
+        nativeSelf->auxType(nativeString);
         env->ReleaseStringUTFChars(javaString, nativeString);
     }
 
     JNI_METHOD(jstring, getTypeNative)
     {
-        NATIVE_AUXILIARY_PROPERTY(nativeHandle, self);
-        return env->NewStringUTF(nativeHandle->auxType().data());
+        NATIVE_SELF;
+        return env->NewStringUTF(nativeSelf->auxType().data());
     }
 
     JNI_METHOD_ARG(void, setSubTypeNative, jbyteArray subType)
     {
-        NATIVE_AUXILIARY_PROPERTY(nativeHandle, self);
+        NATIVE_SELF;
         jbyte *nativeData = env->GetByteArrayElements(subType, 0);
         uint32_t dataSize = static_cast<uint32_t>(env->GetArrayLength(subType));
         std::vector<uint8_t> dataAsVector;
         dataAsVector.reserve(dataSize);
         dataAsVector.assign(nativeData, nativeData + dataSize);
-        nativeHandle->subType(dataAsVector);
+        nativeSelf->subType(dataAsVector);
         env->ReleaseByteArrayElements(subType, nativeData, 0);
     }
 
     JNI_METHOD(jobject, getSubTypeNative)
     {
-        NATIVE_AUXILIARY_PROPERTY(nativeHandle, self);
-        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeHandle->subType().data()),
-                                        static_cast<jlong>(nativeHandle->subType().size()));
+        NATIVE_SELF;
+        return env->NewDirectByteBuffer(const_cast<uint8_t *>(nativeSelf->subType().data()),
+                                        static_cast<jlong>(nativeSelf->subType().size()));
     }
 }

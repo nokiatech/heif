@@ -41,7 +41,7 @@ void DirectReferenceSamplesList::setDirectReferenceSampleIds(const Vector<std::u
     mDirectReferenceSampleIds = referenceSampleIds;
 }
 
-Vector<std::uint32_t> DirectReferenceSamplesList::getDirectReferenceSampleIds() const
+const Vector<std::uint32_t>& DirectReferenceSamplesList::getDirectReferenceSampleIds() const
 {
     return mDirectReferenceSampleIds;
 }

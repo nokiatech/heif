@@ -38,7 +38,7 @@ public:
 
     /** @brief Get identifiers for referenced samples.
      *  @return Identifiers for referenced samples. */
-    Vector<std::uint32_t> getDirectReferenceSampleIds() const;
+    const Vector<std::uint32_t>& getDirectReferenceSampleIds() const;
 
     /** @see SampleGroupEntry::getSize() */
 

@@ -22,8 +22,6 @@ extern "C"
     JNI_METHOD(void, destroyContextNative)
     {
         NATIVE_SELF;
-        jobject javaHandle = GET_JAVA_OBJECT(nativeSelf);
-        env->DeleteGlobalRef(javaHandle);
         setNativeHandle(env, self, 0);
         delete nativeSelf;
     }

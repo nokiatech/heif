@@ -19,9 +19,9 @@ namespace HEIFPP
     /** @brief Image item abstraction*/
     class ImageItem : public HEIFPP::Item
     {
-        friend class Identity;
-        friend class Grid;
-        friend class Overlay;
+        friend class IdentityImageItem;
+        friend class GridImageItem;
+        friend class OverlayImageItem;
         friend class CodedImageItem;
 
     public:
@@ -118,8 +118,8 @@ namespace HEIFPP
         const RelativeLocationProperty* relativeLocation() const;
 
         /** Returns the Auxiliary property if it exists */
-        AuxProperty* aux();
-        const AuxProperty* aux() const;
+        AuxiliaryProperty* aux();
+        const AuxiliaryProperty* aux() const;
 
         /** Returns the amount of metadata items */
         std::uint32_t getMetadataCount() const;

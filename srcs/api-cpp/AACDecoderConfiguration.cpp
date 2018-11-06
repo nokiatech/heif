@@ -18,14 +18,14 @@
 using namespace HEIFPP;
 
 AACDecoderConfiguration::AACDecoderConfiguration(Heif* aHeif)
-    : DecoderConfiguration(aHeif, HEIF::FourCC("mp4a"))
+    : DecoderConfig(aHeif, HEIF::FourCC("mp4a"))
     , mProgramConfig()
     , mGaSpecific()
     , mAudioSpecificConfig()
 {
 }
 AACDecoderConfiguration::AACDecoderConfiguration(Heif* aHeif, const HEIF::FourCC& aType)
-    : DecoderConfiguration(aHeif, aType)
+    : DecoderConfig(aHeif, aType)
     , mProgramConfig()
     , mGaSpecific()
     , mAudioSpecificConfig()
@@ -384,7 +384,7 @@ bool AACDecoderConfiguration::parse()
             mAudioSpecificConfig.extensionAudioObjectType = GetAudioObjectType(bs);
             if (mAudioSpecificConfig.extensionAudioObjectType == 5)
             {
-                mAudioSpecificConfig.sbrPresentFlag = bs.getBits(1);
+                mAudioSpecificConfig.sbrPresentFlag = bs.getBits(1) != 0;
                 if (mAudioSpecificConfig.sbrPresentFlag == 1)
                 {
                     mAudioSpecificConfig.extensionSamplingFrequencyIndex = (std::uint8_t) bs.getBits(4);
@@ -397,14 +397,14 @@ bool AACDecoderConfiguration::parse()
                         mAudioSpecificConfig.syncExtensionType = (std::uint16_t) bs.getBits(11);  // bslbf
                         if (mAudioSpecificConfig.syncExtensionType == 0x548)
                         {
-                            mAudioSpecificConfig.psPresentFlag = bs.getBits(1);  // uimsbf
+                            mAudioSpecificConfig.psPresentFlag = bs.getBits(1) != 0;  // uimsbf
                         }
                     }
                 }
             }
             if (mAudioSpecificConfig.extensionAudioObjectType == 22)
             {
-                mAudioSpecificConfig.sbrPresentFlag = bs.getBits(1);
+                mAudioSpecificConfig.sbrPresentFlag = bs.getBits(1) != 0;
                 if (mAudioSpecificConfig.sbrPresentFlag == 1)
                 {
                     mAudioSpecificConfig.extensionSamplingFrequencyIndex = (std::uint8_t) bs.getBits(4);

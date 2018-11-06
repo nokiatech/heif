@@ -20,7 +20,7 @@ JpegConfigurationBox::JpegConfigurationBox()
 {
 }
 
-Vector<uint8_t> JpegConfigurationBox::getPrefix() const
+const Vector<uint8_t>& JpegConfigurationBox::getPrefix() const
 {
     return mJpegPrefix;
 }

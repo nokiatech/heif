@@ -40,33 +40,4 @@ const FourCCInt AUXL_TREF_TYPE  = "auxl";  ///< 4CC identifier of auxiliry track
 // Grouping Types
 const FourCCInt STMI_GROUP_TYPE = "stmi";  ///< 4CC identifier of Sample To Metadata Item grouping
 
-/// @todo Move helpers to a better location.
-template <typename T>
-String to_String(T& a)
-{
-    std::basic_ostringstream<char, std::char_traits<char>, Allocator<char>> st;
-    st << a;
-    return st.str();
-}
-
-inline FourCCInt to_FourCCInt(std::string& input)
-{
-    return FourCCInt(static_cast<uint32_t>(std::stoul(input)));
-}
-
-template <typename T>
-std::string to_string(T& a)
-{
-    std::ostringstream st;
-    st << a;
-    return st.str();
-}
-
-inline FourCCInt to_FourCCInt(String& input)
-{
-    std::string tmp = to_string(input);
-    return FourCCInt(static_cast<uint32_t>(std::stoul(tmp)));
-}
-
-
 #endif

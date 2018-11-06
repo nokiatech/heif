@@ -42,6 +42,14 @@ set(WRITER_SRCS
     ../common/customallocator.cpp
     )
 
+if (MSVC)
+	#Use native windows file api
+	set(WRITER_SRCS ${WRITER_SRCS} FileOutputStream_win32.cpp)
+else()
+	#Use std::ofstream
+	set(WRITER_SRCS ${WRITER_SRCS} FileOutputStream_std.cpp)
+endif()
+
 set(API_HDRS
     ../api/writer/heifwriter.h
     ../api/writer/heifwriterdatatypes.h
@@ -85,9 +93,6 @@ target_compile_definitions(${HEIF_WRITER_LIB_NAME} INTERFACE "HEIF_USE_STATIC_LI
 target_include_directories(${HEIF_WRITER_LIB_NAME} PRIVATE ../common
                                                    PUBLIC ../api/common
                                                    PUBLIC ../api/writer)
-if (IOS)
-    set_xcode_property(${HEIF_WRITER_LIB_NAME} IPHONEOS_DEPLOYMENT_TARGET "10.0")
-endif(IOS)
 
 if(NOT IOS)
     add_library(${HEIF_SHARED_WRITER_LIB_NAME} SHARED ${WRITER_SRCS} ${API_HDRS} ${WRITER_HDRS} $<TARGET_OBJECTS:common> )

@@ -39,6 +39,7 @@ namespace HEIFPP
 
     private:
         NAL_State& operator=(const NAL_State&) = delete;
+        NAL_State& operator=(NAL_State&&)      = delete;
         NAL_State(const NAL_State&)            = delete;
         NAL_State(NAL_State&&)                 = delete;
     };

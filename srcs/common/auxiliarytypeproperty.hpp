@@ -33,13 +33,13 @@ public:
     void setAuxType(const String& type);
 
     /// @return Auxiliary type. @see setAuxType() for details about the string.
-    String getAuxType() const;
+    const String& getAuxType() const;
 
     /// @param [in] subtype Zero or more bytes. The semantics depend on auxType.
     void setAuxSubType(const Vector<std::uint8_t>& subtype);
 
     /// @return Auxiliary subtype. @see setAuxSubType() for details about the data.
-    Vector<std::uint8_t> getAuxSubType() const;
+    const Vector<std::uint8_t>& getAuxSubType() const;
 
     /// @see Box::writeBox()
     virtual void writeBox(ISOBMFF::BitStream& output) const;

@@ -16,12 +16,12 @@
 
 namespace HEIFPP
 {
-    class Grid : public HEIFPP::DerivedImageItem
+    class GridImageItem : public HEIFPP::DerivedImageItem
     {
     public:
-        Grid(Heif* aHeif);
-        Grid(Heif* aHeif, std::uint32_t aColumns, std::uint32_t aRows);
-        ~Grid() = default;
+        GridImageItem(Heif* aHeif);
+        GridImageItem(Heif* aHeif, std::uint32_t aColumns, std::uint32_t aRows);
+        ~GridImageItem() = default;
 
         /** Sets the dimensions for the grid
          * @param [in] aColums: The column count for the grid
@@ -62,9 +62,10 @@ namespace HEIFPP
         std::uint32_t mRows;
 
     private:
-        Grid& operator=(const Grid&) = delete;
-        Grid(const Grid&)            = delete;
-        Grid(Grid&&)                 = delete;
-        Grid()                       = delete;
+        GridImageItem& operator=(const GridImageItem&) = delete;
+        GridImageItem& operator=(GridImageItem&&)      = delete;
+        GridImageItem(const GridImageItem&)            = delete;
+        GridImageItem(GridImageItem&&)                 = delete;
+        GridImageItem()                       = delete;
     };
 }  // namespace HEIFPP

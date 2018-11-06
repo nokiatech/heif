@@ -5,14 +5,14 @@ import java.nio.ByteBuffer;
 /**
  * Stream for loading HEIF files from a byte array
  */
-public class ByteArrayStream
+public class ByteArrayInputStream
         implements InputStream
 {
     private byte[] mData;
 
     private int mPosition = 0;
 
-    public ByteArrayStream(byte[] data)
+    public ByteArrayInputStream(byte[] data)
     {
         mData = data;
     }

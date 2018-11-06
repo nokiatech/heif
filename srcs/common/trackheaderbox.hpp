@@ -17,7 +17,6 @@
 #include "fullbox.hpp"
 
 #include <cstdint>
-#include <iostream>
 
 /** @brief TrackBox class. Extends from Box.
  *  @details 'tkhd' box contains information related to the track properties as defined in the ISOBMFF standard. */

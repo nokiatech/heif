@@ -30,22 +30,15 @@ ExifItem::~ExifItem()
 
 HEIF::ErrorCode ExifItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 {
-    HEIF::ErrorCode error;
-    error = MetaItem::load(aReader, aId);
+    HEIF::ErrorCode error = MetaItem::load(aReader, aId);
     if (HEIF::ErrorCode::OK != error)
         return error;
     const HEIF::ItemInformation* info = getHeif()->getItemInformation(aId);
     mBufferSize                       = info->size;
-    if (mBufferSize == 0)
+    if (getHeif()->mPreLoadMode == Heif::PreloadMode::LOAD_ALL_DATA ||
+        getHeif()->mPreLoadMode == Heif::PreloadMode::LOAD_PREVIEW_DATA)
     {
-        mBuffer = nullptr;
-    }
-    else
-    {
-        mBuffer = new std::uint8_t[mBufferSize];
-        error   = aReader->getItemData(aId, mBuffer, mBufferSize, false);
-        if (HEIF::ErrorCode::OK != error)
-            return error;
+        error = loadData();
     }
     return HEIF::ErrorCode::OK;
 }
@@ -57,8 +50,6 @@ HEIF::ErrorCode ExifItem::save(HEIF::Writer* aWriter)
         return HEIF::ErrorCode::BUFFER_SIZE_TOO_SMALL;
     }
 
-    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
-
     HEIF::MediaDataId mediaDataId;
     HEIF::Data fr;
     fr.mediaFormat     = HEIF::MediaFormat::EXIF;
@@ -66,10 +57,11 @@ HEIF::ErrorCode ExifItem::save(HEIF::Writer* aWriter)
     fr.data            = mBuffer;
     fr.decoderConfigId = 0;
 
-    // TODO: re-use of data?
-    error = aWriter->feedMediaData(fr, mediaDataId);
+    HEIF::ErrorCode error = aWriter->feedMediaData(fr, mediaDataId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
 
     HEIF::MetadataItemId metadataItemId;
     error = aWriter->addMetadata(mediaDataId, metadataItemId);
@@ -78,11 +70,15 @@ HEIF::ErrorCode ExifItem::save(HEIF::Writer* aWriter)
     return MetaItem::save(aWriter);
 }
 
-
-const std::uint8_t* ExifItem::getData() const
+const std::uint8_t* ExifItem::getData()
 {
+    if (mBuffer == nullptr)
+    {
+        loadData();
+    }
     return mBuffer;
 }
+
 std::uint64_t ExifItem::getDataSize() const
 {
     return mBufferSize;
@@ -95,4 +91,32 @@ void ExifItem::setData(const std::uint8_t* aData, std::uint64_t aDataSize)
     mBuffer = new std::uint8_t[aDataSize];
     std::memcpy(mBuffer, aData, aDataSize);
     mBufferSize = aDataSize;
+}
+
+HEIF::ErrorCode ExifItem::loadData()
+{
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+    if (mBufferSize == 0)
+    {
+        mBuffer = nullptr;
+    }
+    else
+    {
+        if ((getHeif() != nullptr) && (getHeif()->getReaderInstance() != nullptr))
+        {
+            delete[] mBuffer;
+            mBuffer = nullptr;
+            mBuffer = new std::uint8_t[mBufferSize];
+            error   = getHeif()->getReaderInstance()->getItemData(getId(), mBuffer, mBufferSize, false);
+            if (HEIF::ErrorCode::OK != error)
+            {
+                return error;
+            }
+        }
+        else
+        {
+            HEIF_ASSERT(false);
+        }
+    }
+    return error;
 }

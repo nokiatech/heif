@@ -16,7 +16,7 @@
 
 namespace HEIFPP
 {
-    class AACDecoderConfiguration : public HEIFPP::DecoderConfiguration
+    class AACDecoderConfiguration : public HEIFPP::DecoderConfig
     {
     public:
         AACDecoderConfiguration(Heif* aHeif);
@@ -87,6 +87,7 @@ namespace HEIFPP
 
         bool parse();
         AACDecoderConfiguration& operator=(const AACDecoderConfiguration&) = delete;
+        AACDecoderConfiguration& operator=(AACDecoderConfiguration&&)      = delete;
         AACDecoderConfiguration(const AACDecoderConfiguration&)            = delete;
         AACDecoderConfiguration(AACDecoderConfiguration&&)                 = delete;
         AACDecoderConfiguration()                                          = delete;

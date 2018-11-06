@@ -28,6 +28,7 @@ namespace HEIFPP
 
     private:
         XMPItem& operator=(const XMPItem&) = delete;
+        XMPItem& operator=(XMPItem&&)      = delete;
         XMPItem(const XMPItem&)            = delete;
         XMPItem(XMPItem&&)                 = delete;
         XMPItem()                          = delete;

@@ -21,55 +21,52 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::Grid *nativeObject = new HEIFPP::Grid(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        HEIFPP::GridImageItem *nativeObject = new HEIFPP::GridImageItem(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD_ARG(void, resizeNative, jint width, jint height)
     {
-        NATIVE_GRID_IMAGE_ITEM(nativeHandle, self);
-        nativeHandle->resize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+        NATIVE_SELF;
+        nativeSelf->resize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     }
 
     JNI_METHOD(jint, getColumnCountNative)
     {
-        NATIVE_GRID_IMAGE_ITEM(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->columns());
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->columns());
     }
 
     JNI_METHOD(jint, getRowCountNative)
     {
-        NATIVE_GRID_IMAGE_ITEM(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->rows());
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->rows());
     }
 
     JNI_METHOD_ARG(jobject, getImageNative, jint column, jint row)
     {
-        NATIVE_GRID_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
 
         HEIFPP::ImageItem *imageItem = nullptr;
-        CHECK_ERROR(nativeHandle->getImage(static_cast<uint32_t>(column),
-                                           static_cast<uint32_t>(row),
-                                           imageItem),
+        CHECK_ERROR(nativeSelf->getImage(static_cast<uint32_t>(column), static_cast<uint32_t>(row), imageItem),
                     "getImage failed");
         return imageItem ? GET_JAVA_ITEM(imageItem) : nullptr;
     }
 
     JNI_METHOD_ARG(void, setImageNative, jint column, jint row, jobject image)
     {
-        NATIVE_GRID_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeImage, image);
-        CHECK_ERROR(nativeHandle->setImage(static_cast<uint32_t>(column),
-                                           static_cast<uint32_t>(row),
-                                           nativeImage), "setImage failed");
+        CHECK_ERROR(nativeSelf->setImage(static_cast<uint32_t>(column), static_cast<uint32_t>(row), nativeImage),
+                    "setImage failed");
     }
 
     JNI_METHOD_ARG(void, removeImageNative, jobject image)
     {
-        NATIVE_GRID_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeImage, image);
-        nativeHandle->removeImage(nativeImage);
+        nativeSelf->removeImage(nativeImage);
     }
 }

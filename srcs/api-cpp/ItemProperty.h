@@ -27,6 +27,9 @@ namespace HEIFPP
         /** Returns the type of the property */
         const HEIF::ItemPropertyType& getType() const;
 
+        /** Returns the type of the property */
+        const HEIF::FourCC& rawType() const;
+
         /** Sets the custom user data
          *  @param [in] aContext Pointer to the custom data */
         void setContext(const void* aContext);
@@ -47,14 +50,16 @@ namespace HEIFPP
         virtual HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId);
         virtual HEIF::ErrorCode save(HEIF::Writer* aWriter) = 0;
 
-        ItemProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, bool aIsTransform);
+        ItemProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, const HEIF::FourCC& aRawType, bool aIsTransform);
         void setIsTransformative(bool aIsTransformative);
-
+        HEIFPP::Result setRawType(const HEIF::FourCC&);
     private:
         Heif* mHeif;
         HEIF::PropertyId mId;
 
+        HEIF::FourCC mRawType;
         HEIF::ItemPropertyType mType;
+
         LinkArray<Item*> mLinks;
         const void* mContext;
         bool mIsTransform;

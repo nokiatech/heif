@@ -29,6 +29,7 @@
 #include "Sample.h"
 #include "Track.h"
 #include "TransformativeProperty.h"
+#include "OutputStream.h"
 
 #define CLASS_NAME HEIF
 extern "C"
@@ -42,97 +43,6 @@ extern "C"
     JNI_METHOD(void, destroyInstanceNative)
     {
         NATIVE_HEIF(nativeHandle, self);
-
-        uint32_t count = nativeHandle->getImageCount();
-        for (uint32_t index = 0; index < count; index++)
-        {
-            HEIFPP::ImageItem *image = nativeHandle->getImage(index);
-            if (image->getContext() != nullptr)
-            {
-                jobject javaHandle = GET_JAVA_OBJECT(image);
-                releaseJavaHandles(env, javaHandle);
-                env->DeleteGlobalRef(javaHandle);
-                image->setContext(nullptr);
-            }
-        }
-
-        count = nativeHandle->getItemCount();
-        for (uint32_t index = 0; index < count; index++)
-        {
-            HEIFPP::Item *item = nativeHandle->getItem(index);
-            if (item->getContext() != nullptr)
-            {
-                jobject javaHandle = GET_JAVA_OBJECT(item);
-                releaseJavaHandles(env, javaHandle);
-                env->DeleteGlobalRef(javaHandle);
-                item->setContext(nullptr);
-            }
-        }
-
-        count = nativeHandle->getPropertyCount();
-        for (uint32_t index = 0; index < count; index++)
-        {
-            HEIFPP::ItemProperty *item = nativeHandle->getProperty(index);
-            if (item->getContext() != nullptr)
-            {
-                jobject javaHandle = GET_JAVA_OBJECT(item);
-                releaseJavaHandles(env, javaHandle);
-                env->DeleteGlobalRef(javaHandle);
-                item->setContext(nullptr);
-            }
-        }
-
-        count = nativeHandle->getDecoderConfigCount();
-        for (uint32_t index = 0; index < count; index++)
-        {
-            HEIFPP::DecoderConfiguration *item = nativeHandle->getDecoderConfig(index);
-            if (item->getContext() != nullptr)
-            {
-                jobject javaHandle = GET_JAVA_OBJECT(item);
-                releaseJavaHandles(env, javaHandle);
-                env->DeleteGlobalRef(javaHandle);
-                item->setContext(nullptr);
-            }
-        }
-
-        count = nativeHandle->getTrackCount();
-        for (uint32_t index = 0; index < count; index++)
-        {
-            HEIFPP::Track *track = nativeHandle->getTrack(index);
-            if (track->getContext() != nullptr)
-            {
-                uint32_t sampleCount = track->getSampleCount();
-                for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
-                {
-                    HEIFPP::Sample *sample = track->getSample(sampleIndex);
-                    if (sample != nullptr && sample->getContext() != nullptr)
-                    {
-                        jobject javaHandle = GET_JAVA_OBJECT(sample);
-                        releaseJavaHandles(env, javaHandle);
-                        env->DeleteGlobalRef(javaHandle);
-                        sample->setContext(nullptr);
-                    }
-                }
-                jobject javaHandle = GET_JAVA_OBJECT(track);
-                releaseJavaHandles(env, javaHandle);
-                env->DeleteGlobalRef(javaHandle);
-                track->setContext(nullptr);
-            }
-        }
-
-        count = nativeHandle->getAlternativeTrackGroupCount();
-        for (uint32_t index = 0; index < count; index++)
-        {
-            HEIFPP::AlternativeTrackGroup *item = nativeHandle->getAlternativeTrackGroup(index);
-            if (item->getContext() != nullptr)
-            {
-                jobject javaHandle = GET_JAVA_OBJECT(item);
-                releaseJavaHandles(env, javaHandle);
-                env->DeleteGlobalRef(javaHandle);
-                item->setContext(nullptr);
-            }
-        }
-
         delete nativeHandle;
         setNativeHandle(env, self, 0);
     }
@@ -164,6 +74,15 @@ extern "C"
         HEIFPP::Result error = nativeHandle->save(nativeFilename);
 
         env->ReleaseStringUTFChars(filename, nativeFilename);
+        CHECK_ERROR(error, "Saving failed");
+    }
+
+    JNI_METHOD_ARG(void, saveStreamNative, jobject stream)
+    {
+        NATIVE_HEIF(nativeHandle, self);
+        OutputStream *outputStream = new OutputStream(env, stream);
+        HEIFPP::Result error = nativeHandle->save(outputStream);
+        delete outputStream;
         CHECK_ERROR(error, "Saving failed");
     }
 

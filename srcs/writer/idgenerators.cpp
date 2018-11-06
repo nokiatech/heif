@@ -59,3 +59,24 @@ namespace Track
         mAlternateGroupValue = INITIAL_VALUE;
     }
 }  // namespace Track
+
+namespace FNVHash
+{
+    // Calculate FNV-1a hash for null-terminated C-string, http://isthe.com/chongo/tech/comp/fnv/
+    uint64_t generate(const uint8_t* aData, uint64_t aSize)
+    {
+        static uint64_t offset = 2166136261u;
+        static uint64_t prime  = 16777619u;
+
+        uint64_t hash  = offset;
+        uint64_t index = 0;
+        while (index < aSize)
+        {
+            hash ^= (uint64_t) aData[index];
+            hash *= prime;
+            index++;
+        }
+
+        return hash;
+    }
+}  // namespace FNVHash

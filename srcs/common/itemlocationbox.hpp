@@ -97,7 +97,7 @@ public:
     /** @brief Writes the ItemLocation to the bitstream in the standard-defined format
      *  @param [in] version version of the ItemLocation
      *  @param [out] bitstr output ISOBMFF::BitStream */
-    void write(ISOBMFF::BitStream& bitstr, unsigned int version);
+    void write(ISOBMFF::BitStream& bitstr, unsigned int version); //TODO: not-implemented!
 
 private:
     std::uint32_t mItemID;                   ///< Item ID

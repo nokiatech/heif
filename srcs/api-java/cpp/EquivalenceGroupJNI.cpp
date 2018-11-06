@@ -21,42 +21,40 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::EqivGroup* nativeObject = new HEIFPP::EqivGroup(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
+        HEIFPP::EquivalenceGroup* nativeObject = new HEIFPP::EquivalenceGroup(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD(void, destroyContextNative)
     {
-        NATIVE_EQUIVALENCE_GROUP(nativeHandle, self);
-        jobject javaHandle = GET_JAVA_OBJECT(nativeHandle);
-        env->DeleteGlobalRef(javaHandle);
+        NATIVE_SELF;
         setNativeHandle(env, self, 0);
-        delete nativeHandle;
+        delete nativeSelf;
     }
 
     JNI_METHOD_ARG(void, addSampleNative, jobject sample, jint offset, jint multiplier)
     {
-        NATIVE_EQUIVALENCE_GROUP(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_SAMPLE(nativeSample, sample);
 
-        nativeHandle->addSample(nativeSample, static_cast<int16_t>(offset), static_cast<uint16_t>(multiplier));
+        nativeSelf->addSample(nativeSample, static_cast<int16_t>(offset), static_cast<uint16_t>(multiplier));
     }
 
     JNI_METHOD_ARG(jint, getOffsetNative, jobject sample)
     {
-        NATIVE_EQUIVALENCE_GROUP(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_SAMPLE(nativeSample, sample);
 
-        return static_cast<jint>(nativeHandle->getOffset(nativeSample));
+        return static_cast<jint>(nativeSelf->getOffset(nativeSample));
     }
 
     JNI_METHOD_ARG(jint, getMultiplierNative, jobject sample)
     {
-        NATIVE_EQUIVALENCE_GROUP(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_SAMPLE(nativeSample, sample);
 
-        return static_cast<jint>(nativeHandle->getMultiplier(nativeSample));
+        return static_cast<jint>(nativeSelf->getMultiplier(nativeSample));
     }
 }

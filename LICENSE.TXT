@@ -63,7 +63,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 THIRD PARTY MATERIALS
 
 build/ios/ios.toolchain.cmake
-Copyright (c) 2016, Bogdan Cristea <cristeab@gmail.com>
+Copyright (c) 2011-2014, Andrew Fischer <andrew@ltengsoft.com>
+Copyright (c) 2017, Alexander Widerberg <widerbergaren@gmail.com>
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.

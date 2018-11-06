@@ -111,7 +111,6 @@ namespace HEIF
     instance(EntityGrouping);
     instance(FourCCToIds);
     instance(SampleGrouping);
-    instance(ImageInformation);
     instance(ItemInformation);
     instance(ItemPropertyInfo);
     instance(SampleAndEntryIds);

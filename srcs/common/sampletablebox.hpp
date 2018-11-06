@@ -95,7 +95,7 @@ public:
 
     /** @brief Whether SampleTableBox has SyncSampleBox sub-box.
          */
-    bool hasSyncSampleBox();
+    bool hasSyncSampleBox() const;
 
     /** @brief Provides access to a SyncSampleBox.
      *  @details - An instance of the SyncSampleBox is created upon

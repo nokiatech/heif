@@ -49,7 +49,7 @@ void SampleSizeBox::setEntrySize(Vector<uint32_t>& sample_sizes)
     mEntrySize = sample_sizes;
 }
 
-Vector<uint32_t> SampleSizeBox::getEntrySize() const
+const Vector<uint32_t>& SampleSizeBox::getEntrySize() const
 {
     // Fill the entry size in a lazy fashion to avoid doing too much work
     // if the box ends up being discarded due to invalid data determined

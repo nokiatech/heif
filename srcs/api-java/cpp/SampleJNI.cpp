@@ -22,8 +22,6 @@ extern "C"
     JNI_METHOD(void, destroyContextNative)
     {
         NATIVE_SELF;
-        jobject javaHandle = GET_JAVA_OBJECT(nativeSelf);
-        env->DeleteGlobalRef(javaHandle);
         setNativeHandle(env, self, 0);
         delete nativeSelf;
     }
@@ -39,6 +37,12 @@ extern "C"
         NATIVE_SELF;
         NATIVE_DECODER_CONFIG(nativeConfig, config);
         nativeSelf->setDecoderConfiguration(nativeConfig);
+    }
+
+    JNI_METHOD(jint, getSampleDataSizeNative)
+    {
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->getSampleDataSize());
     }
 
     JNI_METHOD(jobject, getSampleDataNative)
@@ -163,7 +167,7 @@ extern "C"
     JNI_METHOD(jobject, getTrackNative)
     {
         NATIVE_SELF;
-        return getJavaTrack(env, self, nativeSelf->getTrack());
+        return getJavaTrack(env, getJavaHEIF(env,self), nativeSelf->getTrack());
     }
 
     JNI_METHOD(jint, getSampleTypeNative)

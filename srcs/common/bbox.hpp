@@ -79,12 +79,12 @@ protected:
     /** @brief Sets usertype to given value and sets type to 'uuid'
      *  @param [in] Vector containing 16 byte UUID code of usertype.
      * */
-    void setUserType(Vector<uint8_t>& usertype);
+    void setUserType(const Vector<uint8_t>& usertype);
 
     /** @brief Gets usertype of 'uuid' type box.
     *  @return Vector containing 16 byte UUID code of usertype.
     * */
-    Vector<uint8_t>& getUserType();
+    const Vector<uint8_t>& getUserType() const;
 
     /** @brief Fills in the Box header data structure as defined in ISOBMFF standard.
      * @param [in,out] bitstr A ISOBMFF::BitStream object that contains Box data stream, where the header data structure

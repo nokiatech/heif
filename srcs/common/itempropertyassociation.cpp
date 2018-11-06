@@ -50,22 +50,16 @@ void ItemPropertyAssociation::addEntry(const std::uint32_t itemId, const std::ui
 }
 
 
-ItemPropertyAssociation::AssociationEntries
+const ItemPropertyAssociation::AssociationEntries&
 ItemPropertyAssociation::getAssociationEntries(const std::uint32_t itemId) const
 {
-    Vector<Entry> indexes;
-
-    if (mAssociations.count(itemId) != 0)
+    const auto it = mAssociations.find(itemId);
+    if (it != mAssociations.end())
     {
-        const AssociationEntries& entries = mAssociations.at(itemId);
-        indexes.reserve(entries.size());
-        for (const auto& entry : entries)
-        {
-            indexes.push_back(entry);
-        }
+        return it->second;
     }
-
-    return indexes;
+    static Vector<Entry> empty;
+    return empty;
 }
 
 void ItemPropertyAssociation::writeBox(BitStream& bitstream) const
@@ -121,8 +115,9 @@ void ItemPropertyAssociation::parseBox(BitStream& bitstream)
             itemId = bitstream.read32Bits();
         }
 
-        AssociationEntries propertyIndexVector;
+        AssociationEntries& propertyIndexVector = mAssociations[itemId];
         const unsigned int associationCount = bitstream.read8Bits();
+        propertyIndexVector.reserve(associationCount);
         for (unsigned int i = 0; i < associationCount; ++i)
         {
             Entry propertyIndexEntry;
@@ -137,6 +132,5 @@ void ItemPropertyAssociation::parseBox(BitStream& bitstream)
             }
             propertyIndexVector.push_back(propertyIndexEntry);
         }
-        mAssociations.insert({itemId, propertyIndexVector});
     }
 }

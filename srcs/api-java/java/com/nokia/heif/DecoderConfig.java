@@ -16,7 +16,7 @@ package com.nokia.heif;
 /**
  * DecoderConfig contains the decoder specific information attached to a CodedImageItem
  */
-public abstract class DecoderConfig extends Base
+public class DecoderConfig extends Base
 {
 
     /**

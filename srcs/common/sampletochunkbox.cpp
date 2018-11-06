@@ -85,9 +85,10 @@ void SampleToChunkBox::parseBox(ISOBMFF::BitStream& bitstr)
         chunkEntry.firstChunk      = bitstr.read32Bits();
         chunkEntry.samplesPerChunk = bitstr.read32Bits();
 
-        if (mMaxSampleCount != -1 && (chunkEntry.samplesPerChunk > mMaxSampleCount))
+        if ((mMaxSampleCount != -1 && (chunkEntry.samplesPerChunk > mMaxSampleCount)) ||
+            (chunkEntry.samplesPerChunk == 0))
         {
-            throw RuntimeError("SampleToChunkBox::parseBox samplesPerChunk is larger than total number of samples");
+            throw RuntimeError("SampleToChunkBox::parseBox samplesPerChunk sanity check fails");
         }
 
         chunkEntry.sampleDescriptionIndex = bitstr.read32Bits();

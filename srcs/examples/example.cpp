@@ -217,8 +217,8 @@ void example4()
             }
         }
 
-        cout << "To render derived image item ID " << itemId << ":" << endl;
-        cout << "-retrieve data for source image item ID " << sourceItemId << endl;
+        cout << "To render derived image item ID " << itemId.get() << ":" << endl;
+        cout << "-retrieve data for source image item ID " << sourceItemId.get() << endl;
         cout << "-rotating image " << rotation << " degrees." << endl;
     }
     else
@@ -248,7 +248,7 @@ void example5()
         for (const auto& trackProperties : info.trackInformation)
         {
             const auto sequenceId = trackProperties.trackId;
-            cout << "Track ID " << sequenceId << endl;  // Context ID corresponds to the track ID
+            cout << "Track ID " << sequenceId.get() << endl;  // Context ID corresponds to the track ID
 
             if (trackProperties.features & TrackFeatureEnum::IsMasterImageSequence)
             {
@@ -264,7 +264,7 @@ void example5()
                 cout << "This is a thumbnail track for track ID ";
                 for (const auto masterTrackId : tref.trackIds)
                 {
-                    cout << masterTrackId << endl;
+                    cout << masterTrackId.get() << endl;
                 }
             }
 
@@ -273,7 +273,7 @@ void example5()
             cout << "Sample timestamps:" << endl;
             for (const auto& timestamp : timestamps)
             {
-                cout << " Timestamp=" << timestamp.timeStamp << "ms, sample ID=" << timestamp.itemId << endl;
+                cout << " Timestamp=" << timestamp.timeStamp << "ms, sample ID=" << timestamp.itemId.get() << endl;
             }
 
             for (const auto& sampleProperties : trackProperties.sampleProperties)
@@ -398,9 +398,9 @@ void example7()
             map<PropertyId, PropertyId> inputToOutputImageProperties;
 
             // go through all items in input file and store master image decoder configs
-            for (const auto& image : fileInfo.rootMetaBoxInformation.imageInformations)
+            for (const auto& image : fileInfo.rootMetaBoxInformation.itemInformations)
             {
-                if (image.features & ImageFeatureEnum::IsMasterImage)
+                if (image.features & ItemFeatureEnum::IsMasterImage)
                 {
                     // read image decoder config and store its id if not seen before
                     DecoderConfiguration inputdecoderConfig{};
@@ -431,7 +431,7 @@ void example7()
                     writer->addImage(outputMediaId, outputImageId);
 
                     // if this input image was the primary image -> also mark output image as primary image
-                    if (image.features & ImageFeatureEnum::IsPrimaryImage)
+                    if (image.features & ItemFeatureEnum::IsPrimaryImage)
                     {
                         writer->setPrimaryItem(outputImageId);
                     }
@@ -446,7 +446,6 @@ void example7()
                         {
                         case ItemPropertyType::IROT:
                         {
-                            PropertyId writerPropertyId;
                             if (!imageRotationProperties.count(imageProperty.index))
                             {
                                 // if we haven't yet read this property for other image -> do so and add it to writer as

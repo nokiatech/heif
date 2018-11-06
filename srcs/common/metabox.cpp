@@ -53,6 +53,11 @@ const ItemInfoBox& MetaBox::getItemInfoBox() const
     return mItemInfoBox;
 }
 
+ItemInfoBox& MetaBox::getItemInfoBox()
+{
+    return mItemInfoBox;
+}
+
 void MetaBox::setItemInfoBox(const ItemInfoBox& itemInfoBox)
 {
     mItemInfoBox = itemInfoBox;

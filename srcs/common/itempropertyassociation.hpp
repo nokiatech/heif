@@ -37,7 +37,7 @@ public:
      * @param [in] itemId The item id to request property indexes for.
      * @return Requested association entries. An empty vector if the itemId is not present in ItemPropertyAssociation.
      */
-    AssociationEntries getAssociationEntries(std::uint32_t itemId) const;
+    const AssociationEntries& getAssociationEntries(std::uint32_t itemId) const;
 
     /** Add a property association for an item.
      * @param [in] itemId Item ID of the item.

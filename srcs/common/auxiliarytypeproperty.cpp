@@ -24,7 +24,7 @@ void AuxiliaryTypeProperty::setAuxType(const String& type)
     mAuxType = type;
 }
 
-String AuxiliaryTypeProperty::getAuxType() const
+const String& AuxiliaryTypeProperty::getAuxType() const
 {
     return mAuxType;
 }
@@ -34,7 +34,7 @@ void AuxiliaryTypeProperty::setAuxSubType(const Vector<std::uint8_t>& subtype)
     mAuxSubType = subtype;
 }
 
-Vector<std::uint8_t> AuxiliaryTypeProperty::getAuxSubType() const
+const Vector<std::uint8_t>& AuxiliaryTypeProperty::getAuxSubType() const
 {
     return mAuxSubType;
 }

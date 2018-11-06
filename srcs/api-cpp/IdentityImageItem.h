@@ -16,11 +16,11 @@
 
 namespace HEIFPP
 {
-    class Identity : public HEIFPP::DerivedImageItem
+    class IdentityImageItem : public HEIFPP::DerivedImageItem
     {
     public:
-        Identity(Heif* aHeif);
-        ~Identity() = default;
+        IdentityImageItem(Heif* aHeif);
+        ~IdentityImageItem() = default;
 
         /** Returns the origin image of the derived image */
         ImageItem* getImage();
@@ -39,10 +39,11 @@ namespace HEIFPP
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
-        Identity& operator=(const Identity&) = delete;
-        Identity(const Identity&)            = delete;
-        Identity(Identity&&)                 = delete;
-        Identity()                           = delete;
+        IdentityImageItem& operator=(const IdentityImageItem&) = delete;
+        IdentityImageItem& operator=(IdentityImageItem&&)      = delete;
+        IdentityImageItem(const IdentityImageItem&)            = delete;
+        IdentityImageItem(IdentityImageItem&&)                 = delete;
+        IdentityImageItem()                           = delete;
     };
 
 }  // namespace HEIFPP

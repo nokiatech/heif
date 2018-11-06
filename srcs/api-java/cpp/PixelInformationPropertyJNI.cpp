@@ -23,9 +23,9 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::PixelInformationProperty *nativeObject = new HEIFPP::PixelInformationProperty(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -39,12 +39,12 @@ extern "C"
 
     JNI_METHOD_ARG(void, setPixelInformationNative, jbyteArray data)
     {
-        NATIVE_PIXEL_INFORMATION_PROPERTY(nativeHandle, self);
+        NATIVE_SELF;
         jbyte *nativeData = env->GetByteArrayElements(data, 0);
         uint32_t dataSize = static_cast<uint32_t>(env->GetArrayLength(data));
 
-        nativeHandle->mPixelInformation.bitsPerChannel = HEIF::Array<uint8_t>(dataSize);
-        std::memcpy(nativeHandle->mPixelInformation.bitsPerChannel.elements, nativeData, dataSize);
+        nativeSelf->mPixelInformation.bitsPerChannel = HEIF::Array<uint8_t>(dataSize);
+        std::memcpy(nativeSelf->mPixelInformation.bitsPerChannel.elements, nativeData, dataSize);
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 }

@@ -20,6 +20,7 @@
 #include "heifcommondatatypes.h"
 #include "heifexport.h"
 #include "heifid.h"
+#include "OutputStreamInterface.h"
 
 namespace HEIF
 {
@@ -31,6 +32,11 @@ namespace HEIF
         /**
          * Output filename */
         const char* fileName;
+
+        /**
+          * Output stream interface 
+          * If set all writes will be directed here*/
+        OutputStreamInterface* outputStream = nullptr;
 
         /**
          * If true: then all file data is kept in memory until finalize() is called.

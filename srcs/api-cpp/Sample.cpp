@@ -14,6 +14,7 @@
 #include <cstring>
 #include "DecoderConfiguration.h"
 #include "EntityGroup.h"
+#include "H26xTools.h"
 #include "MetaItem.h"
 #include "Track.h"
 #include "heifreader.h"
@@ -21,7 +22,6 @@
 
 using namespace HEIFPP;
 
-#include "H26xTools.h"
 Sample::Sample(Heif* aHeif)
     : mHeif(aHeif)
     , mType(HEIF::FourCC((uint32_t) 0))
@@ -32,7 +32,11 @@ Sample::Sample(Heif* aHeif)
     , mConfig(0)
     , mIsAudio(false)
     , mIsVideo(false)
+    , mMetaItems()
     , mTrack(nullptr)
+    , mDecodeDependency()
+    , mDecodeDependencyLinks()
+    , mGroups()
     , mBufferSize(0)
     , mBuffer(nullptr)
     , mContext(nullptr)
@@ -53,7 +57,7 @@ Sample::~Sample()
             meta = nullptr;
         }
     }
-    //disconnect from groups
+    // disconnect from groups
     for (; !mGroups.empty();)
     {
         (*mGroups.begin())->removeSample(this);
@@ -272,6 +276,55 @@ std::uint64_t Sample::getTimeStamp(uint32_t aIndex) const
     }
     return 0;
 }
+
+HEIF::ErrorCode Sample::loadSampleData(const HEIF::SequenceId& aTrackId)
+{
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+    if (mBufferSize == 0)
+    {
+        // No data in sample, warn user?
+    }
+    else
+    {
+        if ((getHeif() != nullptr) && (getHeif()->getReaderInstance() != nullptr) && (mConfig != nullptr))
+        {
+            delete[] mBuffer;
+            mBuffer = nullptr;
+            mBuffer = new std::uint8_t[mBufferSize];
+            error   = getHeif()->getReaderInstance()->getItemData(aTrackId, getId(), mBuffer, mBufferSize, false);
+            if (HEIF::ErrorCode::OK != error)
+            {
+                // Could not get the data. fail.
+                mBufferSize = 0;
+                delete[] mBuffer;
+                mBuffer = nullptr;
+            }
+            else
+            {
+                switch (mConfig->getMediaFormat())
+                {
+                case HEIF::MediaFormat::AVC:
+                case HEIF::MediaFormat::HEVC:
+                {
+                    error = NAL_State::convertToByteStream(mBuffer, mBufferSize) ? HEIF::ErrorCode::OK
+                                                                                 : HEIF::ErrorCode::MEDIA_PARSING_ERROR;
+                    break;
+                }
+                default:
+                {
+                    break;
+                }
+                }
+            }
+        }
+        else
+        {
+            HEIF_ASSERT(false);
+        }
+    }
+    return error;
+}
+
 /** Sets the item data for the image
  * @param [in] aData: A pointer to the data.
  * @param [in] aLength: The amount of data. */
@@ -279,6 +332,7 @@ void Sample::setItemData(const std::uint8_t* aData, std::uint64_t aLength)
 {
     mBufferSize = aLength;
     delete[] mBuffer;
+    mBuffer = nullptr;
     mBuffer = new std::uint8_t[aLength];
     std::memcpy(mBuffer, aData, mBufferSize);
 }
@@ -290,22 +344,26 @@ std::uint64_t Sample::getSampleDataSize() const
 }
 
 /** Returns a pointer to the sample data */
-const std::uint8_t* Sample::getSampleData() const
+const std::uint8_t* Sample::getSampleData()
 {
+    if (mBuffer == nullptr)
+    {
+        loadSampleData(mTrack->getId());
+    }
     return mBuffer;
 }
 
 
-DecoderConfiguration* Sample::getDecoderConfiguration()
+DecoderConfig* Sample::getDecoderConfiguration()
 {
     return mConfig;
 }
 
-const DecoderConfiguration* Sample::getDecoderConfiguration() const
+const DecoderConfig* Sample::getDecoderConfiguration() const
 {
     return mConfig;
 }
-void Sample::setDecoderConfiguration(DecoderConfiguration* aConfig)
+HEIF::ErrorCode Sample::setDecoderConfiguration(DecoderConfig* aConfig)
 {
     if (mConfig)
         mConfig->unlink(this);
@@ -313,13 +371,15 @@ void Sample::setDecoderConfiguration(DecoderConfiguration* aConfig)
     {
         if (aConfig->getMediaType() != mType)
         {
-            // invalid configuration.
-            HEIF_ASSERT(false);
+            return HEIF::ErrorCode::DECODER_CONFIGURATION_ERROR;
         }
     }
     mConfig = aConfig;
     if (mConfig)
+    {
         mConfig->link(this);
+    }
+    return HEIF::ErrorCode::OK;
 }
 
 HEIF::ErrorCode Sample::load(HEIF::Reader* aReader,
@@ -328,9 +388,11 @@ HEIF::ErrorCode Sample::load(HEIF::Reader* aReader,
 {
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
     aReader->getDecoderCodeType(aTrackId, aInfo.sampleId, mType);
-    DecoderConfiguration* config =
-        mHeif->constructDecoderConfig(aReader, Heif::InvalidItem, aTrackId, aInfo.sampleId, error);
-    setDecoderConfiguration(config);
+    DecoderConfig* config = mHeif->constructDecoderConfig(aReader, Heif::InvalidItem, aTrackId, aInfo.sampleId, error);
+    if (error != HEIF::ErrorCode::OK || (setDecoderConfiguration(config) != HEIF::ErrorCode::OK))
+    {
+        return error;
+    }
     mDuration   = aInfo.sampleDurationTS;
     mSampleType = aInfo.sampleType;
     HEIF::Array<std::int64_t> st;
@@ -340,40 +402,13 @@ HEIF::ErrorCode Sample::load(HEIF::Reader* aReader,
     {
         mTimeStamps.push_back(static_cast<std::uint64_t>(t));
     }
-
     mCompositionOffset = aInfo.sampleCompositionOffsetTs;
 
-    // TODO: Use a common buffer of maxSampleSize to load the samples. and preferrably only on demand..
-    mBufferSize = mHeif->getTrackInformation(aTrackId)->maxSampleSize;
-    if (mBufferSize == 0)
+    mBufferSize = aInfo.size;
+    if (getHeif()->mPreLoadMode == Heif::PreloadMode::LOAD_ALL_DATA)
     {
-        // Umm.. no actual data in file?
-        // TODO: add warnings for user.
-        mBuffer = nullptr;
+        error = loadSampleData(aTrackId);
     }
-    else
-    {
-        mBuffer = new std::uint8_t[mBufferSize];
-        error   = aReader->getItemData(aTrackId, aInfo.sampleId, mBuffer, mBufferSize, false);
-        if (HEIF::ErrorCode::OK == error)
-        {
-            switch (config->getMediaFormat())
-            {
-            case HEIF::MediaFormat::AVC:
-            case HEIF::MediaFormat::HEVC:
-            {
-                error = NAL_State::convertToByteStream(mBuffer, mBufferSize) ? HEIF::ErrorCode::OK
-                                                                             : HEIF::ErrorCode::MEDIA_PARSING_ERROR;
-                break;
-            }
-            default:
-            {
-                break;
-            }
-            }
-        }
-    }
-
     return error;
 }
 

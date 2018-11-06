@@ -257,15 +257,15 @@ bool Track::isAuxiliaryImageSequence() const  ///< Is referencing another track 
 }
 bool Track::isEnabled() const  ///< The track is enabled.
 {
-    return (mFeatures & HEIF::TrackFeatureEnum::Feature::IsEnabled);
+    return (mFeatures & HEIF::TrackFeatureEnum::Feature::IsEnabled) != 0;
 }
 bool Track::isInMovie() const  ///< The track is used in the presentation.
 {
-    return (mFeatures & HEIF::TrackFeatureEnum::Feature::IsInMovie);
+    return (mFeatures & HEIF::TrackFeatureEnum::Feature::IsInMovie) != 0;
 }
 bool Track::isInPreview() const  ///< The track is used when previewing the presentation.
 {
-    return (mFeatures & HEIF::TrackFeatureEnum::Feature::IsInPreview);
+    return (mFeatures & HEIF::TrackFeatureEnum::Feature::IsInPreview) != 0;
 }
 bool Track::hasAlternatives() const  ///< The track has alternative track or tracks.
 {
@@ -273,11 +273,11 @@ bool Track::hasAlternatives() const  ///< The track has alternative track or tra
 }
 bool Track::hasCodingConstraints() const  ///< From Coding Constraints Box in HevcSampleEntry
 {
-    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasCodingConstraints);
+    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasCodingConstraints) != 0;
 }
 bool Track::hasSampleGroups() const  ///< The track has SampleToGroupBoxes.
 {
-    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasSampleGroups);
+    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasSampleGroups) != 0;
 }
 bool Track::hasLinkedAuxiliaryImageSequence() const  ///< There is a 'auxl' track reference pointing to this track.
 {
@@ -291,15 +291,15 @@ bool Track::hasSampleToItemGrouping()
     const  ///< The track has one or more SampleToMetadataItemEntry ('stmi') sample groups present.
 {
     // if anysample has metadata return true.
-    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasSampleToItemGrouping);
+    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasSampleToItemGrouping) != 0;
 }
 bool Track::hasExifSampleEntry() const  ///< From SampleEntryBox, not implemented yet
 {
-    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasExifSampleEntry);
+    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasExifSampleEntry) != 0;
 }
 bool Track::hasXmlSampleEntry() const  ///< From SampleEntryBox, not implemented yet
 {
-    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasXmlSampleEntry);
+    return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasXmlSampleEntry) != 0;
 }
 bool Track::hasEditList() const  ///< Track has an edit list
 {
@@ -338,7 +338,7 @@ bool Track::hasSampleEquivalenceGrouping() const  ///< The track has one or more
             }
         }
     }
-    if (ret != (bool) (mFeatures & HEIF::TrackFeatureEnum::Feature::HasSampleEquivalenceGrouping))
+    if (ret != ((mFeatures & HEIF::TrackFeatureEnum::Feature::HasSampleEquivalenceGrouping) != 0))
     {
         HEIF_ASSERT(false);
     }
@@ -363,7 +363,7 @@ bool Track::isImageSequence() const
 bool Track::displayAllSamples() const  ///< Edit List presentation indicates 0 or 1 samples. The player should ignore
                                        ///< timestamps and display all non-hidden samples.
 {
-    return (mFeatures & HEIF::TrackFeatureEnum::Feature::DisplayAllSamples);
+    return (mFeatures & HEIF::TrackFeatureEnum::Feature::DisplayAllSamples) != 0;
 }
 
 std::uint64_t Track::getMaxSampleSize()

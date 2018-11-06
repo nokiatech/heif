@@ -27,7 +27,7 @@ public:
      *  @param [in] sampleNumber 1-based sample number in the track to be added as a sync sample. */
     void addSample(std::uint32_t sampleNumber);
 
-    const Vector<std::uint32_t> getSyncSampleIds() const;
+    const Vector<std::uint32_t>& getSyncSampleIds() const;
 
     void setSampleCountMaxSafety(int64_t sampleCountMax);
 

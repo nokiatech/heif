@@ -40,7 +40,7 @@ Vector<uint64_t>& ChunkOffsetBox::getChunkOffsets()
     return mChunkOffsets;
 }
 
-const Vector<uint64_t> ChunkOffsetBox::getChunkOffsets() const
+const Vector<uint64_t>& ChunkOffsetBox::getChunkOffsets() const
 {
     return mChunkOffsets;
 }

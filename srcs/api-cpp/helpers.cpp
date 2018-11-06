@@ -79,7 +79,7 @@ namespace HEIFPP
     template class LinkArray<ImageItem*>;
     template class LinkArray<CodedImageItem*>;
     template class LinkArray<DerivedImageItem*>;
-    template class LinkArray<DecoderConfiguration*>;
+    template class LinkArray<DecoderConfig*>;
 
 
     BitStream::BitStream(const std::uint8_t* aData, std::uint32_t aLen)
@@ -102,7 +102,7 @@ namespace HEIFPP
     }
     bool BitStream::isByteAligned()
     {
-        return (mCBit & 7u);
+        return (mCBit & 7u) != 0;
     }
     std::uint64_t BitStream::bitpos()
     {

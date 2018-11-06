@@ -106,12 +106,23 @@ void ItemInfoBox::parseBox(ISOBMFF::BitStream& bitstr)
         entryCount = bitstr.read32Bits();
     }
 
+    //--- sanity check: minimum size of ItemInfoEntry (version 0 is: 4 bytes)
+    if (entryCount > (bitstr.numBytesLeft() + 3 / 4))
+    {
+        // likely corrupted input file that might cause memory allocation problems.
+        throw RuntimeError("ItemInfoBox::parseBox: ItemInfoEntry entryCount likely corrupted.. fails sanity check.");
+    }
+
     mItemInfoList.reserve(entryCount);
     mItemIds.reserve(entryCount);
     for (size_t i = 0; i < entryCount; ++i)
     {
+        // Extract contained box bitstream and type
+        FourCCInt boxType;
+        BitStream subBitstr = bitstr.readSubBoxBitStream(boxType);
+
         ItemInfoEntry infoEntry;
-        infoEntry.parseBox(bitstr);
+        infoEntry.parseBox(subBitstr);
         addItemInfoEntry(infoEntry);
     }
 }

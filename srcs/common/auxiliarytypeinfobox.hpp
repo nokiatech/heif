@@ -33,7 +33,7 @@ public:
     void setAuxType(const String& type);
 
     /// @return Auxiliary type. @see setAuxType() for details about the string.
-    String getAuxType() const;
+    const String& getAuxType() const;
 
     /// @see Box::writeBox()
     virtual void writeBox(ISOBMFF::BitStream& output) const;

@@ -169,9 +169,9 @@ namespace HEIF
             FourCCInt type;
             String name;
         };
-        const map<MediaFormat, FormatNames> formatMapping = {{MediaFormat::AVC, {FourCCInt("avc1"), "AVC Image"}},
-                                                             {MediaFormat::HEVC, {FourCCInt("hvc1"), "HEVC Image"}},
-                                                             {MediaFormat::JPEG, {FourCCInt("jpeg"), "JPEG Image"}}};
+        const map<MediaFormat, FormatNames> formatMapping = {{MediaFormat::AVC, {FourCCInt("avc1"), ""}},
+                                                             {MediaFormat::HEVC, {FourCCInt("hvc1"), ""}},
+                                                             {MediaFormat::JPEG, {FourCCInt("jpeg"), ""}}};
 
         const FormatNames& format = formatMapping.at(mediaData.mediaFormat);
 
@@ -204,6 +204,25 @@ namespace HEIF
         {
             mFileTypeBox.addCompatibleBrand("mif1");
         }
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::setItemDescription(const ImageId& imageId, const ItemDescription& itemDescription)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        if (!checkImageIds({imageId}) && (!checkMetadataIds(imageId.get())))
+        {
+            return ErrorCode::INVALID_ITEM_ID;
+        }
+
+        ItemInfoEntry& itemInfo = mMetaBox.getItemInfoBox().getItemById(imageId.get());
+        itemInfo.setItemName({itemDescription.name.begin(), itemDescription.name.end()});
+        itemInfo.setContentType({itemDescription.contentType.begin(), itemDescription.contentType.end()});
+        itemInfo.setContentEncoding({itemDescription.contentEncoding.begin(), itemDescription.contentEncoding.end()});
         return ErrorCode::OK;
     }
 
@@ -335,8 +354,8 @@ namespace HEIF
         clapBox->setVertOffset(value);
 
         PropertyInformation info;
-        info.isTransformative   = true;
-        propertyId              = PropertyId(mMetaBox.addProperty(clapBox, {}, false));
+        info.isTransformative = true;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(clapBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -353,8 +372,8 @@ namespace HEIF
         imirBox->setHorizontalAxis(imir.horizontalAxis);
 
         PropertyInformation info;
-        info.isTransformative   = true;
-        propertyId              = PropertyId(mMetaBox.addProperty(imirBox, {}, false));
+        info.isTransformative = true;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(imirBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -371,8 +390,8 @@ namespace HEIF
         irotBox->setAngle(irot.angle);
 
         PropertyInformation info;
-        info.isTransformative   = true;
-        propertyId              = PropertyId(mMetaBox.addProperty(irotBox, {}, false));
+        info.isTransformative = true;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(irotBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -390,8 +409,8 @@ namespace HEIF
         rlocBox->setVerticalOffset(rloc.verticalOffset);
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(rlocBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(rlocBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -410,8 +429,8 @@ namespace HEIF
         paspBox->setRelativeHeight(pasp.relativeHeight);
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(paspBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(paspBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -433,8 +452,8 @@ namespace HEIF
         pixiBox->setBitsPerChannels(bitsPerChannelVector);
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(pixiBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(pixiBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -470,8 +489,8 @@ namespace HEIF
         colrBox->setIccProfile(iccProfileVector);
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(colrBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(colrBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -494,8 +513,8 @@ namespace HEIF
         }
 
         PropertyInformation info;
-        info.isTransformative   = false;
-        propertyId              = PropertyId(mMetaBox.addProperty(auxCBox, {}, false));
+        info.isTransformative = false;
+        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(auxCBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -514,8 +533,8 @@ namespace HEIF
         customBox->setData(data);
 
         PropertyInformation info;
-        info.isTransformative   = isTransformative;
-        propertyId              = PropertyId(mMetaBox.addProperty(customBox, {}, false));
+        info.isTransformative = isTransformative;
+        propertyId = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(customBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -539,7 +558,7 @@ namespace HEIF
         mImageCollection.images[derivedImageId] = newImage;
 
 
-        mMetaBox.addItem(derivedImageId.get(), "iden", "Derived image");
+        mMetaBox.addItem(derivedImageId.get(), "iden", "");
         mMetaBox.addItemReference("dimg", derivedImageId.get(), imageId.get());
 
         const auto ispeIndex =
@@ -626,7 +645,7 @@ namespace HEIF
             mMetaBox.addItemReference("dimg", gridId.get(), toImageId.get());
         }
         const auto ispeIndex = getIspeIndex(gridItem.outputWidth, gridItem.outputHeight);
-        mMetaBox.addProperty(ispeIndex, {gridId.get()}, false);
+        mMetaBox.addProperty(static_cast<uint16_t>(ispeIndex), {gridId.get()}, false);
 
         return ErrorCode::OK;
     }
@@ -684,7 +703,7 @@ namespace HEIF
             mMetaBox.addItemReference("dimg", overlayId.get(), toImageId.get());
         }
         const auto ispeIndex = getIspeIndex(iovlItem.outputWidth, iovlItem.outputHeight);
-        mMetaBox.addProperty(ispeIndex, {overlayId.get()}, false);
+        mMetaBox.addProperty(static_cast<uint16_t>(ispeIndex), {overlayId.get()}, false);
 
         return ErrorCode::OK;
     }
@@ -803,9 +822,9 @@ namespace HEIF
                 String contentType;
             };
             const map<MediaFormat, FormatNames> formatMapping = {
-                {MediaFormat::EXIF, {FourCCInt("Exif"), "Exif data", ""}},
-                {MediaFormat::MPEG7, {FourCCInt("mime"), "MPEG-7 data", "text/xml"}},
-                {MediaFormat::XMP, {FourCCInt("mime"), "XMP data", "application/rdf+xml"}}};
+                {MediaFormat::EXIF, {FourCCInt("Exif"), "", ""}},
+                {MediaFormat::MPEG7, {FourCCInt("mime"), "", "text/xml"}},
+                {MediaFormat::XMP, {FourCCInt("mime"), "", "application/rdf+xml"}}};
             const FormatNames& format = formatMapping.at(mediaData.mediaFormat);
 
             mMetadataItems[mediaDataId] = Context::getValue();
@@ -822,6 +841,20 @@ namespace HEIF
         }
         metadataItemId = mMetadataItems.at(mediaDataId);
         return ErrorCode::OK;
+    }
+
+    bool WriterImpl::checkMetadataIds(const MetadataItemId& metadataItemId) const
+    {
+        bool found = false;
+        for (auto finder : mMetadataItems)
+        {
+            if (finder.second == metadataItemId)
+            {
+                found = true;
+                break;
+            }
+        }
+        return found;
     }
 
     bool WriterImpl::checkImageIds(const Array<ImageId>& imageIds) const
@@ -848,8 +881,9 @@ namespace HEIF
 
         if (mIspeIndexes.count(size) == 0)
         {
-            mIspeIndexes[size] =
-                mMetaBox.addProperty(makeCustomShared<ImageSpatialExtentsProperty>(width, height), {}, false);
+            mIspeIndexes[size] = mMetaBox.addProperty(
+                static_cast<std::shared_ptr<Box>>(makeCustomShared<ImageSpatialExtentsProperty>(width, height)), {},
+                false);
         }
 
         return mIspeIndexes[size];
@@ -876,7 +910,7 @@ namespace HEIF
                     }
 
                     configBox->setConfiguration(configRecord);
-                    const auto index                 = mMetaBox.addProperty(configBox, {}, true);
+                    const auto index = mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(configBox), {}, true);
                     mDecoderConfigs[decoderConfigId] = index;
                     mDecoderConfigIndexToSize[index] = {configRecord.getPicWidth(), configRecord.getPicHeight()};
                 }
@@ -892,7 +926,7 @@ namespace HEIF
                         return error;
                     }
                     configBox->setConfiguration(configRecord);
-                    const auto index                 = mMetaBox.addProperty(configBox, {}, true);
+                    const auto index = mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(configBox), {}, true);
                     mDecoderConfigs[decoderConfigId] = index;
                     mDecoderConfigIndexToSize[index] = {configRecord.getPicWidth(), configRecord.getPicHeight()};
                 }

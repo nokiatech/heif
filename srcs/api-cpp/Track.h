@@ -187,6 +187,7 @@ namespace HEIFPP
         HEIF::FourCC mHandler;  // soun,vide,pict
     private:
         Track& operator=(const Track&) = delete;
+        Track& operator=(Track&&)      = delete;
         Track(const Track&)            = delete;
         Track(Track&&)                 = delete;
         Track()                        = delete;

@@ -25,7 +25,7 @@ void SyncSampleBox::addSample(std::uint32_t sampleNumber)
     mSampleNumber.push_back(sampleNumber);
 }
 
-const Vector<std::uint32_t> SyncSampleBox::getSyncSampleIds() const
+const Vector<std::uint32_t>& SyncSampleBox::getSyncSampleIds() const
 {
     return mSampleNumber;
 }

@@ -36,7 +36,7 @@ public:
     };
 
     /// @return vector of channel layouts as ChannelLayout structs
-    Vector<ChannelLayout> getChannelLayouts() const;
+    const Vector<ChannelLayout>& getChannelLayouts() const;
 
     /** @brief Adds channel layout into box.
      *  @param [in] channelLayout ChannelLayoutBox::ChannelLayout struct */

@@ -12,6 +12,7 @@
  *
  */
 
+#include <MimeItem.h>
 #include "Helpers.h"
 #include "AlternativeTrackGroup.h"
 #include "AudioTrack.h"
@@ -31,44 +32,25 @@
 #include "TransformativeProperty.h"
 #include "VideoTrack.h"
 
-static const char* HEVC_DECODER_CONFIG_CLASS_NAME = "com/nokia/heif/HEVCDecoderConfig";
-static const char* AVC_DECODER_CONFIG_CLASS_NAME  = "com/nokia/heif/AVCDecoderConfig";
-static const char* AAC_DECODER_CONFIG_CLASS_NAME  = "com/nokia/heif/AACDecoderConfig";
-
-static const char* HEVC_IMAGE_ITEM_CLASS_NAME     = "com/nokia/heif/HEVCImageItem";
-static const char* AVC_IMAGE_ITEM_CLASS_NAME      = "com/nokia/heif/AVCImageItem";
-static const char* CODED_IMAGE_ITEM_CLASS_NAME    = "com/nokia/heif/CodedImageItem";
-static const char* GRID_IMAGE_ITEM_CLASS_NAME     = "com/nokia/heif/GridImageItem";
-static const char* IDENTITY_IMAGE_ITEM_CLASS_NAME = "com/nokia/heif/IdentityImageItem";
-static const char* OVERLAY_IMAGE_ITEM_CLASS_NAME  = "com/nokia/heif/OverlayImageItem";
-static const char* EXIF_ITEM_CLASS_NAME           = "com/nokia/heif/ExifItem";
-static const char* MPEG7_ITEM_CLASS_NAME          = "com/nokia/heif/MPEG7Item";
-static const char* XMP_ITEM_CLASS_NAME            = "com/nokia/heif/XMPItem";
-
-
-static const char* AUXILIARY_PROPERTY_CLASS_NAME          = "com/nokia/heif/AuxiliaryProperty";
-static const char* CLEAN_APERTURE_PROPERTY_CLASS_NAME     = "com/nokia/heif/CleanApertureProperty";
-static const char* ICC_COLOUR_PROPERTY_CLASS_NAME         = "com/nokia/heif/ICCColourProperty";
-static const char* NCLX_COLOUR_PROPERTY_CLASS_NAME        = "com/nokia/heif/NCLXColourProperty";
-static const char* MIRROR_PROPERTY_CLASS_NAME             = "com/nokia/heif/MirrorProperty";
-static const char* ROTATE_PROPERTY_CLASS_NAME             = "com/nokia/heif/RotateProperty";
-static const char* PIXEL_ASPECT_RATIO_PROPERTY_CLASS_NAME = "com/nokia/heif/PixelAspectRatioProperty";
-static const char* PIXEL_INFORMATION_PROPERTY_CLASS_NAME  = "com/nokia/heif/PixelInformationProperty";
-static const char* RELATIVE_LOCATION_PROPERTY_CLASS_NAME  = "com/nokia/heif/RelativeLocationProperty";
-
-static const char* VIDEO_TRACK_CLASS_NAME             = "com/nokia/heif/VideoTrack";
-static const char* AUDIO_TRACK_CLASS_NAME             = "com/nokia/heif/AudioTrack";
-static const char* IMAGE_SEQUENCE_CLASS_NAME          = "com/nokia/heif/ImageSequence";
 static const char* ALTERNATIVE_TRACK_GROUP_CLASS_NAME = "com/nokia/heif/AlternativeTrackGroup";
-static const char* ENTITY_GROUP_CLASS_NAME            = "com/nokia/heif/EntityGroup";
-static const char* EQUIVALENCE_GROUP_CLASS_NAME       = "com/nokia/heif/EquivalenceGroup";
-static const char* STEREOPAIR_GROUP_CLASS_NAME        = "com/nokia/heif/StereoPairGroup";
-static const char* ALTERNATE_GROUP_CLASS_NAME         = "com/nokia/heif/AlternateGroup";
 
-static const char* HEVC_SAMPLE_CLASS_NAME = "com/nokia/heif/HEVCSample";
-static const char* AVC_SAMPLE_CLASS_NAME  = "com/nokia/heif/AVCSample";
-static const char* AAC_SAMPLE_CLASS_NAME  = "com/nokia/heif/AACSample";
+static const char* CREATE_ITEM_METHOD = "createItem";
+static const char* CREATE_ITEM_PROPERTY_METHOD = "createItemProperty";
+static const char* CREATE_DECODER_CONFIG_METHOD = "createDecoderConfig";
+static const char* CREATE_SAMPLE_METHOD = "createSample";
+static const char* CREATE_ENTITY_GROUP_METHOD = "createEntityGroup";
+static const char* CREATE_TRACK_METHOD = "createTrack";
 
+template <class type>
+jobject createJavaBaseObject(JNIEnv* env, jobject parentHeif, type nativeHandle, const char* methodName, const char* fourCC)
+{
+    jclass classType              = env->GetObjectClass(parentHeif);
+    const jmethodID createItemMethod = env->GetMethodID(classType, methodName, "(Ljava/lang/String;J)Lcom/nokia/heif/Base;");
+    env->DeleteLocalRef(classType);
+    jstring fourCCString = env->NewStringUTF(fourCC);
+    jobject javaItem = env->CallObjectMethod(parentHeif, createItemMethod, fourCCString, (jlong) nativeHandle);
+    return javaItem;
+}
 
 template <class type>
 jobject createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, type nativeHandle)
@@ -81,111 +63,42 @@ jobject createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* classN
     }
 
     jobject newObject = env->NewObject(itemClass, constructor, parentJavaHEIF, (jlong) nativeHandle);
-
-    // Create global ref
-    jobject javaObject = env->NewGlobalRef(newObject);
-
-    // Delete local ref
-    env->DeleteLocalRef(newObject);
-
     // Delete local refs
     env->DeleteLocalRef(itemClass);
 
-    nativeHandle->setContext(javaObject);
-    return javaObject;
+    return newObject;
 }
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::Item* nativeHandle);
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::CodedImageItem* nativeHandle);
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::Grid* nativeHandle);
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::Overlay* nativeHandle);
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::Identity* nativeHandle);
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::ItemProperty* nativeHandle);
-template jobject createBaseObject(JNIEnv* env,
-                                  jobject parentJavaHEIF,
-                                  const char* className,
-                                  HEIFPP::DecoderConfiguration* nativeHandle);
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::AuxProperty* nativeHandle);
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::MirrorProperty* nativeHandle);
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::RotateProperty* nativeHandle);
-template jobject createBaseObject(JNIEnv* env,
-                                  jobject parentJavaHEIF,
-                                  const char* className,
-                                  HEIFPP::CleanApertureProperty* nativeHandle);
-template jobject createBaseObject(JNIEnv* env,
-                                  jobject parentJavaHEIF,
-                                  const char* className,
-                                  HEIFPP::PixelInformationProperty* nativeHandle);
-template jobject createBaseObject(JNIEnv* env,
-                                  jobject parentJavaHEIF,
-                                  const char* className,
-                                  HEIFPP::PixelAspectRatioProperty* nativeHandle);
-template jobject createBaseObject(JNIEnv* env,
-                                  jobject parentJavaHEIF,
-                                  const char* className,
-                                  HEIFPP::ColourInformationProperty* nativeHandle);
-
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::AudioTrack* nativeHandle);
-
-template jobject
-createBaseObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::VideoTrack* nativeHandle);
 
 jobject createItem(JNIEnv* env, jobject parentJavaHEIF, void* item);
 jobject createItem(JNIEnv* env, jobject parentJavaHEIF, void* item)
 {
     HEIFPP::Item* heifItem = (HEIFPP::Item*) item;
     HEIF::FourCC itemType  = heifItem->getType();
-    const char* className  = "invalid_class_name";
+    const char* mimeForCreation = "invl";
 
-    if (itemType == HEIF::FourCC("hvc1"))
+    if (itemType == HEIF::FourCC("hvc1")
+            || itemType == HEIF::FourCC("avc1")
+            || itemType == HEIF::FourCC("jpeg")
+            || itemType == HEIF::FourCC("iden")
+            || itemType == HEIF::FourCC("iovl")
+            || itemType == HEIF::FourCC("grid")
+            || itemType == HEIF::FourCC("Exif"))
     {
-        className = HEVC_IMAGE_ITEM_CLASS_NAME;
+        mimeForCreation = itemType.value;
     }
-    else if (itemType == HEIF::FourCC("avc1"))
-    {
-        className = AVC_IMAGE_ITEM_CLASS_NAME;
-    }
-    else if (itemType == HEIF::FourCC("jpeg"))
-    {
-        className = CODED_IMAGE_ITEM_CLASS_NAME;
-    }
-    if (itemType == HEIF::FourCC("iden"))
-    {
-        className = IDENTITY_IMAGE_ITEM_CLASS_NAME;
-    }
-    if (itemType == HEIF::FourCC("iovl"))
-    {
-        className = OVERLAY_IMAGE_ITEM_CLASS_NAME;
-    }
-    if (itemType == HEIF::FourCC("grid"))
-    {
-        className = GRID_IMAGE_ITEM_CLASS_NAME;
-    }
-    if (itemType == HEIF::FourCC("Exif"))
-    {
-        className = EXIF_ITEM_CLASS_NAME;
-    }
-    if (itemType == HEIF::FourCC("mime"))
+
+    else if (itemType == HEIF::FourCC("mime"))
     {
         if (heifItem->isMPEG7Item())
         {
-            className = MPEG7_ITEM_CLASS_NAME;
+            mimeForCreation = "mpg7";
         }
         else if (heifItem->isXMPItem())
         {
-            className = XMP_ITEM_CLASS_NAME;
+            mimeForCreation = "xmp1";
         }
     }
-    return createBaseObject(env, parentJavaHEIF, className, heifItem);
+    return createJavaBaseObject(env, parentJavaHEIF, heifItem, CREATE_ITEM_METHOD, mimeForCreation);
 }
 
 jobject createItemProperty(JNIEnv* env, jobject parentJavaHEIF, void* item);
@@ -193,145 +106,67 @@ jobject createItemProperty(JNIEnv* env, jobject parentJavaHEIF, void* item)
 {
     HEIFPP::ItemProperty* itemProperty = (HEIFPP::ItemProperty*) item;
     const HEIF::ItemPropertyType& type = itemProperty->getType();
-    const char* className              = "invalid_class_name";
-    if (type == HEIF::ItemPropertyType::AUXC)
-    {
-        className = AUXILIARY_PROPERTY_CLASS_NAME;
-    }
-    else if (type == HEIF::ItemPropertyType::AVCC)
-    {
-        // TODO
-    }
-    else if (type == HEIF::ItemPropertyType::CLAP)
-    {
-        className = CLEAN_APERTURE_PROPERTY_CLASS_NAME;
-    }
-    else if (type == HEIF::ItemPropertyType::COLR)
+
+    const char* mimeForCreation = "invl";
+
+    if (type == HEIF::ItemPropertyType::COLR)
     {
         HEIFPP::ColourInformationProperty* colourInformationProperty =
-            (HEIFPP::ColourInformationProperty*) itemProperty;
+                (HEIFPP::ColourInformationProperty*) itemProperty;
         if (colourInformationProperty->mColourInformation.colourType == HEIF::FourCC("nclx"))
         {
-            className = NCLX_COLOUR_PROPERTY_CLASS_NAME;
+            mimeForCreation = "nclx";
         }
         else if (colourInformationProperty->mColourInformation.colourType == HEIF::FourCC("rICC") ||
                  colourInformationProperty->mColourInformation.colourType == HEIF::FourCC("prof"))
         {
-            className = ICC_COLOUR_PROPERTY_CLASS_NAME;
+            mimeForCreation = "rICC";
         }
     }
-    else if (type == HEIF::ItemPropertyType::HVCC)
+    else
     {
-        // TODO
+        mimeForCreation = itemProperty->rawType().value;
     }
-    else if (type == HEIF::ItemPropertyType::IMIR)
-    {
-        className = MIRROR_PROPERTY_CLASS_NAME;
-    }
-    else if (type == HEIF::ItemPropertyType::IROT)
-    {
-        className = ROTATE_PROPERTY_CLASS_NAME;
-    }
-    else if (type == HEIF::ItemPropertyType::ISPE)
-    {
-        // TODO
-    }
-    else if (type == HEIF::ItemPropertyType::JPGC)
-    {
-        // TODO
-    }
-    else if (type == HEIF::ItemPropertyType::PASP)
-    {
-        className = PIXEL_ASPECT_RATIO_PROPERTY_CLASS_NAME;
-    }
-    else if (type == HEIF::ItemPropertyType::PIXI)
-    {
-        className = PIXEL_INFORMATION_PROPERTY_CLASS_NAME;
-    }
-    else if (type == HEIF::ItemPropertyType::RLOC)
-    {
-        className = RELATIVE_LOCATION_PROPERTY_CLASS_NAME;
-    }
-    return createBaseObject(env, parentJavaHEIF, className, itemProperty);
+
+    return createJavaBaseObject(env, parentJavaHEIF, itemProperty, CREATE_ITEM_PROPERTY_METHOD, mimeForCreation);
 }
 
-jobject createDecoderConfig(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::DecoderConfiguration* nativeConfig);
-jobject createDecoderConfig(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::DecoderConfiguration* nativeConfig)
+jobject createDecoderConfig(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::DecoderConfig* nativeConfig);
+jobject createDecoderConfig(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::DecoderConfig* nativeConfig)
 {
-    const char* className = "invalid_class_name";
-    if (nativeConfig->getMediaFormat() == HEIF::MediaFormat::HEVC)
-    {
-        className = HEVC_DECODER_CONFIG_CLASS_NAME;
-    }
-    else if (nativeConfig->getMediaFormat() == HEIF::MediaFormat::AVC)
-    {
-        className = AVC_DECODER_CONFIG_CLASS_NAME;
-    }
-    else if (nativeConfig->getMediaFormat() == HEIF::MediaFormat::AAC)
-    {
-        className = AAC_DECODER_CONFIG_CLASS_NAME;
-    }
-    return createBaseObject(env, parentJavaHEIF, className, nativeConfig);
+    return createJavaBaseObject(env, parentJavaHEIF, nativeConfig, CREATE_DECODER_CONFIG_METHOD, nativeConfig->getMediaType().value);
 }
 
 jobject createTrack(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::Track* nativeTrack);
 jobject createTrack(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::Track* nativeTrack)
 {
-    const char* className = "invalid_class_name";
+    const char* mimeForCreation = "invl";
     if (nativeTrack->isMasterImageSequence() || nativeTrack->isAuxiliaryImageSequence() ||
         nativeTrack->isThumbnailImageSequence())
     {
-        className = IMAGE_SEQUENCE_CLASS_NAME;
+        mimeForCreation = "pict";
     }
     else if (nativeTrack->isVideoTrack())
     {
-        className = VIDEO_TRACK_CLASS_NAME;
+        mimeForCreation = "vide";
     }
     else if (nativeTrack->isAudioTrack())
     {
-        className = AUDIO_TRACK_CLASS_NAME;
+        mimeForCreation = "soun";
     }
-    return createBaseObject(env, parentJavaHEIF, className, nativeTrack);
+    return createJavaBaseObject(env, parentJavaHEIF, nativeTrack, CREATE_TRACK_METHOD, mimeForCreation);
 }
 
 jobject createSample(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::Sample* nativeSample);
 jobject createSample(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::Sample* nativeSample)
 {
-    const char* className   = "invalid_class_name";
-    const auto& decoderType = nativeSample->getDecoderCodeType();
-    if (decoderType == "hvc1")
-    {
-        className = HEVC_SAMPLE_CLASS_NAME;
-    }
-    else if (decoderType == "mp4a")
-    {
-        className = AAC_SAMPLE_CLASS_NAME;
-    }
-    else if (decoderType == "avc1")
-    {
-        className = AVC_SAMPLE_CLASS_NAME;
-    }
-    return createBaseObject(env, parentJavaHEIF, className, nativeSample);
+    return createJavaBaseObject(env, parentJavaHEIF, nativeSample, CREATE_SAMPLE_METHOD, nativeSample->getType().value);
 }
 
 jobject createEntityGroup(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::EntityGroup* nativeEntityGroup);
 jobject createEntityGroup(JNIEnv* env, jobject parentJavaHEIF, HEIFPP::EntityGroup* nativeEntityGroup)
 {
-    const char* className = ENTITY_GROUP_CLASS_NAME;
-    const auto& type      = nativeEntityGroup->getType();
-    if (type == "eqiv")
-    {
-        className = EQUIVALENCE_GROUP_CLASS_NAME;
-    }
-    else if (type == "altr")
-    {
-        className = ALTERNATE_GROUP_CLASS_NAME;
-    }
-    else if (type == "ster")
-    {
-        className = STEREOPAIR_GROUP_CLASS_NAME;
-    }
-    return createBaseObject(env, parentJavaHEIF, className, nativeEntityGroup);
+    return createJavaBaseObject(env, parentJavaHEIF, nativeEntityGroup, CREATE_ENTITY_GROUP_METHOD, nativeEntityGroup->getType().value);
 }
 
 jobject getJavaItem(JNIEnv* env, jobject parentJavaHEIF, void* nativeObject)
@@ -339,11 +174,7 @@ jobject getJavaItem(JNIEnv* env, jobject parentJavaHEIF, void* nativeObject)
     if (nativeObject != NULL)
     {
         HEIFPP::Item* nativeItem = (HEIFPP::Item*) nativeObject;
-        if (nativeItem->getContext() == NULL)
-        {
-            createItem(env, parentJavaHEIF, nativeItem);
-        }
-        return GET_JAVA_OBJECT(nativeItem);
+        return createItem(env, parentJavaHEIF, nativeItem);
     }
     else
     {
@@ -356,11 +187,7 @@ jobject getJavaAlternativeTrackGroup(JNIEnv* env, jobject parentJavaHEIF, void* 
     if (nativeObject != NULL)
     {
         HEIFPP::AlternativeTrackGroup* nativeGroup = (HEIFPP::AlternativeTrackGroup*) nativeObject;
-        if (nativeGroup->getContext() == NULL)
-        {
-            createBaseObject(env, parentJavaHEIF, ALTERNATIVE_TRACK_GROUP_CLASS_NAME, nativeGroup);
-        }
-        return GET_JAVA_OBJECT(nativeGroup);
+        return createBaseObject(env, parentJavaHEIF, ALTERNATIVE_TRACK_GROUP_CLASS_NAME, nativeGroup);
     }
     else
     {
@@ -373,11 +200,7 @@ jobject getJavaEntityGroup(JNIEnv* env, jobject parentJavaHEIF, void* nativeObje
     if (nativeObject != NULL)
     {
         HEIFPP::EntityGroup* nativeGroup = (HEIFPP::EntityGroup*) nativeObject;
-        if (nativeGroup->getContext() == NULL)
-        {
-            createEntityGroup(env, parentJavaHEIF, nativeGroup);
-        }
-        return GET_JAVA_OBJECT(nativeGroup);
+        return createEntityGroup(env, parentJavaHEIF, nativeGroup);
     }
     else
     {
@@ -390,11 +213,7 @@ jobject getJavaTrack(JNIEnv* env, jobject parentJavaHEIF, void* nativeObject)
     if (nativeObject != NULL)
     {
         HEIFPP::Track* nativeItem = (HEIFPP::Track*) nativeObject;
-        if (nativeItem->getContext() == NULL)
-        {
-            createTrack(env, parentJavaHEIF, nativeItem);
-        }
-        return GET_JAVA_OBJECT(nativeItem);
+        return createTrack(env, parentJavaHEIF, nativeItem);
     }
     else
     {
@@ -407,11 +226,7 @@ jobject getJavaSample(JNIEnv* env, jobject parentJavaHEIF, void* nativeObject)
     if (nativeObject != NULL)
     {
         HEIFPP::Sample* nativeItem = (HEIFPP::Sample*) nativeObject;
-        if (nativeItem->getContext() == NULL)
-        {
-            createSample(env, parentJavaHEIF, nativeItem);
-        }
-        return GET_JAVA_OBJECT(nativeItem);
+        return createSample(env, parentJavaHEIF, nativeItem);
     }
     else
     {
@@ -423,12 +238,8 @@ jobject getDecoderConfig(JNIEnv* env, jobject parentJavaHEIF, void* nativeConfig
 {
     if (nativeConfig != NULL)
     {
-        HEIFPP::DecoderConfiguration* nativeItem = (HEIFPP::DecoderConfiguration*) nativeConfig;
-        if (nativeItem->getContext() == NULL)
-        {
-            createDecoderConfig(env, parentJavaHEIF, nativeItem);
-        }
-        return GET_JAVA_OBJECT(nativeItem);
+        HEIFPP::DecoderConfig* nativeItem = (HEIFPP::DecoderConfig*) nativeConfig;
+        return createDecoderConfig(env, parentJavaHEIF, nativeItem);
     }
     else
     {
@@ -442,37 +253,13 @@ jobject getJavaItemProperty(JNIEnv* env, jobject parentJavaHEIF, void* propertyI
     if (propertyItem != NULL)
     {
         HEIFPP::ItemProperty* nativeItem = (HEIFPP::ItemProperty*) propertyItem;
-        if (nativeItem->getContext() == NULL)
-        {
-            createItemProperty(env, parentJavaHEIF, nativeItem);
-        }
-        return GET_JAVA_OBJECT(nativeItem);
+        return createItemProperty(env, parentJavaHEIF, nativeItem);
     }
     else
     {
         return NULL;
     }
 }
-
-template <class type>
-jobject getJavaObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, type nativeHandle)
-{
-    if (nativeHandle != NULL)
-    {
-        if (nativeHandle->getContext() == NULL)
-        {
-            createBaseObject(env, parentJavaHEIF, className, nativeHandle);
-        }
-        return GET_JAVA_OBJECT(nativeHandle);
-    }
-    else
-    {
-        return NULL;
-    }
-}
-template jobject
-getJavaObject(JNIEnv* env, jobject parentJavaHEIF, const char* className, HEIFPP::DecoderConfiguration* nativeHandle);
-
 
 jobject getJavaHEIF(JNIEnv* env, jobject obj)
 {

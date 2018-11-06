@@ -5,6 +5,8 @@ Please follow this **[link](https://nokiatech.github.io/heif)** to access HEIF W
 You can also check the **[Wiki](https://github.com/nokiatech/heif/wiki)** pages for more information.
 
 ## News:
+[06.11.2018] v3.4.0 Release: Java API improvements. Bug fixes, code cleanup and robustness improvements.
+
 [13.06.2018] v3.3.0 Release: Java desktop build added, Java API includes track and image sequence as well as entity grouping support.
 
 [06.04.2018] v3.2 Release. Two new APIs added, a Java API which wraps the C++ libraries using JNI and a convenience C++ API (which is used by the Java API) that wraps the underlying reader and writer. The Java API is expected to remain relatively stable, however the new C++ API will most likely change in the future.
@@ -76,5 +78,5 @@ All the example media files (*.heic, *.png, *.jpg, *.gif) in this repository are
 For more information/questions/source code/commercial licensing related issues, please contact: <heif@nokia.com>
 
 ### **Copyright (c) 2015-2018, Nokia Technologies Ltd.**
-### **All rights reserved.** 
+### **All rights reserved.**
 

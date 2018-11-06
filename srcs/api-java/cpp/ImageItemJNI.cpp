@@ -21,169 +21,169 @@ extern "C"
 {
     JNI_METHOD(jint, getWidthNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->width());
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->width());
     }
 
     JNI_METHOD(jint, getHeightNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->height());
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->height());
     }
 
     JNI_METHOD_ARG(void, setSizeNative, jint width, jint height)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        nativeHandle->setSize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+        NATIVE_SELF;
+        nativeSelf->setSize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     }
 
     JNI_METHOD(jboolean, getHiddenNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return static_cast<jboolean>(nativeHandle->isHidden());
+        NATIVE_SELF;
+        return static_cast<jboolean>(nativeSelf->isHidden());
     }
 
     JNI_METHOD_ARG(void, setHiddenNative, jboolean hidden)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        nativeHandle->setHidden(hidden);
+        NATIVE_SELF;
+        nativeSelf->setHidden(hidden != 0);
     }
 
     JNI_METHOD(jint, getThumbnailCountNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->getThumbnailCount());
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->getThumbnailCount());
     }
 
     JNI_METHOD_ARG(jobject, getThumbnailNative, jint index)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         return getJavaItem(env, getJavaHEIF(env, self),
-                           nativeHandle->getThumbnail(static_cast<uint32_t>(index)));
+                           nativeSelf->getThumbnail(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addThumbnailNative, jobject thumbnail)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeThumbnail, thumbnail);
-        nativeHandle->addThumbnail(nativeThumbnail);
+        nativeSelf->addThumbnail(nativeThumbnail);
     }
 
     JNI_METHOD_ARG(void, removeThumbnailNative, jobject thumbnail)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeThumbnail, thumbnail);
-        nativeHandle->removeThumbnail(nativeThumbnail);
+        nativeSelf->removeThumbnail(nativeThumbnail);
     }
 
     JNI_METHOD(jint, getAuxiliaryCountNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->getAuxCount());
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->getAuxCount());
     }
 
     JNI_METHOD_ARG(jobject, getAuxiliaryNative, jint index)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         return getJavaItem(env, getJavaHEIF(env, self),
-                           nativeHandle->getAux(static_cast<uint32_t>(index)));
+                           nativeSelf->getAux(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addAuxiliaryImageNative, jobject auxiliary)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeAuxiliary, auxiliary);
-        nativeHandle->addAuxImage(nativeAuxiliary);
+        nativeSelf->addAuxImage(nativeAuxiliary);
     }
 
     JNI_METHOD_ARG(void, removeAuxiliaryImageNative, jobject auxiliary)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_IMAGE_ITEM(nativeAuxiliary, auxiliary);
-        nativeHandle->removeAuxImage(nativeAuxiliary);
+        nativeSelf->removeAuxImage(nativeAuxiliary);
     }
 
     JNI_METHOD(jint, transformativePropertyCountNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->transformativePropertyCount());
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->transformativePropertyCount());
     }
 
     JNI_METHOD_ARG(jobject, getTransformativePropertyNative, jint index)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         return getJavaItemProperty(env, getJavaHEIF(env, self),
-                                   nativeHandle->getTransformativeProperty(static_cast<uint32_t>(index)));
+                                   nativeSelf->getTransformativeProperty(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD(jobject, getPixelAspectRatioPropertyNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeHandle->pixelAspectRatio());
+        NATIVE_SELF;
+        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeSelf->pixelAspectRatio());
     }
 
     JNI_METHOD(jobject, getColourInformationPropertyNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeHandle->colourInformation());
+        NATIVE_SELF;
+        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeSelf->colourInformation());
     }
 
     JNI_METHOD(jobject, getPixelInformationPropertyNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeHandle->pixelInformation());
+        NATIVE_SELF;
+        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeSelf->pixelInformation());
     }
 
     JNI_METHOD(jobject, getRelativeLocationPropertyNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeHandle->relativeLocation());
+        NATIVE_SELF;
+        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeSelf->relativeLocation());
     }
 
     JNI_METHOD(jobject, getAuxiliaryPropertyNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeHandle->aux());
+        NATIVE_SELF;
+        return getJavaItemProperty(env, getJavaHEIF(env, self), nativeSelf->aux());
     }
 
     JNI_METHOD_ARG(void, addPropertyNative, jobject property, jboolean essential)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_ITEM_PROPERTY(propertyNative, property);
-        nativeHandle->addProperty(propertyNative, essential);
+        nativeSelf->addProperty(propertyNative, essential != 0);
     }
 
     JNI_METHOD_ARG(void, removePropertyNative, jobject property)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_ITEM_PROPERTY(propertyNative, property);
-        nativeHandle->removeProperty(propertyNative);
+        nativeSelf->removeProperty(propertyNative);
     }
 
     JNI_METHOD(jint, getMetadataCountNative)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->getMetadataCount());
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->getMetadataCount());
     }
 
     JNI_METHOD_ARG(jobject, getMetadataNative, jint index)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         return getJavaItem(env, getJavaHEIF(env, self),
-                           nativeHandle->getMetadata(static_cast<uint32_t>(index)));
+                           nativeSelf->getMetadata(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addMetadataNative, jobject item)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_META_ITEM(nativeItem, item);
-        nativeHandle->addMetadata(nativeItem);
+        nativeSelf->addMetadata(nativeItem);
     }
 
     JNI_METHOD_ARG(void, removeMetadataNative, jobject item)
     {
-        NATIVE_IMAGE_ITEM(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_META_ITEM(nativeItem, item);
-        nativeHandle->removeMetadata(nativeItem);
+        nativeSelf->removeMetadata(nativeItem);
     }
 }

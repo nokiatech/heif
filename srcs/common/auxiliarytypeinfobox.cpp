@@ -24,7 +24,7 @@ void AuxiliaryTypeInfoBox::setAuxType(const String& type)
     mAuxType = type;
 }
 
-String AuxiliaryTypeInfoBox::getAuxType() const
+const String& AuxiliaryTypeInfoBox::getAuxType() const
 {
     return mAuxType;
 }

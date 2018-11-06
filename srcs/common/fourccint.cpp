@@ -34,8 +34,3 @@ String FourCCInt::getString() const
     str[3] = char((mValue >> 0) & 0xff);
     return str;
 }
-
-std::ostream& operator<<(std::ostream& stream, FourCCInt fourcc)
-{
-    return stream << fourcc.getString();
-}

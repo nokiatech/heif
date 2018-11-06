@@ -20,10 +20,8 @@ extern "C"
 {
     JNI_METHOD(void, destroyContextNative)
     {
-        NATIVE_ITEM_PROPERTY(nativeItem, self);
-        jobject javaHandle = GET_JAVA_OBJECT(nativeItem);
-        env->DeleteGlobalRef(javaHandle);
+        NATIVE_SELF;
         setNativeHandle(env, self, 0);
-        delete nativeItem;
+        delete nativeSelf;
     }
 }

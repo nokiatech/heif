@@ -75,19 +75,22 @@ void DecodePts::applyDwellEdit(T& entry)
     std::pair<PMapIt, PMapIt> bound;
     bound = mMediaPtsTS.equal_range(entry.mMediaTime);
 
-    // If lower bound and upper bound point to the same entry in the map the
-    // previous sample in the map needs dwell.
-    if (bound.first->first == bound.second->first)
+    if (bound.first != mMediaPtsTS.end())
     {
-        mMoviePtsTS.insert(std::make_pair(mMovieOffset, std::prev(bound.first)->second));
-        mMovieOffset += fromMovieToMediaTS(entry.mSegmentDuration);
-    }
-    // if the lower and upper bound points to different entries in the map then
-    // the first iterator points to the sample that needs dwell.
-    else
-    {
-        mMoviePtsTS.insert(std::make_pair(mMovieOffset, bound.first->second));
-        mMovieOffset += fromMovieToMediaTS(entry.mSegmentDuration);
+        // If lower bound and upper bound point to the same entry in the map the
+        // previous sample in the map needs dwell.
+        if ((bound.second != mMediaPtsTS.end()) && (bound.first->first == bound.second->first))
+        {
+            mMoviePtsTS.insert(std::make_pair(mMovieOffset, std::prev(bound.first)->second));
+            mMovieOffset += fromMovieToMediaTS(entry.mSegmentDuration);
+        }
+        // if the lower and upper bound points to different entries in the map then
+        // the first iterator points to the sample that needs dwell.
+        else
+        {
+            mMoviePtsTS.insert(std::make_pair(mMovieOffset, bound.first->second));
+            mMovieOffset += fromMovieToMediaTS(entry.mSegmentDuration);
+        }
     }
 }
 

@@ -22,21 +22,21 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::MirrorProperty *nativeObject = new HEIFPP::MirrorProperty(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD(jboolean, getMirrorNative)
     {
-        NATIVE_MIRROR_PROPERTY(nativeHandle, self);
-        return static_cast<jboolean >(nativeHandle->mMirror.horizontalAxis);
+        NATIVE_SELF;
+        return static_cast<jboolean>(nativeSelf->mMirror.horizontalAxis);
     }
 
     JNI_METHOD_ARG(void, setMirrorNative, jboolean mirror)
     {
-        NATIVE_MIRROR_PROPERTY(nativeHandle, self);
-        nativeHandle->mMirror.horizontalAxis = mirror;
+        NATIVE_SELF;
+        nativeSelf->mMirror.horizontalAxis = mirror != 0;
     }
 }

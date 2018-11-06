@@ -16,14 +16,14 @@
 
 namespace HEIFPP
 {
-    class DecoderConfiguration
+    class DecoderConfig
     {
         friend class Sample;
         friend class Heif;
         friend class CodedImageItem;
 
     public:
-        virtual ~DecoderConfiguration();
+        virtual ~DecoderConfig();
 
         /** Returns the id of the decoder config. */
         const HEIF::DecoderConfigId& getId() const;
@@ -72,7 +72,7 @@ namespace HEIFPP
                                                  std::uint32_t& aSize) const                       = 0;
         virtual HEIF::ErrorCode convertFromRawData(const std::uint8_t* aData, std::uint32_t aSize) = 0;
 
-        DecoderConfiguration(Heif* aHeif, const HEIF::FourCC& aType);
+        DecoderConfig(Heif* aHeif, const HEIF::FourCC& aType);
         Heif* mHeif;
         const void* mContext;
         HEIF::FourCC mType;
@@ -83,10 +83,11 @@ namespace HEIFPP
         std::uint32_t mBufferSize;
 
     private:
-        DecoderConfiguration& operator=(const DecoderConfiguration&) = delete;
-        DecoderConfiguration(const DecoderConfiguration&)            = delete;
-        DecoderConfiguration(DecoderConfiguration&&)                 = delete;
-        DecoderConfiguration()                                       = delete;
+        DecoderConfig& operator=(const DecoderConfig&) = delete;
+        DecoderConfig& operator=(DecoderConfig&&)      = delete;
+        DecoderConfig(const DecoderConfig&)            = delete;
+        DecoderConfig(DecoderConfig&&)                 = delete;
+        DecoderConfig()                                       = delete;
     };
 
 }  // namespace HEIFPP

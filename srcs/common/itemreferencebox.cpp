@@ -80,7 +80,7 @@ void SingleItemTypeReferenceBox::writeBox(ISOBMFF::BitStream& bitstr) const
     updateSize(bitstr);
 }
 
-Vector<uint32_t> SingleItemTypeReferenceBox::getToItemIds() const
+const Vector<uint32_t>& SingleItemTypeReferenceBox::getToItemIds() const
 {
     return mToItemIds;
 }
@@ -116,8 +116,11 @@ void ItemReferenceBox::parseBox(ISOBMFF::BitStream& bitstr)
 
     while (bitstr.numBytesLeft() > 0)
     {
+        FourCCInt boxType;
+        BitStream subBitStream = bitstr.readSubBoxBitStream(boxType);
+
         SingleItemTypeReferenceBox singleRef(largeIds);
-        singleRef.parseBox(bitstr);
+        singleRef.parseBox(subBitStream);
         addItemRef(singleRef);
     }
 }

@@ -13,8 +13,6 @@
 
 #pragma once
 
-#include <iostream>
-
 namespace HEIF
 {
 #define IdType(Y, X)                                                      \
@@ -36,11 +34,6 @@ namespace HEIF
             return mId;                                                   \
         }                                                                 \
     };                                                                    \
-    inline std::ostream& operator<<(std::ostream& stream, const X& value) \
-    {                                                                     \
-        stream << value.get();                                            \
-        return stream;                                                    \
-    }                                                                     \
     inline bool operator<(const X& a, const X& b)                         \
     {                                                                     \
         return a.get() < b.get();                                         \

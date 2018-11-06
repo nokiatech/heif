@@ -157,7 +157,7 @@ void MediaInformationBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping an unsupported box '" << boxType << "' inside MediaInformationBox." << std::endl;
+            logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside MediaInformationBox." << std::endl;
         }
     }
 }

@@ -53,10 +53,6 @@ public:
     void addNalData(const Vector<std::uint8_t>& srcData);
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
-     *  @param [out] output Bitstream that contains the box data. */
-    void writeBox(std::ofstream& output) const;
-
-    /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
     void writeBox(ISOBMFF::BitStream& bitstr) const;
 
@@ -67,9 +63,12 @@ public:
     /** @brief Update box size information in header data */
     void updateSize(ISOBMFF::BitStream& bitstr);
 
+    /** @brief returns raw serialized data ready to be written to file.
+    *  @param [out] output headerdata and mediadata. */
+    std::pair<const ISOBMFF::BitStream&, const List<Vector<uint8_t>>&> getSerializedData() const;
 private:
     ISOBMFF::BitStream mHeaderData;         // header container
-    std::list<Vector<uint8_t>> mMediaData;  // media data container
+    List<Vector<uint8_t>> mMediaData;       // media data container
     uint64_t mTotalDataSize;                // total size of mMediaData vectors
 
 

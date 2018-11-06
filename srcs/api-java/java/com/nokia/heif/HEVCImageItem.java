@@ -101,7 +101,7 @@ public final class HEVCImageItem extends CodedImageItem
      * @param heif The parent HEIF instance for the new object
      * @param nativeHandle A handle to the corresponding C++ object
      */
-    protected HEVCImageItem(HEIF heif, long nativeHandle)
+    public HEVCImageItem(HEIF heif, long nativeHandle)
     {
         super(heif, nativeHandle);
     }

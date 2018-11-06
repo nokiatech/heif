@@ -39,7 +39,7 @@ ChannelLayoutBox::ChannelLayoutBox(const ChannelLayoutBox& box)
 {
 }
 
-Vector<ChannelLayoutBox::ChannelLayout> ChannelLayoutBox::getChannelLayouts() const
+const Vector<ChannelLayoutBox::ChannelLayout>& ChannelLayoutBox::getChannelLayouts() const
 {
     return mChannelLayouts;
 }

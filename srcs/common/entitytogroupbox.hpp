@@ -37,7 +37,7 @@ public:
      * @brief getEntityIds Get entity ids of the grouping.
      * @return Entity ids of the grouping.
      */
-    EntityIds getEntityIds() const;
+    const EntityIds& getEntityIds() const;
 
     /**
      * @brief setGroupId Set group id.

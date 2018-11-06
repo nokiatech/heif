@@ -31,7 +31,7 @@ public:
      * Get values of bits per channel fields of the property. Length of the array is number of channels.
      * @return Bits per channel field values of the property.
      */
-    Vector<std::uint8_t> getBitsPerChannels() const;
+    const Vector<std::uint8_t>& getBitsPerChannels() const;
 
     /**
      * Set values of bits per channel fields of the property. Length of the array will bee the number of channels.

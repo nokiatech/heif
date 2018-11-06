@@ -22,9 +22,9 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::ColourInformationProperty *nativeObject = new HEIFPP::ColourInformationProperty(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -37,7 +37,7 @@ extern "C"
     JNI_METHOD_ARG(void, setColourTypeNative, jstring javaString)
     {
         NATIVE_SELF;
-        const char *nativeString                    = env->GetStringUTFChars(javaString, 0);
+        const char *nativeString                  = env->GetStringUTFChars(javaString, 0);
         nativeSelf->mColourInformation.colourType = HEIF::FourCC(nativeString);
         env->ReleaseStringUTFChars(javaString, nativeString);
     }
@@ -87,7 +87,7 @@ extern "C"
     JNI_METHOD_ARG(void, setFullRangeFlagNative, jboolean flag)
     {
         NATIVE_SELF;
-        nativeSelf->mColourInformation.fullRangeFlag = flag;
+        nativeSelf->mColourInformation.fullRangeFlag = (flag != 0);
     }
 
     JNI_METHOD(jobject, getICCProfileNative)
@@ -100,8 +100,8 @@ extern "C"
     JNI_METHOD_ARG(void, setICCProfileNative, jbyteArray data)
     {
         NATIVE_SELF;
-        jbyte *nativeData                           = env->GetByteArrayElements(data, 0);
-        uint32_t dataSize                           = static_cast<uint32_t>(env->GetArrayLength(data));
+        jbyte *nativeData                         = env->GetByteArrayElements(data, 0);
+        uint32_t dataSize                         = static_cast<uint32_t>(env->GetArrayLength(data));
         nativeSelf->mColourInformation.iccProfile = HEIF::Array<uint8_t>(dataSize);
         std::memcpy(nativeSelf->mColourInformation.iccProfile.elements, nativeData, dataSize);
         env->ReleaseByteArrayElements(data, nativeData, 0);

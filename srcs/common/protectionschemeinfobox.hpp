@@ -28,7 +28,7 @@ class ProtectionSchemeInfoBox
 public:
     /** @brief Get box data
      *  @return All data in the box, including headers. */
-    Vector<std::uint8_t> getData() const;
+    const Vector<std::uint8_t>& getData() const;
 
     /** @brief Set box data
      *  @param [in] data Data in the 'sinf' ox. All box data including header must be included. */

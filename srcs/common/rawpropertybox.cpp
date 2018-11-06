@@ -19,7 +19,7 @@ RawPropertyBox::RawPropertyBox()
 {
 }
 
-Vector<std::uint8_t> RawPropertyBox::getData() const
+const Vector<std::uint8_t>& RawPropertyBox::getData() const
 {
     return mData;
 }

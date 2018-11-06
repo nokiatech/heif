@@ -22,33 +22,33 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::RelativeLocationProperty *nativeObject = new HEIFPP::RelativeLocationProperty(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD_ARG(void, setHorizontalOffsetNative, jint offset)
     {
-        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, self);
-        nativeHandle->mRelativeLocation.horizontalOffset = static_cast<uint32_t>(offset);
+        NATIVE_SELF;
+        nativeSelf->mRelativeLocation.horizontalOffset = static_cast<uint32_t>(offset);
     }
 
     JNI_METHOD_ARG(void, setVerticalOffsetNative, jint offset)
     {
-        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, self);
-        nativeHandle->mRelativeLocation.verticalOffset = static_cast<uint32_t>(offset);
+        NATIVE_SELF;
+        nativeSelf->mRelativeLocation.verticalOffset = static_cast<uint32_t>(offset);
     }
 
     JNI_METHOD(int, getHorizontalOffsetNative)
     {
-        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->mRelativeLocation.horizontalOffset);
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->mRelativeLocation.horizontalOffset);
     }
 
     JNI_METHOD(int, getVerticalOffsetNative)
     {
-        NATIVE_RELATIVE_LOCATION_PROPERTY(nativeHandle, self);
-        return static_cast<jint>(nativeHandle->mRelativeLocation.verticalOffset);
+        NATIVE_SELF;
+        return static_cast<jint>(nativeSelf->mRelativeLocation.verticalOffset);
     }
 }

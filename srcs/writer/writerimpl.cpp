@@ -22,6 +22,8 @@ using namespace std;
 
 namespace HEIF
 {
+    OutputStreamInterface* ConstructFileStream(const char* aFilename);
+
     HEIF_DLL_PUBLIC ErrorCode Writer::SetCustomAllocator(CustomAllocator* customAllocator)
     {
         if (!setCustomAllocator(customAllocator))
@@ -49,10 +51,17 @@ namespace HEIF
         return BuildInfo::Version;
     }
 
+    void writeBitstream(BitStream& input, OutputStreamInterface* output)
+    {
+        const Vector<uint8_t>& data = input.getStorage();
+        output->write(data.data(), static_cast<uint64_t>(data.size()));
+    }
+
     WriterImpl::WriterImpl()
         : mState(State::UNINITIALIZED)
         , mAllDecoderConfigs()
         , mMediaData()
+        , mMediaDataHashes()
         , mImageSequences()
         , mImageCollection()
         , mEntityGroups()
@@ -67,11 +76,13 @@ namespace HEIF
         , mMovieBox()
         , mMediaDataBox()
     {
+        mFile = nullptr;
     }
 
     WriterImpl::~WriterImpl()
     {
         clear();
+        delete mFile;
     }
 
     void WriterImpl::clear()
@@ -81,6 +92,7 @@ namespace HEIF
 
         mAllDecoderConfigs.clear();
         mMediaData.clear();
+        mMediaDataHashes.clear();
         mImageSequences.clear();
         mImageCollection = {};
         mEntityGroups.clear();
@@ -103,9 +115,9 @@ namespace HEIF
 
         if (mState == State::WRITING)
         {
-            mFile.close();
-            std::remove(mFilename.c_str());
-            mFilename.clear();
+            mFile->remove();
+            delete mFile;
+            mFile = nullptr;
         }
 
         mState = State::UNINITIALIZED;
@@ -135,9 +147,18 @@ namespace HEIF
             mInitialMdat = true;
         }
 
-        mFilename = outputConfig.fileName;
-        mFile.open(mFilename.c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-        if (!mFile.is_open())
+        mFile = nullptr;
+        if (outputConfig.outputStream)
+        {
+            mFile             = outputConfig.outputStream;
+            mOwnsOutputHandle = false;
+        }
+        else if ((outputConfig.fileName) && (outputConfig.fileName[0] != 0))
+        {
+            mFile             = ConstructFileStream(outputConfig.fileName);
+            mOwnsOutputHandle = true;
+        }
+        if (mFile == nullptr)
         {
             return ErrorCode::FILE_OPEN_ERROR;
         }
@@ -161,7 +182,7 @@ namespace HEIF
 
             // Write Media Data Box 'mdat' header. We can not know input data size, so use 64-bit large size field for
             // the box.
-            mMdatOffset = static_cast<uint64_t>(mFile.tellp());
+            mMdatOffset = static_cast<uint64_t>(mFile->tellp());
             output.clear();
             output.write32Bits(1);  // size field, value 1 implies using largesize field instead.
             output.write32Bits(FourCCInt("mdat").getUInt32());  // boxtype field
@@ -193,6 +214,17 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
+        ErrorCode error = validateFedMediaData(aData);
+        if (error != ErrorCode::OK)
+        {
+            return error;
+        }
+
+        return storeFedMediaData(aData, aMediaDataId);
+    }
+
+    ErrorCode WriterImpl::validateFedMediaData(const Data& aData)
+    {
         if (((aData.mediaFormat == MediaFormat::AVC) || (aData.mediaFormat == MediaFormat::HEVC) ||
              (aData.mediaFormat == MediaFormat::AAC)) &&
             !mAllDecoderConfigs.count(aData.decoderConfigId))
@@ -257,42 +289,55 @@ namespace HEIF
         {
             // todo: was possible to not have decoder config?
         }
+        return ErrorCode::OK;
+    }
 
-        MediaData mediaData       = {};
-        mediaData.id              = Context::getValue();
-        mediaData.mediaFormat     = aData.mediaFormat;
-        mediaData.decoderConfigId = aData.decoderConfigId;
-        mediaData.size            = aData.size;
-
-        mMediaDataSize += mediaData.size;
-
-        if (aData.mediaFormat == MediaFormat::JPEG)
+    ErrorCode WriterImpl::storeFedMediaData(const Data& aData, MediaDataId& aMediaDataId)
+    {
+        uint64_t hash = FNVHash::generate(aData.data, aData.size);
+        if (mMediaDataHashes.count(hash))
         {
-            JpegParser parser;
-            const JpegParser::JpegInfo info = parser.parse(aData.data, static_cast<unsigned int>(aData.size));
-            if (!info.parsingOk)
-            {
-                return ErrorCode::MEDIA_PARSING_ERROR;
-            }
-            mJpegDimensions[mediaData.id] = {info.imageWidth, info.imageHeight};
-        }
-
-        if (mInitialMdat)
-        {
-            mediaData.offset = static_cast<uint64_t>(mFile.tellp());
-            mFile.write(reinterpret_cast<char*>(aData.data), static_cast<streamsize>(aData.size));
+            aMediaDataId = mMediaDataHashes.at(hash);
         }
         else
         {
-            mediaData.offset = mMediaDataBox.addData(aData.data, aData.size);
-            if (mMediaDataSize > std::numeric_limits<std::uint32_t>::max())
-            {
-                mMediaDataBox.setLargeSize();
-            }
-        }
+            MediaData mediaData       = {};
+            mediaData.id              = Context::getValue();
+            mediaData.mediaFormat     = aData.mediaFormat;
+            mediaData.decoderConfigId = aData.decoderConfigId;
+            mediaData.size            = aData.size;
 
-        mMediaData[mediaData.id] = mediaData;
-        aMediaDataId             = mediaData.id;
+            mMediaDataSize += mediaData.size;
+
+            if (aData.mediaFormat == MediaFormat::JPEG)
+            {
+                JpegParser parser;
+                const JpegParser::JpegInfo info = parser.parse(aData.data, static_cast<unsigned int>(aData.size));
+                if (!info.parsingOk)
+                {
+                    return ErrorCode::MEDIA_PARSING_ERROR;
+                }
+                mJpegDimensions[mediaData.id] = {info.imageWidth, info.imageHeight};
+            }
+
+            if (mInitialMdat)
+            {
+                mediaData.offset = mFile->tellp();
+                mFile->write(aData.data, static_cast<uint64_t>(aData.size));
+            }
+            else
+            {
+                mediaData.offset = mMediaDataBox.addData(aData.data, aData.size);
+                if (mMediaDataSize > std::numeric_limits<std::uint32_t>::max())
+                {
+                    mMediaDataBox.setLargeSize();
+                }
+            }
+
+            mMediaData[mediaData.id] = mediaData;
+            aMediaDataId             = mediaData.id;
+            mMediaDataHashes[hash]   = mediaData.id;
+        }
         return ErrorCode::OK;
     }
 
@@ -470,9 +515,21 @@ namespace HEIF
                 output.clear();
             }
             // Finally write mdat.
-            mMediaDataBox.writeBox(mFile);
+
+            const std::pair<const ISOBMFF::BitStream&, const List<Vector<uint8_t>>&>& data =
+                mMediaDataBox.getSerializedData();
+            mFile->write(data.first.getStorage().data(), data.first.getStorage().size());
+            for (const auto& dataBlock : data.second)
+            {
+                mFile->write(dataBlock.data(), static_cast<uint64_t>(dataBlock.size()));
+            }
         }
-        mFile.close();
+        if (mOwnsOutputHandle)
+        {
+            delete mFile;
+        }
+
+        mFile = nullptr;
 
         mState = State::UNINITIALIZED;
 
@@ -482,17 +539,12 @@ namespace HEIF
     void WriterImpl::finalizeMdatBox()
     {
         BitStream output;
-        const int64_t position = mFile.tellp();
-        output.write64Bits(static_cast<uint64_t>(position) - mMdatOffset);
+        const uint64_t position = mFile->tellp();
+        output.write64Bits(position - mMdatOffset);
         const int64_t LARGESIZE_OFFSET = 8;
-        mFile.seekp(static_cast<int64_t>(mMdatOffset) + LARGESIZE_OFFSET);
+        mFile->seekp(mMdatOffset + LARGESIZE_OFFSET);
         writeBitstream(output, mFile);
-        mFile.seekp(position);
+        mFile->seekp(position);
     }
 
-    void writeBitstream(BitStream& input, std::ofstream& output)
-    {
-        const Vector<uint8_t>& data = input.getStorage();
-        output.write(reinterpret_cast<const char*>(data.data()), static_cast<streamsize>(data.size()));
-    }
 }  // namespace HEIF

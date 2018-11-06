@@ -16,9 +16,6 @@
 #include "customallocator.hpp"
 #include "fullbox.hpp"
 
-#include <iostream>
-#include <list>
-
 /** @brief SampleSize Box. Extends FullBox.
  *  @details 'stsz' box provides the Sample size information as defined in the ISOBMFF standard. */
 class SampleSizeBox : public FullBox
@@ -49,7 +46,7 @@ public:
 
     /** @brief Get the sample sizes of the entries as a vector of sizes.
      *  @return vector containing sample sizes. */
-    Vector<uint32_t> getEntrySize() const;
+    const Vector<uint32_t>& getEntrySize() const;
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */

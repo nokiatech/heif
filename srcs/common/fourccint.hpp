@@ -13,7 +13,6 @@
 #define FOURCCINT_HPP
 
 #include <cstdint>
-#include <iostream>
 #include "customallocator.hpp"
 
 /** FourCCInt is a class for holding the four-character-codes in a
@@ -79,7 +78,5 @@ public:
 private:
     std::uint32_t mValue;
 };
-
-std::ostream& operator<<(std::ostream& stream, FourCCInt fourcc);
 
 #endif  // FOURCCINT_HPP

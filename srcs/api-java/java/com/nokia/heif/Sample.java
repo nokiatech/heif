@@ -99,6 +99,19 @@ public abstract class Sample extends Base
     }
 
     /**
+     * Returns the size of the sample data.
+     *
+     * @return The size in bytes
+     * @throws Exception
+     */
+    public int getSampleDataSize()
+            throws Exception
+    {
+        checkState();
+        return getSampleDataSizeNative();
+    }
+
+    /**
      * Returns the sample data as a byte array.
      * Note that this does a memory copy from the ByteBuffer so using the ByteBuffer getter is more optimized
      *
@@ -354,8 +367,10 @@ public abstract class Sample extends Base
     native private DecoderConfig getDecoderConfigNative();
     native private void setDecoderConfigNative(DecoderConfig config);
 
+
+    native private int getSampleDataSizeNative();
     native private ByteBuffer getSampleDataNative();
-    private native void setSampleDataNative(byte[] data);
+    native private void setSampleDataNative(byte[] data);
 
     native private long getDurationNative();
     native private void setDurationNative(long duration);

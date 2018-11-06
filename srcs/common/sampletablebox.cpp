@@ -160,7 +160,7 @@ void SampleTableBox::setSyncSampleBox(const SyncSampleBox& syncSampleBox)
     mHasSyncSampleBox = true;
 }
 
-bool SampleTableBox::hasSyncSampleBox()
+bool SampleTableBox::hasSyncSampleBox() const
 {
     return mHasSyncSampleBox;
 }
@@ -344,7 +344,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping unknown box of type '" << boxType << "' inside SampleTableBox" << endl;
+            logWarning() << "Skipping unknown box of type '" << boxType.getString() << "' inside SampleTableBox" << endl;
         }
     }
 

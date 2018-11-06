@@ -137,6 +137,13 @@ namespace HEIF
         virtual ErrorCode setPrimaryItem(const ImageId& imageId) = 0;
 
         /**
+         * Set item description.
+         * @param itemDescription    [in]  ItemDescription of the item.
+         * @return ErrorCode: OK, UNINITIALIZED or INVALID_ITEM_ID
+         */
+        virtual ErrorCode setItemDescription(const ImageId& imageId, const ItemDescription& itemDescription) = 0;
+
+        /**
          * Add external metadata (EXIF, XMP or MPEG-7) for an image in Image Collection
          * @param mediaDataId     [in]  MediaDataId of metadata that was previously fed to writer using feedMediaData().
          * @param metadataItemId  [out] MetadataItemId of the created metadata item.

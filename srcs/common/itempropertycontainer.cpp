@@ -69,7 +69,7 @@ void ItemPropertyContainer::parseBox(BitStream& bitstream)
     parseBoxHeader(bitstream);
     if (getType() != "ipco")
     {
-        logError() << "Reading ipco, found '" << getType() << "' instead." << std::endl;
+        logError() << "Reading ipco, found '" << getType().getString() << "' instead." << std::endl;
     }
 
     // Read as many ItemProperty- or ItemFullProperty -derived boxes as there is

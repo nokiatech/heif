@@ -56,7 +56,7 @@ public:
 
     /** @brief Gets the list of "To-item" item Ids
      *  @return Vector of Item Id values */
-    Vector<std::uint32_t> getToItemIds() const;
+    const Vector<std::uint32_t>& getToItemIds() const;
 
     /** @brief clears the list of "To-item" item Ids */
     void clearToItemIDs();

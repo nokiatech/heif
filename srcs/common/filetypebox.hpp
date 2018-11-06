@@ -50,7 +50,7 @@ public:
 
     /** @brief Get the Compatible Brands List
      *  @returns Compatible Brand as vector of string values */
-    Vector<FourCCInt> getCompatibleBrands() const;
+    const Vector<FourCCInt>& getCompatibleBrands() const;
 
     /** @brief Check if a brand is among the list of compatible brands
      *  @param [in] brand Brand value to be checked

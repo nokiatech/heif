@@ -31,7 +31,7 @@ public:
      * @brief getPrefix Get JPEG prefix data of the property.
      * @return JPEG prefix data.
      */
-    Vector<uint8_t> getPrefix() const;
+    const Vector<uint8_t>& getPrefix() const;
 
     /**
      * @brief setPrefix Set JPEG prefix data of the property.

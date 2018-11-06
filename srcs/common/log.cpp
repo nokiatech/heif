@@ -13,7 +13,6 @@
 
 #include "log.hpp"
 #include <iostream>
-#include <ostream>
 
 Log::LogLevel Log::mLogLevel = Log::LogLevel::NONE;
 

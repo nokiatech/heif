@@ -1055,8 +1055,9 @@ namespace HEIF
                 const MediaData& sampleData = mMediaData.at(sample.mediaDataId);
 
                 // chunks:
-                if (sampleData.offset != nextSampleOffset ||
-                    (chunks.size() && (chunks.back().sampleDescriptionIndex != sample.decoderConfigIndex)))
+                if (sampleData.offset != nextSampleOffset ||  // if next sample doesn't start where we expect
+                    (chunks.size() && (chunks.back().sampleDescriptionIndex != sample.decoderConfigIndex)) ||
+                    (chunks.size() && (sequence.anyNonSyncSample == true) && sample.isSyncSample))
                 {  // sample belongs to new chunk
                     chunkOffsets.push_back(sampleData.offset);
                     SampleToChunkBox::ChunkEntry chunk{};

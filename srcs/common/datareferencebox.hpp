@@ -34,7 +34,7 @@ public:
 
     /** @brief Get the location field as specificed in ISOBMFF.
      *  @return value of the location field as a string*/
-    const String getLocation() const;
+    const String& getLocation() const;
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
@@ -85,7 +85,7 @@ public:
 
     /** @brief Returns the name field as specified in ISOBMFF specification
      *  @return  name field as a string */
-    const String getName() const;
+    const String& getName() const;
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */

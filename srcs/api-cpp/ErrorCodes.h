@@ -26,6 +26,8 @@ namespace HEIFPP
         HIDDEN_PRIMARY_ITEM  = 5,
         INVALID_HANDLE       = 6,
         ALREADY_IN_GROUP     = 7,
+        ALREADY_SET          = 8,
+        INVALID_CONFIG       = 9,
         ERROR_UNDEFINED      = 999
     };
 

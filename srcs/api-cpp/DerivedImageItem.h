@@ -60,6 +60,7 @@ namespace HEIFPP
 
     private:
         DerivedImageItem& operator=(const DerivedImageItem&) = delete;
+        DerivedImageItem& operator=(DerivedImageItem&&)      = delete;
         DerivedImageItem(const DerivedImageItem&)            = delete;
         DerivedImageItem(DerivedImageItem&&)                 = delete;
         DerivedImageItem()                                   = delete;

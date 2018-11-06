@@ -95,7 +95,7 @@ HEIF::ErrorCode ImageSequence::load(HEIF::Reader* aReader, const HEIF::SequenceI
     HEIF::CleanAperture c;
     std::uint32_t asd = 0, csd = 0;
     bool firstSample      = true;
-    mHasCodingConstraints = info->features & HEIF::TrackFeatureEnum::HasCodingConstraints;
+    mHasCodingConstraints = (info->features & HEIF::TrackFeatureEnum::HasCodingConstraints) != 0;
 
     for (const auto& at : info->sampleProperties)
     {

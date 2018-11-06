@@ -145,7 +145,7 @@ void TrackBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping an unsupported box '" << boxType << "' inside TrackBox." << std::endl;
+            logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside TrackBox." << std::endl;
         }
     }
 }

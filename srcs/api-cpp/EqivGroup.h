@@ -16,10 +16,10 @@
 
 namespace HEIFPP
 {
-    class EqivGroup : public EntityGroup
+    class EquivalenceGroup : public EntityGroup
     {
     public:
-        EqivGroup(Heif* aHeif);
+        EquivalenceGroup(Heif* aHeif);
         void addSample(Sample* aItem, std::int16_t aOffset, std::uint16_t aMultiplier);
         std::int16_t getOffset(Sample* aItem);
         std::uint16_t getMultiplier(Sample* aItem);
@@ -30,9 +30,9 @@ namespace HEIFPP
         std::map<Sample*, std::pair<std::int16_t, std::uint16_t>> mOffsets;
 
     private:
-        EqivGroup& operator=(const EqivGroup&) = delete;
-        EqivGroup& operator=(const EqivGroup&&) = delete;
-        EqivGroup(const EqivGroup&)             = delete;
-        EqivGroup(EqivGroup&&)                  = delete;
+        EquivalenceGroup& operator=(const EquivalenceGroup&)  = delete;
+        EquivalenceGroup& operator=(EquivalenceGroup&&)       = delete;
+        EquivalenceGroup(const EquivalenceGroup&)             = delete;
+        EquivalenceGroup(EquivalenceGroup&&)                  = delete;
     };
 }  // namespace HEIFPP

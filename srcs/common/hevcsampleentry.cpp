@@ -92,7 +92,7 @@ void HevcSampleEntry::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping unknown box of type '" << boxType << "' inside HevcSampleEntry" << std::endl;
+            logWarning() << "Skipping unknown box of type '" << boxType.getString() << "' inside HevcSampleEntry" << std::endl;
         }
     }
 }

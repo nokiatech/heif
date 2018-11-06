@@ -66,7 +66,7 @@ public:
     void setESDescriptor(ElementaryStreamDescriptorBox::ES_Descriptor& esDescriptor);
 
     /// @return ES_Descriptor. @see ISO/IEC 14496-1 for details.
-    ES_Descriptor getESDescriptor() const;
+    const ES_Descriptor& getESDescriptor() const;
 
     /// @see Box::writeBox()
     virtual void writeBox(ISOBMFF::BitStream& output) const;

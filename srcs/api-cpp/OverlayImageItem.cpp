@@ -16,7 +16,7 @@
 
 using namespace HEIFPP;
 
-Overlay::Overlay(Heif* aHeif)
+OverlayImageItem::OverlayImageItem(Heif* aHeif)
     : DerivedImageItem(aHeif, HEIF::FourCC("iovl"))
 {
     mR = 0;
@@ -24,41 +24,41 @@ Overlay::Overlay(Heif* aHeif)
     mB = 0;
     mA = 65535;
 }
-std::uint16_t Overlay::r() const
+std::uint16_t OverlayImageItem::r() const
 {
     return mR;
 }
-std::uint16_t Overlay::g() const
+std::uint16_t OverlayImageItem::g() const
 {
     return mG;
 }
-std::uint16_t Overlay::b() const
+std::uint16_t OverlayImageItem::b() const
 {
     return mB;
 }
-std::uint16_t Overlay::a() const
+std::uint16_t OverlayImageItem::a() const
 {
     return mA;
 }
 
-void Overlay::setR(std::uint16_t aR)
+void OverlayImageItem::setR(std::uint16_t aR)
 {
     mR = aR;
 }
-void Overlay::setG(std::uint16_t aG)
+void OverlayImageItem::setG(std::uint16_t aG)
 {
     mG = aG;
 }
-void Overlay::setB(std::uint16_t aB)
+void OverlayImageItem::setB(std::uint16_t aB)
 {
     mB = aB;
 }
-void Overlay::setA(std::uint16_t aA)
+void OverlayImageItem::setA(std::uint16_t aA)
 {
     mA = aA;
 }
 
-ImageItem* Overlay::getImage(std::uint32_t aId, HEIF::Overlay::Offset& aOffset)
+ImageItem* OverlayImageItem::getImage(std::uint32_t aId, HEIF::Overlay::Offset& aOffset)
 {
     if (aId < getSourceImageCount())
     {
@@ -67,7 +67,7 @@ ImageItem* Overlay::getImage(std::uint32_t aId, HEIF::Overlay::Offset& aOffset)
     }
     return nullptr;
 }
-const ImageItem* Overlay::getImage(std::uint32_t aId, HEIF::Overlay::Offset& aOffset) const
+const ImageItem* OverlayImageItem::getImage(std::uint32_t aId, HEIF::Overlay::Offset& aOffset) const
 {
     if (aId < getSourceImageCount())
     {
@@ -76,12 +76,12 @@ const ImageItem* Overlay::getImage(std::uint32_t aId, HEIF::Overlay::Offset& aOf
     }
     return nullptr;
 }
-std::uint32_t Overlay::imageCount() const
+std::uint32_t OverlayImageItem::imageCount() const
 {
     return getSourceImageCount();
 }
 
-Result Overlay::setImage(std::uint32_t aId, ImageItem* aImage, const HEIF::Overlay::Offset& aOffset)
+Result OverlayImageItem::setImage(std::uint32_t aId, ImageItem* aImage, const HEIF::Overlay::Offset& aOffset)
 {
     if (aId >= getSourceImageCount())
     {
@@ -91,13 +91,13 @@ Result Overlay::setImage(std::uint32_t aId, ImageItem* aImage, const HEIF::Overl
     mOffsets[aId] = aOffset;
     return Result::OK;
 }
-void Overlay::addImage(ImageItem* aImage, const HEIF::Overlay::Offset& aOffset)
+void OverlayImageItem::addImage(ImageItem* aImage, const HEIF::Overlay::Offset& aOffset)
 {
     addSourceImage(aImage);
     mOffsets.push_back(aOffset);
 }
 
-Result Overlay::removeImage(std::uint32_t aId)
+Result OverlayImageItem::removeImage(std::uint32_t aId)
 {
     if (aId >= getSourceImageCount())
     {
@@ -107,7 +107,7 @@ Result Overlay::removeImage(std::uint32_t aId)
     mOffsets.erase(mOffsets.begin() + (std::int32_t) aId);
     return Result::OK;
 }
-Result Overlay::removeImage(ImageItem* aImage)
+Result OverlayImageItem::removeImage(ImageItem* aImage)
 {
     bool found = false;
     for (;;)
@@ -117,7 +117,11 @@ Result Overlay::removeImage(ImageItem* aImage)
             break;
         std::intptr_t id = it - mSourceImages.begin();
         removeSourceImage((std::uint32_t) id);
-        mOffsets.erase(mOffsets.begin() + id);
+        if (mOffsets.size() > static_cast<size_t>(id))
+        {
+            mOffsets.erase(mOffsets.begin() + id);
+        }
+
         found = true;
     }
     if (!found)
@@ -127,7 +131,7 @@ Result Overlay::removeImage(ImageItem* aImage)
     return Result::OK;
 }
 
-HEIF::ErrorCode Overlay::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
+HEIF::ErrorCode OverlayImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 {
     HEIF::ErrorCode error;
     error = DerivedImageItem::load(aReader, aId);
@@ -146,8 +150,6 @@ HEIF::ErrorCode Overlay::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
     {
         return HEIF::ErrorCode::FILE_READ_ERROR;
     }
-    HEIF_ASSERT(overlay.outputWidth == width());
-    HEIF_ASSERT(overlay.outputHeight == height());
     if ((overlay.outputWidth != width()) || (overlay.outputHeight != height()))
     {
         return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
@@ -161,7 +163,7 @@ HEIF::ErrorCode Overlay::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 }
 
 
-HEIF::ErrorCode Overlay::save(HEIF::Writer* aWriter)
+HEIF::ErrorCode OverlayImageItem::save(HEIF::Writer* aWriter)
 {
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
     ;

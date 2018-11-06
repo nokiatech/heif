@@ -48,7 +48,7 @@ HEIF::ErrorCode DerivedImageItem::load(HEIF::Reader* aReader, const HEIF::ImageI
             mSourceImages.reserve((std::uint32_t) dimgIds.size);
             for (const auto& dimgId : dimgIds)
             {
-                ImageItem* image = static_cast<ImageItem*>(getHeif()->constructItem(aReader, dimgId, error));
+                ImageItem* image = getHeif()->constructImageItem(aReader, dimgId, error);
                 if (HEIF::ErrorCode::OK != error)
                 {
                     return error;
@@ -144,8 +144,8 @@ void DerivedImageItem::addSourceImage(ImageItem* aImage)
     if (aImage)
     {
         addSourceLink(aImage, this);
+        mSourceImages.push_back(aImage);
     }
-    mSourceImages.push_back(aImage);
 }
 
 bool DerivedImageItem::removeSourceImage(ImageItem* aImage)

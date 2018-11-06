@@ -104,34 +104,6 @@ namespace HEIF
         MetaBoxFeatureSet mMetaBoxFeatureSet;
     };
 
-    /** @brief Each image in a MetaBox has different features */
-    class ImageFeature
-    {
-    public:
-        typedef Set<ImageFeatureEnum::Feature> ImageFeatureSet;
-
-        bool hasFeature(ImageFeatureEnum::Feature feature) const
-        {
-            return (mImageFeatureSet.count(feature) != 0);
-        }
-        void setFeature(ImageFeatureEnum::Feature feature)
-        {
-            mImageFeatureSet.insert(feature);
-        }
-        uint32_t getFeatureMask() const
-        {
-            uint32_t mask = 0;
-            for (auto set : mImageFeatureSet)
-            {
-                mask |= (uint32_t) set;
-            }
-            return mask;
-        }
-
-    private:
-        ImageFeatureSet mImageFeatureSet;
-    };
-
     /** @brief Each item in a MetaBox has different features */
     class ItemFeature
     {
@@ -179,7 +151,6 @@ namespace HEIF
 
     // In the type definitions, the first element of each map represents the file-given ID of the relevant data
     // structure. In he below mentioned type definitions, key value is the ID of the entity.
-    typedef Map<ImageId, ImageFeature> ImageFeaturesMap;
     typedef Map<ImageId, ItemFeature> ItemFeaturesMap;
     typedef Map<SequenceId, TrackProperties> TrackPropertiesMap;  ///< <track_id/context_id, TrackProperties>
     typedef Map<std::uint32_t, SampleProperties> SamplePropertiesMap;
@@ -189,7 +160,6 @@ namespace HEIF
     {
         std::uint32_t contextId;
         MetaBoxFeature metaBoxFeature;
-        ImageFeaturesMap imageFeaturesMap;
         ItemFeaturesMap itemFeaturesMap;
         Groupings entityGroupings;
     };
@@ -213,6 +183,7 @@ namespace HEIF
         bool hasClap;  ///< CleanApertureBox is present in the sample entry
         bool hasAuxi;  ///< AuxiliaryTypeInfo box is present in the sample entry
         CodingConstraints codingConstraints;
+        uint64_t size; ///< Size of sample data in bytes
     };
 
     /** @brief Track Property definition which contain sample properties.

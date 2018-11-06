@@ -14,6 +14,7 @@
 #include <heifreader.h>
 #include <heifwriter.h>
 #include <cstring>
+#include "ErrorCodes.h"
 
 using namespace HEIFPP;
 
@@ -29,14 +30,19 @@ MimeItem::~MimeItem()
 }
 const std::string& MimeItem::getContentType() const
 {
-    return mContentType;
+    return Item::getContentType();
 }
-void MimeItem::setContentType(const std::string& aType)
+HEIFPP::Result MimeItem::setContentType(const std::string& aType)
 {
-    if (mContentType.empty())
-    {
-        mContentType = aType;
-    }
+    return Item::setContentType(aType);
+}
+const std::string& MimeItem::getContentEncoding() const
+{
+    return Item::getContentEncoding();
+}
+HEIFPP::Result MimeItem::setContentEncoding(const std::string& aType)
+{
+    return Item::setContentEncoding(aType);
 }
 
 HEIF::ErrorCode MimeItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
@@ -47,20 +53,11 @@ HEIF::ErrorCode MimeItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
         return error;
     const HEIF::ItemInformation* info = getHeif()->getItemInformation(aId);
 
-    // TODO: when reader exposes the item content-type, use that.
-    // contentType(info->contentType);
-
     mBufferSize = info->size;
-    mBuffer     = new std::uint8_t[mBufferSize];
-    if (mBufferSize == 0)
+    if (getHeif()->mPreLoadMode == Heif::PreloadMode::LOAD_ALL_DATA ||
+        getHeif()->mPreLoadMode == Heif::PreloadMode::LOAD_PREVIEW_DATA)
     {
-        mBuffer = nullptr;
-    }
-    else
-    {
-        error = aReader->getItemData(aId, mBuffer, mBufferSize, false);
-        if (HEIF::ErrorCode::OK != error)
-            return error;
+        error = loadData();
     }
     return HEIF::ErrorCode::OK;
 }
@@ -72,17 +69,16 @@ HEIF::ErrorCode MimeItem::save(HEIF::Writer* aWriter)
         return HEIF::ErrorCode::BUFFER_SIZE_TOO_SMALL;
     }
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
-    ;
+
     HEIF::MediaDataId mediaDataId;
     HEIF::Data fr;
-    if (mContentType == "application/rdf+xml")
+    if (Item::getContentType() == "")
     {
-        fr.mediaFormat = HEIF::MediaFormat::XMP;
+        // TODO: "content type not set"
+        return HEIF::ErrorCode::INVALID_MEDIA_FORMAT;
     }
-    else if (mContentType == "text/xml")
-    {
-        fr.mediaFormat = HEIF::MediaFormat::MPEG7;
-    }
+    // TODO: this should not be needed. actual contenttype is written Item::save
+    fr.mediaFormat     = HEIF::MediaFormat::MPEG7;
     fr.size            = mBufferSize;
     fr.data            = mBuffer;
     fr.decoderConfigId = 0;
@@ -100,8 +96,12 @@ HEIF::ErrorCode MimeItem::save(HEIF::Writer* aWriter)
 }
 
 
-const std::uint8_t* MimeItem::getData() const
+const std::uint8_t* MimeItem::getData()
 {
+    if (mBuffer == nullptr)
+    {
+        loadData();
+    }
     return mBuffer;
 }
 std::uint64_t MimeItem::getDataSize() const
@@ -116,4 +116,32 @@ void MimeItem::setData(const std::uint8_t* aData, std::uint64_t aDataSize)
     mBuffer = new std::uint8_t[aDataSize];
     std::memcpy(mBuffer, aData, aDataSize);
     mBufferSize = aDataSize;
+}
+
+HEIF::ErrorCode MimeItem::loadData()
+{
+    HEIF::ErrorCode error = HEIF::ErrorCode::OK;
+    if (mBufferSize == 0)
+    {
+        mBuffer = nullptr;
+    }
+    else
+    {
+        if ((getHeif() != nullptr) && (getHeif()->getReaderInstance() != nullptr))
+        {
+            delete[] mBuffer;
+            mBuffer = nullptr;
+            mBuffer = new std::uint8_t[mBufferSize];
+            error   = getHeif()->getReaderInstance()->getItemData(getId(), mBuffer, mBufferSize, false);
+            if (HEIF::ErrorCode::OK != error)
+            {
+                return error;
+            }
+        }
+        else
+        {
+            HEIF_ASSERT(false);
+        }
+    }
+    return error;
 }

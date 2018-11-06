@@ -42,6 +42,7 @@ namespace HEIFPP
 
     private:
         VideoTrack& operator=(const VideoTrack&) = delete;
+        VideoTrack& operator=(VideoTrack&&)      = delete;
         VideoTrack(const VideoTrack&)            = delete;
         VideoTrack(VideoTrack&&)                 = delete;
         VideoTrack()                             = delete;

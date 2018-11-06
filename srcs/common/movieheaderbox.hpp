@@ -42,7 +42,7 @@ public:
     std::uint32_t getNextTrackID() const;
 
     void setMatrix(const Vector<int32_t>& matrix);
-    Vector<int32_t> getMatrix() const;
+    const Vector<int32_t>& getMatrix() const;
 
     /**
      * @brief Serialize box data to the ISOBMFF::BitStream.

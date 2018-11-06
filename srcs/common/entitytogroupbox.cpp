@@ -40,7 +40,7 @@ void EntityToGroupBox::setEntityIds(const EntityIds& entityIds)
     mEntityIds = entityIds;
 }
 
-EntityToGroupBox::EntityIds EntityToGroupBox::getEntityIds() const
+const EntityToGroupBox::EntityIds& EntityToGroupBox::getEntityIds() const
 {
     return mEntityIds;
 }

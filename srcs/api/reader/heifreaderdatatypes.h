@@ -103,21 +103,6 @@ namespace HEIF
     {
         enum Feature
         {
-            IsTileImageItem = 1u,  ///< Item is of type 'hvt1' e.g. HEVC tile Item
-            IsMetadataItem =
-                1u << 1,  ///< Item is metadata item and has 'cdsc' (= content descriptor) reference to other item.
-            IsExifItem  = 1u << 2,  ///< Item is metadata of type 'Exif'
-            IsXMPItem   = 1u << 3,  ///< Item is metadata of type 'mime' and content type "application/rdf+xml"
-            IsMPEG7Item = 1u << 4,  ///< Item is metadata of type 'mime' and not content type "application/rdf+xml"
-            IsProtected =
-                1u << 5,  ///< There is a Protection Scheme Info Box mapped for this item. The item is not accessible.
-        };
-    }
-
-    namespace ImageFeatureEnum
-    {
-        enum Feature
-        {
             IsMasterImage    = 1u,       ///< Image is master image e.g. not a thumbnail or an auxiliary image
             IsThumbnailImage = 1u << 1,  ///< Image is thumbnail image. It has 'thmb' reference to other image
             IsAuxiliaryImage = 1u << 2,  ///< Image is auxiliary image. It has 'auxl' reference to other image
@@ -138,8 +123,15 @@ namespace HEIF
             HasLinkedPreComputedDerivedImage = 1u << 12,  ///< This image has Pre-derived coded image(s) linked to it.
             HasLinkedTiles = 1u << 13,  ///< This image has linked tiles to it. Used with Relative location 'rloc' Image
                                         ///< Property. Has 'tbas' reference(s) to it.
-            HasLinkedMetadata = 1u << 14  ///< This image has linked external metadata (like Exif). It has 'cdsc' (=
-                                          ///< content description) reference(s) to it.
+            HasLinkedMetadata = 1u << 14,  ///< This image has linked external metadata (like Exif). It has 'cdsc' (=
+                                           ///< content description) reference(s) to it.
+
+            IsTileImageItem = 1u << 15,  ///< Item is of type 'hvt1' e.g. HEVC tile Item
+            IsMetadataItem =
+                1u << 16,  ///< Item is metadata item and has 'cdsc' (= content descriptor) reference to other item.
+            IsExifItem  = 1u << 17,  ///< Item is metadata of type 'Exif'
+            IsXMPItem   = 1u << 18,  ///< Item is metadata of type 'mime' and content type "application/rdf+xml"
+            IsMPEG7Item = 1u << 19,  ///< Item is metadata of type 'mime' and not content type "application/rdf+xml"
         };
     }
 
@@ -155,15 +147,12 @@ namespace HEIF
     struct HEIF_DLL_PUBLIC ItemInformation
     {
         ImageId itemId;
+        FourCC type;
+
+        ItemDescription description;
+
         FeatureBitMask features;  ///< bitmask of ItemFeatureEnum
         uint64_t size;            ///< size of item data in bytes (can be 0 if item doesn't have its own data)
-    };
-
-    struct HEIF_DLL_PUBLIC ImageInformation
-    {
-        ImageId itemId;
-        FeatureBitMask features;  ///< bitmask of ImageFeatureEnum
-        uint64_t size;            ///< size of image data in bytes (can be 0 if image doesn't have its own data)
     };
 
     /**
@@ -181,7 +170,6 @@ namespace HEIF
     {
         FeatureBitMask features;  ///< bitmask of MetaBoxFeatureEnum's
         Array<ItemInformation> itemInformations;
-        Array<ImageInformation> imageInformations;
         Array<EntityGrouping> entityGroupings;
     };
 
@@ -302,6 +290,7 @@ namespace HEIF
         bool hasClap;                         ///< CleanApertureBox is present in the sample entry
         bool hasAuxi;                         ///< AuxiliaryTypeInfoBox is present in the sample entry
         CodingConstraints codingConstraints;  ///< CodingConstraints for sample
+        uint64_t size;                    ///< size of sample data in bytes
     };
 
     struct HEIF_DLL_PUBLIC TrackInformation

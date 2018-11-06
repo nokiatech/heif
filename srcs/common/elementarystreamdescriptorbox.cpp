@@ -47,7 +47,7 @@ void ElementaryStreamDescriptorBox::setESDescriptor(ElementaryStreamDescriptorBo
     mES_Descriptor = esDescriptor;
 }
 
-ElementaryStreamDescriptorBox::ES_Descriptor ElementaryStreamDescriptorBox::getESDescriptor() const
+const ElementaryStreamDescriptorBox::ES_Descriptor& ElementaryStreamDescriptorBox::getESDescriptor() const
 {
     return mES_Descriptor;
 }

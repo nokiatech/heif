@@ -14,7 +14,7 @@
 #ifndef WRITERIMPL_HPP
 #define WRITERIMPL_HPP
 
-#include <fstream>
+#include "OutputStreamInterface.h"
 #include "filetypebox.hpp"
 #include "heifcommondatatypes.h"
 #include "heifwriter.h"
@@ -42,6 +42,7 @@ namespace HEIF
 
         virtual ErrorCode addImage(const MediaDataId& mediaDataId, ImageId& imageId);
         virtual ErrorCode setPrimaryItem(const ImageId& imageId);
+        virtual ErrorCode setItemDescription(const ImageId& imageId, const ItemDescription& itemDescription);
         virtual ErrorCode addMetadata(const MediaDataId& mediaDataId, MetadataItemId& metadataIemId);
         virtual ErrorCode addThumbnail(const ImageId& thumbImageId, const ImageId& masterImageId);
         virtual ErrorCode addProperty(const CleanAperture& clap, PropertyId& propertyId);
@@ -124,10 +125,21 @@ namespace HEIF
         void writeRefSampleList(ImageSequence& sequence);
         void writeMetadataItemGroups(ImageSequence& sequence);
 
+        // helpers for handling fed mediaData
+        ErrorCode validateFedMediaData(const Data& aData);
+        ErrorCode storeFedMediaData(const Data& aData, MediaDataId& aMediaDataId);
+
         /**
          * Creates new metadataitem & id for given mediaDataId
          */
         ErrorCode createMetadataItem(const MediaDataId& mediaDataId, MetadataItemId& metadataItemId);
+
+        /**
+         * @param metadataItemIds Array of metadata ids in the writer.
+         * @return True if metadataItemIds has one or more metadataIds, and all of them are valid (found from the
+         * writer).
+         */
+        bool checkMetadataIds(const MetadataItemId& metadataItemId) const;
 
         /**
          * @param imageIds Array of image ids in the image collection.
@@ -205,6 +217,7 @@ namespace HEIF
 
         Map<DecoderConfigId, Array<DecoderSpecificInfo>> mAllDecoderConfigs;
         Map<MediaDataId, MediaData> mMediaData;
+        Map<std::uint64_t, MediaDataId> mMediaDataHashes;
 
         Map<SequenceId, ImageSequence> mImageSequences;
         ImageCollection mImageCollection;
@@ -225,8 +238,8 @@ namespace HEIF
         MovieBox mMovieBox;
         MediaDataBox mMediaDataBox;
 
-        std::ofstream mFile;
-        String mFilename;
+        OutputStreamInterface* mFile;
+
         std::uint64_t mMdatOffset    = 0;  ///< 'mdat' offset in the stream
         std::uint64_t mMediaDataSize = 8;  ///< Data size in 'mdat' box in bytes.
                                            ///< Used to check whether 32- or 64-bit size field is used.
@@ -234,12 +247,9 @@ namespace HEIF
         bool mInitialMdat = false;  ///< True if mdat is written to the file beginning after ftyp. False if it written
                                     ///< after meta and moov boxes.
         bool mPrimaryItemSet = false;  ///< True after a primary item has been set.
-    };
 
-    /**
-     * @brief writeBitstream Write bitstream data to ofstream output.
-     */
-    void writeBitstream(BitStream& input, std::ofstream& output);
+        bool mOwnsOutputHandle = false;  ///< True if the writer owns the output handle
+    };
 
     namespace
     {

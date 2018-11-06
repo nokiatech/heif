@@ -51,7 +51,7 @@ void FileTypeBox::addCompatibleBrand(const FourCCInt& compatibleBrand)
     }
 }
 
-Vector<FourCCInt> FileTypeBox::getCompatibleBrands() const
+const Vector<FourCCInt>& FileTypeBox::getCompatibleBrands() const
 {
     return mCompatibleBrands;
 }

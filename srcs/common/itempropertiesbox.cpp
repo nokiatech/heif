@@ -30,11 +30,11 @@ std::uint32_t ItemPropertiesBox::findPropertyIndex(const PropertyType type, cons
 {
     for (const auto& ipma : mAssociationBoxes)
     {
-        const ItemPropertyAssociation::AssociationEntries propertyIndexVector = ipma.getAssociationEntries(itemId);
+        const ItemPropertyAssociation::AssociationEntries& propertyIndexVector = ipma.getAssociationEntries(itemId);
         for (const auto& entry : propertyIndexVector)
         {
-            const Box* property = mContainer.getProperty(static_cast<size_t>(entry.index - 1));
-            if (getPropertyType(property) == type)
+            const Box* itemproperty = mContainer.getProperty(static_cast<size_t>(entry.index - 1));
+            if (itemproperty && getPropertyType(itemproperty) == type)
             {
                 return entry.index;
             }
@@ -123,7 +123,7 @@ ItemPropertiesBox::PropertyInfos ItemPropertiesBox::getItemProperties(const std:
     PropertyInfos propertyInfoVector;
     for (const auto& ipma : mAssociationBoxes)
     {
-        const ItemPropertyAssociation::AssociationEntries associations = ipma.getAssociationEntries(itemId);
+        const ItemPropertyAssociation::AssociationEntries& associations = ipma.getAssociationEntries(itemId);
 
         for (const auto& entry : associations)
         {
@@ -134,16 +134,23 @@ ItemPropertiesBox::PropertyInfos ItemPropertiesBox::getItemProperties(const std:
             }
 
             PropertyInfo propertyInfo;
-            const Box* property = mContainer.getProperty(static_cast<size_t>(entry.index - 1));
-            propertyInfo.type   = getPropertyType(property);
-            if (propertyInfo.type == PropertyType::FREE)
+            const Box* itemproperty = mContainer.getProperty(static_cast<size_t>(entry.index - 1));
+            if (itemproperty)
             {
-                // Ignore a FreeSpaceBox property. It should not have any associations.
-                continue;
+                propertyInfo.type = getPropertyType(itemproperty);
+                if (propertyInfo.type == PropertyType::FREE)
+                {
+                    // Ignore a FreeSpaceBox property. It should not have any associations.
+                    continue;
+                }
+                propertyInfo.index     = static_cast<std::uint32_t>(entry.index - 1);
+                propertyInfo.essential = entry.essential;
+                propertyInfoVector.push_back(propertyInfo);
             }
-            propertyInfo.index     = static_cast<std::uint32_t>(entry.index - 1);
-            propertyInfo.essential = entry.essential;
-            propertyInfoVector.push_back(propertyInfo);
+            else
+            {
+                throw RuntimeError("ItemPropertiesBox::getItemProperties() invalid property index");
+            }
         }
         if (associations.size() > 0)
         {

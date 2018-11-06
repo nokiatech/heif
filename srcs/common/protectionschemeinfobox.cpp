@@ -14,7 +14,7 @@
 #include "protectionschemeinfobox.hpp"
 #include "bitstream.hpp"
 
-Vector<std::uint8_t> ProtectionSchemeInfoBox::getData() const
+const Vector<std::uint8_t>& ProtectionSchemeInfoBox::getData() const
 {
     return mData;
 }

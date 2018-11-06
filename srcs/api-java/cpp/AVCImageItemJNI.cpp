@@ -24,9 +24,9 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::AVCCodedImageItem* nativeObject = new HEIFPP::AVCCodedImageItem(nativeHeif);
-        nativeObject->setContext((void*) env->NewGlobalRef(self));
         return reinterpret_cast<jlong>(nativeObject);
     }
 }

@@ -75,7 +75,7 @@ bool ColourInformationBox::getFullRangeFlag() const
     return mFullRangeFlag;
 }
 
-Vector<std::uint8_t> ColourInformationBox::getIccProfile() const
+const Vector<std::uint8_t>& ColourInformationBox::getIccProfile() const
 {
     return mIccProfile;
 }

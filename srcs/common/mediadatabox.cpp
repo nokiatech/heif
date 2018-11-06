@@ -31,14 +31,20 @@ MediaDataBox::MediaDataBox()
     writeBoxHeader(mHeaderData);  // write Box header
 }
 
-void MediaDataBox::writeBox(std::ofstream& output) const
+//void MediaDataBox::writeBox(std::ofstream& output) const
+/*void MediaDataBox::writeBox(InternalOutputStream* output) const
 {
-    output.write(reinterpret_cast<const char*>(mHeaderData.getStorage().data()),
+    output->write(reinterpret_cast<const char*>(mHeaderData.getStorage().data()),
                  static_cast<streamsize>(mHeaderData.getStorage().size()));
     for (const auto& dataBlock : mMediaData)
     {
-        output.write(reinterpret_cast<const char*>(dataBlock.data()), static_cast<streamsize>(dataBlock.size()));
+        output->write(reinterpret_cast<const char*>(dataBlock.data()), static_cast<streamsize>(dataBlock.size()));
     }
+}*/
+
+std::pair<const ISOBMFF::BitStream&, const List<Vector<uint8_t>>&> MediaDataBox::getSerializedData() const
+{
+    return { mHeaderData,mMediaData };
 }
 
 void MediaDataBox::writeBox(ISOBMFF::BitStream& bitstr) const

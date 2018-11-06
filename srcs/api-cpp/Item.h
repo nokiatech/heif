@@ -87,6 +87,9 @@ namespace HEIFPP
         Heif* getHeif();
         const Heif* getHeif() const;
 
+
+        const std::string& getName() const;
+        void setName(const std::string& aName);
         // groups
         std::uint32_t getGroupCount() const;
         EntityGroup* getGroup(uint32_t aId);
@@ -106,6 +109,21 @@ namespace HEIFPP
 
         Item(Heif* aHeif, const HEIF::FourCC& aType, bool aIsImage);
 
+        /** Gets the content type of the MimeItem */
+        const std::string& getContentType() const;
+
+        /** Sets the content type of the MimeItem
+        * @param [in] aType: Content type */
+        HEIFPP::Result setContentType(const std::string& aType);
+
+        /** Gets the content encoding of the MimeItem */
+        const std::string& getContentEncoding() const;
+
+        /** Sets the content encoding of the MimeItem
+        * @param [in] aType: Encoding type */
+        HEIFPP::Result setContentEncoding(const std::string& aType);
+
+
     private:
         Heif* mHeif;
         HEIF::ImageId mId;
@@ -116,6 +134,9 @@ namespace HEIFPP
         std::uint32_t mTransformCount;
         std::vector<std::pair<ItemProperty*, bool>> mProps;
         std::vector<EntityGroup*> mGroups;
+        std::string mName;
+        std::string mContentType;
+        std::string mContentEncoding;
 
         Item& operator=(const Item&) = delete;
         Item& operator=(Item&&) = delete;

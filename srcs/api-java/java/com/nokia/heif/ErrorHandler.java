@@ -22,6 +22,8 @@ public final class ErrorHandler
     static final public int WRONG_HEIF_INSTANCE = -3;
     static final public int OBJECT_ALREADY_DELETED = -4;
     static final public int INVALID_STRUCTURE = -5;
+    static final public int INCORRECT_SUPERCLASS = -6;
+    static final public int TYPE_ALREADY_EXISTS = -7;
 
     // Native C++ error codes
     static final public int OK = 0;

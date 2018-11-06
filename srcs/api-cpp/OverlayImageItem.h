@@ -16,11 +16,11 @@
 
 namespace HEIFPP
 {
-    class Overlay : public HEIFPP::DerivedImageItem
+    class OverlayImageItem : public HEIFPP::DerivedImageItem
     {
     public:
-        Overlay(Heif* aHeif);
-        ~Overlay() = default;
+        OverlayImageItem(Heif* aHeif);
+        ~OverlayImageItem() = default;
 
         /** Returns the red component of the background color. The RGB values are in the sRGB color space as defined in
          * IEC 61966-2-1.
@@ -94,10 +94,11 @@ namespace HEIFPP
         std::vector<HEIF::Overlay::Offset> mOffsets;
 
     private:
-        Overlay& operator=(const Overlay&) = delete;
-        Overlay(const Overlay&)            = delete;
-        Overlay(Overlay&&)                 = delete;
-        Overlay()                          = delete;
+        OverlayImageItem& operator=(const OverlayImageItem&) = delete;
+        OverlayImageItem& operator=(OverlayImageItem&&)      = delete;
+        OverlayImageItem(const OverlayImageItem&)            = delete;
+        OverlayImageItem(OverlayImageItem&&)                 = delete;
+        OverlayImageItem()                          = delete;
     };
 
 }  // namespace HEIFPP

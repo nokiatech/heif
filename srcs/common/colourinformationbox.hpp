@@ -56,7 +56,7 @@ public:
     bool getFullRangeFlag() const;
 
     // Methods for "rICC" and "prof" colour types
-    Vector<std::uint8_t> getIccProfile() const;
+    const Vector<std::uint8_t>& getIccProfile() const;
     void setIccProfile(const Vector<std::uint8_t>& iccProfile);
 
     /** Write box/property to ISOBMFF::BitStream.

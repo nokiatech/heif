@@ -28,7 +28,7 @@ public final class Exception extends java.lang.Exception
      * @param nativeErrorCode Error code received from the native side (or an additional Java error code)
      * @param info Extra information to be printed with the exception
      */
-    protected Exception(int nativeErrorCode, String info)
+    public Exception(int nativeErrorCode, String info)
     {
         super(info + " " + ErrorHandler.nativeErrorToString(nativeErrorCode));
         mNativeErrorCode = nativeErrorCode;

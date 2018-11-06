@@ -89,6 +89,24 @@ public abstract class Item extends Base
         return result;
     }
 
+    /**
+     * Returns a list of all the Properties this item has
+     * @return A list of the Properties
+     * @throws Exception
+     */
+    public List<ItemProperty> getProperties()
+            throws Exception
+    {
+        checkState();
+        int count = getPropertyCountNative();
+        List<ItemProperty> result = new ArrayList<>(count);
+        for (int index = 0; index < count; index++)
+        {
+            result.add(getPropertyNative(index));
+        }
+        return result;
+    }
+
     @Override
     protected void destroyNative()
     {
@@ -104,4 +122,7 @@ public abstract class Item extends Base
 
     native private int getGroupCountNative();
     native private EntityGroup getGroupNative(int index);
+
+    native private int getPropertyCountNative();
+    native private ItemProperty getPropertyNative(int index);
 }

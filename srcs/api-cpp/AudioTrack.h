@@ -31,6 +31,7 @@ namespace HEIFPP
 
     private:
         AudioTrack& operator=(const AudioTrack&) = delete;
+        AudioTrack& operator=(AudioTrack&&)      = delete;
         AudioTrack(const AudioTrack&)            = delete;
         AudioTrack(AudioTrack&&)                 = delete;
         AudioTrack()                             = delete;

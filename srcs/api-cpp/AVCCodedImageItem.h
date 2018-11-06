@@ -31,6 +31,7 @@ namespace HEIFPP
 
     private:
         AVCCodedImageItem& operator=(const AVCCodedImageItem&) = delete;
+        AVCCodedImageItem& operator=(AVCCodedImageItem&&)      = delete;
         AVCCodedImageItem(const AVCCodedImageItem&)            = delete;
         AVCCodedImageItem(AVCCodedImageItem&&)                 = delete;
         AVCCodedImageItem()                                    = delete;

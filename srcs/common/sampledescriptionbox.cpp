@@ -79,7 +79,7 @@ void SampleDescriptionBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping unknown SampleDescriptionBox entry of type '" << boxType << "'" << std::endl;
+            logWarning() << "Skipping unknown SampleDescriptionBox entry of type '" << boxType.getString() << "'" << std::endl;
             // Push nullptr to keep indexing correct, in case it will still be possible to operate with the file.
             mIndex.push_back(nullptr);
         }

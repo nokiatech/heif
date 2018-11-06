@@ -56,13 +56,13 @@ FourCCInt Box::getType() const
     return mType;
 }
 
-void Box::setUserType(Vector<uint8_t>& usertype)
+void Box::setUserType(const Vector<uint8_t>& usertype)
 {
     setType("uuid");
     mUserType = usertype;
 }
 
-Vector<uint8_t>& Box::getUserType()
+const Vector<uint8_t>& Box::getUserType() const
 {
     return mUserType;
 }

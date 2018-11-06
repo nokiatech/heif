@@ -16,46 +16,58 @@
 
 using namespace HEIFPP;
 
-Identity::Identity(Heif* aHeif)
+IdentityImageItem::IdentityImageItem(Heif* aHeif)
     : DerivedImageItem(aHeif, HEIF::FourCC("iden"))
 {
 }
-ImageItem* Identity::getImage()
+ImageItem* IdentityImageItem::getImage()
 {
     if (getSourceImageCount() == 0)
         return nullptr;
-    HEIF_ASSERT(getSourceImageCount() == 1);
     return getSourceImage(0);
 }
-const ImageItem* Identity::getImage() const
+const ImageItem* IdentityImageItem::getImage() const
 {
     if (getSourceImageCount() == 0)
         return nullptr;
-    HEIF_ASSERT(getSourceImageCount() == 1);
     return getSourceImage(0);
 }
-void Identity::setImage(ImageItem* aImage)
+void IdentityImageItem::setImage(ImageItem* aImage)
 {
     if (getSourceImageCount() == 0)
     {
         addSourceImage(aImage);
         return;
     }
-    HEIF_ASSERT(getSourceImageCount() == 1);
     setSourceImage((uint32_t) 0, aImage);
 }
 
-Result Identity::removeImage(ImageItem* aImage)
+Result IdentityImageItem::removeImage(ImageItem* aImage)
 {
     if (getImage() != aImage)
     {
+        // Error, more than one source image or invalid handle.
+        // Try to find it so cleanup is done.
+        std::uint32_t index = 0;
+        for (const auto& image : mSourceImages)
+        {
+            if (image == aImage)
+            {  // found it, -> remove it
+                setSourceImage(index, nullptr);
+                return Result::OK;
+            }
+            else
+            {
+                index++;
+            }
+        }
         return Result::INVALID_HANDLE;
     }
     setSourceImage((uint32_t) 0, nullptr);
     return Result::OK;
 }
 
-HEIF::ErrorCode Identity::save(HEIF::Writer* aWriter)
+HEIF::ErrorCode IdentityImageItem::save(HEIF::Writer* aWriter)
 {
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
 
@@ -79,7 +91,7 @@ HEIF::ErrorCode Identity::save(HEIF::Writer* aWriter)
     return error;
 }
 
-HEIF::ErrorCode Identity::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
+HEIF::ErrorCode IdentityImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 {
     HEIF::ErrorCode retval = DerivedImageItem::load(aReader, aId);
     if (retval == HEIF::ErrorCode::OK)

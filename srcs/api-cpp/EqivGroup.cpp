@@ -13,11 +13,11 @@
 
 using namespace HEIFPP;
 
-EqivGroup::EqivGroup(Heif* aHeif)
+EquivalenceGroup::EquivalenceGroup(Heif* aHeif)
     : EntityGroup(aHeif, "eqiv")
 {
 }
-void EqivGroup::addSample(Sample* aSample, int16_t aOffset, uint16_t aMultiplier)
+void EquivalenceGroup::addSample(Sample* aSample, int16_t aOffset, uint16_t aMultiplier)
 {
     std::int32_t index;
     if (addEntity(nullptr, nullptr, aSample, index))
@@ -25,7 +25,7 @@ void EqivGroup::addSample(Sample* aSample, int16_t aOffset, uint16_t aMultiplier
         mOffsets[aSample] = std::pair<std::int16_t, std::uint16_t>(aOffset, aMultiplier);
     }
 }
-std::int16_t EqivGroup::getOffset(Sample* aItem)
+std::int16_t EquivalenceGroup::getOffset(Sample* aItem)
 {
     auto it = mOffsets.find(aItem);
     if (it != mOffsets.end())
@@ -34,7 +34,7 @@ std::int16_t EqivGroup::getOffset(Sample* aItem)
     }
     return 0;
 }
-std::uint16_t EqivGroup::getMultiplier(Sample* aItem)
+std::uint16_t EquivalenceGroup::getMultiplier(Sample* aItem)
 {
     auto it = mOffsets.find(aItem);
     if (it != mOffsets.end())
@@ -43,7 +43,7 @@ std::uint16_t EqivGroup::getMultiplier(Sample* aItem)
     }
     return 0;
 }
-void EqivGroup::removeEntity(std::uint32_t aIndex)
+void EquivalenceGroup::removeEntity(std::uint32_t aIndex)
 {
     if (aIndex < getEntityCount())
     {
@@ -55,7 +55,7 @@ void EqivGroup::removeEntity(std::uint32_t aIndex)
         EntityGroup::removeEntity(aIndex);
     }
 }
-void EqivGroup::removeSample(Sample* aSample)
+void EquivalenceGroup::removeSample(Sample* aSample)
 {
     std::int32_t index;
     if (EntityGroup::removeEntity(nullptr, nullptr, aSample, index))

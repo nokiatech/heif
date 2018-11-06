@@ -33,6 +33,7 @@ namespace HEIFPP
 
     private:
         VideoSample& operator=(const VideoSample&) = delete;
+        VideoSample& operator=(VideoSample&&)      = delete;
         VideoSample(const VideoSample&)            = delete;
         VideoSample(VideoSample&&)                 = delete;
         VideoSample()                              = delete;

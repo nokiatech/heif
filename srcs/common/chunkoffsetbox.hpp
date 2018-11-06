@@ -38,7 +38,7 @@ public:
     Vector<std::uint64_t>& getChunkOffsets();
 
     /// @return Chunk offset values as a vector.
-    const Vector<std::uint64_t> getChunkOffsets() const;
+    const Vector<std::uint64_t>& getChunkOffsets() const;
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data */

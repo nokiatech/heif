@@ -27,7 +27,7 @@ void DataEntryBox::setLocation(const String& location)
     mLocation = location;
 }
 
-const String DataEntryBox::getLocation() const
+const String& DataEntryBox::getLocation() const
 {
     return mLocation;
 }
@@ -75,7 +75,7 @@ void DataEntryUrnBox::setName(const String& name)
     mName = name;
 }
 
-const String DataEntryUrnBox::getName() const
+const String& DataEntryUrnBox::getName() const
 {
     return mName;
 }

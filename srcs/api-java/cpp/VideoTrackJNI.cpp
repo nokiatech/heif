@@ -22,16 +22,16 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::VideoTrack* nativeObject = new HEIFPP::VideoTrack(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD_ARG(void, addSampleNative, jobject sample)
     {
-        NATIVE_VIDEO_TRACK(nativeHandle, self);
+        NATIVE_SELF;
         NATIVE_VIDEO_SAMPLE(nativeSample, sample);
-        nativeHandle->addSample(nativeSample);
+        nativeSelf->addSample(nativeSample);
     }
 }

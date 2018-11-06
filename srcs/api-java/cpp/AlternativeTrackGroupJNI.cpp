@@ -24,17 +24,15 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         HEIFPP::AlternativeTrackGroup* nativeObject = new HEIFPP::AlternativeTrackGroup(nativeHeif);
-        nativeObject->setContext(static_cast<void*>(env->NewGlobalRef(self)));
         return reinterpret_cast<jlong>(nativeObject);
     }
 
     JNI_METHOD(void, destroyContextNative)
     {
         NATIVE_SELF;
-        jobject javaHandle = GET_JAVA_OBJECT(nativeSelf);
-        env->DeleteGlobalRef(javaHandle);
         setNativeHandle(env, self, 0);
         delete nativeSelf;
     }

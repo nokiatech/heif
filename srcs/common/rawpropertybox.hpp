@@ -34,7 +34,7 @@ public:
 
     /** @brief Get box data
      *  @return All data in the box, including headers. */
-    Vector<std::uint8_t> getData() const;
+    const Vector<std::uint8_t>& getData() const;
 
     /** @brief Set raw box data
      *  @param [in] data Data in the box. All box data including header must be included. */

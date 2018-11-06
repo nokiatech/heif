@@ -28,7 +28,7 @@ public:
 
     /** @brief Set the version of the Box.
      *  @param [in] version Box version */
-    void setVersion(std::uint8_t version);
+    void setVersion(std::uint8_t version); //TODO: Not-Implemented!
 
     /** @brief Set the grouping type to use.
      *  @param [in] groupingType Grouping Type as defined in ISOBMFF standard.

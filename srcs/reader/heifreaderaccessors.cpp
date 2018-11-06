@@ -90,7 +90,7 @@ namespace HEIF
         {
             return ErrorCode::UNINITIALIZED;
         }
-        const auto brands = mFtyp.getCompatibleBrands();
+        const auto& brands = mFtyp.getCompatibleBrands();
 
         compatibleBrands = Array<FourCC>(brands.size());
 
@@ -135,7 +135,7 @@ namespace HEIF
             return error;
         }
         const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        width                = mMetaBoxInfo.at(contextId).imageInfoMap.at(itemId.get()).width;
+        width                = mMetaBoxInfo.at(contextId).itemInfoMap.at(itemId.get()).width;
         return ErrorCode::OK;
     }
 
@@ -161,7 +161,7 @@ namespace HEIF
             return error;
         }
         const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        height               = mMetaBoxInfo.at(contextId).imageInfoMap.at(itemId.get()).height;
+        height               = mMetaBoxInfo.at(contextId).itemInfoMap.at(itemId.get()).height;
         return ErrorCode::OK;
     }
 
@@ -363,7 +363,7 @@ namespace HEIF
             Vector<ItemIdTimestampPair> samplePresentationTimes;
             for (auto sampleId : sampleIds)
             {
-                const Vector<int64_t> singleSamplePresentationTimes =
+                const Vector<int64_t>& singleSamplePresentationTimes =
                     mTrackInfo.at(contextId).samples.at(sampleId).compositionTimes;
                 for (auto sampleTime : singleSamplePresentationTimes)
                 {
@@ -404,14 +404,9 @@ namespace HEIF
         }
 
         const auto rootMetaId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        if (mMetaBoxInfo.at(rootMetaId).imageInfoMap.count(itemId.get()))
+        if (mMetaBoxInfo.at(rootMetaId).itemInfoMap.count(itemId.get()))
         {
-            type = mMetaBoxInfo.at(rootMetaId).imageInfoMap.at(itemId.get()).type;
-            return ErrorCode::OK;
-        }
-        else if (mMetaBoxInfo.at(rootMetaId).itemInfoMap.count(itemId.get()))
-        {
-            type = mMetaBoxInfo.at(rootMetaId).itemInfoMap.at(itemId.get()).type;
+            type = mMetaBoxInfo.at(rootMetaId).itemInfoMap.at(itemId.get()).type.getUInt32();
             return ErrorCode::OK;
         }
 
@@ -446,7 +441,7 @@ namespace HEIF
 
         const ItemReferenceBox& itemReferenceBox =
             mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId).getItemReferenceBox();
-        const Vector<SingleItemTypeReferenceBox> references =
+        const Vector<SingleItemTypeReferenceBox>& references =
             itemReferenceBox.getReferencesOfType(FourCCInt(referenceType.value));
 
         IdVector itemIdVector;
@@ -454,7 +449,7 @@ namespace HEIF
         {
             if (reference.getFromItemID() == fromItemId.get())
             {
-                const Vector<uint32_t> toIds = reference.getToItemIds();
+                const Vector<uint32_t>& toIds = reference.getToItemIds();
                 itemIdVector.insert(itemIdVector.end(), toIds.cbegin(), toIds.cend());
             }
         }
@@ -476,7 +471,7 @@ namespace HEIF
 
         const ItemReferenceBox& itemReferenceBox =
             mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId).getItemReferenceBox();
-        const Vector<SingleItemTypeReferenceBox> references =
+        const Vector<SingleItemTypeReferenceBox>& references =
             itemReferenceBox.getReferencesOfType(FourCCInt(referenceType.value));
 
         IdVector itemIdVector;
@@ -529,10 +524,15 @@ namespace HEIF
 
         try
         {
-            error = getItemLength(mMetaBoxMap.at(contextId), itemId.get(), itemLength);
+            List<ItemId> pastReferences;
+            error = getItemLength(mMetaBoxMap.at(contextId), itemId.get(), itemLength, pastReferences);
             if (error != ErrorCode::OK)
             {
                 return error;
+            }
+            else if (static_cast<int64_t>(itemLength) > mIo.size)
+            {
+                return ErrorCode::FILE_HEADER_ERROR;
             }
         }
         catch (...)
@@ -551,7 +551,7 @@ namespace HEIF
         bool processData = false;
         try
         {
-            error = readItem(mMetaBoxMap.at(contextId), itemId.get(), memoryBuffer);
+            error = readItem(mMetaBoxMap.at(contextId), itemId.get(), memoryBuffer, memoryBufferSize);
             if (error != ErrorCode::OK)
             {
                 return error;
@@ -1292,7 +1292,10 @@ namespace HEIF
         Id parameterSetId = mImageToParameterSetMap.at(imageFullId);
 
         const auto iter = mParameterSetMap.find(parameterSetId);
-        assert(iter != mParameterSetMap.cend());
+        if (iter == mParameterSetMap.cend())
+        {
+            return ErrorCode::FILE_HEADER_ERROR;
+        }
 
         const auto& parameterSetMap      = iter->second;
         decoderInfos.decoderConfigId     = parameterSetId.second;
@@ -1328,6 +1331,10 @@ namespace HEIF
         Id parameterSetId = mImageToParameterSetMap.at(imageFullId);
 
         const auto iter = mParameterSetMap.find(parameterSetId);
+        if (iter == mParameterSetMap.cend())
+        {
+            return ErrorCode::INVALID_ITEM_ID;
+        }
         assert(iter != mParameterSetMap.cend());
 
         const auto& parameterSetMap      = iter->second;

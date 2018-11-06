@@ -19,7 +19,7 @@ PixelInformationProperty::PixelInformationProperty()
 {
 }
 
-Vector<std::uint8_t> PixelInformationProperty::getBitsPerChannels() const
+const Vector<std::uint8_t>& PixelInformationProperty::getBitsPerChannels() const
 {
     return mBitsPerChannel;
 }

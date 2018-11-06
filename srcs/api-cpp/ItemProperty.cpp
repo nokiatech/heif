@@ -10,19 +10,20 @@
  * of this material requires the prior written consent of Nokia.
  */
 
-#include "ItemProperty.h"
 #include <heifreader.h>
 #include <heifwriter.h>
 #include "ImageItem.h"
+#include "ItemProperty.h"
 
 using namespace HEIFPP;
 
-ItemProperty::ItemProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, bool aIsTransform)
+ItemProperty::ItemProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, const HEIF::FourCC& aRawType, bool aIsTransform)
     : mHeif(aHeif)
     , mId(Heif::InvalidProperty)
+    , mRawType(aRawType)
     , mType(aType)
     , mContext(nullptr)
-    , mIsTransform(aIsTransform)
+    , mIsTransform(aIsTransform)    
 {
     mHeif->addProperty(this);
 }
@@ -67,6 +68,24 @@ HEIF::ErrorCode ItemProperty::load(HEIF::Reader* /*aReader*/, const HEIF::Proper
 const HEIF::ItemPropertyType& ItemProperty::getType() const
 {
     return mType;
+}
+
+const HEIF::FourCC& ItemProperty::rawType() const
+{
+    return mRawType;
+}
+
+HEIFPP::Result ItemProperty::setRawType(const HEIF::FourCC& aFourCC)
+{
+    if ((mRawType.value[0] == 0) &&
+        (mRawType.value[1] == 0) &&
+        (mRawType.value[2] == 0)&&
+        (mRawType.value[3] == 0))
+    {
+        mRawType = aFourCC;
+        return HEIFPP::Result::OK;
+    }
+    return HEIFPP::Result::ALREADY_SET;
 }
 bool ItemProperty::isTransformative() const
 {
