@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -32,6 +32,7 @@ endif()
 
 set(WRITER_SRCS
     idgenerators.cpp
+    miafchecker.cpp
     refsgroup.cpp
     samplegroup.cpp
     timeutility.cpp
@@ -60,6 +61,7 @@ set(API_HDRS
 
 set(WRITER_HDRS
     idgenerators.hpp
+    miafchecker.hpp
     refsgroup.hpp
     samplegroup.hpp
     timeutility.hpp

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">MIAF Gallery</string>
+
+    <string name="permissions_title">Permissions required</string>
+    <string name="permissions_message">This app requires read access to the device storage</string>
+    <string name="accept">Accept</string>
+    <string name="decline">Decline</string>
+</resources>

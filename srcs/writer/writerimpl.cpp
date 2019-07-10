@@ -17,6 +17,7 @@
 #include "buildinfo.hpp"
 #include "customallocator.hpp"
 #include "jpegparser.hpp"
+#include "miafchecker.hpp"
 #include <cassert>
 
 using namespace std;
@@ -512,6 +513,8 @@ namespace HEIF
 
     ErrorCode WriterImpl::finalize()
     {
+        MIAF::MiafChecker checker(this);
+
         if (mState != State::WRITING)
         {
             return ErrorCode::UNINITIALIZED;
@@ -530,6 +533,12 @@ namespace HEIF
             if (error != ErrorCode::OK)
             {
                 return error;
+            }
+
+            const ErrorCode checkResult = checker.runChecks();
+            if (checkResult != ErrorCode::OK)
+            {
+                return checkResult;
             }
 
             mMetaBox.writeBox(output);
@@ -577,6 +586,13 @@ namespace HEIF
             }
             mMetaBox.setItemFileOffsetBase(mdatOffset);
             updateMoovBox(mdatOffset);
+
+            // Run MIAF checks after offsets are known.
+            const ErrorCode checkResult = checker.runChecks();
+            if (checkResult != ErrorCode::OK)
+            {
+                return checkResult;
+            }
 
             // Serialize meta box again, now with correct mdat offset, and write it.
             mMetaBox.writeBox(output);

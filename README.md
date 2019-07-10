@@ -5,6 +5,8 @@ Please follow this **[link](https://nokiatech.github.io/heif)** to access HEIF W
 You can also check the **[Wiki](https://github.com/nokiatech/heif/wiki)** pages for more information.
 
 ## News:
+[11.07.2019] MIAF features: The HEIF writer checks additional constraints from files which contain 'miaf' brand in compatible brands of FileTypeBox. A MIAF gallery application for Android is included, with an extension to Java API to help with content selection.
+
 [10.07.2019] v3.5.0 Release: Improved support for JPEGs and edit lists. Bug fixes, minor improvements and code cleanup.
 
 [06.11.2018] v3.4.0 Release: Java API improvements. Bug fixes, code cleanup and robustness improvements.

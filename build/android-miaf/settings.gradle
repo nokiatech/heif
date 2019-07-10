@@ -1,0 +1,5 @@
+include ':android-miaf-gallery'
+include ':api-java'
+include ':android-utility'
+
+project(':api-java').projectDir = file('../android/api-java')

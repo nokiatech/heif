@@ -1,0 +1,39 @@
+apply plugin: 'com.android.library'
+
+def projectDir = getProjectDir().absolutePath
+def rootPath = file(projectDir + "/../../../srcs/").path
+
+def androidUtilitySourcePath = file(rootPath + "/android-utility/").path
+def androidUtilityJavaPath = file(androidUtilitySourcePath + "/java/").path
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets.main {
+        java.srcDirs = [androidUtilityJavaPath]
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(':api-java')
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+}

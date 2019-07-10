@@ -21,6 +21,7 @@
 #include "idgenerators.hpp"
 #include "mediadatabox.hpp"
 #include "metabox.hpp"
+#include "miafchecker.hpp"
 #include "moviebox.hpp"
 #include "writerdatatypesinternal.hpp"
 
@@ -259,6 +260,8 @@ namespace HEIF
         bool mPrimaryItemSet = false;  ///< True after a primary item has been set.
 
         bool mOwnsOutputHandle = false;  ///< True if the writer owns the output handle
+
+        friend MIAF::MiafChecker;
     };
 
     namespace
