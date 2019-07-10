@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,7 +17,6 @@
 namespace HEIFPP
 {
     class CleanApertureProperty;
-    class AuxProperty;
 
     class ImageSequence : public VideoTrack
     {
@@ -26,9 +25,10 @@ namespace HEIFPP
         ~ImageSequence();
 
         const HEIF::CleanAperture* clap() const;
-        const HEIF::AuxiliaryType* aux() const;
 
-        //
+        const HEIF::AuxiliaryType* aux() const;
+        void setAux(const HEIF::AuxiliaryType* aAux);
+
         bool getAllRefPicsIntra() const;  ///< This flag when set to one indicates the restriction that samples that are
                                           ///< not sync samples, if any, are predicted only from sync samples.
         bool getIntraPredUsed()

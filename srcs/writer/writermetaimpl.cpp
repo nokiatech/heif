@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -28,6 +28,7 @@
 #include "imagerelativelocationproperty.hpp"
 #include "imagerotation.hpp"
 #include "imagespatialextentsproperty.hpp"
+#include "jpegconfigurationbox.hpp"
 #include "jpegparser.hpp"
 #include "pixelaspectratiobox.hpp"
 #include "pixelinformationproperty.hpp"
@@ -156,13 +157,14 @@ namespace HEIF
             return ErrorCode::INVALID_MEDIADATA_ID;
         }
 
+        const MediaData& mediaData = mMediaData.at(aMediaDataId);
+
         aImageId = Context::getValue();
 
         ImageCollection::Image newImage;
         newImage.imageId                  = aImageId;
+        newImage.decoderConfigId          = mediaData.decoderConfigId;
         mImageCollection.images[aImageId] = newImage;
-
-        const MediaData& mediaData = mMediaData.at(aMediaDataId);
 
         struct FormatNames
         {
@@ -195,6 +197,15 @@ namespace HEIF
         }
         else if (mediaData.mediaFormat == MediaFormat::JPEG)
         {
+            if (mediaData.decoderConfigId.get())
+            {
+                uint16_t configPropertyIndex;
+                if (getConfigIndex(mediaData.decoderConfigId, configPropertyIndex) == ErrorCode::OK)
+                {
+                    mMetaBox.addProperty(configPropertyIndex, {aImageId.get()}, true);
+                }
+            }
+
             const ImageSize& size        = mJpegDimensions.at(aMediaDataId);
             const auto ispePropertyIndex = getIspeIndex(size.width, size.height);
             mMetaBox.addProperty(ispePropertyIndex, {aImageId.get()}, false);
@@ -355,7 +366,7 @@ namespace HEIF
 
         PropertyInformation info;
         info.isTransformative = true;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(clapBox), {}, false));
+        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(clapBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -373,7 +384,7 @@ namespace HEIF
 
         PropertyInformation info;
         info.isTransformative = true;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(imirBox), {}, false));
+        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(imirBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -391,7 +402,7 @@ namespace HEIF
 
         PropertyInformation info;
         info.isTransformative = true;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(irotBox), {}, false));
+        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(irotBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -410,7 +421,7 @@ namespace HEIF
 
         PropertyInformation info;
         info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(rlocBox), {}, false));
+        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(rlocBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -430,7 +441,7 @@ namespace HEIF
 
         PropertyInformation info;
         info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(paspBox), {}, false));
+        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(paspBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -453,7 +464,7 @@ namespace HEIF
 
         PropertyInformation info;
         info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(pixiBox), {}, false));
+        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(pixiBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -490,7 +501,7 @@ namespace HEIF
 
         PropertyInformation info;
         info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(colrBox), {}, false));
+        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(colrBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -514,7 +525,7 @@ namespace HEIF
 
         PropertyInformation info;
         info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(auxCBox), {}, false));
+        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(auxCBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -534,7 +545,7 @@ namespace HEIF
 
         PropertyInformation info;
         info.isTransformative = isTransformative;
-        propertyId = PropertyId(mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(customBox), {}, false));
+        propertyId = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(customBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -882,7 +893,7 @@ namespace HEIF
         if (mIspeIndexes.count(size) == 0)
         {
             mIspeIndexes[size] = mMetaBox.addProperty(
-                static_cast<std::shared_ptr<Box>>(makeCustomShared<ImageSpatialExtentsProperty>(width, height)), {},
+                static_pointer_cast<Box>(makeCustomShared<ImageSpatialExtentsProperty>(width, height)), {},
                 false);
         }
 
@@ -898,8 +909,8 @@ namespace HEIF
 
             if (configNalUnits.size)
             {
-                if (configNalUnits.begin()->decSpecInfoType == AVC_SPS ||
-                    configNalUnits.begin()->decSpecInfoType == AVC_PPS)
+                if (configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::AVC_SPS ||
+                    configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::AVC_PPS)
                 {
                     auto configBox = makeCustomShared<AvcConfigurationBox>();
                     AvcDecoderConfigurationRecord configRecord;
@@ -910,13 +921,13 @@ namespace HEIF
                     }
 
                     configBox->setConfiguration(configRecord);
-                    const auto index = mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(configBox), {}, true);
+                    const auto index = mMetaBox.addProperty(static_pointer_cast<Box>(configBox), {}, true);
                     mDecoderConfigs[decoderConfigId] = index;
                     mDecoderConfigIndexToSize[index] = {configRecord.getPicWidth(), configRecord.getPicHeight()};
                 }
-                else if (configNalUnits.begin()->decSpecInfoType == HEVC_SPS ||
-                         configNalUnits.begin()->decSpecInfoType == HEVC_PPS ||
-                         configNalUnits.begin()->decSpecInfoType == HEVC_VPS)
+                else if (configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::HEVC_SPS ||
+                         configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::HEVC_PPS ||
+                         configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::HEVC_VPS)
                 {
                     auto configBox = makeCustomShared<HevcConfigurationBox>();
                     HevcDecoderConfigurationRecord configRecord;
@@ -926,9 +937,19 @@ namespace HEIF
                         return error;
                     }
                     configBox->setConfiguration(configRecord);
-                    const auto index = mMetaBox.addProperty(static_cast<std::shared_ptr<Box>>(configBox), {}, true);
+                    const auto index = mMetaBox.addProperty(static_pointer_cast<Box>(configBox), {}, true);
                     mDecoderConfigs[decoderConfigId] = index;
                     mDecoderConfigIndexToSize[index] = {configRecord.getPicWidth(), configRecord.getPicHeight()};
+                }
+                else if (configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::JPEG)
+                {
+                    auto configBox = makeCustomShared<JpegConfigurationBox>();
+                    configBox->setPrefix({configNalUnits.begin()->decSpecInfoData.begin(),
+                                          configNalUnits.begin()->decSpecInfoData.end()});
+                    const auto index = mMetaBox.addProperty(static_pointer_cast<Box>(configBox), {}, true);
+                    mDecoderConfigs[decoderConfigId] = index;
+                    // TODO:
+                    // mDecoderConfigIndexToSize[index] = {configRecord.getPicWidth(), configRecord.getPicHeight()};
                 }
                 else
                 {

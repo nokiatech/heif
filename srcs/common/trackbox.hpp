@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -19,6 +19,7 @@
 #include "mediabox.hpp"
 #include "trackheaderbox.hpp"
 #include "trackreferencebox.hpp"
+#include "tracktypebox.hpp"
 
 /** @brief TrackBox class. Extends from Box.
  *  @details 'trak' box contains all relevant meta information of a media track as defined in ISOBMFF specification. */
@@ -60,6 +61,22 @@ public:
      *  @return Reference to the  Track Reference Box. */
     const TrackReferenceBox& getTrackReferenceBox() const;
 
+    /** @brief Gets the reference of the contained box
+     *  @return Reference to the TrackTypeBox. */
+    TrackTypeBox& getTrackTypeBox();
+
+    /** @brief Gets the reference of the contained box
+     *  @return Reference to the TrackTypeBox. */
+    const TrackTypeBox& getTrackTypeBox() const;
+
+    /** @brief Sets whether the track contains TrackTypeBox.
+     *  @param [in] value TRUE if track has the box, FALSE otherwise */
+    void setHasTrackTypeBox(bool value);
+
+    /** @brief Gets whether the track contains TrackTypeBox.
+     *  @return TRUE if track has the box, FALSE otherwise */
+    bool getHasTrackTypeBox() const;
+
     /** @brief Set EditBox */
     void setEditBox(const EditBox& EditBox);
 
@@ -79,6 +96,8 @@ private:
     MediaBox mMediaBox;                    ///< Media Box related to this track
     TrackReferenceBox mTrackReferenceBox;  ///< Track Reference Box
     bool mHasTrackReferences;              ///< Flag that shows whether the track has references from other tracks
+    TrackTypeBox mTrackTypeBox;            ///< Track Type Box
+    bool mHasTrackTypeBox;                 ///< Flag that shows whether the track has a track type box
 
     std::shared_ptr<EditBox> mEditBox;  ///< Edit box (optional)
 };

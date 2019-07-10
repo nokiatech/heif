@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -20,6 +20,10 @@ template <typename Key, typename Value>
 class WriteOnceMap
 {
 public:
+    typedef Key key_type;
+    typedef Value mapped_type;
+    typedef std::pair<Key, Value> value_type;
+
     typedef std::pair<Key, Value> Entry;
 
     // WriteOnceMap doesn't provide mutating iterators
@@ -82,6 +86,11 @@ public:
     const_reverse_iterator rend() const;
 
     std::size_t size() const;
+
+    Entry& front(); // note: don't modify value.first, it will break havoc. not easy to make it const.
+    const Entry& front() const;
+    Entry& back(); // note: don't modify value.first, it will break havoc. not easy to make it const.
+    const Entry& back() const;
 
     Value& operator[](const Key& key);
     const Value& operator[](const Key& key) const;
@@ -303,6 +312,34 @@ std::size_t WriteOnceMap<Key, Value>::size() const
 {
     checkValidation();
     return mData.size();
+}
+
+template <typename Key, typename Value>
+typename WriteOnceMap<Key, Value>::Entry& WriteOnceMap<Key, Value>::front()
+{
+    checkValidation();
+    return mData.front();
+}
+
+template <typename Key, typename Value>
+const typename WriteOnceMap<Key, Value>::Entry& WriteOnceMap<Key, Value>::front() const
+{
+    checkValidation();
+    return mData.front();
+}
+
+template <typename Key, typename Value>
+typename WriteOnceMap<Key, Value>::Entry& WriteOnceMap<Key, Value>::back()
+{
+    checkValidation();
+    return mData.back();
+}
+
+template <typename Key, typename Value>
+const typename WriteOnceMap<Key, Value>::Entry& WriteOnceMap<Key, Value>::back() const
+{
+    checkValidation();
+    return mData.back();
 }
 
 template <typename Key, typename Value>

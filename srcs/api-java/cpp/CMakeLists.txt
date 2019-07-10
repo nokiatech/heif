@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -49,6 +49,8 @@ set(sources
     AVCDecoderConfigJNI.cpp
     AVCImageItemJNI.cpp
     HEVCDecoderConfigJNI.cpp
+    JPEGDecoderConfigJNI.cpp
+    JPEGImageItemJNI.cpp
     MPEG7ItemJNI.cpp
     XMPItemJNI.cpp
     MimeItemJNI.cpp
@@ -69,6 +71,7 @@ set(sources
     AlternateGroupJNI.cpp
     StereoPairGroupJNI.cpp
     ImageSequenceJNI.cpp
+    VideoSampleJNI.cpp
     )
 
 

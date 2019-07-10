@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -57,7 +57,7 @@ HEIF::ErrorCode AACDecoderConfiguration::convertFromRawData(const std::uint8_t* 
 {
     mConfig.decoderSpecificInfo                    = HEIF::Array<HEIF::DecoderSpecificInfo>(1);
     mConfig.decoderSpecificInfo[0].decSpecInfoType = HEIF::DecoderSpecInfoType::AudioSpecificConfig;
-    mConfig.decoderSpecificInfo[0].decSpecInfoData = aSize;
+    mConfig.decoderSpecificInfo[0].decSpecInfoData = HEIF::Array<uint8_t>(aSize);
     std::memcpy(mConfig.decoderSpecificInfo[0].decSpecInfoData.elements, aData, aSize);
     return HEIF::ErrorCode::OK;
 }
@@ -93,7 +93,7 @@ bool AACDecoderConfiguration::program_config_element(BitStream& bs)
 {
     std::uint32_t i;
     mProgramConfig.element_instance_tag = (std::uint8_t) bs.getBits(4);
-    mProgramConfig.object_type = (std::uint8_t) bs.getBits(2);  // 0 AAC-Main 1 AAC-LC 2 AAC-SSR 3 AAC-LTP
+    mProgramConfig.object_type          = (std::uint8_t) bs.getBits(2);  // 0 AAC-Main 1 AAC-LC 2 AAC-SSR 3 AAC-LTP
     if (mProgramConfig.object_type != 2)
     {
         return false;

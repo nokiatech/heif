@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -141,7 +141,11 @@ private:
 
     /// Template function to apply shift edits; Entry can either be (a) EntryVersion0, or (b) EntryVersion1
     template <typename Entry>
-    void applyShiftEdit(Entry& entry);
+    void applyShiftEditForward(Entry& entry);
+
+    /// Template function to apply shift edits; Entry can either be (a) EntryVersion0, or (b) EntryVersion1
+    template <typename Entry>
+    void applyShiftEditReverse(Entry& entry);
 
     template <typename Time>
     std::uint64_t fromMovieToMediaTS(Time movieTS) const;

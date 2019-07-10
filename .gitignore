@@ -1,5 +1,4 @@
 Bins/
-build
 CMakeCache.txt
 CMakeFiles
 Makefile
@@ -14,9 +13,12 @@ cmake_install.cmake
 .vscode/
 
 *.bak
+*~
+
+*.gcov
 
 *.heic
-*.xml
+*_info.xml
 
 # IDE files
 *.user

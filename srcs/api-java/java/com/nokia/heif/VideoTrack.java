@@ -1,3 +1,15 @@
+/*
+ * This file is part of Nokia HEIF library
+ *
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ *
+ * Contact: heif@nokia.com
+ *
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ *
+ */
+
 package com.nokia.heif;
 
 import java.util.ArrayList;
@@ -8,7 +20,6 @@ import java.util.List;
  */
 public class VideoTrack extends Track
 {
-
     /**
      * Creates a new AudioTrack to the given HEIF instance
      *
@@ -87,7 +98,22 @@ public class VideoTrack extends Track
         addSampleNative(sample);
     }
 
+    /**
+     * Get video track display dimensions
+     * @throws Exception
+     */
+    public Size getDisplaySize()
+            throws Exception
+    {
+        checkState();
+        return new Size(getDisplayWidthNative(), getDisplayHeightNative());
+    }
+
     private native long createContextNative(HEIF heif);
 
     private native void addSampleNative(VideoSample sample);
+
+    native private int getDisplayWidthNative();
+
+    native private int getDisplayHeightNative();
 }

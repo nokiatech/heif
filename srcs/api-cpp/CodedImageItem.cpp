@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -300,7 +300,7 @@ HEIF::ErrorCode CodedImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId&
         mBaseImages.reserve((std::uint32_t) baseIds.size);
         for (const auto& baseId : baseIds)
         {
-            ImageItem* tmp = getHeif()->constructImageItem(aReader, baseId, error);
+            ImageItem* tmp = getHeif()->constructImageItem(aReader, baseId, info, error);
             if (HEIF::ErrorCode::OK != error)
             {
                 return error;

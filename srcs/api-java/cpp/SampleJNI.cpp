@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -174,5 +174,11 @@ extern "C"
     {
         NATIVE_SELF;
         return static_cast<jint>(nativeSelf->getSampleType());
+    }
+
+    JNI_METHOD(jstring, getTypeNative)
+    {
+        HEIFPP::Sample* instance = (HEIFPP::Sample*) getNativeHandle(env, self);
+        return env->NewStringUTF(instance->getType().value);
     }
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -19,8 +19,8 @@
 #include "VideoTrack.h"
 #include "heifreader.h"
 #include "heifwriter.h"
-using namespace HEIFPP;
 
+using namespace HEIFPP;
 
 Track::Track(Heif* aHeif)
     : mHeif(aHeif)
@@ -39,6 +39,7 @@ Track::Track(Heif* aHeif)
     mEditList.mRepetitions = 0;
     mHeif->addTrack(this);
 }
+
 Track::~Track()
 {
     // Disconnect all samples
@@ -52,7 +53,7 @@ Track::~Track()
     }
     mSamples.clear();
 
-    //disconnect from groups
+    // disconnect from groups
     for (; !mGroups.empty();)
     {
         (*mGroups.begin())->removeTrack(this);
@@ -118,8 +119,12 @@ HEIF::ErrorCode Track::load(HEIF::Reader* aReader, const HEIF::SequenceId& aId)
             mEditList.mEditUnits.push_back(e);
         }
     }
+
+    error = aReader->getItemTimestamps(mId, mTimestamps);
+
     return error;
 }
+
 HEIF::ErrorCode Track::save(HEIF::Writer* aWriter)
 {
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
@@ -174,14 +179,17 @@ HEIF::ErrorCode Track::save(HEIF::Writer* aWriter)
     }
     return error;
 }
+
 std::uint32_t Track::getTimescale()
 {
     return mTimeScale;
 }
+
 void Track::setTimescale(std::uint32_t aScale)
 {
     mTimeScale = aScale;
 }
+
 std::uint32_t Track::getAlternativeTrackCount() const
 {
     if (mAltGroup)
@@ -190,6 +198,7 @@ std::uint32_t Track::getAlternativeTrackCount() const
     }
     return 0;
 }
+
 const Track* Track::getAlternativeTrack(std::uint32_t aId) const
 {
     if (mAltGroup)
@@ -198,6 +207,7 @@ const Track* Track::getAlternativeTrack(std::uint32_t aId) const
     }
     return nullptr;
 }
+
 Track* Track::getAlternativeTrack(std::uint32_t aId)
 {
     if (mAltGroup)
@@ -225,14 +235,17 @@ void Track::setAlternativeTrackGroup(AlternativeTrackGroup* aAlt)
         mAltGroup->addTrack(this);
     }
 }
+
 AlternativeTrackGroup* Track::getAlternativeTrackGroup()
 {
     return mAltGroup;
 }
+
 const AlternativeTrackGroup* Track::getAlternativeTrackGroup() const
 {
     return mAltGroup;
 }
+
 bool Track::isMasterImageSequence() const  ///< Track handler type is 'pict', and the track is not referencing any
                                            ///< another track.
 {
@@ -247,64 +260,79 @@ bool Track::isMasterImageSequence() const  ///< Track handler type is 'pict', an
     }
     return false;
 }
+
 bool Track::isThumbnailImageSequence() const  ///< Is referencing another track with a 'thmb' type track reference.
 {
     return !mIsThumbnailTo.empty();
 }
+
 bool Track::isAuxiliaryImageSequence() const  ///< Is referencing another track with an 'auxl' type track reference.
 {
     return !mIsAuxiliaryTo.empty();
 }
+
 bool Track::isEnabled() const  ///< The track is enabled.
 {
     return (mFeatures & HEIF::TrackFeatureEnum::Feature::IsEnabled) != 0;
 }
+
 bool Track::isInMovie() const  ///< The track is used in the presentation.
 {
     return (mFeatures & HEIF::TrackFeatureEnum::Feature::IsInMovie) != 0;
 }
+
 bool Track::isInPreview() const  ///< The track is used when previewing the presentation.
 {
     return (mFeatures & HEIF::TrackFeatureEnum::Feature::IsInPreview) != 0;
 }
+
 bool Track::hasAlternatives() const  ///< The track has alternative track or tracks.
 {
     return (mAltGroup != nullptr);
 }
+
 bool Track::hasCodingConstraints() const  ///< From Coding Constraints Box in HevcSampleEntry
 {
     return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasCodingConstraints) != 0;
 }
+
 bool Track::hasSampleGroups() const  ///< The track has SampleToGroupBoxes.
 {
     return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasSampleGroups) != 0;
 }
+
 bool Track::hasLinkedAuxiliaryImageSequence() const  ///< There is a 'auxl' track reference pointing to this track.
 {
     return !mAux.empty();
 }
+
 bool Track::hasLinkedThumbnailImageSequence() const  ///< There is a 'thmb' track reference pointing to this track.
 {
     return !mThumbnail.empty();
 }
+
 bool Track::hasSampleToItemGrouping()
     const  ///< The track has one or more SampleToMetadataItemEntry ('stmi') sample groups present.
 {
     // if anysample has metadata return true.
     return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasSampleToItemGrouping) != 0;
 }
+
 bool Track::hasExifSampleEntry() const  ///< From SampleEntryBox, not implemented yet
 {
     return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasExifSampleEntry) != 0;
 }
+
 bool Track::hasXmlSampleEntry() const  ///< From SampleEntryBox, not implemented yet
 {
     return (mFeatures & HEIF::TrackFeatureEnum::Feature::HasXmlSampleEntry) != 0;
 }
+
 bool Track::hasEditList() const  ///< Track has an edit list
 {
     return !mEditList.mEditUnits.empty();
 }
+
 bool Track::hasInfiniteLoopPlayback() const  ///< Infinite looping has been set on in the edit list
 {
     if (hasEditList())
@@ -313,6 +341,7 @@ bool Track::hasInfiniteLoopPlayback() const  ///< Infinite looping has been set 
     }
     return false;
 }
+
 bool Track::hasSampleEquivalenceGrouping() const  ///< The track has one or more VisualSampleGroupEntry ('eqiv') sample
                                                   ///< group entries present.
 {
@@ -344,22 +373,27 @@ bool Track::hasSampleEquivalenceGrouping() const  ///< The track has one or more
     }
     return ret;
 }
+
 const HEIF::FourCC& Track::getHandler() const
 {
     return mHandler;
 }
+
 bool Track::isAudioTrack() const  ///< Track is an audio track (handler type 'soun').
 {
     return (mHandler == "soun");
 }
+
 bool Track::isVideoTrack() const  ///< Track is a video track (handler type 'vide').
 {
     return (mHandler == "vide");
 }
+
 bool Track::isImageSequence() const
 {
     return (mHandler == "pict");
 }
+
 bool Track::displayAllSamples() const  ///< Edit List presentation indicates 0 or 1 samples. The player should ignore
                                        ///< timestamps and display all non-hidden samples.
 {
@@ -380,6 +414,7 @@ std::uint32_t Track::getReferenceCount() const
     }
     return cnt;
 }
+
 const std::pair<const HEIF::FourCC, const Track*> Track::getReference(std::uint32_t aIndex) const
 {
     std::uint32_t cnt = 0;
@@ -394,6 +429,7 @@ const std::pair<const HEIF::FourCC, const Track*> Track::getReference(std::uint3
     }
     return std::pair<const HEIF::FourCC, const Track*>("", nullptr);
 }
+
 const std::pair<const HEIF::FourCC, Track*> Track::getReference(std::uint32_t aIndex)
 {
     std::uint32_t cnt = 0;
@@ -413,6 +449,7 @@ std::uint32_t Track::getReferenceTypeCount() const
 {
     return (std::uint32_t) mRefs.size();
 }
+
 const HEIF::FourCC Track::getReferenceType(std::uint32_t aIndex) const
 {
     std::uint32_t cnt = 0;
@@ -424,6 +461,7 @@ const HEIF::FourCC Track::getReferenceType(std::uint32_t aIndex) const
     }
     return "";
 }
+
 HEIF::FourCC Track::getReferenceType(std::uint32_t aIndex)
 {
     std::uint32_t cnt = 0;
@@ -445,6 +483,7 @@ std::uint32_t Track::getReferenceCount(const HEIF::FourCC& aType) const
     }
     return 0;
 }
+
 const Track* Track::getReference(const HEIF::FourCC& aType, std::uint32_t aIndex) const
 {
     auto it = mRefs.find(aType);
@@ -457,6 +496,7 @@ const Track* Track::getReference(const HEIF::FourCC& aType, std::uint32_t aIndex
     }
     return nullptr;
 }
+
 Track* Track::getReference(const HEIF::FourCC& aType, std::uint32_t aIndex)
 {
     auto it = mRefs.find(aType);
@@ -481,6 +521,7 @@ void Track::addReference(const HEIF::FourCC& aType, Track* aTrack)
         }
     }
 }
+
 void Track::removeReference(const HEIF::FourCC& aType, Track* aTrack)
 {
     if (aTrack)
@@ -496,6 +537,7 @@ std::uint32_t Track::getThumbnailCount() const
 {
     return (std::uint32_t) mThumbnail.size();
 }
+
 Track* Track::getThumbnail(uint32_t aIndex)
 {
     if (aIndex < mThumbnail.size())
@@ -504,6 +546,7 @@ Track* Track::getThumbnail(uint32_t aIndex)
     }
     return nullptr;
 }
+
 const Track* Track::getThumbnail(uint32_t aIndex) const
 {
     if (aIndex < mThumbnail.size())
@@ -541,6 +584,7 @@ std::uint32_t Track::getAuxCount() const
 {
     return (std::uint32_t) mAux.size();
 }
+
 Track* Track::getAux(uint32_t aIndex)
 {
     if (aIndex < mAux.size())
@@ -549,6 +593,7 @@ Track* Track::getAux(uint32_t aIndex)
     }
     return nullptr;
 }
+
 const Track* Track::getAux(uint32_t aIndex) const
 {
     if (aIndex < mAux.size())
@@ -586,6 +631,7 @@ std::uint32_t Track::getSampleCount() const
 {
     return (std::uint32_t) mSamples.size();
 }
+
 Sample* Track::getSample(std::uint32_t aId)
 {
     if (aId < mSamples.size())
@@ -594,6 +640,7 @@ Sample* Track::getSample(std::uint32_t aId)
     }
     return nullptr;
 }
+
 Sample* Track::getSample(std::uint32_t aId) const
 {
     if (aId < mSamples.size())
@@ -602,14 +649,17 @@ Sample* Track::getSample(std::uint32_t aId) const
     }
     return nullptr;
 }
+
 Sample* Track::getSampleByType(HEIF::TrackSampleType, std::uint32_t)
 {
     return nullptr;
 }
+
 Sample* Track::getSampleByType(HEIF::TrackSampleType, std::uint32_t) const
 {
     return nullptr;
 }
+
 void Track::setSample(std::uint32_t aId, Sample* aSample)
 {
     if (aId < mSamples.size())
@@ -626,6 +676,7 @@ void Track::setSample(std::uint32_t aId, Sample* aSample)
         }
     }
 }
+
 void Track::setSample(Sample* aOldSample, Sample* aNewSample)
 {
     for (Sample*& s : mSamples)
@@ -702,14 +753,17 @@ void Track::addToGroup(EntityGroup* aGroup)
 {
     AddItemTo(mGroups, aGroup);
 }
+
 void Track::removeFromGroup(EntityGroup* aGroup)
 {
     RemoveItemFrom(mGroups, aGroup);
 }
+
 std::uint32_t Track::getGroupCount() const
 {
     return (std::uint32_t) mGroups.size();
 }
+
 EntityGroup* Track::getGroup(uint32_t aId)
 {
     if (aId < mGroups.size())
@@ -718,6 +772,7 @@ EntityGroup* Track::getGroup(uint32_t aId)
     }
     return nullptr;
 }
+
 std::uint32_t Track::getGroupByTypeCount(const HEIF::FourCC& aType)
 {
     std::uint32_t cnt = 0;
@@ -730,6 +785,7 @@ std::uint32_t Track::getGroupByTypeCount(const HEIF::FourCC& aType)
     }
     return cnt;
 }
+
 EntityGroup* Track::getGroupByType(const HEIF::FourCC& aType, std::uint32_t aId)
 {
     std::uint32_t cnt = 0;
@@ -744,6 +800,7 @@ EntityGroup* Track::getGroupByType(const HEIF::FourCC& aType, std::uint32_t aId)
     }
     return nullptr;
 }
+
 EntityGroup* Track::getGroupById(const HEIF::GroupId& aId)
 {
     for (auto grp : mGroups)
@@ -754,4 +811,33 @@ EntityGroup* Track::getGroupById(const HEIF::GroupId& aId)
         }
     }
     return nullptr;
+}
+
+std::uint32_t Track::getTimestampCount()
+{
+    return mTimestamps.size;
+}
+
+void Track::getTimestamp(std::uint32_t index, std::uint32_t& sampleId, std::int64_t& timestamp)
+{
+    if (index < mTimestamps.size)
+    {
+        sampleId  = mTimestamps[index].itemId.get();
+        timestamp = mTimestamps[index].timeStamp;
+    }
+}
+
+void Track::setEditListLooping(const bool aIsLooping)
+{
+    mEditList.mLooping = aIsLooping;
+}
+
+void Track::setEditListRepetitions(const double aRepetitions)
+{
+    mEditList.mRepetitions = aRepetitions;
+}
+
+void Track::addEditListUnit(const HEIF::EditUnit& aUnit)
+{
+    mEditList.mEditUnits.push_back(aUnit);
 }

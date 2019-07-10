@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -324,6 +324,31 @@ uint16_t HevcDecoderConfigurationRecord::getPicHeight() const
 uint16_t HevcDecoderConfigurationRecord::getAvgFrameRate() const
 {
     return mAvgFrameRate;
+}
+
+std::uint8_t HevcDecoderConfigurationRecord::getChromaFormat() const
+{
+    return mChromaFormat;
+}
+
+Vector<std::uint8_t> HevcDecoderConfigurationRecord::getGeneralConstraintFlags() const
+{
+    return mGeneralConstraintIndicatorFlags;
+}
+
+std::uint8_t HevcDecoderConfigurationRecord::getGeneralProfileIdc() const
+{
+    return mGeneralProfileIdc;
+}
+
+std::uint32_t HevcDecoderConfigurationRecord::getGeneralProfileCompatibilityFlags() const
+{
+    return mGeneralProfileCompatibilityFlags;
+}
+
+std::uint8_t HevcDecoderConfigurationRecord::getGeneralLevelIdc() const
+{
+    return mGeneralLevelIdc;
 }
 
 void HevcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap &aMap) const

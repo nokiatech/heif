@@ -14,9 +14,22 @@
 #include "jpegconfigurationbox.hpp"
 #include "bitstream.hpp"
 
+JpegConfigurationBox::JpegDecoderConfigurationRecord::JpegDecoderConfigurationRecord(const Vector<uint8_t>& aRecord)
+    : mRecord(aRecord)
+{
+}
+
+JpegConfigurationBox::JpegDecoderConfigurationRecord::~JpegDecoderConfigurationRecord() = default;
+
+void JpegConfigurationBox::JpegDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap) const
+{
+    aMap[JPEG] = mRecord;
+}
+
 JpegConfigurationBox::JpegConfigurationBox()
-    : Box("jpgC")
+    : DecoderConfigurationBox("jpgC")
     , mJpegPrefix()
+    , mRecord(mJpegPrefix)
 {
 }
 
@@ -43,4 +56,9 @@ void JpegConfigurationBox::parseBox(ISOBMFF::BitStream& bitstr)
     parseBoxHeader(bitstr);
     const auto length = bitstr.numBytesLeft();
     bitstr.read8BitsArray(mJpegPrefix, length);
+}
+
+const DecoderConfigurationRecord& JpegConfigurationBox::getConfiguration() const
+{
+    return mRecord;
 }

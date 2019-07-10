@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -63,21 +63,6 @@ namespace HEIF
             std::copy(other.elements, other.elements + other.size, elements);
         }
         return *this;
-    }
-
-    template <typename T>
-    template <typename U>
-    Array<T>::Array(U begin, U end)
-        : Array(static_cast<size_t>(std::distance(begin, end)))
-    {
-        auto it      = begin;
-        size_t index = 0;
-        while (it != end)
-        {
-            elements[index] = *it;
-            ++it;
-            ++index;
-        }
     }
 
     // Put here to avoid? possible binary-incompatibilites with std::initializer_list

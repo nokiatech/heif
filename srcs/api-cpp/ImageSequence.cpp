@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -31,6 +31,7 @@ ImageSequence::ImageSequence(Heif* aHeif)
 {
     mHandler = HEIF::FourCC("pict");
 }
+
 ImageSequence::~ImageSequence()
 {
 }
@@ -41,6 +42,24 @@ const HEIF::AuxiliaryType* ImageSequence::aux() const
         return &mAuxProperty;
     return nullptr;
 }
+
+void ImageSequence::setAux(const HEIF::AuxiliaryType* aAux)
+{
+    if (aAux == nullptr)
+    {
+        mHasAux = false;
+        mAuxProperty = {};
+        mFeatures &= ~HEIF::TrackFeatureEnum::Feature::IsAuxiliaryImageSequence;
+    }
+    else
+    {
+        mHasAux = true;
+        mAuxProperty.auxType = aAux->auxType;
+        // subtype is not used on sample description entry
+        mFeatures |= HEIF::TrackFeatureEnum::Feature::IsAuxiliaryImageSequence;
+    }
+}
+
 const HEIF::CleanAperture* ImageSequence::clap() const
 {
     if (mHasClap)

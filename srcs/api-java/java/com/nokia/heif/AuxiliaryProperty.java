@@ -1,13 +1,12 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
  * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
  * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
- *
  *
  */
 
@@ -22,6 +21,8 @@ import java.nio.ByteBuffer;
 public final class AuxiliaryProperty extends DescriptiveProperty
 {
 
+    public static final String ALPHA_MASK_URN = "urn:mpeg:hevc:2015:auxid:1";
+    public static final String DEPTH_URN = "urn:mpeg:hevc:2015:auxid:2";
     /**
      * Creates a new AuxiliaryProperty to the given HEIF instance
      * @param heif The parent HEIF instance for the new object
@@ -32,6 +33,25 @@ public final class AuxiliaryProperty extends DescriptiveProperty
     {
         super(heif);
         mNativeHandle = createContextNative(heif);
+    }
+
+    public AuxiliaryProperty(HEIF heif, String type, byte[] subtype)
+            throws Exception
+    {
+        this(heif);
+        try
+        {
+            setType(type);
+            if (subtype != null)
+            {
+                setSubType(subtype);
+            }
+        }
+        catch (Exception ex)
+        {
+            destroy();
+            throw ex;
+        }
     }
 
     /**

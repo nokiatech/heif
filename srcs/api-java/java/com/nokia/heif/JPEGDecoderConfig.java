@@ -13,41 +13,43 @@
 package com.nokia.heif;
 
 /**
- * A sample containing video data
+ * DecoderConfig for JPEG data
  */
-public abstract class VideoSample extends Sample
+public final class JPEGDecoderConfig extends DecoderConfig
 {
     /**
-     * Constructor, abstract class so not called directly
+     * Creates a new JPEGDecoderConfig to the given HEIF instance
      *
      * @param heif The parent HEIF instance for the new object
+     * @param config Byte array containing the config data; may be empty
      * @throws Exception Thrown if the parent HEIF instance is invalid
      */
-    protected VideoSample(HEIF heif)
+    public JPEGDecoderConfig(HEIF heif, byte[] config)
             throws Exception
     {
         super(heif);
+        mNativeHandle = createContextNative(heif);
+        try
+        {
+            setConfig(config);
+        }
+        catch (Exception ex)
+        {
+            destroy();
+            throw ex;
+        }
     }
 
     /**
-     * Protected constructor, abstract class so not called directly
-     *
-     * @param heif         The parent HEIF instance for the new object
+     * Protected constructor, used to create an object from the native side
+     * @param heif The parent HEIF instance for the new object
      * @param nativeHandle A handle to the corresponding C++ object
      */
-    protected VideoSample(HEIF heif, long nativeHandle)
+    protected JPEGDecoderConfig(HEIF heif, long nativeHandle)
     {
         super(heif, nativeHandle);
     }
 
-    public Size getSize()
-            throws Exception
-    {
-        checkState();
-        return new Size(getWidthNative(), getHeightNative());
-    }
 
-
-    private native int getWidthNative();
-    private native int getHeightNative();
+    private native long createContextNative(HEIF heif);
 }

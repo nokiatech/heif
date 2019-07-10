@@ -1,3 +1,15 @@
+/*
+ * This file is part of Nokia HEIF library
+ *
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ *
+ * Contact: heif@nokia.com
+ *
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ *
+ */
+
 package com.nokia.heif;
 
 import java.nio.ByteBuffer;
@@ -73,13 +85,26 @@ public abstract class Sample extends Base
     }
 
     /**
+     * Returns the FourCC type of the sample
+     * @return Type as a String
+     * @throws Exception
+     */
+    public FourCC getType()
+            throws Exception
+    {
+        checkState();
+        return new FourCC(getTypeNative(), true);
+    }
+
+
+    /**
      * Returns the type of the sample
      *
      * @see Sample.Type
      * @return The Type of the sample
      * @throws Exception
      */
-    public Type getType()
+    public Type getSampleType()
             throws Exception
     {
         checkState();
@@ -397,5 +422,6 @@ public abstract class Sample extends Base
 
     native private Track getTrackNative();
 
+    native private String getTypeNative();
     native private int getSampleTypeNative();
 }

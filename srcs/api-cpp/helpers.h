@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -83,24 +83,33 @@ namespace HEIFPP
 
     private:
         LinkArray<T>& operator=(const LinkArray<T>&) = delete;
-        LinkArray<T>& operator=(LinkArray<T>&&)      = delete;
-        LinkArray<T>(const LinkArray<T>&)            = delete;
-        LinkArray<T>(LinkArray<T>&&)                 = delete;
+        LinkArray<T>& operator=(LinkArray<T>&&) = delete;
+        LinkArray<T>(const LinkArray<T>&)       = delete;
+        LinkArray<T>(LinkArray<T>&&)            = delete;
     };
 
+
+    std::uint8_t expGolombCodeLength(const uint32_t val);
 
     class BitStream
     {
     public:
-        BitStream(const std::uint8_t* aData, std::uint32_t aLen);
+        BitStream(std::uint8_t* aData, std::uint32_t aLen);
+        std::uint32_t peekBits(std::uint32_t bits);
         std::uint32_t getBits(std::uint32_t bits);
+        void writeBits(std::uint64_t bits, std::uint32_t len);
         bool isByteAligned();
         std::uint64_t bitpos();
+        void setbitpos(std::uint64_t pos);
         std::uint64_t bits_to_decode();
+        std::int32_t getSignedExpGolombCode();  // se(v)
+        std::uint32_t getExpGolombCode();       // ue(v)
+
     protected:
-        const std::uint8_t* mSrc;
+        std::uint8_t* mSrc;
         std::uint32_t mLen;
-        std::uint8_t mCBit;
+        std::uint64_t mCBit;
+        std::uint32_t mWriteByte;
     };
 
 

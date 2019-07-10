@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -22,6 +22,8 @@ TrackBox::TrackBox()
     , mMediaBox()
     , mTrackReferenceBox()
     , mHasTrackReferences(false)
+    , mTrackTypeBox()
+    , mHasTrackTypeBox(false)
     , mEditBox(nullptr)
 {
 }
@@ -66,6 +68,26 @@ std::shared_ptr<const EditBox> TrackBox::getEditBox() const
     return mEditBox;
 }
 
+const TrackTypeBox& TrackBox::getTrackTypeBox() const
+{
+    return mTrackTypeBox;
+}
+
+TrackTypeBox& TrackBox::getTrackTypeBox()
+{
+    return mTrackTypeBox;
+}
+
+void TrackBox::setHasTrackTypeBox(bool value)
+{
+    mHasTrackTypeBox = value;
+}
+
+bool TrackBox::getHasTrackTypeBox() const
+{
+    return mHasTrackTypeBox;
+}
+
 void TrackBox::setEditBox(const EditBox& editBox)
 {
     if (mEditBox == nullptr)
@@ -105,6 +127,11 @@ void TrackBox::writeBox(ISOBMFF::BitStream& bitstr) const
     // The MediaBox
     mMediaBox.writeBox(bitstr);
 
+    if (mHasTrackTypeBox)
+    {
+        mTrackTypeBox.writeBox(bitstr);
+    }
+
     // Update the size of the movie box
     updateSize(bitstr);
 }
@@ -137,6 +164,11 @@ void TrackBox::parseBox(ISOBMFF::BitStream& bitstr)
         {
             mTrackReferenceBox.parseBox(subBitstr);
             mHasTrackReferences = true;
+        }
+        else if (boxType == "ttyp")
+        {
+            mHasTrackTypeBox = true;
+            mTrackTypeBox.parseBox(subBitstr);
         }
         else if (boxType == "edts")
         {

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -506,13 +506,9 @@ namespace HEIF
         for (const auto itemId : itemIds)
         {
             const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemById(itemId);
-            ItemInfo itemInfo;
-            itemInfo.type            = item.getItemType();
-            itemInfo.name            = item.getItemName();
-            itemInfo.contentType     = item.getContentType();
-            itemInfo.contentEncoding = item.getContentEncoding();
+            ItemInfo itemInfo = makeItemInfo(item);
 
-            if (isImageItemType(itemInfo.type))
+            if (isImageItem(makeItemInfo(item)))
             {
                 const ItemPropertiesBox& iprp = metaBox.getItemPropertiesBox();
                 const std::uint32_t ispeIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::ISPE, itemId);
@@ -722,6 +718,11 @@ namespace HEIF
                 type = DecoderSpecInfoType::AudioSpecificConfig;
                 break;
             }
+            case DecoderConfigurationRecord::JPEG:
+            {
+                type = DecoderSpecInfoType::JPEG;
+                break;
+            }
             default:
             {
                 type = (DecoderSpecInfoType) t.first;
@@ -740,7 +741,7 @@ namespace HEIF
         items.clear();
         for (const auto& imageInfo : mMetaBoxInfo.at(contextId).itemInfoMap)
         {
-            if (isImageItemType(imageInfo.second.type))
+            if (isImageItem(imageInfo.second))
             {
                 items.push_back(imageInfo.first);
             }
@@ -851,17 +852,17 @@ namespace HEIF
         }
         const auto rootMetaId = mFileProperties.rootLevelMetaBoxProperties.contextId;
 
-        FourCCInt type;
+        ItemInfoEntry item;
         try
         {
-            type = mMetaBoxMap.at(rootMetaId).getItemInfoBox().getItemById(imageId.get()).getItemType();
+            item = mMetaBoxMap.at(rootMetaId).getItemInfoBox().getItemById(imageId.get());
         }
         catch (...)
         {
             return ErrorCode::INVALID_ITEM_ID;
         }
 
-        if (isImageItemType(type))
+        if (isImageItem(makeItemInfo(item)))
         {
             return ErrorCode::OK;
         }
@@ -976,10 +977,9 @@ namespace HEIF
         for (const auto itemId : itemIds)
         {
             const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemById(itemId);
-            const auto type           = item.getItemType();
 
             ItemFeature itemFeatures;
-            if (isImageItemType(type))
+            if (isImageItem(makeItemInfo(item)))
             {
                 if (item.getItemProtectionIndex() > 0)
                 {
@@ -1048,6 +1048,7 @@ namespace HEIF
             }
             else
             {
+                const auto type = item.getItemType();
                 if (item.getItemProtectionIndex() > 0)
                 {
                     itemFeatures.setFeature(ItemFeatureEnum::IsProtected);
@@ -1184,6 +1185,8 @@ namespace HEIF
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::HVCC, imageId.get());
             const std::uint32_t avccIndex =
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::AVCC, imageId.get());
+            const std::uint32_t jpegIndex =
+                iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::JPGC, imageId.get());
 
             FourCCInt type;
             Id configIndex(0, 0);
@@ -1197,6 +1200,11 @@ namespace HEIF
             {
                 configIndex = Id(contextId, avccIndex);
                 type        = "avc1";
+            }
+            else if (jpegIndex)
+            {
+                configIndex = Id(contextId, jpegIndex);
+                type        = "jpeg";
             }
             else
             {
@@ -1878,6 +1886,8 @@ namespace HEIF
                         editUnit.mediaTimeInTrackTS = mEntryVersion0.mMediaTime;
                     }
                     editUnit.durationInMovieTS = mEntryVersion0.mSegmentDuration;
+                    editUnit.mediaRateInteger  = mEntryVersion0.mMediaRateInteger;
+                    editUnit.mediaRateFraction = mEntryVersion0.mMediaRateFraction;
                 }
                 else
                 {
@@ -1899,7 +1909,10 @@ namespace HEIF
                         editUnit.mediaTimeInTrackTS = mEntryVersion1.mMediaTime;
                     }
                     editUnit.durationInMovieTS = mEntryVersion1.mSegmentDuration;
+                    editUnit.mediaRateInteger  = mEntryVersion1.mMediaRateInteger;
+                    editUnit.mediaRateFraction = mEntryVersion1.mMediaRateFraction;
                 }
+
                 editUnits.push_back(editUnit);
             }
             editlist.editUnits = makeArray<EditUnit>(editUnits);
@@ -2081,6 +2094,13 @@ namespace HEIF
 
                 trackInfo.pMap = repeatingPMap;
             }
+        }
+
+        // Read track type if exists
+        if (trackBox->getHasTrackTypeBox())
+        {
+            trackInfo.hasTtyp = true;
+            trackInfo.ttyp    = trackBox->getTrackTypeBox();
         }
 
         return trackInfo;
@@ -2518,11 +2538,23 @@ namespace HEIF
         return auxi;
     }
 
-    bool isImageItemType(const FourCCInt& type)
+    bool HeifReaderImpl::isImageItem(const ItemInfo& info)
     {
         static const std::set<FourCCInt> IMAGE_TYPES = {"avc1", "hvc1", "grid", "iovl", "iden", "jpeg"};
 
-        return IMAGE_TYPES.find(type) != IMAGE_TYPES.end();
+        auto type = info.type;
+
+        return IMAGE_TYPES.count(type) || (type == "mime" && info.contentType == "image/jpeg");
+    }
+
+    HeifReaderImpl::ItemInfo HeifReaderImpl::makeItemInfo(const ItemInfoEntry& item)
+    {
+        ItemInfo itemInfo{};
+        itemInfo.type            = item.getItemType();
+        itemInfo.name            = item.getItemName();
+        itemInfo.contentType     = item.getContentType();
+        itemInfo.contentEncoding = item.getContentEncoding();
+        return itemInfo;
     }
 
     bool doReferencesFromItemIdExist(const MetaBox& metaBox, const uint32_t itemId, const FourCCInt& referenceType)

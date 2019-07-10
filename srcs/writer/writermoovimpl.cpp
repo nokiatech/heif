@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -1486,6 +1486,10 @@ namespace HEIF
             {
                 addShiftEdit(editListPtr, editUnit);
             }
+            else if (editUnit.editType == EditType::RAW)
+            {
+                addRawEdit(editListPtr, editUnit);
+            }
         }
         editBox.setEditListBox(editListBox);
 
@@ -1524,6 +1528,18 @@ namespace HEIF
         editEntry.mSegmentDuration   = static_cast<uint32_t>(editUnit.durationInMovieTS);  // Assume mvhd timescale 1000
         editEntry.mMediaRateInteger  = 1;
         editEntry.mMediaRateFraction = 0;
+
+        editListBox->addEntry(editEntry);
+    }
+
+    void WriterImpl::addRawEdit(EditListBox* editListBox, const EditUnit& editUnit) const
+    {
+        EditListBox::EntryVersion0 editEntry;
+
+        editEntry.mMediaTime         = static_cast<int32_t>(editUnit.mediaTimeInTrackTS);
+        editEntry.mSegmentDuration   = static_cast<uint32_t>(editUnit.durationInMovieTS);  // Assume mvhd timescale 1000
+        editEntry.mMediaRateInteger  = editUnit.mediaRateInteger;
+        editEntry.mMediaRateFraction = editUnit.mediaRateFraction;
 
         editListBox->addEntry(editEntry);
     }

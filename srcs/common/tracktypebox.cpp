@@ -11,11 +11,9 @@
  * written consent of Nokia.
  */
 
-#include "filetypebox.hpp"
-#include <algorithm>
-#include "log.hpp"
+#include "tracktypebox.hpp"
 
-FileTypeBox::FileTypeBox()
-    : BrandAndCompatibleBrandsBaseBox("ftyp")
+TrackTypeBox::TrackTypeBox()
+    : BrandAndCompatibleBrandsBaseBox("ttyp", 0, 0)
 {
 }

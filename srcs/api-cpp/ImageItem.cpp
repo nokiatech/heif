@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -395,7 +395,7 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
             mThumbnailImages.reserve(ids.size);
             for (const auto& thumbId : ids)
             {
-                ImageItem* image = mHeif->constructImageItem(aReader, thumbId, error);
+                ImageItem* image = mHeif->constructImageItem(aReader, thumbId, nullptr, error);
                 if (HEIF::ErrorCode::OK != error)
                 {
                     return error;
@@ -412,7 +412,7 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
             mAuxImages.reserve(ids.size);
             for (const auto& auxId : ids)
             {
-                ImageItem* image = mHeif->constructImageItem(aReader, auxId, error);
+                ImageItem* image = mHeif->constructImageItem(aReader, auxId, nullptr, error);
                 if (HEIF::ErrorCode::OK != error)
                 {
                     return error;

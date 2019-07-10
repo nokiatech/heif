@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -103,7 +103,6 @@ namespace HEIFPP
 
         std::uint64_t getMaxSampleSize();
 
-
         std::uint32_t getSampleCount() const;
         Sample* getSample(std::uint32_t);
         Sample* getSample(std::uint32_t) const;
@@ -111,6 +110,8 @@ namespace HEIFPP
         Sample* getSampleByType(HEIF::TrackSampleType, std::uint32_t) const;
         void removeSample(Sample* aSample);
 
+        std::uint32_t getTimestampCount();
+        void getTimestamp(std::uint32_t index, std::uint32_t& sampleId, std::int64_t& timestamp);
 
         double getDuration();
         std::uint32_t getTimescale();
@@ -137,7 +138,11 @@ namespace HEIFPP
         EntityGroup* getGroupByType(const HEIF::FourCC& aType, std::uint32_t aId);
         EntityGroup* getGroupById(const HEIF::GroupId& aId);
 
-        // TODO: add methods to access/edit/set the editlist.
+        // edit list
+        void setEditListLooping(bool aIsLooping);
+        void setEditListRepetitions(double aRepetitions);
+        void addEditListUnit(const HEIF::EditUnit& aUnit);
+        // TODO: add methods to access/edit the editlist.
 
     protected:
         // NOTE: moved add/removeReference to protected. since custom references are not possible ATM.
@@ -185,6 +190,8 @@ namespace HEIFPP
         EditList mEditList;
 
         HEIF::FourCC mHandler;  // soun,vide,pict
+        HEIF::Array<HEIF::TimestampIDPair> mTimestamps;
+
     private:
         Track& operator=(const Track&) = delete;
         Track& operator=(Track&&)      = delete;
@@ -192,5 +199,4 @@ namespace HEIFPP
         Track(Track&&)                 = delete;
         Track()                        = delete;
     };
-
 }  // namespace HEIFPP

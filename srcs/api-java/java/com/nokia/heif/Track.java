@@ -1,3 +1,15 @@
+/*
+ * This file is part of Nokia HEIF library
+ *
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ *
+ * Contact: heif@nokia.com
+ *
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ *
+ */
+
 package com.nokia.heif;
 
 import java.util.ArrayList;
@@ -95,6 +107,53 @@ public abstract class Track extends Base
             throw new Exception(ErrorHandler.INVALID_PARAMETER, "Timescale must be > 0");
         }
         setTimescaleNative(timescale);
+    }
+
+    /**
+     * Returns the auxiliary tracks of this track
+     *
+     * @return A list of the auxiliary tracks
+     * @throws Exception
+     */
+    public List<Track> getAuxiliaries()
+            throws Exception
+    {
+        checkState();
+        int count =  getAuxiliaryCountNative();
+        List<Track> result = new ArrayList<>(count);
+        for (int index = 0; index < count; index++)
+        {
+            result.add(getAuxiliaryNative(index));
+        }
+        return result;
+    }
+
+    /**
+     * Adds an auxiliary track
+     *
+     * @param auxiliary The auxiliary track to be added
+     * @throws Exception
+     */
+    public void addAuxiliary(Track auxiliary)
+            throws Exception
+    {
+        checkState();
+        checkParameter(auxiliary);
+        addAuxiliaryNative(auxiliary);
+    }
+
+    /**
+     * Removes an auxiliary track
+     *
+     * @param auxiliary The auxiliary track to be removed
+     * @throws Exception
+     */
+    public void removeAuxiliary(Track auxiliary)
+            throws Exception
+    {
+        checkState();
+        checkParameter(auxiliary);
+        removeAuxiliaryNative(auxiliary);
     }
 
     /**
@@ -202,6 +261,69 @@ public abstract class Track extends Base
         return getDurationNative();
     }
 
+    public class TimeStamp
+    {
+        public int sampleIndex;
+        public long timeStamp; // Timestamp in milliseconds
+    }
+
+    /**
+     * Returns the timestamps in the track
+     *
+     * @return A list of all the timestamps
+     * @throws Exception
+     */
+    public List<TimeStamp> getTimestamps()
+            throws Exception
+    {
+        checkState();
+        int count = getTimestampCountNative();
+        List<TimeStamp> result = new ArrayList<>(count);
+        for (int index = 0; index < count; index++)
+        {
+            result.add(getTimestampNative(index));
+        }
+        return result;
+    }
+
+    // order here should be same as in heifcommondatatypes.h
+    public enum EditType {
+        EMPTY,
+        DWELL,
+        SHIFT,
+        RAW
+    }
+
+    public class EditUnit
+    {
+        public long mediaTimeInTrackTS;
+        public long durationInMovieTS;
+        public int mediaRateInteger;
+        public int mediaRateFraction;
+        public EditType editType;
+    }
+
+    public void setEditListLooping(boolean isLooping)
+            throws Exception
+    {
+        checkState();
+        setEditListLoopingNative(isLooping);
+    }
+
+    public void setEditListRepetitions(double repetitions)
+            throws Exception
+    {
+        checkState();
+        setEditListRepetitionsNative(repetitions);
+    }
+
+    public void addEditListUnit(EditUnit editUnit)
+            throws Exception
+    {
+        checkState();
+        addEditListUnitNative(editUnit);
+    }
+
     @Override
     protected void destroyNative()
     {
@@ -222,6 +344,11 @@ public abstract class Track extends Base
     native private void addThumbnailNative(Track thumbnail);
     native private void removeThumbnailNative(Track thumbnail);
 
+    native private int getAuxiliaryCountNative();
+    native private Track getAuxiliaryNative(int index);
+    native private void addAuxiliaryNative(Track auxiliary);
+    native private void removeAuxiliaryNative(Track auxiliary);
+
     native private AlternativeTrackGroup getAlternativeTrackGroupNative();
 
     native private int getGroupCountNative();
@@ -229,4 +356,11 @@ public abstract class Track extends Base
 
     native private boolean hasInfiniteLoopPlaybackNative();
     native private double getDurationNative();
+
+    native private int getTimestampCountNative();
+    native private TimeStamp getTimestampNative(int index);
+
+    native private void setEditListLoopingNative(boolean isLooping);
+    native private void setEditListRepetitionsNative(double repetitions);
+    native private void addEditListUnitNative(EditUnit editUnit);
 }

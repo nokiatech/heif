@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,6 +16,7 @@
 #include "AACDecoderConfiguration.h"
 #include "AVCDecoderConfiguration.h"
 #include "HEVCDecoderConfiguration.h"
+#include "JPEGDecoderConfiguration.h"
 
 #include "AVCCodedImageItem.h"
 #include "ExifItem.h"
@@ -493,7 +494,7 @@ HEIF::ErrorCode Heif::load(HEIF::Reader* aReader)
 
                         for (const auto& i : mFileinfo.rootMetaBoxInformation.itemInformations)
                         {
-                            ImageItem* image = constructImageItem(aReader, i.itemId, error);
+                            ImageItem* image = constructImageItem(aReader, i.itemId, &i, error);
                             if (HEIF::ErrorCode::OK != error)
                             {
                                 return error;
@@ -870,7 +871,7 @@ Track* Heif::constructTrack(HEIF::Reader* aReader, const HEIF::SequenceId& aTrac
     return it.first->second;
 }
 
-ImageItem* Heif::constructImageItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, HEIF::ErrorCode& aErrorCode)
+ImageItem* Heif::constructImageItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, const HEIF::ItemInformation* aItemInfo, HEIF::ErrorCode& aErrorCode)
 {
     auto it = mItemsLoad.insert({aItemId, nullptr});
     if (it.second)
@@ -892,6 +893,7 @@ ImageItem* Heif::constructImageItem(HEIF::Reader* aReader, const HEIF::ImageId& 
         }
         else if (type == HEIF::FourCC("jpeg"))
         {
+            // mime image/jpeg handled in separate case
             item = new JPEGCodedImageItem(this);
         }
         else if (type == HEIF::FourCC("iden"))
@@ -905,6 +907,21 @@ ImageItem* Heif::constructImageItem(HEIF::Reader* aReader, const HEIF::ImageId& 
         else if (type == HEIF::FourCC("grid"))
         {
             item = new GridImageItem(this);
+        }
+        else if (type == HEIF::FourCC("mime") && aItemInfo)
+        {
+            auto contentType = aItemInfo->description.contentType;
+            auto contentTypeString = std::string(contentType.begin(), contentType.end());
+            if (contentTypeString == "image/jpeg")
+            {
+                // How bad is this? Should really do MimeItem, but what about compatibility. Special
+                // support in JPEGCodedImageItem maybe required.
+                item = new JPEGCodedImageItem(this);
+            }
+            else
+            {
+                // Handle possible other future image mime types
+            }
         }
         if (item)
         {
@@ -1421,12 +1438,6 @@ DecoderConfig* Heif::constructDecoderConfig(HEIF::Reader* aReader,
     if (it.second)
     {
         DecoderConfig* config = nullptr;
-#if 0
-        if (fourcc for jpeg?)
-        {
-            config = new JPEGDecoderConfiguration(this,aTYpe);
-        }
-#endif
         switch (mediaFormatFromFourCC(aType))
         {
         case HEIF::MediaFormat::AVC:
@@ -1442,6 +1453,11 @@ DecoderConfig* Heif::constructDecoderConfig(HEIF::Reader* aReader,
         case HEIF::MediaFormat::AAC:
         {
             config = new AACDecoderConfiguration(this, aType);
+            break;
+        }
+        case HEIF::MediaFormat::JPEG:
+        {
+            config = new JPEGDecoderConfiguration(this, aType);
             break;
         }
         default:
@@ -1707,6 +1723,12 @@ HEIF::MediaFormat Heif::mediaFormatFromFourCC(const HEIF::FourCC& aType)
         return HEIF::MediaFormat::AVC;
     else if (aType == "avc3")
         return HEIF::MediaFormat::AVC;
+    else if (aType == "jpeg")
+        return HEIF::MediaFormat::JPEG;
+    else if (aType == "jpgs")
+        return HEIF::MediaFormat::JPEG;
+    else if (aType == "mjpg")
+        return HEIF::MediaFormat::JPEG;
     else
     {
         return HEIF::MediaFormat::INVALID;

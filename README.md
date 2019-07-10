@@ -5,6 +5,8 @@ Please follow this **[link](https://nokiatech.github.io/heif)** to access HEIF W
 You can also check the **[Wiki](https://github.com/nokiatech/heif/wiki)** pages for more information.
 
 ## News:
+[10.07.2019] v3.5.0 Release: Improved support for JPEGs and edit lists. Bug fixes, minor improvements and code cleanup.
+
 [06.11.2018] v3.4.0 Release: Java API improvements. Bug fixes, code cleanup and robustness improvements.
 
 [13.06.2018] v3.3.0 Release: Java desktop build added, Java API includes track and image sequence as well as entity grouping support.
@@ -55,8 +57,10 @@ cmake --build .
 ```
 
 ## Building Java API for Windows or Linux
-Prerequisites: Java version 8 or newer, Gradle
-First build the C/C++ library as described above
+Prerequisites: Java version 8 or newer, Gradle.
+
+First build the C/C++ library as described above.
+
 After that
 ```
 cd heif/build/java-desktop
@@ -77,6 +81,6 @@ All the example media files (*.heic, *.png, *.jpg, *.gif) in this repository are
 
 For more information/questions/source code/commercial licensing related issues, please contact: <heif@nokia.com>
 
-### **Copyright (c) 2015-2018, Nokia Technologies Ltd.**
+### **Copyright (c) 2015-2019, Nokia Technologies Ltd.**
 ### **All rights reserved.**
 

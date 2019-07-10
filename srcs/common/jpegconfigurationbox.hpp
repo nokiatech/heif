@@ -14,6 +14,7 @@
 
 #include "bbox.hpp"
 #include "customallocator.hpp"
+#include "decoderconfigurationbox.hpp"
 
 /** @brief JPEG Configuration item property class
  *  @details 'jpgC' box implementation. This is used by
@@ -21,7 +22,7 @@
  *           Data can include e.g. quantization and other tables
  *           common to several JPEG image items.
  */
-class JpegConfigurationBox : public Box
+class JpegConfigurationBox : public DecoderConfigurationBox
 {
 public:
     JpegConfigurationBox();
@@ -40,13 +41,29 @@ public:
     void setPrefix(const Vector<uint8_t>& data);
 
     /** @see Box::writeBox() */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @see Box::parseBox() */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
+
+    /** @see DecoderConfigurationBox::getConfiguration() */
+    const DecoderConfigurationRecord& getConfiguration() const override;
 
 private:
+    class JpegDecoderConfigurationRecord : public DecoderConfigurationRecord
+    {
+    public:
+        JpegDecoderConfigurationRecord(const Vector<uint8_t>& aRecord);
+        ~JpegDecoderConfigurationRecord() override;
+
+        void getConfigurationMap(ConfigurationMap& aMap) const override;
+
+    private:
+        const Vector<uint8_t>& mRecord;
+    };
+
     Vector<uint8_t> mJpegPrefix;  ///< JPEG prefix data.
+    JpegDecoderConfigurationRecord mRecord;
 };
 
 #endif /* end of include guard: JPEGCONFIGURATIONBOX_HPP */

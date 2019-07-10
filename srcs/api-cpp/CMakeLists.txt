@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -15,7 +15,7 @@ set(HEIFPP_LIB_NAME heifpp)
 
 project(${HEIFPP_LIB_NAME} LANGUAGES CXX)
 
-add_library(${HEIFPP_LIB_NAME} STATIC 
+add_library(${HEIFPP_LIB_NAME} STATIC
     ${PROJECT_SOURCE_DIR}/Heif.h
     ${PROJECT_SOURCE_DIR}/Heif.cpp
 
@@ -35,6 +35,8 @@ add_library(${HEIFPP_LIB_NAME} STATIC
     ${PROJECT_SOURCE_DIR}/AVCDecoderConfiguration.cpp
     ${PROJECT_SOURCE_DIR}/HEVCDecoderConfiguration.h
     ${PROJECT_SOURCE_DIR}/HEVCDecoderConfiguration.cpp
+    ${PROJECT_SOURCE_DIR}/JPEGDecoderConfiguration.h
+    ${PROJECT_SOURCE_DIR}/JPEGDecoderConfiguration.cpp
 
     ${PROJECT_SOURCE_DIR}/Track.h
     ${PROJECT_SOURCE_DIR}/Track.cpp

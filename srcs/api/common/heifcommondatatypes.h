@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,6 +16,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <initializer_list>
 #include "heifexport.h"
 #include "heifid.h"
@@ -184,7 +185,18 @@ namespace HEIF
             return elements + size;
         }
         template <typename U>
-        Array(U begin, U end);
+        Array(U begin, U end)
+            : Array(static_cast<size_t>(std::distance(begin, end)))
+        {
+            auto it      = begin;
+            size_t index = 0;
+            while (it != end)
+            {
+                elements[index] = *it;
+                ++it;
+                ++index;
+            }
+        }
         Array(std::initializer_list<T> aInit);
         virtual ~Array();
     };
@@ -202,7 +214,7 @@ namespace HEIF
         uint64_t den;
     };
 
-    enum DecoderSpecInfoType
+    enum class DecoderSpecInfoType : uint8_t
     {
         AVC_SPS = 7,  ///< H.264/AVC Sequence Parameter Set (SPS) nal unit, bytestream header (0001) if any is stripped
                       ///< internally.
@@ -216,7 +228,12 @@ namespace HEIF
         HEVC_PPS = 34,  ///< H.265/HEVC Picture Parameter Set (PPS) nal unit, bytestream header (0001) if any is
                         ///< stripped internally.
 
-        AudioSpecificConfig  ///< As defined in 1.6.2.1 AudioSpecificConfig of ISO/IEC 14496-3:200X(E)
+        PREFIX_SEI_NUT = 39,
+        SUFFIX_SEI_NUT = 40,
+
+        AudioSpecificConfig = 63,  ///< As defined in 1.6.2.1 AudioSpecificConfig of ISO/IEC 14496-3:200X(E)
+
+        JPEG = 108  ///< This number probably comes from ISO/IEC 10918-1
     };
 
     struct HEIF_DLL_PUBLIC DecoderSpecificInfo
@@ -372,7 +389,8 @@ namespace HEIF
     {
         EMPTY,
         DWELL,
-        SHIFT
+        SHIFT,
+        RAW
     };
 
     /**
@@ -383,6 +401,8 @@ namespace HEIF
         std::int64_t mediaTimeInTrackTS;  ///< Edit time in media in timescale units of track
         std::uint64_t durationInMovieTS;  ///< Edit unit length in timescale units of movie (writer uses value 1000 for
                                           ///< movie timescale)
+        std::int16_t mediaRateInteger;    ///< Integer part of the media_rate (fixed-point 16.16)
+        std::int16_t mediaRateFraction;   ///< Fraction part of the media_rate (fixed-point 16.16)
     };
 
     /**

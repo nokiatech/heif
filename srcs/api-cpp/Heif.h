@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -337,7 +337,8 @@ namespace HEIFPP
                                 const HEIF::SequenceId& aTrack,
                                 const HEIF::SampleInformation& aId,
                                 HEIF::ErrorCode& aErrorCode);
-        ImageItem* constructImageItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, HEIF::ErrorCode& aErrorCode);
+        /** aItemInfo may be null to indicate there is no associated ItemInfo object */
+        ImageItem* constructImageItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, const HEIF::ItemInformation* aItemInfo, HEIF::ErrorCode& aErrorCode);
         MetaItem* constructMetaItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, HEIF::ErrorCode& aErrorCode);
         ItemProperty* constructItemProperty(HEIF::Reader* aReader,
                                             const HEIF::ItemPropertyInfo& aItemInfo,

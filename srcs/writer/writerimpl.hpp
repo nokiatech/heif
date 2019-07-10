@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -177,6 +177,7 @@ namespace HEIF
          * @brief addEmptyEdit Append a new empty edit to an edit list box.
          * @param editListBox  Edit List Box where the new entry will be appended.
          * @param editUnit     Edit List entry where edit type is EMPTY.
+         *                     Media rate fields are ignored.
          */
         void addEmptyEdit(EditListBox* editListBox, const EditUnit& editUnit) const;
 
@@ -184,6 +185,7 @@ namespace HEIF
          * @brief addDwellEdit   Append a new dwell edit to an edit list box.
          * @param editListBox    Edit List Box where the new entry will be appended.
          * @param editUnit       Edit List entry where edit type is DWELL.
+         *                       Media rate fields are ignored.
          */
         void addDwellEdit(EditListBox* editListBox, const EditUnit& editUnit) const;
 
@@ -191,8 +193,16 @@ namespace HEIF
          * @brief addShiftEdit   Append a new shift edit to an edit list box.
          * @param editListBox    Edit List Box where the new entry will be appended.
          * @param editUnit       Edit List entry where edit type is SHIFT.
+         *                       Media rate fields are ignored.
          */
         void addShiftEdit(EditListBox* editListBox, const EditUnit& editUnit) const;
+
+        /**
+         * @brief addRawEdit     Append a new edit  unitto an edit list box.
+         * @param editListBox    Edit List Box where the new entry will be appended.
+         * @param editUnit       Edit List entry. Media rate fields are written as set in fields.
+         */
+        void addRawEdit(EditListBox* editListBox, const EditUnit& editUnit) const;
 
         /**
          * @brief Initialize internal data structures and ID generators of the writer.

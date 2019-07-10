@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -27,6 +27,7 @@ set(COMMON_SRCS
     avcsampleentry.cpp
     bbox.cpp
     bitstream.cpp
+    brandandcompatiblebrandsbasebox.cpp
     channellayoutbox.cpp
     chunkoffsetbox.cpp
     cleanaperturebox.cpp
@@ -101,6 +102,7 @@ set(COMMON_SRCS
     trackreferencebox.cpp
     trackreferencetypebox.cpp
     trackrunbox.cpp
+    tracktypebox.cpp
     videomediaheaderbox.cpp
     visualequivalenceentry.cpp
     visualsampleentrybox.cpp
@@ -117,6 +119,7 @@ set(COMMON_HDRS
     auxiliarytypeproperty.hpp
     bbox.hpp
     bitstream.hpp
+    brandandcompatiblebrandsbasebox.hpp
     channellayoutbox.hpp
     chunkoffsetbox.hpp
     cleanaperturebox.hpp
@@ -196,6 +199,7 @@ set(COMMON_HDRS
     trackreferencebox.hpp
     trackreferencetypebox.hpp
     trackrunbox.hpp
+    tracktypebox.hpp
     videomediaheaderbox.hpp
     visualequivalenceentry.hpp
     visualsampleentrybox.hpp

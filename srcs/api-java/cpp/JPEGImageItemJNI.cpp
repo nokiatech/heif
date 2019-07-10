@@ -11,12 +11,14 @@
  *
  *
  */
+
+#include <JPEGCodedImageItem.h>
 #include <jni.h>
+
+#include "CodedImageItem.h"
 #include "Helpers.h"
-#include "VideoTrack.h"
 
-
-#define CLASS_NAME VideoTrack
+#define CLASS_NAME JPEGImageItem
 
 extern "C"
 {
@@ -24,26 +26,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::VideoTrack* nativeObject = new HEIFPP::VideoTrack(nativeHeif);
+        HEIFPP::JPEGCodedImageItem* nativeObject = new HEIFPP::JPEGCodedImageItem(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
-    }
-
-    JNI_METHOD_ARG(void, addSampleNative, jobject sample)
-    {
-        NATIVE_SELF;
-        NATIVE_VIDEO_SAMPLE(nativeSample, sample);
-        nativeSelf->addSample(nativeSample);
-    }
-
-    JNI_METHOD(jint, getDisplayWidthNative)
-    {
-        NATIVE_SELF;
-        return static_cast<jint>(nativeSelf->getDisplayWidth());
-    }
-
-    JNI_METHOD(jint, getDisplayHeightNative)
-    {
-        NATIVE_SELF;
-        return static_cast<jint>(nativeSelf->getDisplayHeight());
     }
 }

@@ -1,19 +1,21 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef HEVCDECODERCONFIGRECORD_HPP
 #define HEVCDECODERCONFIGRECORD_HPP
 
-#include "hevccommondefs.hpp"
 #include "decoderconfigrecord.hpp"
+#include "hevccommondefs.hpp"
 
 namespace ISOBMFF
 {
@@ -42,8 +44,7 @@ public:
      * @param nalUnitType       Type of the NAL unit
      * @param arrayCompleteness TBD
      */
-    void addNalUnit(const Vector<std::uint8_t> &sps, HevcNalUnitType nalUnitType,
-                    bool arrayCompleteness);
+    void addNalUnit(const Vector<std::uint8_t> &sps, HevcNalUnitType nalUnitType, bool arrayCompleteness);
 
     /**
      * Serialize decoder configuration to ISOBMFF::BitStream.
@@ -65,8 +66,7 @@ public:
      * @param [in,out] byteStream  Vector where the parameter set is appended
      * @param          nalUnitType NAL unit type to append
      */
-    void getOneParameterSet(Vector<std::uint8_t> &byteStream,
-        HevcNalUnitType nalUnitType) const;
+    void getOneParameterSet(Vector<std::uint8_t> &byteStream, HevcNalUnitType nalUnitType) const;
 
     /**
      * @pre makeConfigFromSPS has been called successfully.
@@ -87,7 +87,33 @@ public:
     std::uint16_t getAvgFrameRate() const;
 
     /* @brief Returns configuration parameter map for this record */
-    virtual void getConfigurationMap(ConfigurationMap& aMap) const override;
+    virtual void getConfigurationMap(ConfigurationMap &aMap) const override;
+
+    /**
+     * @return Returns chroma_format_idc value.
+     */
+    std::uint8_t getChromaFormat() const;
+
+    /**
+     * @return Return general contraint flags.
+     */
+    Vector<std::uint8_t> getGeneralConstraintFlags() const;
+
+    /**
+     * @return Return general_profile_idc value.
+     */
+    std::uint8_t getGeneralProfileIdc() const;
+
+    /**
+     * @return Return general_profile_compatibility_flag value.
+     */
+    std::uint32_t getGeneralProfileCompatibilityFlags() const;
+
+    /**
+     * @return Return general_level_idc value.
+     */
+    std::uint8_t getGeneralLevelIdc() const;
+
 private:
     // Member variables can be found from the High Efficiency Video Coding (HEVC)
     // specification

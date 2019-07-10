@@ -11,11 +11,19 @@
  * written consent of Nokia.
  */
 
-#include "filetypebox.hpp"
-#include <algorithm>
-#include "log.hpp"
+#ifndef TRACKTYPEBOX_HPP
+#define TRACKTYPEBOX_HPP
 
-FileTypeBox::FileTypeBox()
-    : BrandAndCompatibleBrandsBaseBox("ftyp")
+#include "brandandcompatiblebrandsbasebox.hpp"
+#include "fullbox.hpp"
+
+/** @brief Track Type Box class. Box payload is the same between ftyp and ttyp, so implementation is shared.
+ */
+class TrackTypeBox : public BrandAndCompatibleBrandsBaseBox<FullBox>
 {
-}
+public:
+    TrackTypeBox();
+    virtual ~TrackTypeBox() = default;
+};
+
+#endif  // TRACKTYPEBOX_HPP

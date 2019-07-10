@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -359,6 +359,20 @@ namespace HEIF
         };
         typedef Map<ItemId, ItemInfo> ItemInfoMap;
 
+        /**
+         * @brief Recognize image item types ( "avc1", "hvc1", "grid", "iovl", "iden", "jpeg")
+         *        as well as mime content type "image/jpeg"
+         * @param ItemInfo for the item
+         * @return True if the 4CC is an image type or if it's a mime type and content type "image/jpeg" */
+        static bool isImageItem(const ItemInfo& itemInfo);
+
+        /**
+         * @brief Construct an ItemInfo out of ItemInfoEntry. Not a constructor as in not to
+         *        affect the other c++ mechanisms. The image-specific data is not filled in.
+         * @param ItemInfoEntry for the item
+         * @return ItemInfo for the item */
+        static ItemInfo makeItemInfo(const ItemInfoEntry& itemInfo);
+
         /// Reader internal information about each MetaBox
         struct MetaBoxInfo
         {
@@ -481,6 +495,8 @@ namespace HEIF
             Map<SampleDescriptionIndex, AuxiliaryType>
                 auxiProperties;  ///< Clean aperture data from sample description entries
             double repetitions;
+            bool hasTtyp = false;
+            TrackTypeBox ttyp;  ///< TrackType info, if available
         };
         Map<SequenceId, TrackInfo> mTrackInfo;  ///< Reader internal information about each TrackBox
 
@@ -733,12 +749,6 @@ namespace HEIF
      * @param auxiBox Pointer to input AuxiliaryTypeInfoBox
      * @return A AuxProperty filled with data from AuxiliaryTypeInfoBox */
     AuxiliaryType makeAuxi(const AuxiliaryTypeInfoBox* auxiBox);
-
-    /**
-     * @brief Recognize image item types ( "avc1", "hvc1", "grid", "iovl", "iden", "jpeg").
-     * @param type 4CC Item type from Item Info Entry
-     * @return True if the 4CC is an image type */
-    bool isImageItemType(const FourCCInt& type);
 
     /**
      * @brief Check if one or more references from an item exists.

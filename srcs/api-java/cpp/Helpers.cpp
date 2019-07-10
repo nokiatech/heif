@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -46,6 +46,10 @@ jobject createJavaBaseObject(JNIEnv* env, jobject parentHeif, type nativeHandle,
 {
     jclass classType              = env->GetObjectClass(parentHeif);
     const jmethodID createItemMethod = env->GetMethodID(classType, methodName, "(Ljava/lang/String;J)Lcom/nokia/heif/Base;");
+    if (createItemMethod == NULL)
+    {
+        return NULL;
+    }
     env->DeleteLocalRef(classType);
     jstring fourCCString = env->NewStringUTF(fourCC);
     jobject javaItem = env->CallObjectMethod(parentHeif, createItemMethod, fourCCString, (jlong) nativeHandle);
@@ -89,6 +93,7 @@ jobject createItem(JNIEnv* env, jobject parentJavaHEIF, void* item)
 
     else if (itemType == HEIF::FourCC("mime"))
     {
+        auto mimeItem = dynamic_cast<HEIFPP::MimeItem*>(heifItem);
         if (heifItem->isMPEG7Item())
         {
             mimeForCreation = "mpg7";
@@ -96,6 +101,10 @@ jobject createItem(JNIEnv* env, jobject parentJavaHEIF, void* item)
         else if (heifItem->isXMPItem())
         {
             mimeForCreation = "xmp1";
+        }
+        else if (mimeItem && mimeItem->getContentType() == "image/jpeg")
+        {
+            mimeForCreation = "jpeg";
         }
     }
     return createJavaBaseObject(env, parentJavaHEIF, heifItem, CREATE_ITEM_METHOD, mimeForCreation);

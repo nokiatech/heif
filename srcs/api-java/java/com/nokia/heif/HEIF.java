@@ -1,13 +1,12 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
  * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
  * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
- *
  *
  */
 
@@ -22,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class HEIF
+public class HEIF
 {
 
     private static final String TAG = "HEIF";
@@ -517,7 +516,7 @@ public final class HEIF
         ITEM_CLASSES = new HashMap<>();
         ITEM_CLASSES.put(FOURCC_HEVC.toString(), HEVCImageItem.class);
         ITEM_CLASSES.put(FOURCC_AVC.toString(), AVCImageItem.class);
-        ITEM_CLASSES.put(FOURCC_JPEG.toString(), CodedImageItem.class);
+        ITEM_CLASSES.put(FOURCC_JPEG.toString(), JPEGImageItem.class);
         ITEM_CLASSES.put(FOURCC_IDENTITY.toString(), IdentityImageItem.class);
         ITEM_CLASSES.put(FOURCC_OVERLAY.toString(), OverlayImageItem.class);
         ITEM_CLASSES.put(FOURCC_GRID.toString(), GridImageItem.class);
@@ -532,6 +531,7 @@ public final class HEIF
         DECODER_CONFIG_CLASSES.put(FOURCC_HEVC.toString(), HEVCDecoderConfig.class);
         DECODER_CONFIG_CLASSES.put(FOURCC_AVC.toString(), AVCDecoderConfig.class);
         DECODER_CONFIG_CLASSES.put(FOURCC_AAC.toString(), AACDecoderConfig.class);
+        DECODER_CONFIG_CLASSES.put(FOURCC_JPEG.toString(), JPEGDecoderConfig.class);
     }
 
     static private void resetSampleClasses()
@@ -650,7 +650,7 @@ public final class HEIF
         }
     }
 
-    private Base createItem(String fourCC, long nativeHandle)
+    protected Base createItem(String fourCC, long nativeHandle)
     {
         Class itemClass = ITEM_CLASSES.get(fourCC);
         if (itemClass != null)
@@ -663,7 +663,7 @@ public final class HEIF
         }
     }
 
-    private Base createItemProperty(String fourCC, long nativeHandle)
+    protected Base createItemProperty(String fourCC, long nativeHandle)
     {
         Class itemClass = ITEM_PROPERTY_CLASSES.get(fourCC);
         if (itemClass == null)
@@ -673,7 +673,7 @@ public final class HEIF
         return createBase(itemClass, nativeHandle);
     }
 
-    private Base createDecoderConfig(String fourCC, long nativeHandle)
+    protected Base createDecoderConfig(String fourCC, long nativeHandle)
     {
         Class itemClass = DECODER_CONFIG_CLASSES.get(fourCC);
         if (itemClass == null)
@@ -683,7 +683,7 @@ public final class HEIF
         return createBase(itemClass, nativeHandle);
     }
 
-    private Base createSample(String fourCC, long nativeHandle)
+    protected Base createSample(String fourCC, long nativeHandle)
     {
         Class itemClass = SAMPLE_CLASSES.get(fourCC);
         if (itemClass != null)
@@ -696,7 +696,7 @@ public final class HEIF
         }
     }
 
-    private Base createEntityGroup(String fourCC, long nativeHandle)
+    protected Base createEntityGroup(String fourCC, long nativeHandle)
     {
         Class itemClass = ENTITY_GROUP_CLASSES.get(fourCC);
         if (itemClass == null)
@@ -706,7 +706,7 @@ public final class HEIF
         return createBase(itemClass, nativeHandle);
     }
 
-    private Base createTrack(String fourCC, long nativeHandle)
+    protected Base createTrack(String fourCC, long nativeHandle)
     {
         Class itemClass = TRACK_CLASSES.get(fourCC);
         if (itemClass != null)

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -414,8 +414,8 @@ namespace HEIF
          *   - Changes auxiliary Image Sequence track handler type to 'auxv'.
          *   - Adds 'auxl' track reference from auxiliary Image Sequence to master Image Sequence.
          * @param auxC                  [in]   Type of the auxiliary image as AuxiliaryType struct
-         *                                     AuxiliaryType.auxType : "urn:mpeg:hevc:2015:auxid:1" for alpha plane
-         *                                                             "urn:mpeg:hevc:2015:auxid:2" for depth map
+         *                                     AuxiliaryType.auxType : "urn:mpeg:mpegB:cicp:systems:auxiliary:alpha" for alpha plane
+         *                                                             "urn:mpeg:mpegB:cicp:systems:auxiliary:depth" for depth map
          * @param auxiliarySequenceId   [in]  SequenceId of the Image Sequence that is marked as auxiliary.
          * @param sequenceId            [in]  SequenceId of the Image Sequence for which the auxiliary Image Sequence is
          * added.

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,11 +17,33 @@
 #include "buildinfo.hpp"
 #include "customallocator.hpp"
 #include "jpegparser.hpp"
+#include <cassert>
 
 using namespace std;
 
 namespace HEIF
 {
+    namespace
+    {
+        std::vector<uint8_t> embedJPEGDecoderConfig(const HEIF::DecoderSpecificInfo& aDecoderSpecificInfo,
+                                                    const Data& aData)
+        {
+            std::vector<uint8_t> completeImage;
+            const Array<uint8_t>& decoderSpecInfoData = aDecoderSpecificInfo.decSpecInfoData;
+
+            assert(aData.mediaFormat == MediaFormat::JPEG);
+            assert(aDecoderSpecificInfo.decSpecInfoType == DecoderSpecInfoType::JPEG);
+
+            completeImage.reserve(decoderSpecInfoData.size + aData.size);
+            auto toImage = std::back_inserter(completeImage);
+            std::copy(decoderSpecInfoData.begin(), decoderSpecInfoData.end(), toImage);
+            std::copy(aData.data, aData.data + aData.size, toImage);
+
+            return completeImage;
+        }
+    }  // namespace
+
+
     OutputStreamInterface* ConstructFileStream(const char* aFilename);
 
     HEIF_DLL_PUBLIC ErrorCode Writer::SetCustomAllocator(CustomAllocator* customAllocator)
@@ -225,9 +247,10 @@ namespace HEIF
 
     ErrorCode WriterImpl::validateFedMediaData(const Data& aData)
     {
-        if (((aData.mediaFormat == MediaFormat::AVC) || (aData.mediaFormat == MediaFormat::HEVC) ||
-             (aData.mediaFormat == MediaFormat::AAC)) &&
-            !mAllDecoderConfigs.count(aData.decoderConfigId))
+        if ((((aData.mediaFormat == MediaFormat::AVC) || (aData.mediaFormat == MediaFormat::HEVC) ||
+              (aData.mediaFormat == MediaFormat::AAC)) &&
+             !mAllDecoderConfigs.count(aData.decoderConfigId)) &&
+            !(aData.mediaFormat == MediaFormat::JPEG))
         {
             return ErrorCode::INVALID_DECODER_CONFIG_ID;
         }
@@ -287,7 +310,31 @@ namespace HEIF
         }
         else if (aData.mediaFormat == MediaFormat::JPEG)
         {
-            // todo: was possible to not have decoder config?
+            if (aData.decoderConfigId.get())
+            {
+                Array<DecoderSpecificInfo>& decoderSpecInfo = mAllDecoderConfigs.at(aData.decoderConfigId);
+                if (decoderSpecInfo.size == 1)
+                {
+                    DecoderSpecInfoType type = decoderSpecInfo.elements[0].decSpecInfoType;
+                    if (type != DecoderSpecInfoType::JPEG)
+                    {
+                        return ErrorCode::INVALID_DECODER_CONFIG_ID;
+                    }
+                }
+                else if (decoderSpecInfo.size > 1)
+                {
+                    return ErrorCode::INVALID_DECODER_CONFIG_ID;
+                }
+                else
+                {
+                    // If there is decoderConfigId, we expect at least some decoder config data for it
+                    return ErrorCode::INVALID_DECODER_CONFIG_ID;
+                }
+            }
+            else
+            {
+                return ErrorCode::OK;
+            }
         }
         return ErrorCode::OK;
     }
@@ -312,7 +359,35 @@ namespace HEIF
             if (aData.mediaFormat == MediaFormat::JPEG)
             {
                 JpegParser parser;
-                const JpegParser::JpegInfo info = parser.parse(aData.data, static_cast<unsigned int>(aData.size));
+                JpegParser::JpegInfo info;
+
+                const Array<DecoderSpecificInfo>* decoderSpecInfo =
+                    mAllDecoderConfigs.count(aData.decoderConfigId)
+                    ? &mAllDecoderConfigs.at(aData.decoderConfigId)
+                    : nullptr;
+                // Compose a complete image out of decoder specific info and the data
+                if (decoderSpecInfo && decoderSpecInfo->size == 1)
+                {
+                    // TODO: JpegParser::parse should work completely as a state machine, so the input can
+                    // be provided in arbitrary units, ie. provide bytes until its state is "header
+                    // parsed". Now we need to construct an intermediate data that includes the decoder
+                    // configuration to do the verification.
+
+                    auto completeImage = embedJPEGDecoderConfig(decoderSpecInfo->elements[0], aData);
+
+                    info = parser.parse(completeImage.data(), completeImage.size());
+                }
+                else if (decoderSpecInfo && decoderSpecInfo->size > 1)
+                {
+                    // we don't really expect this, the error should have occurred earlier
+                    return ErrorCode::INVALID_DECODER_CONFIG_ID;
+                }
+                else
+                {
+                    // But if there's no decoder specific info, just work on the original data
+                    info = parser.parse(aData.data, static_cast<unsigned int>(aData.size));
+                }
+
                 if (!info.parsingOk)
                 {
                     return ErrorCode::MEDIA_PARSING_ERROR;

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,25 +16,6 @@
 
 namespace HEIFPP
 {
-#if 0
-    class JPEGDecoderConfiguration : public HEIFPP::DecoderConfiguration
-    {
-    public:
-        JPEGDecoderConfiguration(Heif* aHeif);
-        virtual ~JPEGDecoderConfiguration() = default;
-        virtual void getConfig(std::uint8_t*& data, std::uint32_t& size) const;
-        virtual HEIF::ErrorCode  setConfig(const std::uint8_t* data, std::uint32_t size);
-    protected:
-        HEIF::ErrorCode convertToRawData(const HEIF::Array<HEIF::DecoderSpecificInfo>& aConfig, std::uint8_t*& aData, std::uint32_t& aSize) const;
-        HEIF::ErrorCode convertFromRawData(const std::uint8_t* aData, std::uint32_t aSize);       
-    private:
-        JPEGDecoderConfiguration & operator=(const JPEGDecoderConfiguration&) = delete;
-        JPEGDecoderConfiguration & operator=(JPEGDecoderConfiguration&&) = delete;
-        JPEGDecoderConfiguration(const JPEGDecoderConfiguration&) = delete;
-        JPEGDecoderConfiguration(JPEGDecoderConfiguration&&) = delete;
-        JPEGDecoderConfiguration() = delete;
-};
-#endif
     class JPEGCodedImageItem : public HEIFPP::CodedImageItem
     {
     public:

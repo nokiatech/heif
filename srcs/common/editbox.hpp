@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -28,8 +28,8 @@ public:
     {
         std::uint32_t mSegmentDuration;
         std::int32_t mMediaTime;
-        std::uint16_t mMediaRateInteger;
-        std::uint16_t mMediaRateFraction;
+        std::int16_t mMediaRateInteger;
+        std::int16_t mMediaRateFraction;
     };
 
     /// Edit List Entry Format version 1
@@ -37,8 +37,8 @@ public:
     {
         std::uint64_t mSegmentDuration;
         std::int64_t mMediaTime;
-        std::uint16_t mMediaRateInteger;
-        std::uint16_t mMediaRateFraction;
+        std::int16_t mMediaRateInteger;
+        std::int16_t mMediaRateFraction;
     };
 
     EditListBox();

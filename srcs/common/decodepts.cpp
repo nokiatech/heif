@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -18,6 +18,8 @@
 #include "compositiontodecodebox.hpp"
 #include "editbox.hpp"
 #include "timetosamplebox.hpp"
+#include <iostream>
+#include <limits>
 
 DecodePts::DecodePts()
     : mEditListBox(nullptr)
@@ -38,13 +40,17 @@ void DecodePts::applyEdit(T& entry)
     {
         applyEmptyEdit(entry);
     }
-    if (entry.mMediaRateInteger == 0)
+    if (entry.mMediaRateInteger == 0 && entry.mMediaRateFraction == 0)
     {
         applyDwellEdit(entry);
     }
-    if (entry.mMediaTime >= 0 && entry.mMediaRateInteger != 0)
+    if (entry.mMediaTime >= 0 && (entry.mMediaRateInteger == 1 || (entry.mMediaRateInteger == 0 && entry.mMediaRateFraction > 0)))
     {
-        applyShiftEdit(entry);
+        applyShiftEditForward(entry);
+    }
+    if (entry.mMediaTime >= 0 && entry.mMediaRateInteger == -1)
+    {
+        applyShiftEditReverse(entry);
     }
 }
 
@@ -120,62 +126,179 @@ std::uint64_t DecodePts::lastSampleDuration() const
 
 /// @todo This function can be optimized further using map ranges.
 template <typename T>
-void DecodePts::applyShiftEdit(T& entry)
+void DecodePts::applyShiftEditForward(T& entry)
 {
-    std::int64_t segmentEndTime(INT64_MAX);
+    int64_t segmentBeginTime = static_cast<std::int64_t>(entry.mMediaTime);
+    std::int64_t segmentEndTime(std::numeric_limits<std::int64_t>::max());
+
+    // Adjust each inserted sample's time ratio by this amount.
+    // ie. entry.mMediaTime == half of (its maximum value + 1) (+1 is handled by the value of .mMediaRateInteger being
+    // 1) then the duration is each sample's is doubled, ie. sampleTimeRatio == 2.0
+    const auto sampleTimeRatio =
+        (entry.mMediaRateInteger == 1)
+            ? 1.0
+            : (static_cast<double>(std::numeric_limits<std::int16_t>::max()) + 1) / entry.mMediaRateFraction;
 
     if (entry.mSegmentDuration != 0)
     {
-        segmentEndTime = static_cast<std::int64_t>(static_cast<std::uint64_t>(entry.mMediaTime) +
-                                                   (fromMovieToMediaTS(entry.mSegmentDuration)));
+        segmentBeginTime = entry.mMediaTime;
+        segmentEndTime = entry.mMediaTime + static_cast<std::int64_t>(fromMovieToMediaTS(entry.mSegmentDuration / sampleTimeRatio));
     }
 
-    if (mMediaPtsTS.size())
-    {
-        // this may end up being "negative", but hopefully we'll find enough samples in the loop to come back to
-        // "positive"
-        mMovieOffset += static_cast<std::uint64_t>(mMediaPtsTS.begin()->first + mMediaOffset - entry.mMediaTime);
-    }
+    std::int64_t lastInsertedSampleT1 = segmentBeginTime;
 
-    for (auto it = mMediaPtsTS.cbegin(); it != mMediaPtsTS.cend(); ++it)
+    for (auto it = mMediaPtsTS.begin(); it != mMediaPtsTS.end(); ++it)
     {
-        // Find those samples that is presented in this edit
-        if (it->first + mMediaOffset >= static_cast<std::int64_t>(entry.mMediaTime) &&
-            it->first + mMediaOffset < segmentEndTime)
+        std::int64_t sampleDuration = std::next(it) == mMediaPtsTS.end()
+                                          ? static_cast<std::int64_t>(lastSampleDuration())
+                                          : std::next(it)->first - it->first;
+
+        auto sampleId = it->second;
+        auto sampleT0 = it->first + mMediaOffset;
+        auto sampleT1 = sampleT0 + sampleDuration;
+
+        if (sampleT0 >= segmentBeginTime)
         {
-            // If the pts first sample of this edit does not exactly fall in the
-            // start of the edit, also include the previous sample and compute
-            // the time for which that sample is displayed.
-            if (it != mMediaPtsTS.cbegin() &&
-                std::prev(it)->first + mMediaOffset < static_cast<std::int64_t>(entry.mMediaTime) &&
-                it->first + mMediaOffset != static_cast<std::int64_t>(entry.mMediaTime))
+            if (sampleT0 < segmentEndTime)
             {
-                mMoviePtsTS.insert(std::make_pair(mMovieOffset, std::prev(it)->second));
-                mMovieOffset += static_cast<std::uint64_t>(
-                    it->first - (std::prev(it)->first + (entry.mMediaTime - std::prev(it)->first)));
+                std::int64_t insertedSampleDuration = 0;
+                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (sampleT0 - lastInsertedSampleT1));
+                mMoviePtsTS.insert(std::make_pair(mMovieOffset, sampleId));
+                if (sampleT1 <= segmentEndTime)
+                {
+                    insertedSampleDuration = sampleDuration;
+                    lastInsertedSampleT1 = sampleT1;
+                }
+                else  // sampleT1 > segmentEndTime; we need to cut it from the end
+                {
+                    insertedSampleDuration = segmentEndTime - sampleT0;
+                    lastInsertedSampleT1 = segmentEndTime;
+                }
+                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (insertedSampleDuration));
             }
-
-            // Insert the rest of the samples into the movie edit
-            mMoviePtsTS.insert(std::make_pair(mMovieOffset, it->second));
+            else
+            {
+                // ignore sample
+            }
         }
-
-        // If the next sample falls into the edit, update mMovieOffset with
-        // the difference of this sample and the next.
-        if (std::next(it) != mMediaPtsTS.cend())
+        else // sampleT0 < segmentBeginTime
         {
-            mMovieOffset += static_cast<std::uint64_t>(std::next(it)->first - it->first);
+            if (sampleT1 > segmentBeginTime)
+            {
+                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (segmentBeginTime - lastInsertedSampleT1));
+                std::int64_t insertedSampleDuration = 0;
+                mMoviePtsTS.insert(std::make_pair(mMovieOffset, sampleId));
+                if (sampleT1 >= segmentEndTime)
+                {
+                    insertedSampleDuration = segmentEndTime - segmentBeginTime;
+                    lastInsertedSampleT1 = segmentEndTime;
+                }
+                else
+                {
+                    insertedSampleDuration = sampleT1 - segmentBeginTime;
+                    lastInsertedSampleT1 = sampleT1;
+                }
+                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (insertedSampleDuration));
+            }
+            else
+            {
+                // ignore sample
+            }
         }
-        else
+    }
+    if (entry.mSegmentDuration)
+    {
+        // gap the distance between last inserted sample and the segment end time
+        mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (segmentEndTime - lastInsertedSampleT1));
+    }
+}
+
+/// @todo This function can be optimized further using map ranges.
+template <typename T>
+void DecodePts::applyShiftEditReverse(T& entry)
+{
+    int64_t segmentBeginTime = static_cast<std::int64_t>(entry.mMediaTime);
+    std::int64_t segmentEndTime(std::numeric_limits<std::int64_t>::max());
+
+    std::int64_t lastInsertedSampleT0 = segmentBeginTime;
+    if (entry.mSegmentDuration != 0)
+    {
+        segmentEndTime = entry.mMediaTime;
+        segmentBeginTime = entry.mMediaTime - static_cast<std::int64_t>(fromMovieToMediaTS(entry.mSegmentDuration));
+        lastInsertedSampleT0 = segmentEndTime;
+    }
+    else
+    {
+        if (mMediaPtsTS.size())
         {
-            mMovieOffset += lastSampleDuration();
+            lastInsertedSampleT0 = mMediaPtsTS.back().first + static_cast<std::int64_t>(lastSampleDuration());
         }
     }
 
-    if (mMediaPtsTS.size() && entry.mSegmentDuration != 0)
+    for (auto it = mMediaPtsTS.rbegin(); it != mMediaPtsTS.rend(); ++it)
     {
-        // do corresponding fix at the end of the media
-        mMovieOffset -= static_cast<std::uint64_t>(mMediaPtsTS.rbegin()->first + mMediaOffset +
-                                                   static_cast<std::int64_t>(lastSampleDuration()) - segmentEndTime);
+        std::int64_t sampleDuration = it == mMediaPtsTS.rbegin() ? static_cast<std::int64_t>(lastSampleDuration())
+                                                                 : std::prev(it)->first - it->first;
+
+        auto sampleId = it->second;
+        auto sampleT0 = it->first + mMediaOffset;
+        auto sampleT1 = sampleT0 + sampleDuration;
+
+        if (sampleT0 >= segmentBeginTime)
+        {
+            if (sampleT0 < segmentEndTime)
+            {
+                std::int64_t insertedSampleDuration = 0;
+                mMoviePtsTS.insert(std::make_pair(mMovieOffset, sampleId));
+                if (sampleT1 <= segmentEndTime)
+                {
+                    insertedSampleDuration = sampleDuration;
+                    mMovieOffset += static_cast<std::uint64_t>(lastInsertedSampleT0 - sampleT1);
+                }
+                else  // sampleT1 > segmentEndTime; we need to cut it from the end
+                {
+                    auto cutSampleDuration = segmentEndTime - sampleT0;
+                    insertedSampleDuration = cutSampleDuration;
+                    mMovieOffset += static_cast<std::uint64_t>(lastInsertedSampleT0 - segmentEndTime);
+                }
+                lastInsertedSampleT0 = sampleT0;  // sampleT0 is within range -> just use that
+                mMovieOffset += static_cast<std::uint64_t>(insertedSampleDuration);
+            }
+            else
+            {
+                // ignore sample
+            }
+        }
+        else // sampleT0 < segmentBeginTime
+        {
+            if (sampleT1 > segmentBeginTime)
+            {
+                std::int64_t insertedSampleDuration = 0;
+                mMoviePtsTS.insert(std::make_pair(mMovieOffset, sampleId));
+                if (sampleT1 >= segmentEndTime)
+                {
+                    mMovieOffset += static_cast<std::uint64_t>(lastInsertedSampleT0 - segmentEndTime);
+                    insertedSampleDuration = segmentEndTime - segmentBeginTime;
+                }
+                else
+                {
+                    mMovieOffset += static_cast<std::uint64_t>(lastInsertedSampleT0 - sampleT1);
+                    insertedSampleDuration = sampleT1 - segmentBeginTime;
+                }
+                // sampleT0 is before segmentBeginTime -> cap it to segmentBeginTime
+                lastInsertedSampleT0 = segmentBeginTime;
+                mMovieOffset += static_cast<std::uint64_t>(insertedSampleDuration);
+            }
+            else
+            {
+                // ignore sample
+            }
+        }
+    }
+    if (entry.mSegmentDuration)
+    {
+        // gap the distance between last inserted sample and the segment end time
+        mMovieOffset += static_cast<std::uint64_t>(lastInsertedSampleT0 - segmentBeginTime);
     }
 }
 

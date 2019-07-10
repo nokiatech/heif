@@ -1,3 +1,15 @@
+/*
+ * This file is part of Nokia HEIF library
+ *
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ *
+ * Contact: heif@nokia.com
+ *
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ *
+ */
+
 package com.nokia.heif;
 
 /**
@@ -39,5 +51,30 @@ public final class ImageSequence extends VideoTrack
         super(heif, nativeHandle);
     }
 
+    /**
+     * Get the auxiliary type identifier from an optional AuxiliaryTypeInfoBox.
+     * @return URN used to identify the typo of the auxiliary images. Null if no AuxiliaryTypeInfoBox
+     * was present in the sample entry.
+     */
+    public String getAuxTypeInfo()
+    {
+        return getAuxiliaryTypeInfoNative();
+    }
+
+    /**
+     * Set auxiliary type identifier to an optional AuxiliaryTypeInfoBox in the sample entry.
+     * @param aux UTF-8 character string of the URN used to identify the type of the auxiliary images
+     *            Null if removing the AuxiliaryTypeInfoBox.
+     * @throws Exception
+     */
+    public void setAux(String aux)
+            throws Exception
+    {
+        checkState();
+        setAuxNative(aux);
+    }
+
     private native long createContextNative(HEIF heif);
+    native private String getAuxiliaryTypeInfoNative();
+    native private void setAuxNative(String auxType);
 }

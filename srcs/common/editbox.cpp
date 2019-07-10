@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -112,8 +112,8 @@ void EditListBox::writeBox(ISOBMFF::BitStream& bitstr) const
         {
             bitstr.write32Bits(entry.mSegmentDuration);
             bitstr.write32Bits(static_cast<unsigned int>(entry.mMediaTime));
-            bitstr.write16Bits(entry.mMediaRateInteger);
-            bitstr.write16Bits(entry.mMediaRateFraction);
+            bitstr.write16Bits(static_cast<std::uint16_t>(entry.mMediaRateInteger));
+            bitstr.write16Bits(static_cast<std::uint16_t>(entry.mMediaRateFraction));
         }
     }
     else if (mEntryVersion1.empty() == false)
@@ -123,8 +123,8 @@ void EditListBox::writeBox(ISOBMFF::BitStream& bitstr) const
         {
             bitstr.write64Bits(entry.mSegmentDuration);
             bitstr.write64Bits(static_cast<std::uint64_t>(entry.mMediaTime));
-            bitstr.write16Bits(entry.mMediaRateInteger);
-            bitstr.write16Bits(entry.mMediaRateFraction);
+            bitstr.write16Bits(static_cast<std::uint16_t>(entry.mMediaRateInteger));
+            bitstr.write16Bits(static_cast<std::uint16_t>(entry.mMediaRateFraction));
         }
     }
     updateSize(bitstr);
@@ -143,8 +143,8 @@ void EditListBox::parseBox(ISOBMFF::BitStream& bitstr)
             EntryVersion0 entryVersion0;
             entryVersion0.mSegmentDuration   = bitstr.read32Bits();
             entryVersion0.mMediaTime         = static_cast<std::int32_t>(bitstr.read32Bits());
-            entryVersion0.mMediaRateInteger  = bitstr.read16Bits();
-            entryVersion0.mMediaRateFraction = bitstr.read16Bits();
+            entryVersion0.mMediaRateInteger  = static_cast<std::int16_t>(bitstr.read16Bits());
+            entryVersion0.mMediaRateFraction = static_cast<std::int16_t>(bitstr.read16Bits());
             mEntryVersion0.push_back(entryVersion0);
         }
     }
@@ -155,8 +155,8 @@ void EditListBox::parseBox(ISOBMFF::BitStream& bitstr)
             EntryVersion1 entryVersion1;
             entryVersion1.mSegmentDuration   = bitstr.read64Bits();
             entryVersion1.mMediaTime         = static_cast<std::int64_t>(bitstr.read64Bits());
-            entryVersion1.mMediaRateInteger  = bitstr.read16Bits();
-            entryVersion1.mMediaRateFraction = bitstr.read16Bits();
+            entryVersion1.mMediaRateInteger  = static_cast<std::int16_t>(bitstr.read16Bits());
+            entryVersion1.mMediaRateFraction = static_cast<std::int16_t>(bitstr.read16Bits());
             mEntryVersion1.push_back(entryVersion1);
         }
     }
