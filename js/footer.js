@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -28,6 +28,11 @@ function Footer () {
                             <span class="glyphicon glyphicon-download"></span> HEIF Reader/Writer Source Code at GitHub\
                         </a> \
                     </div> \
+                    <div class="heif-download-content-link"> \
+                        <a href="https://github.com/nokiatech/heif/tree/miaf"> \
+                            <span class="glyphicon glyphicon-download"></span> MIAF Source Code GitHub\
+                        </a> \
+                    </div> \
                 </div> \
                 <div class="heif-download-content col-xs-12 col-sm-6"> \
                     <div class="heif-download-content-title"> \
@@ -36,13 +41,14 @@ function Footer () {
                     <ul> \
                         <li><a href="http://mpeg.chiariglione.org/">MPEG</a></li> \
                         <li><a href="http://standards.iso.org/ittf/PubliclyAvailableStandards/c066067_ISO_IEC_23008-12_2017.zip">HEIF standard ISO/IEC 23008-12:2017</a></li> \
+                        <li><a href="https://www.iso.org/standard/74417.html">MIAF standard ISO/IEC 23000-22:2019</a></li> \
                         <li><a href="http://mpeg.chiariglione.org/standards/mpeg-4/iso-base-media-file-format">ISO Base Media File Format Specification</a></li> \
                     </ul> \
                 </div> \
             </div> \
             \
             <div class="heif-footer-container"> \
-                <small><span>Copyright &#169; Nokia Technologies 2015-2018</span></small> \
+                <small><span>Copyright &#169; 2015-2019 Nokia Corporation and/or its subsidiary(-ies)</span></small> \
                 <small><span>Contact: <a href="mailto:heif@nokia.com">heif@nokia.com</a></span></small>\
             </div> \
             \

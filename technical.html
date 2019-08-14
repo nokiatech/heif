@@ -3,7 +3,7 @@
 <!--
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -82,6 +82,7 @@
 
         <div class="heif-technical-content">
             <h2>Technical information</h2>
+            Here, you can find technical information about HEIF (ISO/IEC 23008-12) and MIAF (ISO/IEC 23000-22). Click <a href="#miaf">here</a> to go directly to MIAF technical information.
             <h3>Introduction</h3>
             <p>
             High Efficiency Image File Format (HEIF, ISO/IEC 23008-12) specifies the storage of individual images,
@@ -1969,6 +1970,192 @@
                     The configuration information of alpha planes and depth maps follows the respective supplemental enhancement information of HEVC.
                 </li>
             </ul>
+
+            <a name="miaf"></a>
+            <h3>Multi-Image Application Format (MIAF)</h3>
+            <p>
+                The Multi-Image Application Format (MIAF) specification defines additional constraints and interoperability points to ensure higher interoperability, while fully conforming to the HEIF format.
+                This is done by defining specific constraints, limiting the supported encoding types to a set of specific profiles and levels (see <a href="#table-11">Table XI</a>), requiring specific metadata formats, and defining a set of brands for signalling such constraints (see <a href="#table-12">Table XII</a>). This enables the industry to deploy particular uses of the HEIF specification.
+            </p>
+
+            <a name="table-11"></a>
+            <p>
+                <b>Table XI. MIAF profiles.</b>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                MIAF profile
+                            </th>
+                            </th>
+                            <th>
+                                Allowed image item coding profiles and highest levels
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                MIAF HEVC Basic profile
+                            </td>
+                            <td>
+                                <ul>
+                                    <li>HEVC Main Still Picture Profile, Level 6</li>
+                                    <li>HEVC Main Profile, Level 6</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                MIAF HEVC Advanced profile
+                            </td>
+                            <td>
+                                 <ul>
+                                    <li>Main 10, Level 6</li>
+                                    <li>Main 10 Intra, Level 6</li>
+                                    <li>Main 10 Still Picture, Level 6</li>
+                                    <li>Main 4:2:2 10 Intra, Level 6</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                MIAF HEVC Extended profile
+                            </td>
+                            <td>
+                                <ul>
+                                    <li>Main 4:4:4 10, Level 6</li>
+                                    <li>Main 4:4:4 Still Picture, Level 6</li>
+                                    <li>Main 4:4:4 10 Intra, Level 6</li>
+                                    <li>Monochrome 10, Level 6</li>
+                                    <li>Monochrome, Level 6</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                MIAF AVC Basic profile
+                            </td>
+                            <td>
+                                <ul>
+                                    <li>AVC Progressive High Profile, Level 5.2</li>
+                                    <li>AVC Constrained High Profile, Level 5.2</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+
+            <a name="table-12"></a>
+            <p>
+                <b>Table XII. MIAF brands.</b>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                MIAF Application brand
+                            </th>
+                            <th>
+                                Features
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                Progressive application brand
+                            </td>
+                            <td>
+                                Data is ordered in way that progressive perceived quality enchancement during loading the file is possible.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Animation application brand
+                            </td>
+                            <td>
+                                An animation application branded video file includes one video track, and may also include an associated alpha plane sequence and an audio track.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Burst capture application brand
+                            </td>
+                            <td>
+                                Multi-image capturing, for example focal and exposure stacks.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Common media fragmented brand
+                            </td>
+                            <td>
+                                Used when compatiblity with CMAF is desired ('cmfc' brand in ISO/IEC 23000-19).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Fragmented alpha video brand
+                            </td>
+                            <td>
+                                Files that are CMAF compatible, and contain an alpha plane sequence associated with the video sequence.
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </p>
+
+            <p>
+                The MIAF specification also defines normative requirements for MIAF readers and renderers. Entities participating in MIAF file playback are briefly described in <a href="#table-13">Table XIII</a>.
+            </p>
+
+            <a name="table-13"></a>
+            <p>
+                <b>Table XIII. MIAF architecture.</b>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Component
+                            </th>
+                            <th>
+                                Description
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                MIAF reader
+                            </td>
+                            <td>
+                                Reads and parses MIAF files, and identifies the type of image coding and metadata. Handles decoding of bitstreams for the coding (types, profiles, levels) that are supported.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                MIAF renderer
+                            </td>
+                            <td>
+                                Renders the output of MIAF reader into a visual context, taking associated metadata (e.g. colour information) into account, and possible auxiliary image data (e.g. depth or alpha planes).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                MIAF player
+                            </td>
+                            <td>
+                                Uses a MIAF reader and a MIAF renderer to present the contents of a MIAF file.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+            <p>
+                The MIAF specification can be found from <a href="https://www.iso.org/standard/74417.html">the ISO website</a>.
+            </p>
 
         </div>
         <script>
