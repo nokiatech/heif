@@ -1,44 +1,27 @@
-# High Efficiency Image File Format (HEIF)
+# Multi-Image Application Format (MIAF)
+MIAF (Multi-Image Application Format) standard defines a set of additional constraints on HEIF specification, which further enables interoperability. MIAF is an MPEG standard ([ISO/IEC 23000-22](https://www.iso.org/standard/74417.html)).
 HEIF is a visual media container format standardized by the Moving Picture Experts Group (MPEG) for storage and sharing of images and image sequences. It is based on the well-known ISO Base Media File Format (ISOBMFF) standard. HEIF Reader/Writer Engine is an implementation of HEIF standard in order to demonstrate its powerful features and capabilities.
 
+This is a MIAF-specific branch. For HEIF implementation, please switch to [this branch](https://github.com/nokiatech/heif).
+
 Please follow this **[link](https://nokiatech.github.io/heif)** to access HEIF Web-Site.
-You can also check the **[Wiki](https://github.com/nokiatech/heif/wiki)** pages for more information.
+You can also check the **[technical information](https://nokiatech.github.io/heif/technical.html)** pages for more detail.
 
 ## News:
 [11.07.2019] MIAF features: The HEIF writer checks additional constraints from files which contain 'miaf' brand in compatible brands of FileTypeBox. A MIAF gallery application for Android is included, with an extension to Java API to help with content selection.
 
-[10.07.2019] v3.5.0 Release: Improved support for JPEGs and edit lists. Bug fixes, minor improvements and code cleanup.
-
-[06.11.2018] v3.4.0 Release: Java API improvements. Bug fixes, code cleanup and robustness improvements.
-
-[13.06.2018] v3.3.0 Release: Java desktop build added, Java API includes track and image sequence as well as entity grouping support.
-
-[06.04.2018] v3.2 Release. Two new APIs added, a Java API which wraps the C++ libraries using JNI and a convenience C++ API (which is used by the Java API) that wraps the underlying reader and writer. The Java API is expected to remain relatively stable, however the new C++ API will most likely change in the future.
-
-[14.03.2018] v3.1 Release. Reader API update, bug fixes and examples update.
-
-[05.03.2018] Code updated and tagged v3.0. Writer executable replaced with writer library / API. Implementation is based on HEIF standard specification [ISO/IEC 23008-12:2017](http://standards.iso.org/ittf/PubliclyAvailableStandards/c066067_ISO_IEC_23008-12_2017.zip) that is available from iso.org web pages.
-
-[09.03.2017] ISO/IEC 23008-12 second edition includes support for the interchange of multi-layered images. The source code now includes structures that are specified in this second edition. Simple support for AVC is also added. Minor bug fixes are included in this update. Example configuration files for generating multi-layered streams can be found in the Wiki.
-
-[24.02.2016] HEIF source code and website is updated to reflect the latest HEIF specification changes and various fixes. Please note that backwards compatibility is not maintained during this update.
-
-[24.02.2016] HEIF conformance test candidate files can be found **[here](https://github.com/nokiatech/heif_conformance)**
-
 ## Features:
-HEIF is a media container format. It is not an image or video encoder per se. Hence, the quality of the visual media depends highly on the proper usage of visual media encoder (e.g. HEVC). Current standard allows containing HEVC/AVC/JPEG encoded bitstreams. This can be easily extended to future visual media codecs. It has many powerful features which are currently not present in other image file formats. Some of these features are:
-* Encapsulate images coded using HEVC/SHVC/MV-HEVC/AVC/JPEG.
-* Encapsulate image sequences coded using HEVC/SHVC/MV-HEVC/AVC.
-* Storage based on widely adopted ISO Base Media File Format (ISOBMFF)
-* Supports efficient storage of image bursts and cinemagraphs
-* Supports computational photography use cases
-* Supports both lossy and lossless image data storage
-* A better and easy way to distribute still images, image collections and related metadata.
-
-Please follow this **[link](https://nokiatech.github.io/heif/examples.html)** to see HEIF file examples.
+HEIF is a media container format. It is not an image or video encoder per se. Hence, the quality of the visual media depends highly on the proper usage of visual media encoder (e.g. HEVC). Current standard allows containing HEVC/AVC/JPEG encoded bitstreams. This can be easily extended to future visual media codecs. It has many powerful features which are currently not present in other image file formats. MIAF further enhances HEIF interoperability. Some of MIAF features are:
+* Additional constraints to HEIF
+* Application brands (e.g. Progressive application brand, Burst capture application brand)
+* Coding profile brands
+* Specific metadata formats
+* Rules for extending MIAF format
 
 ## Contents of the Repository:
 This repository contains the following items:
+* MIAF checker add-on for writer (under srcs/api/writer/)
+* MIAF player example (under srcs/android-miaf-gallery)
 * ISO Base Media File Format (ISOBMFF) box parse/write source code (under srcs/common/)
 * HEIF Reader API and Library (under srcs/api/reader/)
 * HEIF Writer API and Library (under srcs/api/writer/)
@@ -73,6 +56,14 @@ Note that in order to run the Java API you need to have the HEIF JNI library bui
 ## Building Java API for Android:
 Prerequisites: Android SDK & NDK
 Import the project files under heif/build/android into Android Studio and build the library
+
+## Building Android MIAF gallery
+Import the project files under heif/build/android into Android Studio and build the app. Alternatively, you can build it from command line. E.g. in Linux:
+
+```
+cd heif/build/android-miaf
+./gradlew build
+```
 
 See **[wiki page](https://github.com/nokiatech/heif/wiki/I.-How-to-build-HEIF-Source-Code)** for more information and platform specific instructions.
 

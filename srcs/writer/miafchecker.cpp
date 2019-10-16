@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <cmath>
 #include <cstdint>
 
 using namespace HEIF;
@@ -68,6 +69,7 @@ namespace MIAF
             &MiafChecker::checkBurstCaptureApplicationBrand,
             &MiafChecker::checkAnimationApplicationBrand,
             &MiafChecker::checkMatchedDuration,
+            &MiafChecker::checkAlphaTrackDimensions,
         };
 
         for (const auto& checker : checkers)
@@ -82,26 +84,62 @@ namespace MIAF
         return ErrorCode::OK;
     }
 
+    HEIF::ErrorCode MiafChecker::checkAlphaTrackDimensions() const
+    {
+        for (const auto& it : mWriter->mImageSequences)
+        {
+            const auto& sequence = it.second;
+
+            // Check alpha auxiliary tracks
+            if (((sequence.auxiliaryType == "urn:mpeg:mpegB:cicp:systems:auxiliary:alpha") ||
+                 (sequence.auxiliaryType == "urn:mpeg:hevc:2015:auxid:1")) &&
+                (sequence.trackReferences.count("auxl") > 0))
+            {
+                // Check that dimensions of all auxl-referenced sequences match.
+                const auto& masterTrackIds = sequence.trackReferences.at("auxl");
+                for (const auto& masterTrackId : masterTrackIds)
+                {
+                    const auto& masterSequence =
+                        std::find_if(mWriter->mImageSequences.cbegin(), mWriter->mImageSequences.cend(),
+                                     [&masterTrackId](std::pair<SequenceId, ImageSequence> const& mapItem) {
+                                         return masterTrackId == mapItem.second.trackId;
+                                     });
+                    if ((masterSequence->second.maxDimensions.width != sequence.maxDimensions.width) ||
+                        (masterSequence->second.maxDimensions.height != sequence.maxDimensions.height))
+                    {
+                        return ErrorCode::MIAF_ALPHA_TRACK_DIMENSIONS;
+                    }
+                }
+            }
+        }
+
+        return ErrorCode::OK;
+    }
+
     HEIF::ErrorCode MiafChecker::checkMatchedDuration() const
     {
-        unsigned int durationInMs = 0;
-        double duration;
-        DecodePts::PMap presentationMap;
+        bool durationFound           = false;
+        double firstSequenceDuration = 0;
 
         for (const auto& it : mWriter->mImageSequences)
         {
+            DecodePts::PMap presentationMap;
+            double duration;
+
             if (!getTrackTimeStamps(it.second, duration, presentationMap))
             {
                 return ErrorCode::MIAF_TRACK_DURATION;
             }
 
-            if (durationInMs == 0)
+            if (durationFound == false)
             {
-                durationInMs = duration * 1000;
+                firstSequenceDuration = duration;
+                durationFound         = true;
             }
             else
             {
-                if (duration * 1000 != durationInMs)
+                // Because of roundings, allow max 1 millisecond difference in duration.
+                if (std::fabs(duration - firstSequenceDuration) > 0.001)
                 {
                     return ErrorCode::MIAF_TRACK_DURATION;
                 }
@@ -645,15 +683,15 @@ namespace MIAF
             ExtensionProfile configFlags;
             const std::bitset<8> constraintFlagBits1(constraintFlags.at(0));
             const std::bitset<8> constraintFlagBits2(constraintFlags.at(1));
-            configFlags.generalMax12bitConstraint       = constraintFlagBits1.test(4);
-            configFlags.generalMax10bitConstraint       = constraintFlagBits1.test(5);
-            configFlags.generalMax8bitConstraint        = constraintFlagBits1.test(6);
-            configFlags.generalMax422chromaConstraint   = constraintFlagBits1.test(7);
-            configFlags.generalMax420chromaConstraint   = constraintFlagBits1.test(0);
-            configFlags.generalMaxMonochromeConstraint  = constraintFlagBits1.test(1);
-            configFlags.generalIntraConstraint          = constraintFlagBits1.test(2);
-            configFlags.generalOnePictureOnlyConstraint = constraintFlagBits2.test(3);
-            configFlags.generalLowerBitRateConstraint   = constraintFlagBits2.test(4);
+            configFlags.generalMax12bitConstraint       = constraintFlagBits1.test(3);
+            configFlags.generalMax10bitConstraint       = constraintFlagBits1.test(2);
+            configFlags.generalMax8bitConstraint        = constraintFlagBits1.test(1);
+            configFlags.generalMax422chromaConstraint   = constraintFlagBits1.test(0);
+            configFlags.generalMax420chromaConstraint   = constraintFlagBits2.test(7);
+            configFlags.generalMaxMonochromeConstraint  = constraintFlagBits2.test(6);
+            configFlags.generalIntraConstraint          = constraintFlagBits2.test(5);
+            configFlags.generalOnePictureOnlyConstraint = constraintFlagBits2.test(4);
+            configFlags.generalLowerBitRateConstraint   = constraintFlagBits2.test(3);
 
             const std::vector<ExtensionProfile> rangeExtensionProfiles = {
                 {HevcProfile::MAIN_10_INTRA, true, true, false, true, true, false, true, false, true},

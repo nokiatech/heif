@@ -82,10 +82,11 @@ namespace HEIF
         MIAF_PROGRESSIVE_APPLICATION,    ///< progressive application brand is present, but constraints are not followed
         MIAF_BURST_CAPTURE_APPLICATION,  ///< burst capture application brand is present, but constraints are not
                                          ///< followed
-        MIAF_PRIMARY_ITEM,    ///< the primary item is not valid, is not master image or not a miaf image item
-        MIAF_CODEC_PROFILE,   ///< a codec profile is not present among FileTypeBox compatible brands
-        MIAF_TRACK_DURATION,  ///< duration of tracks differs
-        MIAF_THUMBNAIL_SIZE,  ///< thumbnail size constraints are not followed
+        MIAF_PRIMARY_ITEM,            ///< the primary item is not valid, is not master image or not a miaf image item
+        MIAF_CODEC_PROFILE,           ///< a codec profile is not present among FileTypeBox compatible brands
+        MIAF_TRACK_DURATION,          ///< duration of tracks differs
+        MIAF_ALPHA_TRACK_DIMENSIONS,  ///< alpha plane auxiliary and master track dimensions differ
+        MIAF_THUMBNAIL_SIZE,          ///< thumbnail size constraints are not followed
         MIAF_TRANSFORMATIVE_PROPERTY_ORDER,  ///< association order of transformative properties is invalid
         MIAF_MULTIPLE_IDEN_DIMGS,            ///< an identity derived image has several derivation inputs
         MIAF_PRIMARY_NOT_MIAF_ITEM,          ///< the primary item is not a miaf image item

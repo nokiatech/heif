@@ -61,6 +61,7 @@ namespace MIAF
         HEIF::ErrorCode checkProgressiveApplicationBrand() const;
         HEIF::ErrorCode checkBurstCaptureApplicationBrand() const;
         HEIF::ErrorCode checkAnimationApplicationBrand() const;
+        HEIF::ErrorCode checkAlphaTrackDimensions() const;
 
         // Shared checkers
         HEIF::ErrorCode checkEditLists() const;
