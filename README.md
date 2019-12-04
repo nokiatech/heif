@@ -4,6 +4,8 @@ HEIF is a visual media container format standardized by the Moving Picture Exper
 Please follow this **[link](https://nokiatech.github.io/heif)** to access HEIF Web-Site.
 You can also check the **[Wiki](https://github.com/nokiatech/heif/wiki)** pages for more information.
 
+For MIAF specific code, please switch to the [MIAF branch](https://github.com/nokiatech/heif/tree/miaf).
+
 ## News:
 [10.07.2019] v3.5.0 Release: Improved support for JPEGs and edit lists. Bug fixes, minor improvements and code cleanup.
 

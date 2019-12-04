@@ -68,6 +68,21 @@ public class HEIF
     public static final FourCC BRAND_MP41 = new FourCC("mp41", true);
 
 
+    public enum PreloadMode
+    {
+        LOAD_ALL_DATA(0),
+        LOAD_PREVIEW_DATA(1),
+        LOAD_ON_DEMAND(2);
+
+        private int value;
+
+        PreloadMode(int value)
+        {
+            this.value = value;
+        }
+    }
+
+
     /**
      * Creates a HEIF instance which can be used to read and write HEIF files
      */
@@ -88,6 +103,27 @@ public class HEIF
         try
         {
             load(filename);
+        }
+        catch (Exception ex)
+        {
+            release();
+            throw ex;
+        }
+    }
+
+    /**
+     * Creates a HEIF instance from the given file
+     * @param filename Path to the file to be opened
+     * @param preloadMode In which mode the file should be loaded
+     * @throws Exception Thrown if the loading fails
+     */
+    public HEIF(String filename, PreloadMode preloadMode)
+            throws Exception
+    {
+        this();
+        try
+        {
+            load(filename, preloadMode);
         }
         catch (Exception ex)
         {
@@ -190,14 +226,40 @@ public class HEIF
     /**
      * Loads a HEIF file. Can be called only once per instance.
      * @param filename Filename including the path
+     * @param preloadMode In which mode the file should be loaded
+     * @throws Exception
+     */
+    public void load(String filename, PreloadMode preloadMode)
+            throws Exception
+    {
+        checkState();
+        checkParameter(filename);
+        loadNative(filename, preloadMode.value);
+    }
+
+    /**
+     * Loads a HEIF file. Can be called only once per instance.
+     * @param filename Filename including the path
      * @throws Exception
      */
     public void load(String filename)
             throws Exception
     {
+        load(filename, PreloadMode.LOAD_ALL_DATA);
+    }
+
+    /**
+     * Loads a HEIF file from a stream
+     * @param inputStream The input stream for the file
+     * @param preloadMode In which mode the file should be loaded
+     * @throws Exception
+     */
+    public void load(InputStream inputStream, PreloadMode preloadMode)
+            throws Exception
+    {
         checkState();
-        checkParameter(filename);
-        loadNative(filename);
+        checkParameter(inputStream);
+        loadStreamNative(inputStream, preloadMode.value);
     }
 
     /**
@@ -208,9 +270,7 @@ public class HEIF
     public void load(InputStream inputStream)
             throws Exception
     {
-        checkState();
-        checkParameter(inputStream);
-        loadStreamNative(inputStream);
+        load(inputStream, PreloadMode.LOAD_ALL_DATA);
     }
 
     /**
@@ -723,9 +783,9 @@ public class HEIF
 
     private native void destroyInstanceNative();
 
-    private native void loadNative(String filename);
+    private native void loadNative(String filename, int preloadMode);
 
-    private native void loadStreamNative(InputStream stream);
+    private native void loadStreamNative(InputStream stream, int preloadMode);
 
     private native void saveNative(String filename);
 

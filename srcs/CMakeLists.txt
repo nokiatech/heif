@@ -129,7 +129,7 @@ execute_process(
 
 if(GIT_ERROR)
     message( "Could not get version information from git")
-    set(GIT_DESCRIBE "v3.5.0")
+    set(GIT_DESCRIBE "v3.5.1")
 endif()
 
 # Get build timestamp
