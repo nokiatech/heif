@@ -47,21 +47,21 @@ extern "C"
         setNativeHandle(env, self, 0);
     }
 
-    JNI_METHOD_ARG(void, loadNative, jstring filename)
+    JNI_METHOD_ARG(void, loadNative, jstring filename, jint preloadMode)
     {
         NATIVE_HEIF(nativeHandle, self);
         const char *nativeFilename = env->GetStringUTFChars(filename, 0);
 
-        HEIFPP::Result error = nativeHandle->load(nativeFilename);
+        HEIFPP::Result error = nativeHandle->load(nativeFilename, static_cast<HEIFPP::Heif::PreloadMode>(preloadMode));
         env->ReleaseStringUTFChars(filename, nativeFilename);
         CHECK_ERROR(error, "Loading failed");
     }
 
-    JNI_METHOD_ARG(void, loadStreamNative, jobject stream)
+    JNI_METHOD_ARG(void, loadStreamNative, jobject stream, jint preloadMode)
     {
         NATIVE_HEIF(nativeHandle, self);
         InputStream *inputStream = new InputStream(env, stream);
-        HEIFPP::Result error     = nativeHandle->load(inputStream);
+        HEIFPP::Result error     = nativeHandle->load(inputStream, static_cast<HEIFPP::Heif::PreloadMode>(preloadMode));
         delete inputStream;
         CHECK_ERROR(error, "Loading failed");
     }

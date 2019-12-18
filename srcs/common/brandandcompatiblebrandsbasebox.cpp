@@ -63,7 +63,10 @@ uint32_t BrandAndCompatibleBrandsBaseBox<T>::getMinorVersion() const
 template <class T>
 void BrandAndCompatibleBrandsBaseBox<T>::addCompatibleBrand(const FourCCInt& compatibleBrand)
 {
-    mCompatibleBrands.push_back(compatibleBrand);
+    if (!checkCompatibleBrand(compatibleBrand))
+    {
+        mCompatibleBrands.push_back(compatibleBrand);
+    }
 }
 
 template <class T>
