@@ -2,19 +2,20 @@
                      Nokia High-Efficiency Image File Format (HEIF) License
                                              Version 2.0
 
-Copyright (c) 2018, Nokia Technologies Ltd.
+Copyright (c) 2018-2020, Nokia Technologies Ltd.
 All rights reserved.
 
 Definitions.
 Specification means a draft or final version of the ISO/IEC (the International Organization
 for Standardization / the International Electrotechnical Commission) International Standard
-23008-12:2017 "Information technology – MPEG systems technologies – Part 12: Image File Format".
+23008-12 "Information technology – MPEG systems technologies – Part 12: Image File Format"
+and ISO/IEC International Standard 23000-22 “MPEG Multi-Image application Format (MIAF)”.
 
 Software means any source code, object code or binary files provided by Nokia excluding THIRD
 PARTY MATERIALS that, when used, fully or partly, generates files complying with the
 Specification and/or read files complying with the Specification.
 
- Necessarily Infringed means there is no technical means of implementing the Specification,
+Necessarily Infringed means there is no technical means of implementing the Specification,
 including implementation of any mandatory or optional parts thereof, without infringing such
 claim of a patent.
 
@@ -63,7 +64,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 THIRD PARTY MATERIALS
 
 build/ios/ios.toolchain.cmake
-Copyright (c) 2016, Bogdan Cristea <cristeab@gmail.com>
+Copyright (c) 2011-2014, Andrew Fischer <andrew@ltengsoft.com>
+Copyright (c) 2017, Alexander Widerberg <widerbergaren@gmail.com>
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.

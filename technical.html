@@ -3,7 +3,7 @@
 <!--
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -126,8 +126,9 @@
                 metadata is stored as items. Consequently, HEIF has the following basic design:
                 <ul>
                     <li>
-                        1. Still images are stored as items. All image items are independently coded and do not depend on
-                        any other item in their decoding. Any number of image items can be included in the same file.
+                        1. Still images are stored as items. Typically image items are independently coded, and do not depend on
+                        any other item in their decoding. If predictively coded image items with coding dependencies are present,
+                        this is clearly signalled. Any number of image items can be included in the same file.
                     </li>
                     <li>
                         2. Image sequences are stored as tracks. An image sequence track can be indicated to be displayed
@@ -1659,6 +1660,171 @@
                         </tr>
                         <tr>
                             <td>
+                                Content light level (‘clli’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Has the same syntax as the ContentLightLevelBox as defined in ISO/IEC 14496-12.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Mastering display colour volume (‘mdcv’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Has the same syntax as the MasteringDisplayColourVolumeBox as defined in ISO/IEC 14496-12.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Content colour volume (‘cclv’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Has the same syntax as the  ContentColourVolumeBox as defined in ISO/IEC 14496-12.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               Required reference types (‘rrtp’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Lists the item reference types that a reader shall process to display the associated image item.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               Creation time information (‘crtt’)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Creation time of the associated item or entity group.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               Modification time information (‘mdft‘)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Modification time of the associated item or entity group.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               User description (‘udes‘)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                User-defined name, description and tags.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               Accessibility text (‘altt‘)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Alternate text for an image, in case the image cannot be displayed.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               Auto exposure information (‘aebr‘)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Exposure variation information in bracketed sets.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               White balance information (‘wbbr‘)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                White balance compensation information in bracketed sets.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               Focus information (‘fobr‘)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Focus variation information in bracketed sets.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               Flash exposure information (‘afbr‘)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Flash exposure variation information in bracketed sets.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               Depth of field information (‘dobr‘)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Depth of field variation information in bracketed sets.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                               Panorama information (‘pano‘)
+                            </td>
+                            <td>
+                                Descriptive Property
+                            </td>
+                            <td>
+                                Characteristics about the associated panorama entity group.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Image Scaling (‘iscl’)
+                            </td>
+                            <td>
+                                Transformative
+                            </td>
+                            <td>
+                                Resize input image to target width and height.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
                                 Image Rotation (‘irot’)
                             </td>
                             <td>
@@ -1666,7 +1832,6 @@
                             </td>
                             <td>
                                 Rotation by 90, 180, or 270 degrees.
-
                             </td>
                         </tr>
                         <tr>
@@ -1741,6 +1906,15 @@
             </p>
             <p>
                 <a href="examples.html">Here are some examples of Derived Images</a>
+            </p>
+
+            <h3>Predictively Coded Images</h3>
+            <p>
+                Predictively coded image items have several benefits, such as selecting
+                any image from an image sequence as the cover image, higher compression efficiency, and avoiding re-encoding when converting an image sequence to image items.
+                Presence of predictively coded image items, which have one or more other coded image items as decoding dependencies,
+                is signalled with 'pred' brand. Decoding dependencies and order for predictively coded image items are specified
+                by item references of type 'pred'.
             </p>
 
             <h3>Image Metadata</h3>
@@ -2013,6 +2187,7 @@
                                  <ul>
                                     <li>Main 10, Level 6</li>
                                     <li>Main 10 Intra, Level 6</li>
+                                    <li>Main Intra, Level 6</li>
                                     <li>Main 10 Still Picture, Level 6</li>
                                     <li>Main 4:2:2 10 Intra, Level 6</li>
                                 </ul>
@@ -2027,6 +2202,7 @@
                                     <li>Main 4:4:4 10, Level 6</li>
                                     <li>Main 4:4:4 Still Picture, Level 6</li>
                                     <li>Main 4:4:4 10 Intra, Level 6</li>
+                                    <li>Main 4:4:4, Level 6</li>
                                     <li>Monochrome 10, Level 6</li>
                                     <li>Monochrome, Level 6</li>
                                 </ul>

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -18,6 +18,7 @@ function Examples () {
 
     var gridHint = "Click on the images to enlarge their view. Click again to go back.";
     var coverHint = "Click on the thumbnail images to enlarge their view.";
+    var stereoHint = "Click on the thumbnail image to enlarge left or right view.";
 
     this._exampleContentMapping = {
         "still-1": {
@@ -92,7 +93,7 @@ function Examples () {
             hint: gridHint
         },
         "collection-2": {
-            title: "Image collection",
+            title: "Image album - Seasons",
             element: "img",
             fps: "0",
             type: "cover",
@@ -178,6 +179,29 @@ function Examples () {
             content: "content/overlay_grid_alpha/alpha_1440x960.heic",
             thumb: "content/pngs/winter.png",
             detail: "File size: 433 KiB, Resolution: 1440x960"
+        },
+        "stereo-1": {
+            title: "Stereo Pair",
+            element: "img",
+            content: "content/heifv2/stereo_1200x800.heic",
+            thumb: "content/pngs/stereo.png",
+            detail: "File size: 254 KiB, Resolution: 1200x800",
+            type: "grid",
+            hint: stereoHint
+        },
+        "bothie-1": {
+            title: "Time-synchronized capture / bothie",
+            element: "img",
+            content: "content/heifv2/bothie_1440x960.heic",
+            thumb: "content/pngs/bothie.png",
+            detail: "File size: 113 KiB, Resolution: 1440x960"
+        },
+        "udes-1": {
+            title: "User description",
+            element: "img",
+            content: "content/heifv2/lights_1440x960.heic",
+            thumb: "content/pngs/lights.png",
+            detail: "File size: 60 KiB, Resolution: 1440x960"
         }
     };
 

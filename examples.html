@@ -3,7 +3,7 @@
 <!--
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -98,7 +98,7 @@
 
         <div class="heif-examples-container">
             <div class="heif-examples-message-container">
-			    <p><center><b><font color="darkblue">All the example files in this page are under copyright &#169; 2017-2019 Nokia Corporation and/or its subsidiary(-ies)</font></center></b></p>
+			    <p><center><b><font color="darkblue">All the example files in this page are under copyright &#169; 2017-2020 Nokia Corporation and/or its subsidiary(-ies)</font></center></b></p>
                 <h4>HEIF files can store:</h4>
                 <ul>
                     <li>Still Images, their thumbnails and related metadata such as EXIF or XMP information</li>
@@ -120,6 +120,9 @@
                 </ul>
                 <ul>
                     <li>Audio tracks and cover images along with still images and image sequences</li>
+                </ul>
+                <ul>
+                    <li>Well-defined information about content context to signal e.g. stereo pairs, time-synchronized capture, image bursts and image album groups</li>
                 </ul>
 
                 HEIF files also inherit many properties of ISOBMFF such as edit lists, media alternatives, media data groupings. Moreover, an MP4 file can be “branded” so that it can also contain images and image sequences as well as video and audio (i.e. dual branding)
@@ -185,7 +188,8 @@
             </div>
             <div class="heif-examples-message-container">
                 <h2>Image collections</h2>
-                <p>Each file contains multiple still images, just like an album or collection:</p>
+                <p>Each file contains multiple still images, just like an album or collection. Album groupings
+                and descriptions can be indicated in the file:</p>
             </div>
             <div class="row">
                 <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
@@ -271,6 +275,39 @@
             <div class="row">
                 <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
                     <div class="heif-example-content" id="alpha-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="heif-examples-message-container">
+                <h2>Stereo image</h2>
+                <p>Stereo image pair can be signalled in file:</p>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="stereo-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="heif-examples-message-container">
+                <h2>Time-synchronized capture</h2>
+                <p>It is possible to signal time-synchronous capture. This can be used, for example, to indicate bothie capture, where mobile device rear and front cameras trigger simultaneously:</p>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="bothie-1">
+                        <div class="heif-example-title"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="heif-examples-message-container">
+                <h2>User description</h2>
+                <p>Description and tags can be associated to content:</p>
+            </div>
+            <div class="row">
+                <div class="heif-example-container col-xs-12 col-sm-6 col-md-6">
+                    <div class="heif-example-content" id="udes-1">
                         <div class="heif-example-title"></div>
                     </div>
                 </div>
