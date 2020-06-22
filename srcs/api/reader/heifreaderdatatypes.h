@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,6 +16,7 @@
 
 #include <cstddef>
 #include <cstdint>
+
 #include "heifcommondatatypes.h"
 #include "heifexport.h"
 
@@ -43,18 +44,24 @@ namespace HEIF
         INVALID = 0,  ///< Can be used for error checking. Not a valid property type.
 
         RAW,   ///< Property of an unrecognized/unknown type. It is accessible only as raw data.
+        ALTT,  ///< Accessibility text
         AUXC,  ///< Image properties for auxiliary images
         AVCC,  ///< AVC configuration
         CLAP,  ///< Clean aperture (crop)
         COLR,  ///< Colour information
+        CRTT,  ///< Creation time information
         HVCC,  ///< HEVC configuration
         IMIR,  ///< Image mirror
         IROT,  ///< Image rotation
+        ISCL,  ///< Image scaling
         ISPE,  ///< Image spatial extents
         JPGC,  ///< JPEG configuration
+        MDFT,  ///< Modification time information
         PASP,  ///< Pixel aspect ratio
         PIXI,  ///< Pixel information
-        RLOC   ///< Relative location
+        RLOC,  ///< Relative location
+        RREF,  ///< Required reference types
+        UDES,  ///< User description
     };
 
     /// Information about a single property associated to an image item
@@ -132,6 +139,9 @@ namespace HEIF
             IsExifItem  = 1u << 17,  ///< Item is metadata of type 'Exif'
             IsXMPItem   = 1u << 18,  ///< Item is metadata of type 'mime' and content type "application/rdf+xml"
             IsMPEG7Item = 1u << 19,  ///< Item is metadata of type 'mime' and not content type "application/rdf+xml"
+            HasUnrecognzedRequiredReferences =
+                1u << 20,  ///< Item has required references listed in 'rref' property not recognzed by the reader
+            IsPredictivelyCodedImage = 1u << 21,  ///< This image has other images as decoding dependencies.
         };
     }
 
@@ -162,7 +172,7 @@ namespace HEIF
     struct HEIF_DLL_PUBLIC EntityGrouping
     {
         FourCC type;                ///< Grouping type.
-        uint32_t groupId;           ///< Grouping ID, a non-negative integer.
+        GroupId groupId;            ///< Grouping ID.
         Array<uint32_t> entityIds;  ///< Grouped entity IDs. These can be image item IDs or track IDs.
     };
 
@@ -178,7 +188,7 @@ namespace HEIF
         /** @brief Media Track or timed image sequence features flag enumeration.
          *
          * A HEVC file may have several media tracks with different feature sets. */
-        enum Feature
+        enum Feature : HEIF::FeatureBitMask
         {
             IsMasterImageSequence =
                 1u,  ///< Track handler type is 'pict', and the track is not referencing any another track.
@@ -270,6 +280,19 @@ namespace HEIF
                                                   ///< belonging to this group may be predicted from.
     };
 
+    /** Sample Flags Field as defined in 8.8.3.1 of ISO/IEC 14496-12:2015(E) */
+    struct SampleFlagsType
+    {
+        uint32_t reserved : 4, is_leading : 2, sample_depends_on : 2, sample_is_depended_on : 2,
+            sample_has_redundancy : 2, sample_padding_value : 3, sample_is_non_sync_sample : 1,
+            sample_degradation_priority : 16;
+    };
+
+    union SampleFlags
+    {
+        uint32_t flagsAsUInt;
+        SampleFlagsType flags;
+    };
 
     /** @brief SampleType enumeration to indicate the type of the frame. */
     enum SampleType
@@ -277,6 +300,13 @@ namespace HEIF
         OUTPUT_NON_REFERENCE_FRAME,
         OUTPUT_REFERENCE_FRAME,
         NON_OUTPUT_REFERENCE_FRAME
+    };
+
+    struct HEIF_DLL_PUBLIC TrackTypeInformation
+    {
+        FourCC majorBrand;      ///< Major brand of track
+        uint32_t minorVersion;  ///< Minor version
+        Array<FourCC> compatibleBrands;
     };
 
     struct HEIF_DLL_PUBLIC SampleInformation
@@ -290,7 +320,11 @@ namespace HEIF
         bool hasClap;                         ///< CleanApertureBox is present in the sample entry
         bool hasAuxi;                         ///< AuxiliaryTypeInfoBox is present in the sample entry
         CodingConstraints codingConstraints;  ///< CodingConstraints for sample
-        uint64_t size;                    ///< size of sample data in bytes
+        uint64_t size;                        ///< size of sample data in bytes
+        SegmentId segmentId;                  ///< in which segment sample is located
+        uint64_t earliestTimestamp;           ///< earliest timestamps of the sample
+        SampleFlags sampleFlags;              ///< Sample Flags Field as defined in 8.8.3.1 of ISO/IEC 14496-12:2015(E)
+        uint64_t earliestTimestampTS;         ///< earliest timestamps of the sample in time scale units
     };
 
     struct HEIF_DLL_PUBLIC TrackInformation
@@ -300,6 +334,7 @@ namespace HEIF
         FeatureBitMask features;                    ///< bitmask of TrackFeatureEnum::Feature
         Array<SequenceId> alternateTrackIds;        ///< other track' IDs with same alternateGroupId.
         Array<FourCCToIds> referenceTrackIds;       ///< <reference_type, reference track IDs>
+        Array<FourCCToIds> trackGroupIds;           ///< <group_type, group track IDs>
         Array<SampleGrouping> sampleGroups;         ///< Sample grouping information of samples of this track.
         Array<SampleInformation> sampleProperties;  ///< SampleInformation for each of the samples inside the track.
         Array<SampleVisualEquivalence>
@@ -308,12 +343,15 @@ namespace HEIF
         Array<SampleToMetadataItem> metadatas;  ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries
                                                 ///< of this track. Indexed using sampleGroupDescriptionIndex.
         Array<DirectReferenceSamples>
-            referenceSamples;    ///< Data from  DirectReferenceSamplesList ('refs') sample group entries
-                                 ///< of this track. Indexed using sampleGroupDescriptionIndex
-        uint64_t maxSampleSize;  ///< Size of largest sample inside the track (can be used to allocate client side read
-                                 ///< buffer).
-        uint32_t timeScale;      ///< Time scale of the track; useful for video stream procsesing purposes
-        EditList editList;       ///< Editlist for this track.
+            referenceSamples;     ///< Data from  DirectReferenceSamplesList ('refs') sample group entries
+                                  ///< of this track. Indexed using sampleGroupDescriptionIndex
+        uint64_t maxSampleSize;   ///< Size of largest sample inside the track (can be used to allocate client side read
+                                  ///< buffer).
+        uint32_t timeScale;       ///< Time scale of the track; useful for video stream procsesing purposes
+        EditList editList;        ///< Editlist for this track.
+        Rational frameRate;       ///< Frames per second
+        bool hasTypeInformation;  ///< Signals if optional fields, majorBrand, minorVerion and compatibleBrands are used
+        TrackTypeInformation type;  ///< Track's brand, version and compatible brands
     };
 
     struct HEIF_DLL_PUBLIC FileInformation
@@ -325,6 +363,20 @@ namespace HEIF
                                       ///< edit list processing where it is used for EditUnit.durationInMovieTS
     };
 
+    struct HEIF_DLL_PUBLIC SegmentInformation
+    {
+        SegmentId segmentId;       ///< segmentId for this DASH ISOBMFF On-Demand profile file byte range
+        uint32_t referenceId;      ///< referenceId provides the stream ID for the reference stream
+        uint32_t timescale;        ///< the timescale, in ticks per second, for the earliestPTS and duration fields
+        bool referenceType;        ///< referenceType: 1=other sidx box, 0=media content
+        uint64_t earliestPTSinTS;  ///< earliest PTS in timescale
+        uint32_t durationInTS;     ///< byte range duration in milliseconds
+        uint64_t startDataOffset;  ///< distance in bytes, in the file containing media, to start offset of segment byte
+                                   ///< range
+        uint32_t dataSize;         ///< distance in bytes from the startDataOffset to the end of the segment
+        bool startsWithSAP;        ///< indicates whether the segment start with a Stream Access Point (SAP)
+        uint8_t SAPType;           ///< SAP type as specified in 8.16.3.3 of ISO/IEC 14496-12:2015(E)
+    };
 }  // namespace HEIF
 
 #endif /* HEIFFILEDATATYPES_H */

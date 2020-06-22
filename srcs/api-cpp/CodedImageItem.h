@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -20,7 +20,7 @@ namespace HEIFPP
     class CodedImageItem : public HEIFPP::ImageItem
     {
     public:
-        ~CodedImageItem();
+        ~CodedImageItem() override;
 
         /** Returns the DecoderConfiguration of the image */
         DecoderConfig* getDecoderConfiguration();

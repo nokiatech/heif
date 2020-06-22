@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -18,6 +18,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+
 #include "heifreader.h"
 #include "heifwriter.h"
 
@@ -49,7 +50,7 @@ void example1()
         reader->getPrimaryItem(itemId);
 
         uint64_t memoryBufferSize = 1024 * 1024;
-        uint8_t* memoryBuffer     = new uint8_t[memoryBufferSize];
+        auto* memoryBuffer        = new uint8_t[memoryBufferSize];
         reader->getItemDataWithDecoderParameters(itemId, memoryBuffer, memoryBufferSize);
 
         // Feed 'data' to decoder and display the cover image...
@@ -71,7 +72,7 @@ void example2()
 {
     Array<ImageId> itemIds;
     uint64_t itemSize = 1024 * 1024;
-    uint8_t* itemData = new uint8_t[itemSize];
+    auto* itemData    = new uint8_t[itemSize];
 
     auto* reader = Reader::Create();
 
@@ -284,8 +285,8 @@ void example5()
                 reader->getDecodeDependencies(sequenceId, sampleProperties.sampleId, itemsToDecode);
                 for (auto dependencyId : itemsToDecode)
                 {
-                    uint64_t size       = 1024 * 1024;
-                    uint8_t* sampleData = new uint8_t[size];
+                    uint64_t size    = 1024 * 1024;
+                    auto* sampleData = new uint8_t[size];
                     reader->getItemDataWithDecoderParameters(sequenceId, dependencyId, sampleData, size);
 
                     // Feed data to decoder...
@@ -531,7 +532,7 @@ void example8()
     auto itemSize = fileInfo.rootMetaBoxInformation.itemInformations[0].size;
 
     // Request item data.
-    uint8_t* memoryBuffer = new uint8_t[itemSize];
+    auto* memoryBuffer = new uint8_t[itemSize];
     reader->getItemData(metadataIds[0], memoryBuffer, itemSize);
 
     // Write Exif item data to a file.

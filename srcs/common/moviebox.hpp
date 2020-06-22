@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef MOVIEBOX_HPP
@@ -14,6 +16,7 @@
 
 #include "bbox.hpp"
 #include "customallocator.hpp"
+#include "movieextendsbox.hpp"
 #include "movieheaderbox.hpp"
 #include "trackbox.hpp"
 
@@ -26,7 +29,7 @@ class MovieBox : public Box
 {
 public:
     MovieBox();
-    virtual ~MovieBox() = default;
+    ~MovieBox() override = default;
 
     /**
      * @brief Clear track boxes, initialize mvhd and other data.
@@ -43,9 +46,14 @@ public:
     /** @return Pointer to contained TrackBox with given track id. */
     TrackBox* getTrackBox(uint32_t trackId);
 
-    bool isOzoPreviewFile() const;
-
+    /** @return True if MovieExtendBox is present. */
     bool isMovieExtendsBoxPresent() const;
+
+    /** @return MovieExtendsBox */
+    const MovieExtendsBox* getMovieExtendsBox() const;
+
+    /** Add MovieExtendsBox */
+    void addMovieExtendsBox(UniquePtr<MovieExtendsBox> movieExtendsBox);
 
     /**
      * Add a TrackBox to MovieBox
@@ -56,18 +64,18 @@ public:
      * @brief Serialize box data to the ISOBMFF::BitStream.
      * @see Box::writeBox()
      */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /**
      * @brief Deserialize box data from the ISOBMFF::BitStream.
      * @see Box::parseBox()
      */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    MovieHeaderBox mMovieHeaderBox;       ///< The mandatory MovieHeaderBox
-    Vector<UniquePtr<TrackBox>> mTracks;  ///< Contained TrackBoxes
-    bool mIsOzoPreviewFile;               ///< Whether file is Ozo Preview file
+    MovieHeaderBox mMovieHeaderBox;               ///< The mandatory MovieHeaderBox
+    Vector<UniquePtr<TrackBox>> mTracks;          ///< Contained TrackBoxes
+    UniquePtr<MovieExtendsBox> mMovieExtendsBox;  ///< Optional Movie Extends Box
 };
 
 #endif /* end of include guard: MOVIEBOX_HPP */

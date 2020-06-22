@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "moviebox.hpp"
+
 #include "bitstream.hpp"
 #include "log.hpp"
 
@@ -19,7 +20,6 @@ MovieBox::MovieBox()
     : Box("moov")
     , mMovieHeaderBox()
     , mTracks()
-    , mIsOzoPreviewFile(false)
 {
 }
 
@@ -27,7 +27,6 @@ void MovieBox::clear()
 {
     mMovieHeaderBox = {};
     mTracks.clear();
-    mIsOzoPreviewFile = false;
 }
 
 MovieHeaderBox& MovieBox::getMovieHeaderBox()
@@ -57,14 +56,24 @@ TrackBox* MovieBox::getTrackBox(uint32_t trackId)
     return nullptr;
 }
 
+bool MovieBox::isMovieExtendsBoxPresent() const
+{
+    return mMovieExtendsBox != nullptr;
+}
+
+const MovieExtendsBox* MovieBox::getMovieExtendsBox() const
+{
+    return mMovieExtendsBox.get();
+}
+
+void MovieBox::addMovieExtendsBox(UniquePtr<MovieExtendsBox> movieExtendsBox)
+{
+    mMovieExtendsBox = std::move(movieExtendsBox);
+}
+
 void MovieBox::addTrackBox(UniquePtr<TrackBox> trackBox)
 {
     mTracks.push_back(std::move(trackBox));
-}
-
-bool MovieBox::isOzoPreviewFile() const
-{
-    return mIsOzoPreviewFile;
 }
 
 void MovieBox::writeBox(ISOBMFF::BitStream& bitstr) const
@@ -108,24 +117,15 @@ void MovieBox::parseBox(ISOBMFF::BitStream& bitstr)
                 mTracks.push_back(move(trackBox));
             }
         }
-        else if (boxType == "udta")
+        else if (boxType == "mvex")
         {
-            unsigned int udtaSize = subBitstr.read32Bits();
-            if (udtaSize < 200)
-            {
-                String udtaData;
-                subBitstr.readStringWithLen(udtaData, static_cast<unsigned int>(subBitstr.numBytesLeft()));
-                std::size_t found = udtaData.find("NokiaPC");
-                if (found != String::npos)
-                {
-                    // this is Ozo Preview file with "NokiaPC" in udta
-                    mIsOzoPreviewFile = true;
-                }
-            }
+            mMovieExtendsBox = makeCustomUnique<MovieExtendsBox, MovieExtendsBox>();
+            mMovieExtendsBox->parseBox(subBitstr);
         }
         else
         {
-            logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside movie box." << std::endl;
+            logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside movie box."
+                         << std::endl;
         }
     }
 }

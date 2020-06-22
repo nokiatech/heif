@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef SAMPLETABLEBOX_HPP
@@ -43,7 +45,7 @@ public:
     /** @brief The destructor for SampleTableBox.
      *  @details - Currently does nothing but is defined due to polymorphism.
      */
-    virtual ~SampleTableBox() = default;
+    ~SampleTableBox() override = default;
 
     SampleTableBox(const SampleTableBox& obj) = delete;
 
@@ -94,7 +96,7 @@ public:
     void setSyncSampleBox(const SyncSampleBox& syncSampleBox);
 
     /** @brief Whether SampleTableBox has SyncSampleBox sub-box.
-         */
+     */
     bool hasSyncSampleBox() const;
 
     /** @brief Provides access to a SyncSampleBox.
@@ -168,11 +170,11 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a SampleTableBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
     /** @brief Purge all information related to individual samples, still keep sample descriptions */
     void resetSamples();
@@ -190,8 +192,9 @@ private:
     std::shared_ptr<CompositionOffsetBox> mCompositionOffsetBox;      ///< Composition offset box (optional)
     std::shared_ptr<CompositionToDecodeBox> mCompositionToDecodeBox;  ///< Composition to decode box (optional)
 
-    Vector<UniquePtr<SampleGroupDescriptionBox>> mSampleGroupDescriptionBoxes;  ///< Vectory of sample group description boxes
-    Vector<SampleToGroupBox> mSampleToGroupBoxes;                               ///< Vectory of sample-to-group boxes
+    Vector<UniquePtr<SampleGroupDescriptionBox>>
+        mSampleGroupDescriptionBoxes;              ///< Vectory of sample group description boxes
+    Vector<SampleToGroupBox> mSampleToGroupBoxes;  ///< Vectory of sample-to-group boxes
 
     bool mHasSyncSampleBox;
 };

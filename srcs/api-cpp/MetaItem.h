@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -24,13 +24,13 @@ namespace HEIFPP
         friend class ImageItem;
 
     public:
-        ~MetaItem();
+        ~MetaItem() override;
 
     protected:
         void link(ImageItem* aImage);
         void unlink(ImageItem* aImage);
-        void link(Sample* aImage);
-        void unlink(Sample* aImage);
+        void link(Sample* aSample);
+        void unlink(Sample* aSample);
 
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
 
@@ -41,10 +41,10 @@ namespace HEIFPP
         LinkArray<Sample*> mIsMetaToSample;
 
     private:
-        MetaItem & operator=(const MetaItem&) = delete;
-        MetaItem& operator=(MetaItem&&)      = delete;
-        MetaItem(const MetaItem&)            = delete;
-        MetaItem(MetaItem&&)                 = delete;
-        MetaItem()                           = delete;
+        MetaItem& operator=(const MetaItem&) = delete;
+        MetaItem& operator=(MetaItem&&) = delete;
+        MetaItem(const MetaItem&)       = delete;
+        MetaItem(MetaItem&&)            = delete;
+        MetaItem()                      = delete;
     };
 }  // namespace HEIFPP

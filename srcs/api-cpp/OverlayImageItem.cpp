@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,6 +11,7 @@
  */
 
 #include "OverlayImageItem.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
 
@@ -104,7 +105,7 @@ Result OverlayImageItem::removeImage(std::uint32_t aId)
         return Result::INDEX_OUT_OF_BOUNDS;
     }
     removeSourceImage(aId);
-    mOffsets.erase(mOffsets.begin() + (std::int32_t) aId);
+    mOffsets.erase(mOffsets.begin() + static_cast<std::int32_t>(aId));
     return Result::OK;
 }
 Result OverlayImageItem::removeImage(ImageItem* aImage)
@@ -114,9 +115,11 @@ Result OverlayImageItem::removeImage(ImageItem* aImage)
     {
         const auto& it = FindItemIn(mSourceImages, aImage);
         if (it == mSourceImages.end())
+        {
             break;
+        }
         std::intptr_t id = it - mSourceImages.begin();
-        removeSourceImage((std::uint32_t) id);
+        removeSourceImage(static_cast<std::uint32_t>(id));
         if (mOffsets.size() > static_cast<size_t>(id))
         {
             mOffsets.erase(mOffsets.begin() + id);
@@ -136,11 +139,15 @@ HEIF::ErrorCode OverlayImageItem::load(HEIF::Reader* aReader, const HEIF::ImageI
     HEIF::ErrorCode error;
     error = DerivedImageItem::load(aReader, aId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     HEIF::Overlay overlay;
     error = aReader->getItem(aId, overlay);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
 
     mR = overlay.r;
     mG = overlay.g;
@@ -187,7 +194,9 @@ HEIF::ErrorCode OverlayImageItem::save(HEIF::Writer* aWriter)
         {
             error = image->save(aWriter);
             if (HEIF::ErrorCode::OK != error)
+            {
                 return error;
+            }
         }
         ids[i] = image->getId();
     }
@@ -197,6 +206,8 @@ HEIF::ErrorCode OverlayImageItem::save(HEIF::Writer* aWriter)
     error = aWriter->addDerivedImageItem(overlay, newId);
     setId(newId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     return DerivedImageItem::save(aWriter);
 }

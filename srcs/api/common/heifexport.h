@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,6 +16,8 @@
 #ifndef HEIFFILEEXPORT_H
 #define HEIFFILEEXPORT_H
 
+// Retain indented preprocessor directives to keep nested ifs more readable.
+// clang-format off
 #if (defined(HEIF_BUILDING_LIB) && !defined(HEIF_BUILDING_DLL)) || defined(HEIF_USE_STATIC_LIB)
     #define HEIF_DLL_PUBLIC
     #define HEIF_DLL_LOCAL
@@ -23,9 +25,9 @@
     #if defined _WIN32 || defined __CYGWIN__
         #ifdef HEIF_BUILDING_DLL
             #ifdef __GNUC__
-            #define HEIF_DLL_PUBLIC __attribute__((dllexport))
+                #define HEIF_DLL_PUBLIC __attribute__((dllexport))
             #else
-            #define HEIF_DLL_PUBLIC __declspec(dllexport)  // Note: actually gcc seems to also supports this syntax.
+                #define HEIF_DLL_PUBLIC __declspec(dllexport)  // Note: actually gcc seems to also supports this syntax.
             #endif
         #else
             #ifdef __GNUC__
@@ -45,5 +47,6 @@
         #endif
     #endif
 #endif
+// clang-format on
 
 #endif  // HEIFFILEEXPORT_H

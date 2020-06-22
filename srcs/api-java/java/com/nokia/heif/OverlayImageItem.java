@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -110,6 +110,7 @@ public final class OverlayImageItem extends DerivedImageItem
 
     /**
      * Protected constructor, should be called only by the HEIF instance
+     * @param heif The parent HEIF instance for the new object
      * @param nativeHandle A handle to the corresponding C++ object
      */
     protected OverlayImageItem(HEIF heif, long nativeHandle)

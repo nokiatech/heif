@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef DIRECTREFEREBCESAMPLESLISTENTRY_HPP
@@ -22,7 +24,7 @@ class DirectReferenceSamplesList : public SampleGroupDescriptionEntry
 {
 public:
     DirectReferenceSamplesList();
-    virtual ~DirectReferenceSamplesList() = default;
+    ~DirectReferenceSamplesList() override = default;
 
     /** @brief Set the sample identifier computed for a reference or a non reference sample.
      *  @param [in] sampleId Sample ID */
@@ -44,17 +46,17 @@ public:
 
     /** @brief Get the serialized byte size of DirectReferenceSamplesList.
      *  @return Byte size of the Entry */
-    virtual std::uint32_t getSize() const;
+    std::uint32_t getSize() const override;
 
     /** @brief Serialize the DirectReferenceSamplesList data structure.
      *  @details Implemented by the extending class.
      *  @param [out] bitstr Bitstream containing the serialized DirectReferenceSamplesList data structure */
-    virtual void writeEntry(ISOBMFF::BitStream& bitstr);
+    void writeEntry(ISOBMFF::BitStream& bitstr) override;
 
     /** @brief Parse a serialized DirectReferenceSamplesList data structure.
      *  @details Implemented by the extending class.
      *  @param [in] bitstr Bitstream containing the serialized DirectReferenceSamplesList data structure */
-    virtual void parseEntry(ISOBMFF::BitStream& bitstr);
+    void parseEntry(ISOBMFF::BitStream& bitstr) override;
 
 private:
     std::uint32_t mSampleId;                          ///< Sample Id whose referenced sample Id will be listed

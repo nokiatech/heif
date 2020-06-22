@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,6 +15,7 @@
 #define DECODERCONFIGRECORD_HPP
 
 #include <cstdint>
+
 #include "customallocator.hpp"
 
 class DecoderConfigurationRecord
@@ -22,7 +23,7 @@ class DecoderConfigurationRecord
 public:
     enum DecoderParameterType
     {
-        AVC_SPS=0,
+        AVC_SPS = 0,
         AVC_PPS,
         HEVC_VPS,
         HEVC_SPS,

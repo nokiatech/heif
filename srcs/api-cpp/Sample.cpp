@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,7 +11,9 @@
  */
 
 #include "Sample.h"
+
 #include <cstring>
+
 #include "DecoderConfiguration.h"
 #include "EntityGroup.h"
 #include "H26xTools.h"
@@ -24,12 +26,12 @@ using namespace HEIFPP;
 
 Sample::Sample(Heif* aHeif)
     : mHeif(aHeif)
-    , mType(HEIF::FourCC((uint32_t) 0))
+    , mType(HEIF::FourCC(static_cast<uint32_t>(0)))
     , mId(Heif::InvalidSequenceImage)
     , mSampleType(HEIF::SampleType::OUTPUT_REFERENCE_FRAME)
     , mDuration(0)
     , mCompositionOffset(0)
-    , mConfig(0)
+    , mConfig(nullptr)
     , mIsAudio(false)
     , mIsVideo(false)
     , mMetaItems()
@@ -108,7 +110,7 @@ void Sample::unlink(Track* aTrack)
 
 std::uint32_t Sample::getDecodeDependencyCount() const
 {
-    return (std::uint32_t) mDecodeDependency.size();
+    return static_cast<std::uint32_t>(mDecodeDependency.size());
 }
 void Sample::setDecodeDependency(uint32_t aId, Sample* aSample)
 {
@@ -125,13 +127,17 @@ void Sample::setDecodeDependency(uint32_t aId, Sample* aSample)
 Sample* Sample::getDecodeDependency(uint32_t aId)
 {
     if (aId < mDecodeDependency.size())
+    {
         return mDecodeDependency[aId];
+    }
     return nullptr;
 }
 const Sample* Sample::getDecodeDependency(uint32_t aId) const
 {
     if (aId < mDecodeDependency.size())
+    {
         return mDecodeDependency[aId];
+    }
     return nullptr;
 }
 
@@ -155,14 +161,16 @@ void Sample::removeDecodeDependency(std::uint32_t aId)
     if (smp)
     {
         smp->unlink(this);
-        mDecodeDependency.erase(mDecodeDependency.begin() + (std::int32_t) aId);
+        mDecodeDependency.erase(mDecodeDependency.begin() + static_cast<std::int32_t>(aId));
     }
 }
 
 void Sample::removeDecodeDependency(Sample* aSample)
 {
     if (aSample == nullptr)
+    {
         return;
+    }
     if (RemoveItemFrom(mDecodeDependency, aSample))
     {
         aSample->unlink(this);
@@ -172,27 +180,33 @@ void Sample::removeDecodeDependency(Sample* aSample)
 
 std::uint32_t Sample::getMetadataCount() const
 {
-    return (uint32_t) mMetaItems.size();
+    return static_cast<uint32_t>(mMetaItems.size());
 }
 
 MetaItem* Sample::getMetadata(uint32_t aIndex)
 {
     if (aIndex >= mMetaItems.size())
+    {
         return nullptr;
+    }
     return mMetaItems[aIndex];
 }
 
 const MetaItem* Sample::getMetadata(uint32_t aIndex) const
 {
     if (mMetaItems.size() >= aIndex)
+    {
         return nullptr;
+    }
     return mMetaItems[aIndex];
 }
 
 void Sample::addMetadata(MetaItem* aMeta)
 {
     if (aMeta == nullptr)
+    {
         return;
+    }
     if (AddItemTo(mMetaItems, aMeta))
     {
         aMeta->link(this);
@@ -202,7 +216,9 @@ void Sample::addMetadata(MetaItem* aMeta)
 void Sample::removeMetadata(MetaItem* aMeta)
 {
     if (aMeta == nullptr)
+    {
         return;
+    }
     if (RemoveItemFrom(mMetaItems, aMeta))
     {
         aMeta->unlink(this);
@@ -266,7 +282,7 @@ std::uint64_t Sample::getDuration() const
 }
 std::uint32_t Sample::getTimeStampCount() const
 {
-    return (std::uint32_t) mTimeStamps.size();
+    return static_cast<std::uint32_t>(mTimeStamps.size());
 }
 std::uint64_t Sample::getTimeStamp(uint32_t aIndex) const
 {
@@ -366,7 +382,9 @@ const DecoderConfig* Sample::getDecoderConfiguration() const
 HEIF::ErrorCode Sample::setDecoderConfiguration(DecoderConfig* aConfig)
 {
     if (mConfig)
+    {
         mConfig->unlink(this);
+    }
     if (aConfig)
     {
         if (aConfig->getMediaType() != mType)
@@ -451,7 +469,9 @@ HEIF::ErrorCode Sample::save(HEIF::Writer* aWriter)
         {
             err = mConfig->save(aWriter);
             if (HEIF::ErrorCode::OK != err)
+            {
                 return err;
+            }
         }
         data.decoderConfigId = mConfig->getId();
     }
@@ -489,7 +509,9 @@ HEIF::ErrorCode Sample::save(HEIF::Writer* aWriter)
     delete[] aData;
 
     if (HEIF::ErrorCode::OK != err)
+    {
         return err;
+    }
 
     if (mTrack->mFeatures & HEIF::TrackFeatureEnum::IsAudioTrack)
     {
@@ -505,7 +527,9 @@ HEIF::ErrorCode Sample::save(HEIF::Writer* aWriter)
     }
 
     if (HEIF::ErrorCode::OK != err)
+    {
         return err;
+    }
 
     // add meta item links here.
     if (!mMetaItems.empty())
@@ -514,7 +538,9 @@ HEIF::ErrorCode Sample::save(HEIF::Writer* aWriter)
         {
             err = aWriter->addMetadataItemReference(HEIF::MetadataItemId(meta->getId().get()), mTrack->getId(), mId);
             if (HEIF::ErrorCode::OK != err)
+            {
                 return err;
+            }
         }
     }
 
@@ -549,7 +575,7 @@ void Sample::removeFromGroup(EntityGroup* aGroup)
 }
 std::uint32_t Sample::getGroupCount() const
 {
-    return (std::uint32_t) mGroups.size();
+    return static_cast<std::uint32_t>(mGroups.size());
 }
 EntityGroup* Sample::getGroup(uint32_t aId)
 {
@@ -579,7 +605,9 @@ EntityGroup* Sample::getGroupByType(const HEIF::FourCC& aType, std::uint32_t aId
         if (grp->getType() == aType)
         {
             if (aId == cnt)
+            {
                 return grp;
+            }
             cnt++;
         }
     }

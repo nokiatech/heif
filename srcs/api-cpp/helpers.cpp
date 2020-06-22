@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,7 +11,9 @@
  */
 
 #include "helpers.h"
+
 #include <limits>
+
 #include "Heif.h"
 
 namespace HEIFPP
@@ -108,9 +110,9 @@ namespace HEIFPP
         std::uint64_t tempCBit = mCBit;
         for (std::uint32_t i = 0; i < bits; i++)
         {
-            std::uint32_t index = static_cast<std::uint32_t>(tempCBit / 8);
-            std::uint32_t cbit  = (std::uint8_t)(tempCBit - (index * 8));
-            res |= ((((std::uint32_t) mSrc[index]) >> (7u - cbit)) & 1u) << (bits - i - 1u);
+            auto index         = static_cast<std::uint32_t>(tempCBit / 8);
+            std::uint32_t cbit = static_cast<std::uint8_t>(tempCBit - (index * 8));
+            res |= ((static_cast<std::uint32_t>(mSrc[index]) >> (7u - cbit)) & 1u) << (bits - i - 1u);
             tempCBit++;
         }
         return res;
@@ -121,9 +123,9 @@ namespace HEIFPP
         std::uint32_t res = 0;
         for (std::uint32_t i = 0; i < bits; i++)
         {
-            std::uint32_t index = static_cast<std::uint32_t>(mCBit / 8);
-            std::uint32_t cbit  = (std::uint8_t)(mCBit - (index * 8));
-            res |= ((((std::uint32_t) mSrc[index]) >> (7u - cbit)) & 1u) << (bits - i - 1u);
+            auto index         = static_cast<std::uint32_t>(mCBit / 8);
+            std::uint32_t cbit = static_cast<std::uint8_t>(mCBit - (index * 8));
+            res |= ((static_cast<std::uint32_t>(mSrc[index]) >> (7u - cbit)) & 1u) << (bits - i - 1u);
             mCBit++;
         }
         return res;
@@ -139,17 +141,16 @@ namespace HEIFPP
         {
             do
             {
-                std::uint32_t index = static_cast<std::uint32_t>(mCBit / 8);
-                std::uint32_t cbit  = (std::uint8_t)(mCBit - (index * 8));
+                auto index         = static_cast<std::uint32_t>(mCBit / 8);
+                std::uint32_t cbit = static_cast<std::uint8_t>(mCBit - (index * 8));
 
                 const unsigned int numBitsLeftInByte = 8 - cbit;
                 if (numBitsLeftInByte > len)
                 {
-                    mWriteByte =
-                        mWriteByte |
-                        (static_cast<unsigned int>((bits & (std::numeric_limits<std::uint64_t>::max() >> (64 - len)))
-                                                   << (numBitsLeftInByte - len)));
-                    mSrc[index] = ((uint8_t) mWriteByte);
+                    mWriteByte = mWriteByte | static_cast<unsigned int>(
+                                                  (bits & (std::numeric_limits<std::uint64_t>::max() >> (64 - len)))
+                                                  << (numBitsLeftInByte - len));
+                    mSrc[index] = static_cast<uint8_t>(mWriteByte);
                     mCBit += len;
                     len = 0;
                 }
@@ -158,7 +159,7 @@ namespace HEIFPP
                     mWriteByte  = mWriteByte | (static_cast<unsigned int>((bits >> (len - numBitsLeftInByte)) &
                                                                          ~((std::numeric_limits<std::uint64_t>::max()
                                                                             << (64 - numBitsLeftInByte)))));
-                    mSrc[index] = ((uint8_t) mWriteByte);
+                    mSrc[index] = static_cast<uint8_t>(mWriteByte);
                     mWriteByte  = 0;
                     mCBit += numBitsLeftInByte;
                     len -= numBitsLeftInByte;
@@ -189,8 +190,8 @@ namespace HEIFPP
 
     std::int32_t BitStream::getSignedExpGolombCode()  // se(v)
     {
-        std::uint32_t codeNum  = getExpGolombCode();
-        std::int32_t signedVal = std::int32_t((codeNum + 1) >> 1);
+        std::uint32_t codeNum = getExpGolombCode();
+        auto signedVal        = std::int32_t((codeNum + 1) >> 1);
 
         if ((codeNum & 1) == 0)
         {
@@ -212,8 +213,8 @@ namespace HEIFPP
             leadingZeroBits++;
         }
 
-        std::uint32_t shiftAmount = static_cast<std::uint32_t>(leadingZeroBits);
-        codeNum                   = ((std::uint32_t) 1 << shiftAmount) - 1 + getBits(shiftAmount);
+        auto shiftAmount = static_cast<std::uint32_t>(leadingZeroBits);
+        codeNum          = (static_cast<std::uint32_t>(1) << shiftAmount) - 1 + getBits(shiftAmount);
         return codeNum;
     }
 

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,14 +12,14 @@
  */
 
 #include "samplegroupdescriptionbox.hpp"
-#include "directreferencesampleslist.hpp"
-#include "sampletometadataitementry.hpp"
-#include "visualequivalenceentry.hpp"
-
-#include "bitstream.hpp"
-#include "log.hpp"
 
 #include <stdexcept>
+
+#include "bitstream.hpp"
+#include "directreferencesampleslist.hpp"
+#include "log.hpp"
+#include "sampletometadataitementry.hpp"
+#include "visualequivalenceentry.hpp"
 
 SampleGroupDescriptionBox::SampleGroupDescriptionBox()
     : FullBox("sgpd", 0, 0)
@@ -66,7 +66,7 @@ std::uint32_t SampleGroupDescriptionBox::getEntryIndexOfSampleId(const std::uint
     {
         if (entry->getGroupingType() == FourCCInt("refs"))
         {
-            const DirectReferenceSamplesList* drsle = static_cast<const DirectReferenceSamplesList*>(entry.get());
+            const auto* drsle = static_cast<const DirectReferenceSamplesList*>(entry.get());
             if (drsle->getSampleId() == sampleId)
             {
                 return index;

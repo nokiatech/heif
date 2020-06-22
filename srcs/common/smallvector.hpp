@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
+
 #include "customallocator.hpp"
 
 /** SmallVector is a fixed-overhead container for storing a small
@@ -71,9 +72,7 @@ public:
             return small ? smallIndex >= other.smallIndex : iterator >= other.iterator;
         }
 
-        iterator_root()
-        {
-        }
+        iterator_root() = default;
 
         iterator_root(BaseContainer& container_, signed int index_)
             : container(container_)
@@ -107,9 +106,7 @@ public:
         typedef iterator_root<BaseContainer, Iterator, VectorIterator> root;
 
     public:
-        iterator_base()
-        {
-        }
+        iterator_base() = default;
         iterator_base(BaseContainer& container_, signed int index_)
             : root(container_, index_)
         {
@@ -122,52 +119,76 @@ public:
         Iterator& operator++()
         {
             if (root::small)
+            {
                 ++root::smallIndex;
+            }
             else
+            {
                 ++root::iterator;
+            }
             return *static_cast<Iterator*>(this);
         }
         Iterator& operator--()
         {
             if (root::small)
+            {
                 --root::smallIndex;
+            }
             else
+            {
                 --root::iterator;
+            }
             return *static_cast<Iterator*>(this);
         }
         Iterator operator++(int)
         {
             auto prev = *static_cast<Iterator*>(this);
             if (root::small)
+            {
                 ++root::smallIndex;
+            }
             else
+            {
                 ++root::iterator;
+            }
             return prev;
         }
         Iterator operator--(int)
         {
             auto prev = *static_cast<Iterator*>(this);
             if (root::small)
+            {
                 --root::smallIndex;
+            }
             else
+            {
                 --root::iterator;
+            }
             return prev;
         }
 
         Iterator& operator+=(int n)
         {
             if (root::small)
+            {
                 root::smallIndex += n;
+            }
             else
+            {
                 root::iterator += n;
+            }
             return *static_cast<Iterator*>(this);
         }
         Iterator& operator-=(int n)
         {
             if (root::small)
+            {
                 root::smallIndex -= n;
+            }
             else
+            {
                 root::iterator -= n;
+            }
             return *static_cast<Iterator*>(this);
         }
 
@@ -192,9 +213,7 @@ public:
         typedef iterator_root<BaseContainer, Iterator, VectorIterator> root;
 
     public:
-        reverse_iterator_base()
-        {
-        }
+        reverse_iterator_base() = default;
         reverse_iterator_base(BaseContainer& container_, signed int index_)
             : root(container_, index_)
         {
@@ -207,52 +226,76 @@ public:
         Iterator& operator++()
         {
             if (root::small)
+            {
                 --root::smallIndex;
+            }
             else
+            {
                 ++root::iterator;
+            }
             return *static_cast<Iterator*>(this);
         }
         Iterator& operator--()
         {
             if (root::small)
+            {
                 ++root::smallIndex;
+            }
             else
+            {
                 --root::iterator;
+            }
             return *static_cast<Iterator*>(this);
         }
         Iterator operator++(int)
         {
             auto prev = *static_cast<Iterator*>(this);
             if (root::small)
+            {
                 --root::smallIndex;
+            }
             else
+            {
                 ++root::iterator;
+            }
             return prev;
         }
         Iterator operator--(int)
         {
             auto prev = *static_cast<Iterator*>(this);
             if (root::small)
+            {
                 ++root::smallIndex;
+            }
             else
+            {
                 --root::iterator;
+            }
             return prev;
         }
 
         Iterator& operator+=(int n)
         {
             if (root::small)
+            {
                 root::smallIndex -= n;
+            }
             else
+            {
                 root::iterator -= n;
+            }
             return *static_cast<Iterator*>(this);
         }
         Iterator& operator-=(int n)
         {
             if (root::small)
+            {
                 root::smallIndex += n;
+            }
             else
+            {
                 root::iterator -= n;
+            }
             return *static_cast<Iterator*>(this);
         }
 
@@ -289,9 +332,7 @@ public:
     struct iterator : public iterator_base<SmallVector<Value, Size>, iterator, typename Vector::iterator>
     {
         typedef iterator_base<SmallVector<Value, Size>, iterator, typename Vector::iterator> base;
-        iterator()
-        {
-        }
+        iterator() = default;
         iterator(SmallVector<Value, Size>& container_, signed int index_)
             : base(container_, index_)
         {
@@ -314,9 +355,7 @@ public:
         : public iterator_base<const SmallVector<Value, Size>, const_iterator, typename Vector::const_iterator>
     {
         typedef iterator_base<const SmallVector<Value, Size>, const_iterator, typename Vector::const_iterator> base;
-        const_iterator()
-        {
-        }
+        const_iterator() = default;
         const_iterator(const SmallVector& container_, signed int index_)
             : base(container_, index_)
         {
@@ -336,9 +375,7 @@ public:
     {
         typedef reverse_iterator_base<SmallVector<Value, Size>, reverse_iterator, typename Vector::reverse_iterator>
             base;
-        reverse_iterator()
-        {
-        }
+        reverse_iterator() = default;
         reverse_iterator(SmallVector<Value, Size>& container_, signed int index_)
             : base(container_, index_)
         {
@@ -365,9 +402,7 @@ public:
                                       const_reverse_iterator,
                                       typename Vector::const_reverse_iterator>
             base;
-        const_reverse_iterator()
-        {
-        }
+        const_reverse_iterator() = default;
         const_reverse_iterator(const SmallVector& container_, signed int index_)
             : base(container_, index_)
         {

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -35,9 +35,9 @@ void customDeallocate(void* ptr);
 template <typename T>
 T* customAllocateArray(size_t n)
 {
-    size_t size    = sizeof(T);
-    size_t* header = static_cast<size_t*>(customAllocate(sizeof(size_t) + size * n));
-    T* ptr         = reinterpret_cast<T*>(header + 1);
+    size_t size  = sizeof(T);
+    auto* header = static_cast<size_t*>(customAllocate(sizeof(size_t) + size * n));
+    T* ptr       = reinterpret_cast<T*>(header + 1);
     for (size_t c = 0; c < n; ++c)
     {
         try
@@ -134,9 +134,7 @@ public:
     }
 #endif
 
-    Allocator() noexcept
-    {
-    }
+    Allocator() noexcept = default;
 
     ~Allocator() = default;
 
@@ -208,9 +206,7 @@ UniquePtr<T, ParentWithVirtualDeleteOrSelf> makeCustomUnique(Args&&... args)
 class Exception
 {
 public:
-    Exception()
-    {
-    }
+    Exception() = default;
     Exception(const char* msg)
         : mMessage(msg)
     {
@@ -219,9 +215,7 @@ public:
     {
         return mMessage;
     }
-    virtual ~Exception()
-    {
-    }
+    virtual ~Exception() = default;
 
 private:
     const char* mMessage;
@@ -232,6 +226,11 @@ class RuntimeError : public Exception
 public:
     RuntimeError(const char* str)
         : Exception(str)
+    {
+    }
+
+    RuntimeError(const String& str)
+        : Exception(str.c_str())
     {
     }
 };

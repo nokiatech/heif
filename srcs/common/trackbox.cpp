@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "trackbox.hpp"
+
 #include "log.hpp"
 
 using namespace std;
@@ -22,6 +23,8 @@ TrackBox::TrackBox()
     , mMediaBox()
     , mTrackReferenceBox()
     , mHasTrackReferences(false)
+    , mTrackGroupBox()
+    , mHasTrackGroupBox(false)
     , mTrackTypeBox()
     , mHasTrackTypeBox(false)
     , mEditBox(nullptr)
@@ -62,6 +65,27 @@ const TrackReferenceBox& TrackBox::getTrackReferenceBox() const
 {
     return mTrackReferenceBox;
 }
+
+const TrackGroupBox& TrackBox::getTrackGroupBox() const
+{
+    return mTrackGroupBox;
+}
+
+TrackGroupBox& TrackBox::getTrackGroupBox()
+{
+    return mTrackGroupBox;
+}
+
+void TrackBox::setHasTrackGroup(bool value)
+{
+    mHasTrackGroupBox = value;
+}
+
+bool TrackBox::getHasTrackGroup() const
+{
+    return mHasTrackGroupBox;
+}
+
 
 std::shared_ptr<const EditBox> TrackBox::getEditBox() const
 {
@@ -127,6 +151,11 @@ void TrackBox::writeBox(ISOBMFF::BitStream& bitstr) const
     // The MediaBox
     mMediaBox.writeBox(bitstr);
 
+    if (mHasTrackGroupBox)
+    {
+        mTrackGroupBox.writeBox(bitstr);
+    }
+
     if (mHasTrackTypeBox)
     {
         mTrackTypeBox.writeBox(bitstr);
@@ -164,6 +193,11 @@ void TrackBox::parseBox(ISOBMFF::BitStream& bitstr)
         {
             mTrackReferenceBox.parseBox(subBitstr);
             mHasTrackReferences = true;
+        }
+        else if (boxType == "trgr")
+        {
+            mHasTrackGroupBox = true;
+            mTrackGroupBox.parseBox(subBitstr);
         }
         else if (boxType == "ttyp")
         {

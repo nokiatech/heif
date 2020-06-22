@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,10 +12,30 @@
  */
 
 #include "timeutility.hpp"
+
 #include <ctime>
 
-unsigned int getSecondsSince1904()
+namespace TimeUtility
 {
-    static const unsigned int SECONDS_FROM_1904_TO_1970 = 2082844800u;
-    return (static_cast<unsigned int>(std::time(nullptr)) + SECONDS_FROM_1904_TO_1970);
-}
+    bool useFakeTime       = false;
+    std::uint64_t fakeTime = 0;
+
+    void setFakeTime(uint64_t fakeTimeToSet)
+    {
+        useFakeTime = true;
+        fakeTime    = fakeTimeToSet;
+    }
+
+
+    std::uint64_t getSecondsSince1904()
+    {
+        if (useFakeTime)
+        {
+            return fakeTime;
+        }
+
+        static const std::uint64_t SECONDS_FROM_1904_TO_1970 = 2082844800u;
+        return static_cast<std::uint64_t>(std::time(nullptr)) + SECONDS_FROM_1904_TO_1970;
+    }
+
+}  // namespace TimeUtility

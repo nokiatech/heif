@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,10 +12,12 @@
  */
 
 #include "refsgroup.hpp"
+
 #include <algorithm>
 #include <iterator>
 #include <set>
 #include <tuple>
+
 #include "directreferencesampleslist.hpp"
 #include "samplegroupdescriptionbox.hpp"
 #include "samplegroupdescriptionentry.hpp"
@@ -31,11 +33,11 @@ void RefsGroup::loadRefs(const RefsList& refsList)
     mRefsList = refsList;
 }
 
-void RefsGroup::allotId(void)
+void RefsGroup::allotId()
 {
     // First insert all reference pictures into a set
     Set<std::uint32_t> rps;
-    for (auto sample : mRefsList)
+    for (const auto& sample : mRefsList)
     {
         for (auto refIdx : sample)
         {
@@ -63,11 +65,11 @@ void RefsGroup::allotId(void)
     }
 }
 
-void RefsGroup::makeSet(void)
+void RefsGroup::makeSet()
 {
     // Construct a tuple and dump into a set
     std::uint32_t sampleIdx = 0;
-    for (auto sample : mRefsList)
+    for (const auto& sample : mRefsList)
     {
         Vector<std::uint32_t> v = sample;
         for (std::uint32_t& refIdx : v)
@@ -86,7 +88,7 @@ void RefsGroup::fillSgpd(SampleGroupDescriptionBox* sgpd)
 
     sgpd->FullBox::setVersion(1);
     sgpd->setGroupingType(mGroupingType);
-    for (auto entry : mEntrySet)
+    for (const auto& entry : mEntrySet)
     {
         std::uint32_t tag;
         Vector<std::uint32_t> refs;
@@ -109,7 +111,7 @@ void RefsGroup::fillSbgp(SampleToGroupBox& sbgp)
 
     std::uint32_t sampleIdx = 0;
     Vector<std::uint32_t> entryIdx;
-    for (auto sample : mRefsList)
+    for (const auto& sample : mRefsList)
     {
         Vector<std::uint32_t> v = sample;
         for (std::uint32_t& refIdx : v)

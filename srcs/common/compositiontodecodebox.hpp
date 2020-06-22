@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef COMPOSITIONTODECODEBOX_HPP
@@ -23,21 +25,23 @@ class CompositionToDecodeBox : public FullBox
 {
 public:
     CompositionToDecodeBox();
-    virtual ~CompositionToDecodeBox() = default;
+    ~CompositionToDecodeBox() override = default;
 
-    /// @param [in] compositionTosDtsShift Composition to Dts shift value as specified in the ISOBMFF standard
-    void setCompositionToDtsShift(std::int64_t compositionTosDtsShift);
+    /// @param [in] compositionToDtsShift Composition to Dts shift value as specified in the ISOBMFF standard
+    void setCompositionToDtsShift(std::int64_t compositionToDtsShift);
 
     /// @return Composition to Dts shift value
     std::int64_t getCompositionToDtsShift() const;
 
-    /// @param [in] leastDecodeToDisplayDelta Least Decode to Display Time Delta value as specified in the ISOBMFF standard
+    /// @param [in] leastDecodeToDisplayDelta Least Decode to Display Time Delta value as specified in the ISOBMFF
+    /// standard
     void setLeastDecodeToDisplayDelta(std::int64_t leastDecodeToDisplayDelta);
 
     /// @return Least Decode to Display Time Delta value
     std::int64_t getLeastDecodeToDisplayDelta() const;
 
-    /// @param [in] greatestDecodeToDisplayDelta Greatest Decode to Display Time Delta value as specified in the ISOBMFF standard
+    /// @param [in] greatestDecodeToDisplayDelta Greatest Decode to Display Time Delta value as specified in the ISOBMFF
+    /// standard
     void setGreatestDecodeToDisplayDelta(std::int64_t greatestDecodeToDisplayDelta);
 
     /// @return Greatest Decode to Display Time Delta value
@@ -57,11 +61,11 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a Composition To Decode Box bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     /// @brief Update box version depending on required value range.

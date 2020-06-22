@@ -1,18 +1,21 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef RAWPROPERTYBOX_HPP
 #define RAWPROPERTYBOX_HPP
 
 #include <cstdint>
+
 #include "bbox.hpp"
 #include "customallocator.hpp"
 
@@ -30,7 +33,7 @@ class RawPropertyBox : public Box
 {
 public:
     RawPropertyBox();
-    ~RawPropertyBox() = default;
+    ~RawPropertyBox() override = default;
 
     /** @brief Get box data
      *  @return All data in the box, including headers. */
@@ -41,10 +44,10 @@ public:
     void setData(const Vector<std::uint8_t>& data);
 
     /** Write box data to ISOBMFF::BitStream. */
-    void writeBox(ISOBMFF::BitStream& bitstream) const;
+    void writeBox(ISOBMFF::BitStream& bitstream) const override;
 
     /** Read box data from ISOBMFF::BitStream. */
-    void parseBox(ISOBMFF::BitStream& bitstream);
+    void parseBox(ISOBMFF::BitStream& bitstream) override;
 
 private:
     Vector<std::uint8_t> mData;  ///< Content of this box, including box headers

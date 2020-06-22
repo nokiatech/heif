@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "channellayoutbox.hpp"
+
 #include <stdexcept>
 
 #define CHANNEL_STRUCTURED 1u
@@ -25,17 +26,6 @@ ChannelLayoutBox::ChannelLayoutBox()
     , mObjectCount(0)
     , mChannelCount(0)
     , mChannelLayouts()
-{
-}
-
-ChannelLayoutBox::ChannelLayoutBox(const ChannelLayoutBox& box)
-    : FullBox(box.getType(), box.getVersion(), box.getFlags())
-    , mStreamStructure(box.mStreamStructure)
-    , mDefinedLayout(box.mDefinedLayout)
-    , mOmittedChannelsMap(box.mOmittedChannelsMap)
-    , mObjectCount(box.mObjectCount)
-    , mChannelCount(box.mChannelCount)
-    , mChannelLayouts(box.mChannelLayouts)
 {
 }
 
@@ -123,13 +113,13 @@ void ChannelLayoutBox::writeBox(BitStream& bitstr) const
                 throw RuntimeError("ChannelLayoutBox mChannelCount doesn't match mChannelLayout.size()");
             }
 
-            for (std::uint16_t i = 0; i < mChannelLayouts.size(); i++)
+            for (auto channelLayout : mChannelLayouts)
             {
-                bitstr.write8Bits(mChannelLayouts.at(i).speakerPosition);
-                if (mChannelLayouts[i].speakerPosition == 126)
+                bitstr.write8Bits(channelLayout.speakerPosition);
+                if (channelLayout.speakerPosition == 126)
                 {
-                    bitstr.write16Bits(static_cast<std::uint16_t>(mChannelLayouts.at(i).azimuth));
-                    bitstr.write8Bits(static_cast<std::uint8_t>(mChannelLayouts.at(i).elevation));
+                    bitstr.write16Bits(static_cast<std::uint16_t>(channelLayout.azimuth));
+                    bitstr.write8Bits(static_cast<std::uint8_t>(channelLayout.elevation));
                 }
             }
         }

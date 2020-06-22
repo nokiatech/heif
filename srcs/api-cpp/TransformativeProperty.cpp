@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,12 +11,15 @@
  */
 
 #include "TransformativeProperty.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
 
 using namespace HEIFPP;
 
-TransformativeProperty::TransformativeProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, const HEIF::FourCC& aRawType)
+TransformativeProperty::TransformativeProperty(Heif* aHeif,
+                                               const HEIF::ItemPropertyType& aType,
+                                               const HEIF::FourCC& aRawType)
     : ItemProperty(aHeif, aType, aRawType, true){};
 HEIF::ErrorCode TransformativeProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
 {
@@ -24,7 +27,7 @@ HEIF::ErrorCode TransformativeProperty::load(HEIF::Reader* aReader, const HEIF::
 }
 
 CleanApertureProperty::CleanApertureProperty(Heif* aHeif)
-    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::CLAP,"clap")
+    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::CLAP, "clap")
     , mClap{}
 {
 }
@@ -51,7 +54,7 @@ HEIF::ErrorCode CleanApertureProperty::save(HEIF::Writer* aWriter)
 }
 
 RotateProperty::RotateProperty(Heif* aHeif)
-    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::IROT,"irot")
+    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::IROT, "irot")
     , mRotate{0}
 {
 }
@@ -77,8 +80,8 @@ HEIF::ErrorCode RotateProperty::save(HEIF::Writer* aWriter)
 }
 
 MirrorProperty::MirrorProperty(Heif* aHeif)
-    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::IMIR,"imir")
-    , mMirror{0}
+    : TransformativeProperty(aHeif, HEIF::ItemPropertyType::IMIR, "imir")
+    , mMirror{false}
 {
 }
 HEIF::ErrorCode MirrorProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,6 +15,7 @@
 #define ITEMINFOBOX_HPP
 
 #include <cstdint>
+
 #include "customallocator.hpp"
 #include "fullbox.hpp"
 
@@ -33,7 +34,7 @@ class ItemInfoBox : public FullBox
 public:
     ItemInfoBox();
     ItemInfoBox(uint8_t version);
-    virtual ~ItemInfoBox() = default;
+    ~ItemInfoBox() override = default;
 
     /** @brief Clear the contents of the Item Information List */
     void clear();
@@ -47,11 +48,11 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a ItemInfoBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
     /** @brief Get the ItemInfoEntry of particular item type
      * @param [in] itemType Type (4CC) of the item to find.
@@ -82,7 +83,7 @@ class ItemInfoEntry : public FullBox
 {
 public:
     ItemInfoEntry();
-    virtual ~ItemInfoEntry();
+    ~ItemInfoEntry() override;
 
     ItemInfoEntry(const ItemInfoEntry&) = default;
     ItemInfoEntry& operator=(const ItemInfoEntry&) = default;
@@ -153,11 +154,11 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses an ItemInfoEntry bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     // Version 0, 1, 2, 3
@@ -201,7 +202,7 @@ class FDItemInfoExtension : public ItemInfoExtension
 {
 public:
     FDItemInfoExtension();
-    virtual ~FDItemInfoExtension() = default;
+    ~FDItemInfoExtension() override = default;
 
     /** @brief Set the content location field
      * @param [in] location Content Location field as defined in the ISOBMFF standard. */
@@ -255,11 +256,11 @@ public:
 
     /** @brief Creates the bitstream that represents the class in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the class data. */
-    virtual void write(ISOBMFF::BitStream& bitstr);
+    void write(ISOBMFF::BitStream& bitstr) override;
 
     /** @brief Parses an FDItemInfoExtension bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the class data */
-    virtual void parse(ISOBMFF::BitStream& bitstr);
+    void parse(ISOBMFF::BitStream& bitstr) override;
 
 private:
     String mContentLocation;    ///< Content location

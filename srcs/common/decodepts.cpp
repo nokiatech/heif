@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,14 +12,16 @@
  */
 
 #include "decodepts.hpp"
+
 #include <algorithm>
+#include <iostream>
 #include <iterator>
+#include <limits>
+
 #include "compositionoffsetbox.hpp"
 #include "compositiontodecodebox.hpp"
 #include "editbox.hpp"
 #include "timetosamplebox.hpp"
-#include <iostream>
-#include <limits>
 
 DecodePts::DecodePts()
     : mEditListBox(nullptr)
@@ -44,7 +46,8 @@ void DecodePts::applyEdit(T& entry)
     {
         applyDwellEdit(entry);
     }
-    if (entry.mMediaTime >= 0 && (entry.mMediaRateInteger == 1 || (entry.mMediaRateInteger == 0 && entry.mMediaRateFraction > 0)))
+    if (entry.mMediaTime >= 0 &&
+        (entry.mMediaRateInteger == 1 || (entry.mMediaRateInteger == 0 && entry.mMediaRateFraction > 0)))
     {
         applyShiftEditForward(entry);
     }
@@ -128,7 +131,7 @@ std::uint64_t DecodePts::lastSampleDuration() const
 template <typename T>
 void DecodePts::applyShiftEditForward(T& entry)
 {
-    int64_t segmentBeginTime = static_cast<std::int64_t>(entry.mMediaTime);
+    auto segmentBeginTime = static_cast<std::int64_t>(entry.mMediaTime);
     std::int64_t segmentEndTime(std::numeric_limits<std::int64_t>::max());
 
     // Adjust each inserted sample's time ratio by this amount.
@@ -142,7 +145,8 @@ void DecodePts::applyShiftEditForward(T& entry)
     if (entry.mSegmentDuration != 0)
     {
         segmentBeginTime = entry.mMediaTime;
-        segmentEndTime = entry.mMediaTime + static_cast<std::int64_t>(fromMovieToMediaTS(entry.mSegmentDuration / sampleTimeRatio));
+        segmentEndTime =
+            entry.mMediaTime + static_cast<std::int64_t>(fromMovieToMediaTS(entry.mSegmentDuration / sampleTimeRatio));
     }
 
     std::int64_t lastInsertedSampleT1 = segmentBeginTime;
@@ -167,12 +171,12 @@ void DecodePts::applyShiftEditForward(T& entry)
                 if (sampleT1 <= segmentEndTime)
                 {
                     insertedSampleDuration = sampleDuration;
-                    lastInsertedSampleT1 = sampleT1;
+                    lastInsertedSampleT1   = sampleT1;
                 }
                 else  // sampleT1 > segmentEndTime; we need to cut it from the end
                 {
                     insertedSampleDuration = segmentEndTime - sampleT0;
-                    lastInsertedSampleT1 = segmentEndTime;
+                    lastInsertedSampleT1   = segmentEndTime;
                 }
                 mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (insertedSampleDuration));
             }
@@ -181,7 +185,7 @@ void DecodePts::applyShiftEditForward(T& entry)
                 // ignore sample
             }
         }
-        else // sampleT0 < segmentBeginTime
+        else  // sampleT0 < segmentBeginTime
         {
             if (sampleT1 > segmentBeginTime)
             {
@@ -191,12 +195,12 @@ void DecodePts::applyShiftEditForward(T& entry)
                 if (sampleT1 >= segmentEndTime)
                 {
                     insertedSampleDuration = segmentEndTime - segmentBeginTime;
-                    lastInsertedSampleT1 = segmentEndTime;
+                    lastInsertedSampleT1   = segmentEndTime;
                 }
                 else
                 {
                     insertedSampleDuration = sampleT1 - segmentBeginTime;
-                    lastInsertedSampleT1 = sampleT1;
+                    lastInsertedSampleT1   = sampleT1;
                 }
                 mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (insertedSampleDuration));
             }
@@ -217,14 +221,14 @@ void DecodePts::applyShiftEditForward(T& entry)
 template <typename T>
 void DecodePts::applyShiftEditReverse(T& entry)
 {
-    int64_t segmentBeginTime = static_cast<std::int64_t>(entry.mMediaTime);
+    auto segmentBeginTime = static_cast<std::int64_t>(entry.mMediaTime);
     std::int64_t segmentEndTime(std::numeric_limits<std::int64_t>::max());
 
     std::int64_t lastInsertedSampleT0 = segmentBeginTime;
     if (entry.mSegmentDuration != 0)
     {
-        segmentEndTime = entry.mMediaTime;
-        segmentBeginTime = entry.mMediaTime - static_cast<std::int64_t>(fromMovieToMediaTS(entry.mSegmentDuration));
+        segmentEndTime       = entry.mMediaTime;
+        segmentBeginTime     = entry.mMediaTime - static_cast<std::int64_t>(fromMovieToMediaTS(entry.mSegmentDuration));
         lastInsertedSampleT0 = segmentEndTime;
     }
     else
@@ -269,7 +273,7 @@ void DecodePts::applyShiftEditReverse(T& entry)
                 // ignore sample
             }
         }
-        else // sampleT0 < segmentBeginTime
+        else  // sampleT0 < segmentBeginTime
         {
             if (sampleT1 > segmentBeginTime)
             {
@@ -372,10 +376,10 @@ bool DecodePts::unravel()
 
         if (ptsDelta.size() == mediaDtsTS.size())
         {
-            for (size_t i = 0; i < mediaDtsTS.size(); i++)
-            {
-                mediaPtsTS.push_back(std::int64_t(std::int32_t(mediaDtsTS.at(i)) + ptsDelta.at(i)));
-            }
+            std::transform(mediaDtsTS.begin(), mediaDtsTS.end(), ptsDelta.begin(), std::back_inserter(mediaPtsTS),
+                           [](std::uint64_t theMediaDts, std::int32_t thePtsDelta) {
+                               return std::uint64_t(std::int32_t(theMediaDts) + thePtsDelta);
+                           });
         }
         else
         {
@@ -461,10 +465,10 @@ void DecodePts::unravelTrackRun()
     mediaPts.reserve(mediaDts.size());
     if (processCompositionTimeOffset)
     {
-        for (size_t i = 0; i < mediaPts.size(); i++)
-        {
-            mediaPts.push_back(std::int64_t(std::int32_t(mediaDts.at(i)) + ptsDelta.at(i)));
-        }
+        std::transform(mediaDts.begin(), mediaDts.end(), ptsDelta.begin(), std::back_inserter(mediaPts),
+                       [](std::uint32_t theMediaDts, std::int32_t thePtsDelta) {
+                           return std::uint32_t(std::int32_t(theMediaDts) + thePtsDelta);
+                       });
     }
     else
     {

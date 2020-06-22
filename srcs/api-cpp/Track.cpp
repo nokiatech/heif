@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,6 +11,7 @@
  */
 
 #include "Track.h"
+
 #include "AlternativeTrackGroup.h"
 #include "DecoderConfiguration.h"
 #include "EntityGroup.h"
@@ -408,9 +409,9 @@ std::uint64_t Track::getMaxSampleSize()
 std::uint32_t Track::getReferenceCount() const
 {
     std::uint32_t cnt = 0;
-    for (auto t : mRefs)
+    for (const auto& t : mRefs)
     {
-        cnt += (std::uint32_t) t.second.size();
+        cnt += static_cast<std::uint32_t>(t.second.size());
     }
     return cnt;
 }
@@ -424,8 +425,8 @@ const std::pair<const HEIF::FourCC, const Track*> Track::getReference(std::uint3
         {
             return std::pair<const HEIF::FourCC, const Track*>(t.first, t.second[aIndex]);
         }
-        cnt += (std::uint32_t) t.second.size();
-        aIndex -= (std::uint32_t) t.second.size();
+        cnt += static_cast<std::uint32_t>(t.second.size());
+        aIndex -= static_cast<std::uint32_t>(t.second.size());
     }
     return std::pair<const HEIF::FourCC, const Track*>("", nullptr);
 }
@@ -439,24 +440,26 @@ const std::pair<const HEIF::FourCC, Track*> Track::getReference(std::uint32_t aI
         {
             return std::pair<const HEIF::FourCC, Track*>(t.first, t.second[aIndex]);
         }
-        cnt += (std::uint32_t) t.second.size();
-        aIndex -= (std::uint32_t) t.second.size();
+        cnt += static_cast<std::uint32_t>(t.second.size());
+        aIndex -= static_cast<std::uint32_t>(t.second.size());
     }
     return std::pair<const HEIF::FourCC, Track*>("", nullptr);
 }
 
 std::uint32_t Track::getReferenceTypeCount() const
 {
-    return (std::uint32_t) mRefs.size();
+    return static_cast<std::uint32_t>(mRefs.size());
 }
 
 const HEIF::FourCC Track::getReferenceType(std::uint32_t aIndex) const
 {
     std::uint32_t cnt = 0;
-    for (auto t : mRefs)
+    for (const auto& t : mRefs)
     {
         if (aIndex == cnt)
+        {
             return t.first;
+        }
         cnt++;
     }
     return "";
@@ -465,10 +468,12 @@ const HEIF::FourCC Track::getReferenceType(std::uint32_t aIndex) const
 HEIF::FourCC Track::getReferenceType(std::uint32_t aIndex)
 {
     std::uint32_t cnt = 0;
-    for (auto t : mRefs)
+    for (const auto& t : mRefs)
     {
         if (aIndex == cnt)
+        {
             return t.first;
+        }
         cnt++;
     }
     return "";
@@ -479,7 +484,7 @@ std::uint32_t Track::getReferenceCount(const HEIF::FourCC& aType) const
     auto it = mRefs.find(aType);
     if (it != mRefs.end())
     {
-        return (std::uint32_t) it->second.size();
+        return static_cast<std::uint32_t>(it->second.size());
     }
     return 0;
 }
@@ -535,7 +540,7 @@ void Track::removeReference(const HEIF::FourCC& aType, Track* aTrack)
 
 std::uint32_t Track::getThumbnailCount() const
 {
-    return (std::uint32_t) mThumbnail.size();
+    return static_cast<std::uint32_t>(mThumbnail.size());
 }
 
 Track* Track::getThumbnail(uint32_t aIndex)
@@ -582,7 +587,7 @@ void Track::removeThumbnail(Track* aTrack)
 
 std::uint32_t Track::getAuxCount() const
 {
-    return (std::uint32_t) mAux.size();
+    return static_cast<std::uint32_t>(mAux.size());
 }
 
 Track* Track::getAux(uint32_t aIndex)
@@ -629,7 +634,7 @@ void Track::removeAux(Track* aTrack)
 
 std::uint32_t Track::getSampleCount() const
 {
-    return (std::uint32_t) mSamples.size();
+    return static_cast<std::uint32_t>(mSamples.size());
 }
 
 Sample* Track::getSample(std::uint32_t aId)
@@ -699,7 +704,9 @@ void Track::setSample(Sample* aOldSample, Sample* aNewSample)
 void Track::addSample(Sample* aSample)
 {
     if (aSample == nullptr)
+    {
         return;
+    }
 
     if (AddItemTo(mSamples, aSample))
     {
@@ -761,7 +768,7 @@ void Track::removeFromGroup(EntityGroup* aGroup)
 
 std::uint32_t Track::getGroupCount() const
 {
-    return (std::uint32_t) mGroups.size();
+    return static_cast<std::uint32_t>(mGroups.size());
 }
 
 EntityGroup* Track::getGroup(uint32_t aId)
@@ -794,7 +801,9 @@ EntityGroup* Track::getGroupByType(const HEIF::FourCC& aType, std::uint32_t aId)
         if (grp->getType() == aType)
         {
             if (aId == cnt)
+            {
                 return grp;
+            }
             cnt++;
         }
     }

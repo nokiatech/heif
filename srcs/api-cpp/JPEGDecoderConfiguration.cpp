@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -10,9 +10,9 @@
  * of this material requires the prior written consent of Nokia.
  */
 
-#include <algorithm>
-
 #include "JPEGDecoderConfiguration.h"
+
+#include <algorithm>
 
 using namespace HEIFPP;
 
@@ -48,7 +48,7 @@ HEIF::ErrorCode JPEGDecoderConfiguration::convertFromRawData(const std::uint8_t*
     // How to verify that the data contains valid JPEG prefix/config code? The only realistic way
     // is to run a custom JPEG decoder against the prefix and determine if it fails before the
     // end-of-data. Not feasible.
-    mConfig.decoderSpecificInfo = HEIF::Array<HEIF::DecoderSpecificInfo>(1);
+    mConfig.decoderSpecificInfo                    = HEIF::Array<HEIF::DecoderSpecificInfo>(1);
     mConfig.decoderSpecificInfo[0].decSpecInfoType = HEIF::DecoderSpecInfoType::JPEG;
     mConfig.decoderSpecificInfo[0].decSpecInfoData = HEIF::Array<uint8_t>(aSize);
     std::copy_n(aData, aSize, mConfig.decoderSpecificInfo[0].decSpecInfoData.elements);
@@ -65,4 +65,3 @@ void JPEGDecoderConfiguration::getConfig(uint8_t*& aData, std::uint32_t& aSize) 
     aData = mBuffer;
     aSize = mBufferSize;
 }
-

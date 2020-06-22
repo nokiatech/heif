@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -83,6 +83,17 @@ namespace HEIF
         virtual ErrorCode addCompatibleBrand(const FourCC& brand) = 0;
 
         /**
+         * Add a new compatible brand combination.
+         * A new type combination box will be added to the extended type box, after the file type box.
+         * Calling this is possible only if the file type box was not already written (OutputConfig.progressiveFile =
+         * true).
+         * @param compatibleBrandCombination FourCCs of a new compatible brand combination. Empty array returns error
+         *                                   INVALID_FUNCTION_PARAMETER.
+         * @return ErrorCode: OK, INVALID_FUNCTION_PARAMETER, UNINITIALIZED or FTYP_ALREADY_WRITTEN
+         */
+        virtual ErrorCode addCompatibleBrandCombination(const Array<FourCC>& compatibleBrandCombination) = 0;
+
+        /**
          * Finalize the file writing.
          * @return ErrorCode: OK, UNINITIALIZED or BRANDS_NOT_SET
          */
@@ -128,6 +139,18 @@ namespace HEIF
         virtual ErrorCode addImage(const MediaDataId& mediaDataId, ImageId& imageId) = 0;
 
         /**
+         * Add an image with decoding dependencies to a HEIF Image Collection. The image bitstream and decoding
+         * dependencies must have been already fed by using feedMediaData() and addImage().
+         * @param mediaDataId       [in]  MediaDataId of the data from feedMediaData().
+         * @param referenceImageIds [in]  Ids of reference images.
+         * @param imageId           [out] ImageId of the added image.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID or INVALID_MEDIADATA_ID
+         */
+        virtual ErrorCode addImage(const MediaDataId& mediaDataId,
+                                   const Array<ImageId>& referenceImageIds,
+                                   ImageId& imageId) = 0;
+
+        /**
          * Set primary item of the file.
          * Typically cover image / main thumbnail for the file.
          * The primary item of the file can not be hidden.
@@ -138,7 +161,8 @@ namespace HEIF
 
         /**
          * Set item description.
-         * @param itemDescription    [in]  ItemDescription of the item.
+         * @param imageId         [in]  ImageId of the image item.
+         * @param itemDescription [in]  ItemDescription of the item.
          * @return ErrorCode: OK, UNINITIALIZED or INVALID_ITEM_ID
          */
         virtual ErrorCode setItemDescription(const ImageId& imageId, const ItemDescription& itemDescription) = 0;
@@ -232,11 +256,65 @@ namespace HEIF
          * If an image has an associated auxiliary property, a 'auxl' reference from
          * from the auxiliary image to the master image must be also present. The reference is created by using method
          * addAuxiliaryReference().
-         * @param auxC       [in]  Parameters for the pixel aspect ratio property.
+         * @param auxC       [in]  Parameters for the image properties for auxiliary images.
          * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
          * @return ErrorCode: OK or UNINITIALIZED
          */
         virtual ErrorCode addProperty(const AuxiliaryType& auxC, PropertyId& propertyId) = 0;
+
+        /**
+         * Add a  Required reference types 'rref' descriptive property.
+         * It can be then associated to one or several images by using method associateProperty().
+         * @param rref       [in]  Parameters for the Required reference types property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const RequiredReferenceTypes& rref, PropertyId& propertyId) = 0;
+
+        /**
+         * Add a  User description 'udes' descriptive property.
+         * It can be then associated to one or several images by using method associateProperty().
+         * @param udes       [in]  Parameters for the User description property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const UserDescription& udes, PropertyId& propertyId) = 0;
+
+        /**
+         * Add a  Image scaling 'iscl' transformative property.
+         * It can be then associated to one or several images by using method associateProperty().
+         * @param iscl       [in]  Parameters for the Image scaling property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const Scale& iscl, PropertyId& propertyId) = 0;
+
+        /**
+         * Add a Accessibility text 'altt' descriptive property.
+         * It can be then associated to one or several images by using method associateProperty().
+         * @param altt       [in]  Parameters for the Accessibility text property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const AccessibilityText& altt, PropertyId& propertyId) = 0;
+
+        /**
+         * Add a Creation time information 'crtt' descriptive property.
+         * It can be then associated to one or several images by using method associateProperty().
+         * @param crtt       [in]  Parameters for the Creation time information property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const CreationTimeInformation& crtt, PropertyId& propertyId) = 0;
+
+        /**
+         * Add a Modification time information 'mdft' descriptive property.
+         * It can be then associated to one or several images by using method associateProperty().
+         * @param mdft       [in]  Parameters for the Modification time information property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const ModificationTimeInformation& mdft, PropertyId& propertyId) = 0;
 
         /**
          * Add a new property from binary data.
@@ -259,7 +337,7 @@ namespace HEIF
          * Associate a property to an image.
          * The writer will arrange all descriptive property associations before transformative property associations.
          * Otherwise association order will be same as fed by using this method.
-         * Note that it is possible to associate same property to several images.
+         * Note that it is possible to associate same property to several images and/or entity groups.
          * @param imageId     [in]  ImageId of the existing image item.
          * @param propertyId  [in]  PropertyId of the existing property.
          * @param isEssential [out] True if this property is defined 'essential' for this image. A reader should
@@ -267,6 +345,20 @@ namespace HEIF
          * @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID or INVALID_PROPERTY_INDEX
          */
         virtual ErrorCode associateProperty(const ImageId& imageId,
+                                            const PropertyId& propertyId,
+                                            const bool isEssential = false) = 0;
+
+        /**
+         * Associate a property to an entity group.
+         * The writer will arrange all descriptive property associations before transformative property associations.
+         * Otherwise association order will be same as fed by using this method.
+         * Note that it is possible to associate same property to several images and/or entity groups.
+         * @param groupId     [in]  GroupId of the existing entity group.
+         * @param propertyId  [in]  PropertyId of the existing property.
+         * @param isEssential [out] True if this property is defined 'essential' for this entity group.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_GROUP_ID or INVALID_PROPERTY_INDEX
+         */
+        virtual ErrorCode associateProperty(const GroupId& groupId,
                                             const PropertyId& propertyId,
                                             const bool isEssential = false) = 0;
 
@@ -413,12 +505,12 @@ namespace HEIF
          * Set an Image Sequence as an auxiliary Image Sequence for another Image Sequence.
          *   - Changes auxiliary Image Sequence track handler type to 'auxv'.
          *   - Adds 'auxl' track reference from auxiliary Image Sequence to master Image Sequence.
-         * @param auxC                  [in]   Type of the auxiliary image as AuxiliaryType struct
-         *                                     AuxiliaryType.auxType : "urn:mpeg:mpegB:cicp:systems:auxiliary:alpha" for alpha plane
-         *                                                             "urn:mpeg:mpegB:cicp:systems:auxiliary:depth" for depth map
+         * @param auxC                  [in]   Type of the auxiliary image as AuxiliaryType struct:
+         *                                     auxType : "urn:mpeg:mpegB:cicp:systems:auxiliary:alpha" for alpha plane
+         *                                               "urn:mpeg:mpegB:cicp:systems:auxiliary:depth" for depth map
          * @param auxiliarySequenceId   [in]  SequenceId of the Image Sequence that is marked as auxiliary.
          * @param sequenceId            [in]  SequenceId of the Image Sequence for which the auxiliary Image Sequence is
-         * added.
+         *                                    added.
          * @return ErrorCode: OK, UNINITIALIZED or INVALID_SEQUENCE_ID
          */
         virtual ErrorCode addAuxiliaryReference(const AuxiliaryType& auxC,
@@ -526,7 +618,8 @@ namespace HEIF
          * Add a Image Seqeunce image to an equivalence ('eqiv') entity group. Image Collection images can use generic
          * addToGroup() instead.
          * @param equivalenceGroupId  [in]  GroupId of the Equivalence entity group.
-         * @param id                  [in]  SequenceImageId of the image sequence image which is added to the group.
+         * @param sequenceId          [in]  SequenceId of the image sequence which is added to the group.
+         * @param sequenceImageId     [in]  SequenceImageId of the image sequence image which is added to the group.
          * @param offset              [in]  Optional: In case equivalence image item doesn't match give SequenceImageId
          * timing on image sequence timeline this offset value can be added (see HEIF specification "6.8	Relating an
          * untimed item to a timed sequence" for details) to indicate this.

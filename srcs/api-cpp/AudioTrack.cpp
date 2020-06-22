@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,6 +11,7 @@
  */
 
 #include "AudioTrack.h"
+
 #include "AACDecoderConfiguration.h"
 #include "AudioSample.h"
 #include "MetaItem.h"
@@ -25,9 +26,7 @@ AudioTrack::AudioTrack(Heif* aHeif)
 {
     mHandler = HEIF::FourCC("soun");
 }
-AudioTrack::~AudioTrack()
-{
-}
+AudioTrack::~AudioTrack() = default;
 
 
 HEIF::ErrorCode AudioTrack::load(HEIF::Reader* aReader, const HEIF::SequenceId& aId)
@@ -54,9 +53,9 @@ HEIF::ErrorCode AudioTrack::save(HEIF::Writer* aWriter)
     {
         return HEIF::ErrorCode::INVALID_MEDIA_FORMAT;
     }
-    AACDecoderConfiguration* aac = static_cast<AACDecoderConfiguration*>(conf);
-    config.channelCount          = aac->getChannels();
-    config.sampleRate            = aac->getSampleRate();
+    auto* aac           = static_cast<AACDecoderConfiguration*>(conf);
+    config.channelCount = aac->getChannels();
+    config.sampleRate   = aac->getSampleRate();
 
     // This is just a simple guestimate. slightly pessimistic, returns bitrates higher than actually needed.
     uint64_t time = 0, totalTime = 0;
@@ -71,7 +70,7 @@ HEIF::ErrorCode AudioTrack::save(HEIF::Writer* aWriter)
         time += smpl->getDuration();
         if (time >= mTimeScale)
         {
-            br = bytes / (time / (float) mTimeScale);  //~one second average.
+            br = bytes / (time / static_cast<float>(mTimeScale));  //~one second average.
             time -= mTimeScale;
             bytes = 0;
             if (br > max)
@@ -81,8 +80,9 @@ HEIF::ErrorCode AudioTrack::save(HEIF::Writer* aWriter)
             bytes = smpl->getSampleDataSize();
         }
     }
-    config.maxBitrate     = (std::uint32_t)(max * 8);
-    config.averageBitrate = (std::uint32_t)(((totalBytes / (totalTime / ((float) mTimeScale))) * 8));
+    config.maxBitrate = static_cast<std::uint32_t>(max * 8);
+    config.averageBitrate =
+        static_cast<std::uint32_t>(((totalBytes / (totalTime / static_cast<float>(mTimeScale))) * 8));
 
     err = aWriter->addAudioTrack(tb, config, mId);
     for (auto smpl : mSamples)

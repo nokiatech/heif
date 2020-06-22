@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,6 +14,7 @@
 
 #include <DescriptiveProperty.h>
 #include <jni.h>
+
 #include "Helpers.h"
 
 #define CLASS_NAME RelativeLocationProperty
@@ -24,7 +25,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::RelativeLocationProperty *nativeObject = new HEIFPP::RelativeLocationProperty(nativeHeif);
+        auto *nativeObject = new HEIFPP::RelativeLocationProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 

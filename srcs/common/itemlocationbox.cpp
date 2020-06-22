@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -329,16 +329,14 @@ const ItemLocationExtent& ItemLocation::getExtent(const unsigned int i) const
 
 ItemLocationVector::const_iterator ItemLocationBox::findItem(const std::uint32_t itemId) const
 {
-    ItemLocationVector::const_iterator iter =
-        std::find_if(mItemLocations.cbegin(), mItemLocations.cend(),
-                     [itemId](const ItemLocation& itemLocation) { return itemLocation.getItemID() == itemId; });
+    auto iter = std::find_if(mItemLocations.cbegin(), mItemLocations.cend(),
+                             [itemId](const ItemLocation& itemLocation) { return itemLocation.getItemID() == itemId; });
     return iter;
 }
 
 ItemLocationVector::iterator ItemLocationBox::findItem(const std::uint32_t itemId)
 {
-    ItemLocationVector::iterator iter =
-        std::find_if(mItemLocations.begin(), mItemLocations.end(),
-                     [itemId](const ItemLocation& itemLocation) { return itemLocation.getItemID() == itemId; });
+    auto iter = std::find_if(mItemLocations.begin(), mItemLocations.end(),
+                             [itemId](const ItemLocation& itemLocation) { return itemLocation.getItemID() == itemId; });
     return iter;
 }

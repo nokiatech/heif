@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,9 +11,12 @@
  */
 
 #include "CodedImageItem.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include <cstring>
+
 #include "DecoderConfiguration.h"
 #include "H26xTools.h"
 
@@ -52,7 +55,9 @@ const DecoderConfig* CodedImageItem::getDecoderConfiguration() const
 Result CodedImageItem::setDecoderConfiguration(DecoderConfig* aConfig)
 {
     if (mConfig)
+    {
         mConfig->unlink(this);
+    }
     if (aConfig)
     {
         if (aConfig->getMediaFormat() != mFormat)
@@ -83,7 +88,7 @@ HEIF::MediaFormat CodedImageItem::getMediaFormat() const
 
 std::uint32_t CodedImageItem::getBaseImageCount() const
 {
-    return (std::uint32_t) mBaseImages.size();
+    return static_cast<std::uint32_t>(mBaseImages.size());
 }
 ImageItem* CodedImageItem::getBaseImage(std::uint32_t aId)
 {
@@ -124,9 +129,9 @@ void CodedImageItem::setBaseImage(std::uint32_t aId, ImageItem* aImage)
 
 void CodedImageItem::setBaseImage(ImageItem* aOldImage, ImageItem* aNewImage)
 {
-    for (auto it = mBaseImages.begin(); it != mBaseImages.end(); ++it)
+    for (auto& baseImage : mBaseImages)
     {
-        if (aOldImage == (*it))
+        if (aOldImage == baseImage)
         {
             if (aOldImage)
             {
@@ -135,7 +140,7 @@ void CodedImageItem::setBaseImage(ImageItem* aOldImage, ImageItem* aNewImage)
                     HEIF_ASSERT(false);
                 }
             }
-            *it = aNewImage;
+            baseImage = aNewImage;
             if (aNewImage)
             {
                 addBaseLink(aNewImage, this);
@@ -157,7 +162,7 @@ void CodedImageItem::removeBaseImage(std::uint32_t aId)
 {
     if (aId < mBaseImages.size())
     {
-        auto it = mBaseImages.begin() + (std::int32_t) aId;
+        auto it = mBaseImages.begin() + static_cast<std::int32_t>(aId);
         if (*it)
         {
             if (!removeBaseLink(*it, this))
@@ -194,7 +199,7 @@ void CodedImageItem::reserveBaseImages(std::uint32_t aCount)
 {
     if (aCount < mBaseImages.size())
     {
-        for (auto it = mBaseImages.begin() + (std::int32_t) aCount; it != mBaseImages.end(); ++it)
+        for (auto it = mBaseImages.begin() + static_cast<std::int32_t>(aCount); it != mBaseImages.end(); ++it)
         {
             if (!removeBaseLink(*it, this))
             {
@@ -295,9 +300,11 @@ HEIF::ErrorCode CodedImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId&
         // base images for pre-derived images..
         error = aReader->getReferencedFromItemListByType(aId, "base", baseIds);
         if (HEIF::ErrorCode::OK != error)
+        {
             return error;
+        }
         // construct base images.
-        mBaseImages.reserve((std::uint32_t) baseIds.size);
+        mBaseImages.reserve(static_cast<std::uint32_t>(baseIds.size));
         for (const auto& baseId : baseIds)
         {
             ImageItem* tmp = getHeif()->constructImageItem(aReader, baseId, info, error);
@@ -352,7 +359,9 @@ HEIF::ErrorCode CodedImageItem::save(HEIF::Writer* aWriter)
         {
             error = mConfig->save(aWriter);
             if (HEIF::ErrorCode::OK != error)
+            {
                 return error;
+            }
         }
         fr.decoderConfigId = mConfig->getId();
     }
@@ -390,12 +399,16 @@ HEIF::ErrorCode CodedImageItem::save(HEIF::Writer* aWriter)
     delete[] fr.data;
 
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     HEIF::ImageId newId;
     error = aWriter->addImage(mediaDataId, newId);
     setId(newId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
 
     // save base images.. needs to be done here since we only get the correct mId AFTER aWriter->addImage.
     if (!mBaseImages.empty())
@@ -412,14 +425,18 @@ HEIF::ErrorCode CodedImageItem::save(HEIF::Writer* aWriter)
             {
                 error = image->save(aWriter);
                 if (HEIF::ErrorCode::OK != error)
+                {
                     return error;
+                }
             }
             toImageIds[count] = image->getId();
             ++count;
         }
         error = aWriter->addBaseItemReference(getId(), toImageIds);
         if (HEIF::ErrorCode::OK != error)
+        {
             return error;
+        }
     }
 
     return ImageItem::save(aWriter);

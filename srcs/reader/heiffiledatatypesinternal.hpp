@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,8 +16,15 @@
 
 #include <cstdint>
 #include <set>
+
 #include "customallocator.hpp"
+#include "decodepts.hpp"
+#include "heifid.h"
 #include "heifreaderdatatypes.h"
+#include "heifstreaminternal.hpp"
+#include "moviefragmentsdatatypes.hpp"
+#include "segmenttypebox.hpp"
+#include "tracktypebox.hpp"
 
 
 namespace HEIF
@@ -40,7 +47,7 @@ namespace HEIF
             uint32_t mask = 0;
             for (auto set : mFileFeatureSet)
             {
-                mask |= (uint32_t) set;
+                mask |= static_cast<uint32_t>(set);
             }
             return mask;
         }
@@ -67,7 +74,7 @@ namespace HEIF
             uint32_t mask = 0;
             for (auto set : mTrackFeatureSet)
             {
-                mask |= (uint32_t) set;
+                mask |= static_cast<uint32_t>(set);
             }
             return mask;
         }
@@ -95,7 +102,7 @@ namespace HEIF
             uint32_t mask = 0;
             for (auto set : mMetaBoxFeatureSet)
             {
-                mask |= (uint32_t) set;
+                mask |= static_cast<uint32_t>(set);
             }
             return mask;
         }
@@ -123,7 +130,7 @@ namespace HEIF
             uint32_t mask = 0;
             for (auto set : mItemFeatureSet)
             {
-                mask |= (uint32_t) set;
+                mask |= static_cast<uint32_t>(set);
             }
             return mask;
         }
@@ -132,74 +139,134 @@ namespace HEIF
         ItemFeatureSet mItemFeatureSet;
     };
 
-    // Forward declarations
-    struct TrackProperties;
-    struct SampleProperties;
+    /** @brief 'MOOV' level features flag enumeration. */
+    class MoovFeature
+    {
+    public:
+        /// Enumerated list of Moov Features
+        enum Feature
+        {
+            HasMoovLevelMetaBox,
+            HasCoverImage
+        };
+        typedef Set<Feature> MoovFeatureSet;
 
+        bool hasFeature(Feature feature) const
+        {
+            return mMoovFeatureSet.count(feature) != 0;
+        }
+        void setFeature(Feature feature)
+        {
+            mMoovFeatureSet.insert(feature);
+        }
+
+    private:
+        MoovFeatureSet mMoovFeatureSet;
+    };
+
+    // Forward declarations
+    struct SampleProperties;
+    struct InitTrackInfo;
+
+    struct SampleSizeInPixels
+    {
+        uint32_t width;
+        uint32_t height;
+    };
 
     // Convenience types
     typedef std::int64_t Timestamp;
-    typedef std::uint32_t ItemId;
-    typedef Vector<std::pair<ItemId, Timestamp>> DecodingOrderVector;
-    typedef Vector<std::uint32_t> IdVector;
+    typedef Vector<TimestampIDPair> DecodingOrderVector;
     typedef Vector<std::uint8_t> DataVector;
-    typedef Map<FourCC, IdVector> TypeToIdsMap;
+    typedef Map<FourCC, Vector<SequenceId>> TypeToIdsMap;
     typedef Vector<EntityGrouping> Groupings;
     typedef Map<DecoderSpecInfoType, DataVector> ParameterSetMap;
     typedef Vector<ItemPropertyInfo> PropertyTypeVector;
 
+    IdType(std::uint32_t, Sequence);
+    IdType(std::uint32_t, SampleDescriptionIndex);
+
+    typedef std::pair<SegmentId, SequenceId> SegmentTrackId;
+    typedef std::pair<SequenceId, SampleDescriptionIndex> TrackSampleEntryIndex;
+
+    typedef std::pair<SequenceId, SequenceImageId>
+        SequenceImageIdPair;  ///< Unique identifier for an sample/sequence image in a sequence
 
     // In the type definitions, the first element of each map represents the file-given ID of the relevant data
     // structure. In he below mentioned type definitions, key value is the ID of the entity.
     typedef Map<ImageId, ItemFeature> ItemFeaturesMap;
-    typedef Map<SequenceId, TrackProperties> TrackPropertiesMap;  ///< <track_id/context_id, TrackProperties>
     typedef Map<std::uint32_t, SampleProperties> SamplePropertiesMap;
+    typedef Map<SequenceId, InitTrackInfo> InitTrackInfoMap;
+
+    typedef std::pair<SequenceImageId, Timestamp> ItemIdTimestampPair;  ///< Pair of Item/sample ID and timestamp
+
+    typedef Map<SequenceImageIdPair, SampleDescriptionIndex> SampleToParameterSetMap;
+    typedef Array<SegmentInformation> SegmentIndex;
+
 
     /** @brief MetaBox Property definition that contains image and item features */
     struct MetaBoxProperties
     {
-        std::uint32_t contextId;
         MetaBoxFeature metaBoxFeature;
         ItemFeaturesMap itemFeaturesMap;
         Groupings entityGroupings;
     };
 
-    /** @brief Moov Property definition that may contain a MetaBox */
+    /** @brief Moov Property definition */
     struct MoovProperties
     {
-        std::uint32_t moovId;
-        MetaBoxProperties metaBoxProperties;
+        MoovFeature moovFeature;
+        uint32_t movieTimescale;
+        Vector<std::int32_t> mMatrix;  ///< Video transformation matrix from the Movie Header Box
+
+        // movie fragment support related properties, used internally only:
+        uint64_t fragmentDuration;
+        Vector<MOVIEFRAGMENTS::SampleDefaults> fragmentSampleDefaults;
     };
+
+    struct TrackGroupInfo
+    {
+        Vector<SequenceId> ids;
+    };
+    using TrackGroupInfoMap = Map<FourCCInt, TrackGroupInfo>;
 
     /** @brief Sample Property definition */
     struct SampleProperties
     {
-        std::uint32_t sampleId;                ///< based on the sample's entry order in the sample table
-        FourCC sampleEntryType;                ///< coming from SampleDescriptionBox (codingname)
-        std::uint32_t sampleDescriptionIndex;  ///< coming from SampleDescriptionBox index (sample_description_index)
-        SampleType sampleType;                 ///< coming from sample groupings
-        uint64_t sampleDurationTS;             ///< duration of sample in timescale
-        int64_t sampleCompositionOffsetTs;
-        bool hasClap;  ///< CleanApertureBox is present in the sample entry
-        bool hasAuxi;  ///< AuxiliaryTypeInfo box is present in the sample entry
+        SequenceImageId sampleId =
+            0;                    ///< based on the sample's entry order in the sample table; this is in decoding order
+        SegmentId segmentId = 0;  ///< Segment Id of the sample.
+
+        FourCCInt sampleEntryType = 0;  ///< coming from SampleDescriptionBox (codingname)
+        SampleType sampleType;          ///< coming from sample groupings
+        SampleDescriptionIndex sampleDescriptionIndex =
+            0;  ///< coming from SampleDescriptionBox index (sample_description_index)
+
         CodingConstraints codingConstraints;
-        uint64_t size; ///< Size of sample data in bytes
+
+        std::uint32_t sampleDurationTS         = 0;  ///< Duration of sample in time scale units.
+        std::int64_t sampleCompositionOffsetTs = 0;
+        Vector<std::int64_t> compositionTimes;     ///< Timestamps of the sample. Possible edit list is considered here.
+        Vector<std::uint64_t> compositionTimesTS;  ///< Timestamps of the sample in time scale units. Possible
+                                                   ///< edit list is considered here.
+        std::uint64_t dataOffset = 0;              ///< File offset of sample data in bytes
+        std::uint32_t dataLength = 0;              ///< Length of sample in bytes
+        std::uint32_t width      = 0;              ///< Width of the frame
+        std::uint32_t height     = 0;              ///< Height of the frame
+        SampleFlags sampleFlags;  ///< Sample Flags Field as defined in 8.8.3.1 of ISO/IEC 14496-12:2015(E)
+        Vector<SequenceImageId> decodeDependencies;  ///< Direct decoding dependencies
+
+        bool hasClap = false;  ///< CleanApertureBox is present in the sample entry
+        bool hasAuxi = false;  ///< AuxiliaryTypeInfo box is present in the sample entry
     };
 
     /** @brief Track Property definition which contain sample properties.
      *
-     * In the samplePropertiesMap, samples of the track are listed in the same order they appear
-     * in the sample size or sample to chunk boxes.
-     * Each sample is given an ID, which is used as the key of the map.
+     * Information about a track, extracted from the initialization segment.
      */
-    struct TrackProperties
+    struct InitTrackInfo
     {
-        SequenceId trackId;  ///< trackId is also context id
-        std::uint32_t alternateGroupId;
-        TrackFeature trackFeature;
-        SamplePropertiesMap sampleProperties;
-        IdVector alternateTrackIds;            ///< other tracks IDs with the same alternate_group id.
-        TypeToIdsMap referenceTrackIds;        ///< <reference_type, reference track ID> (coming from 'tref')
+        SequenceId trackId;
         Array<SampleGrouping> groupedSamples;  ///< Sample groupings of the track.
         Array<SampleVisualEquivalence>
             equivalences;                       ///< Information from VisualEquivalenceEntry() 'eqiv' sample groups.
@@ -209,24 +276,102 @@ namespace HEIF
         uint64_t maxSampleSize;  ///< Size of largest sample inside the track (can be used to allocate client side read
                                  ///< buffer).
         uint32_t timeScale;
-        EditList editList;  ///< Editlist for this track.
+
+        std::uint32_t alternateGroupId;
+        TrackFeature trackFeature;
+        Vector<SequenceId> alternateTrackIds;  ///< other tracks IDs with the same alternate_group id.
+        TypeToIdsMap referenceTrackIds;        ///< <reference_type, reference track ID> (coming from 'tref')
+        TrackGroupInfoMap trackGroupInfoMap;  ///< <group_type, track group info> ... coming from Track Group Box 'trgr'
+        EditList editList;                    ///< Editlist for this track.
+        std::shared_ptr<const EditBox> editBox;  ///< If set, an edit list box exists
+
+        std::uint32_t width;   ///< display width in pixels, from 16.16 fixed point in TrackHeaderBox
+        std::uint32_t height;  ///< display height in pixels, from 16.16 fixed point in TrackHeaderBox
+
+        FourCCInt sampleEntryType;  /// sample type from this track. Passed to segments sampleproperties.
+
+        Map<SampleDescriptionIndex, ParameterSetMap> parameterSetMaps;  ///< Extracted decoder parameter sets
+        Map<SampleDescriptionIndex, SampleSizeInPixels>
+            sampleSizeInPixels;  ///< Clean sample size information from sample description entries
+        Map<SampleDescriptionIndex, std::uint8_t> nalLengthSizeMinus1;
+
+        Vector<int32_t> matrix;  ///< transformation matrix of the track (from track header box)
+
+        Map<SampleDescriptionIndex, CleanAperture>
+            clapProperties;  ///< Clean aperture data from sample description entries
+        Map<SampleDescriptionIndex, AuxiliaryType>
+            auxiProperties;  ///< Clean aperture data from sample description entries
     };
+
+    typedef Vector<SampleProperties> SamplePropertyVector;
+
+    /// Information about samples of a track in a segment.
+    struct TrackInfoInSegment
+    {
+        SequenceImageId itemIdBase;
+        SamplePropertyVector samples;  ///< Information about each sample in the TrackBox
+
+        DecodePts::PresentationTimeTS durationTS    = 0;  ///< Track duration in time scale units, from TrackHeaderBox
+        DecodePts::PresentationTimeTS earliestPTSTS = 0;  ///< Time of the first sample in time scale units
+        DecodePts::PresentationTimeTS noSidxFallbackPTSTS = 0;  ///< Start PTS for next segment if no sidx
+
+        /** Time to use as the base when adding the next track run; this value is initialized with
+        some derived value upon first use and the incremented by trackrun duration when one is read. */
+        DecodePts::PresentationTimeTS nextPTSTS = 0;
+
+        WriteOnceMap<SequenceImageId, FourCCInt> decoderCodeTypeMap;  ///< Extracted decoder code types
+
+        DecodePts::PMap pMap;      ///< Display timestamps, from edit list
+        DecodePts::PMapTS pMapTS;  ///< Display timestamps in time scale units, from edit list
+
+        /// @todo Move to another structs.
+        bool hasEditList = false;  ///< Used to determine if updateCompositionTimes should edit the time of last sample
+                                   ///< to match track duration
+        bool hasTtyp = false;
+        TrackTypeBox ttyp;  ///< TrackType info in case if available
+        double duration;    ///< Track duration in seconds, from TrackHeaderBox
+        double repetitions;
+    };
+
+    struct StreamIO
+    {
+        UniquePtr<InternalStream> stream;
+        UniquePtr<StreamInterface> fileStream;  // only used when reading from files
+        std::int64_t size = 0;
+    };
+
+    struct SegmentProperties
+    {
+        SegmentId segmentId;
+        Set<Sequence> sequences;  ///< Generated sequence number for this segment instead of sequence numbers from the
+                                  ///< movie fragment header box.
+
+        StreamIO io;
+
+        SegmentTypeBox styp;  ///< Segment Type Box for later information retrieval
+
+        Map<SequenceId, TrackInfoInSegment> trackInfos;
+
+        SampleToParameterSetMap sampleToParameterSetMap;  ///< Map from every sample to parameter set map entry
+    };
+
+    typedef Map<SegmentId, SegmentProperties> SegmentPropertiesMap;
+    typedef Map<Sequence, SegmentId> SequenceToSegmentMap;
 
     /** @brief Overall File Property definition which contains file's properties.*/
     struct FileInformationInternal
     {
         FileFeature fileFeature;
-        TrackPropertiesMap trackProperties;
         MetaBoxProperties rootLevelMetaBoxProperties;
-        uint32_t movieTimescale;
+
+        MoovProperties moovProperties;
+
+        Map<SequenceId, InitTrackInfo> initTrackInfos;
+
+        SegmentIndex segmentIndex;
+        SegmentPropertiesMap segmentPropertiesMap;
+        SequenceToSegmentMap sequenceToSegment;
     };
-
-
-    typedef std::uint32_t ContextId;                           ///< Context (= meta box and track) identifiers
-    typedef std::uint32_t ItemId;                              ///< Sample/image/item identifiers
-    typedef std::pair<ContextId, ItemId> Id;                   ///< Convenience type combining context and item IDs
-    typedef std::pair<ItemId, Timestamp> ItemIdTimestampPair;  ///< Pair of Item/sample ID and timestamp
-
 }  // namespace HEIF
 
 #endif /* HEIFFILEDATATYPESINTERNAL_HPP */

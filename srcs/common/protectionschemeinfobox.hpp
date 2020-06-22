@@ -1,18 +1,21 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef PROTECTIONSCHEMEINFOBOX_HPP
 #define PROTECTIONSCHEMEINFOBOX_HPP
 
 #include <cstdint>
+
 #include "customallocator.hpp"
 
 namespace ISOBMFF
@@ -22,7 +25,8 @@ namespace ISOBMFF
 
 /** Protection Scheme Information Box class
  *  @details 'sinf' box dummy implementation. Box structure is specified in the ISOBMFF specification.
- *  Structures of 'sinf' and contained boxes are not implemented. It is possible to set and get content as a binary blob. */
+ *  Structures of 'sinf' and contained boxes are not implemented. It is possible to set and get content as a binary
+ * blob. */
 class ProtectionSchemeInfoBox
 {
 public:

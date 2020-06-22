@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef WRITEONCEMAP_HPP
@@ -14,6 +16,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+
 #include "customallocator.hpp"
 
 template <typename Key, typename Value>
@@ -87,9 +90,9 @@ public:
 
     std::size_t size() const;
 
-    Entry& front(); // note: don't modify value.first, it will break havoc. not easy to make it const.
+    Entry& front();  // note: don't modify value.first, it will break havoc. not easy to make it const.
     const Entry& front() const;
-    Entry& back(); // note: don't modify value.first, it will break havoc. not easy to make it const.
+    Entry& back();  // note: don't modify value.first, it will break havoc. not easy to make it const.
     const Entry& back() const;
 
     Value& operator[](const Key& key);
@@ -347,12 +350,10 @@ std::pair<typename WriteOnceMap<Key, Value>::iterator, typename WriteOnceMap<Key
 WriteOnceMap<Key, Value>::equal_range(const Key& key)
 {
     checkValidation();
-    iterator lower = std::lower_bound(begin(), end(), std::make_pair(key, Value()),
-                                      lessThanProjectFirst);
+    auto lower = std::lower_bound(begin(), end(), std::make_pair(key, Value()), lessThanProjectFirst);
     if (lower != end() && lower->first == key)
     {
-        iterator upper = std::upper_bound(lower, end(), std::make_pair(key, Value()),
-                                          lessThanProjectFirst);
+        auto upper = std::upper_bound(lower, end(), std::make_pair(key, Value()), lessThanProjectFirst);
         return std::make_pair(lower, upper);
     }
     else
@@ -366,12 +367,10 @@ std::pair<typename WriteOnceMap<Key, Value>::const_iterator, typename WriteOnceM
 WriteOnceMap<Key, Value>::equal_range(const Key& key) const
 {
     checkValidation();
-    const_iterator lower = std::lower_bound(cbegin(), cend(), std::make_pair(key, Value()),
-                                            lessThanProjectFirst);
+    const_iterator lower = std::lower_bound(cbegin(), cend(), std::make_pair(key, Value()), lessThanProjectFirst);
     if (lower != end() && lower->first == key)
     {
-        const_iterator upper = std::upper_bound(lower, cend(), std::make_pair(key, Value()),
-                                                lessThanProjectFirst);
+        const_iterator upper = std::upper_bound(lower, cend(), std::make_pair(key, Value()), lessThanProjectFirst);
         return std::make_pair(lower, upper);
     }
     else
@@ -381,12 +380,10 @@ WriteOnceMap<Key, Value>::equal_range(const Key& key) const
 }
 
 template <typename Key, typename Value>
-typename WriteOnceMap<Key, Value>::const_iterator
-WriteOnceMap<Key, Value>::find(const Key& key) const
+typename WriteOnceMap<Key, Value>::const_iterator WriteOnceMap<Key, Value>::find(const Key& key) const
 {
     checkValidation();
-    const_iterator lower = std::lower_bound(begin(), end(), std::make_pair(key, Value()),
-                                            lessThanProjectFirst);
+    const_iterator lower = std::lower_bound(begin(), end(), std::make_pair(key, Value()), lessThanProjectFirst);
     if (lower != end() && lower->first == key)
     {
         return lower;
@@ -398,12 +395,10 @@ WriteOnceMap<Key, Value>::find(const Key& key) const
 }
 
 template <typename Key, typename Value>
-Value&
-WriteOnceMap<Key, Value>::at(const Key& key)
+Value& WriteOnceMap<Key, Value>::at(const Key& key)
 {
     checkValidation();
-    auto lower = std::lower_bound(mData.begin(), mData.end(), std::make_pair(key, Value()),
-                                  lessThanProjectFirst);
+    auto lower = std::lower_bound(mData.begin(), mData.end(), std::make_pair(key, Value()), lessThanProjectFirst);
     if (lower != mData.end() && lower->first == key)
     {
         return lower->second;
@@ -415,12 +410,10 @@ WriteOnceMap<Key, Value>::at(const Key& key)
 }
 
 template <typename Key, typename Value>
-const Value&
-WriteOnceMap<Key, Value>::at(const Key& key) const
+const Value& WriteOnceMap<Key, Value>::at(const Key& key) const
 {
     checkValidation();
-    auto lower = std::lower_bound(mData.begin(), mData.end(), std::make_pair(key, Value()),
-                                  lessThanProjectFirst);
+    auto lower = std::lower_bound(mData.begin(), mData.end(), std::make_pair(key, Value()), lessThanProjectFirst);
     if (lower != mData.end() && lower->first == key)
     {
         return lower->second;
@@ -432,23 +425,19 @@ WriteOnceMap<Key, Value>::at(const Key& key) const
 }
 
 template <typename Key, typename Value>
-size_t
-WriteOnceMap<Key, Value>::count(const Key& key) const
+size_t WriteOnceMap<Key, Value>::count(const Key& key) const
 {
     checkValidation();
-    auto lower = std::lower_bound(mData.begin(), mData.end(), std::make_pair(key, Value()),
-                                  lessThanProjectFirst);
+    auto lower = std::lower_bound(mData.begin(), mData.end(), std::make_pair(key, Value()), lessThanProjectFirst);
     return (lower != mData.end() && lower->first == key) ? 1 : 0;
 }
 
 template <typename Key, typename Value>
-typename Vector<std::pair<Key, Value>>::iterator
-WriteOnceMap<Key, Value>::find(const Key& key)
+typename Vector<std::pair<Key, Value>>::iterator WriteOnceMap<Key, Value>::find(const Key& key)
 {
     checkValidation();
     typename Vector<std::pair<Key, Value>>::iterator lower =
-        std::lower_bound(mData.begin(), mData.end(), std::make_pair(key, Value()),
-                         lessThanProjectFirst);
+        std::lower_bound(mData.begin(), mData.end(), std::make_pair(key, Value()), lessThanProjectFirst);
     if (lower != end() && lower->first == key)
     {
         return lower;
@@ -460,8 +449,7 @@ WriteOnceMap<Key, Value>::find(const Key& key)
 }
 
 template <typename Key, typename Value>
-Value&
-    WriteOnceMap<Key, Value>::operator[](const Key& key)
+Value& WriteOnceMap<Key, Value>::operator[](const Key& key)
 {
     auto it = find(key);
     if (it == mData.end())
@@ -478,8 +466,7 @@ Value&
 }
 
 template <typename Key, typename Value>
-const Value&
-    WriteOnceMap<Key, Value>::operator[](const Key& key) const
+const Value& WriteOnceMap<Key, Value>::operator[](const Key& key) const
 {
     auto it = find(key);
     if (it == end())

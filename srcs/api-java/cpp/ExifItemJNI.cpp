@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
  */
 
 #include <jni.h>
+
 #include "ExifItem.h"
 #include "Helpers.h"
 #define CLASS_NAME ExifItem
@@ -22,7 +23,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::ExifItem *nativeObject = new HEIFPP::ExifItem(nativeHeif);
+        auto *nativeObject = new HEIFPP::ExifItem(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -36,7 +37,7 @@ extern "C"
     JNI_METHOD_ARG(void, setItemDataNative, jbyteArray data)
     {
         NATIVE_SELF;
-        jbyte *nativeData = env->GetByteArrayElements(data, 0);
+        jbyte *nativeData = env->GetByteArrayElements(data, nullptr);
         nativeSelf->setData((uint8_t *) nativeData, static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }

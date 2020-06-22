@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -82,6 +82,6 @@ void CodingConstraintsBox::parseBox(ISOBMFF::BitStream& bitstr)
     parseFullBoxHeader(bitstr);
     mAllRefPicsIntra = (bitstr.readBits(1) != 0);
     mIntraPredUsed   = (bitstr.readBits(1) != 0);
-    mMaxRefPicUsed   = (std::uint8_t) bitstr.readBits(4);
+    mMaxRefPicUsed   = static_cast<std::uint8_t>(bitstr.readBits(4));
     bitstr.readBits(26);  // discard reserved int(26)
 }

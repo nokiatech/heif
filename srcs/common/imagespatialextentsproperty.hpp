@@ -1,18 +1,21 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef IMAGESPATIALEXTENTSPROPERTY_HPP
 #define IMAGESPATIALEXTENTSPROPERTY_HPP
 
 #include <cstdint>
+
 #include "customallocator.hpp"
 #include "fullbox.hpp"
 
@@ -27,7 +30,7 @@ class ImageSpatialExtentsProperty : public FullBox
 public:
     ImageSpatialExtentsProperty();
     ImageSpatialExtentsProperty(std::uint32_t width, std::uint32_t height);
-    virtual ~ImageSpatialExtentsProperty() = default;
+    ~ImageSpatialExtentsProperty() override = default;
 
     /** Set image width.
      *  @param [in] width Image width in pixels. */
@@ -47,11 +50,11 @@ public:
 
     /** Write box/property to ISOBMFF::BitStream.
      *  @see Box::writeBox() */
-    virtual void writeBox(ISOBMFF::BitStream& output) const;
+    void writeBox(ISOBMFF::BitStream& output) const override;
 
     /** Parse box/property from ISOBMFF::BitStream.
      *  @see Box::parseBox() */
-    virtual void parseBox(ISOBMFF::BitStream& input);
+    void parseBox(ISOBMFF::BitStream& input) override;
 
 private:
     std::uint32_t mImageWidth;   ///< Width of the reconstructed image in pixels.

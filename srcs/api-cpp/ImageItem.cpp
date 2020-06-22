@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,8 +11,10 @@
  */
 
 #include "ImageItem.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include "CodedImageItem.h"
 #include "DerivedImageItem.h"
 #include "DescriptiveProperty.h"
@@ -112,11 +114,11 @@ ImageItem::~ImageItem()
 
 ItemProperty* ImageItem::getFirstPropertyOfType(HEIF::ItemPropertyType aType) const
 {
-    for (auto it = mProps.begin(); it != mProps.end(); it++)
+    for (const auto& prop : mProps)
     {
-        if (it->first->getType() == aType)
+        if (prop.first->getType() == aType)
         {
-            return (it->first);
+            return (prop.first);
         }
     }
     return nullptr;
@@ -255,9 +257,11 @@ bool ImageItem::isPreDerivedImage() const
 {
     if (isCodedImage())
     {
-        const CodedImageItem* img = static_cast<const CodedImageItem*>(this);
+        const auto* img = static_cast<const CodedImageItem*>(this);
         if (img->getBaseImageCount() > 0)
+        {
             return true;
+        }
     }
     return false;
 }
@@ -309,7 +313,9 @@ HEIF::ErrorCode ImageItem::save(HEIF::Writer* aWriter)
     HEIF::ErrorCode error;
     error = aWriter->setImageHidden(mId, isHidden());
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
 
     // save metadata.
     for (MetaItem* item : mMetaItems)
@@ -322,11 +328,15 @@ HEIF::ErrorCode ImageItem::save(HEIF::Writer* aWriter)
         {
             error = item->save(aWriter);
             if (HEIF::ErrorCode::OK != error)
+            {
                 return error;
+            }
         }
         error = aWriter->addMetadataItemReference(item->getId().get(), mId);
         if (HEIF::ErrorCode::OK != error)
+        {
             return error;
+        }
     }
 
     // save all thumbs..
@@ -340,11 +350,15 @@ HEIF::ErrorCode ImageItem::save(HEIF::Writer* aWriter)
         {
             error = image->save(aWriter);
             if (HEIF::ErrorCode::OK != error)
+            {
                 return error;
+            }
         }
         error = aWriter->addThumbnail(image->getId(), mId);
         if (HEIF::ErrorCode::OK != error)
+        {
             return error;
+        }
     }
 
     // save all auxiliarys..
@@ -358,11 +372,15 @@ HEIF::ErrorCode ImageItem::save(HEIF::Writer* aWriter)
         {
             error = image->save(aWriter);
             if (HEIF::ErrorCode::OK != error)
+            {
                 return error;
+            }
         }
         error = aWriter->addAuxiliaryReference(image->getId(), mId);
         if (HEIF::ErrorCode::OK != error)
+        {
             return error;
+        }
     }
 
     return Item::save(aWriter);
@@ -373,13 +391,19 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
     HEIF::ErrorCode error;
     error = Item::load(aReader, aId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     error = aReader->getWidth(aId, mWidth);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     error = aReader->getHeight(aId, mHeight);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
 
     HEIF::Array<HEIF::ImageId> ids;
     {
@@ -389,7 +413,9 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 
         error = aReader->getReferencedToItemListByType(aId, "thmb", ids);
         if (HEIF::ErrorCode::OK != error)
+        {
             return error;
+        }
         if (ids.size > 0)
         {
             mThumbnailImages.reserve(ids.size);
@@ -406,7 +432,9 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 
         error = aReader->getReferencedToItemListByType(aId, "auxl", ids);
         if (HEIF::ErrorCode::OK != error)
+        {
             return error;
+        }
         if (ids.size > 0)
         {
             mAuxImages.reserve(ids.size);
@@ -423,7 +451,9 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 
         error = aReader->getReferencedToItemListByType(aId, "cdsc", ids);
         if (HEIF::ErrorCode::OK != error)
+        {
             return error;
+        }
         if (ids.size > 0)
         {
             mMetaItems.reserve(ids.size);
@@ -443,7 +473,7 @@ HEIF::ErrorCode ImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 
 std::uint32_t ImageItem::getThumbnailCount() const
 {
-    return (uint32_t) mThumbnailImages.size();
+    return static_cast<uint32_t>(mThumbnailImages.size());
 }
 ImageItem* ImageItem::getThumbnail(uint32_t aId)
 {
@@ -494,7 +524,7 @@ void ImageItem::removeThumbnail(ImageItem* aImage)
 
 std::uint32_t ImageItem::getAuxCount() const
 {
-    return (uint32_t) mAuxImages.size();
+    return static_cast<uint32_t>(mAuxImages.size());
 }
 ImageItem* ImageItem::getAux(uint32_t aId)
 {
@@ -544,7 +574,7 @@ void ImageItem::removeAuxImage(ImageItem* aImage)
 
 std::uint32_t ImageItem::getMetadataCount() const
 {
-    return (uint32_t) mMetaItems.size();
+    return static_cast<uint32_t>(mMetaItems.size());
 }
 MetaItem* ImageItem::getMetadata(uint32_t aId)
 {
@@ -565,7 +595,9 @@ const MetaItem* ImageItem::getMetadata(uint32_t aId) const
 void ImageItem::addMetadata(MetaItem* aItem)
 {
     if (aItem == nullptr)
+    {
         return;
+    }
 
     if (AddItemTo(mMetaItems, aItem))
     {
@@ -575,7 +607,9 @@ void ImageItem::addMetadata(MetaItem* aItem)
 void ImageItem::removeMetadata(MetaItem* aItem)
 {
     if (aItem == nullptr)
+    {
         return;
+    }
     if (RemoveItemFrom(mMetaItems, aItem))
     {
         aItem->unlink(this);

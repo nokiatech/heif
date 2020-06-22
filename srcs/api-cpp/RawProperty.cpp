@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,24 +11,24 @@
  */
 
 #include "RawProperty.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include <cstring>
 
 using namespace HEIFPP;
 
 RawProperty::RawProperty(Heif* aHeif)
-    : ItemProperty(aHeif, HEIF::ItemPropertyType::RAW, HEIF::FourCC((std::uint32_t)0), false)
+    : ItemProperty(aHeif, HEIF::ItemPropertyType::RAW, HEIF::FourCC(static_cast<std::uint32_t>(0)), false)
 {
 }
 RawProperty::RawProperty(Heif* aHeif, const HEIF::FourCC& aType, bool aIsTransform)
-    : ItemProperty(aHeif, HEIF::ItemPropertyType::RAW, aType,aIsTransform)
+    : ItemProperty(aHeif, HEIF::ItemPropertyType::RAW, aType, aIsTransform)
 {
 }
 
-RawProperty::~RawProperty()
-{
-}
+RawProperty::~RawProperty() = default;
 void RawProperty::getData(const std::uint8_t*& aData, std::uint64_t& aLength) const
 {
     aData   = mRaw.data.elements + 8;
@@ -36,21 +36,21 @@ void RawProperty::getData(const std::uint8_t*& aData, std::uint64_t& aLength) co
 }
 void RawProperty::setData(const std::uint8_t* aData, std::uint64_t aLength)
 {
-    const int offset = 8;//offset to payload (size of box type and size)
-    mRaw.data    = HEIF::Array<uint8_t>((aLength + offset));
-    mRaw.data[0] = ((aLength + offset) >> 24) & 0xFF;
-    mRaw.data[1] = ((aLength + offset) >> 16) & 0xFF;
-    mRaw.data[2] = ((aLength + offset) >> 8) & 0xFF;
-    mRaw.data[3] = ((aLength + offset)) &0xFF;    
-    mRaw.data[4] = static_cast<std::uint8_t>(rawType().value[0]);
-    mRaw.data[5] = static_cast<std::uint8_t>(rawType().value[1]);
-    mRaw.data[6] = static_cast<std::uint8_t>(rawType().value[2]);
-    mRaw.data[7] = static_cast<std::uint8_t>(rawType().value[3]);
+    const int offset = 8;  // offset to payload (size of box type and size)
+    mRaw.data        = HEIF::Array<uint8_t>((aLength + offset));
+    mRaw.data[0]     = ((aLength + offset) >> 24) & 0xFF;
+    mRaw.data[1]     = ((aLength + offset) >> 16) & 0xFF;
+    mRaw.data[2]     = ((aLength + offset) >> 8) & 0xFF;
+    mRaw.data[3]     = ((aLength + offset)) & 0xFF;
+    mRaw.data[4]     = static_cast<std::uint8_t>(rawType().value[0]);
+    mRaw.data[5]     = static_cast<std::uint8_t>(rawType().value[1]);
+    mRaw.data[6]     = static_cast<std::uint8_t>(rawType().value[2]);
+    mRaw.data[7]     = static_cast<std::uint8_t>(rawType().value[3]);
     std::memcpy(mRaw.data.elements + offset, aData, aLength);
 }
 HEIFPP::Result RawProperty::setRawType(const HEIF::FourCC& aType, bool aIsTransform)
 {
-    HEIFPP::Result res=ItemProperty::setRawType(aType);
+    HEIFPP::Result res = ItemProperty::setRawType(aType);
     if (res == HEIFPP::Result::OK)
     {
         setIsTransformative(aIsTransform);
@@ -81,11 +81,11 @@ HEIF::ErrorCode RawProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId&
         fc.value[2] = static_cast<char>(mRaw.data[6]);
         fc.value[3] = static_cast<char>(mRaw.data[7]);
         fc.value[4] = 0;
-        setRawType(fc,false);
+        setRawType(fc, false);
         if (size != mRaw.data.size)
         {
             return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
-        }        
+        }
         if (rawType() != mRaw.type)
         {
             return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
@@ -99,6 +99,8 @@ HEIF::ErrorCode RawProperty::save(HEIF::Writer* aWriter)
     HEIF::PropertyId newId;
     error = aWriter->addProperty(mRaw, isTransformative(), newId);
     if (HEIF::ErrorCode::OK == error)
+    {
         setId(newId);
+    }
     return error;
 }

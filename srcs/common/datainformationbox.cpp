@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,9 +12,10 @@
  */
 
 #include "datainformationbox.hpp"
-#include "log.hpp"
 
 #include <stdexcept>
+
+#include "log.hpp"
 
 DataInformationBox::DataInformationBox()
     : Box("dinf")
@@ -24,7 +25,7 @@ DataInformationBox::DataInformationBox()
 
 std::uint16_t DataInformationBox::addDataEntryBox(std::shared_ptr<DataEntryBox> dataEntryBox)
 {
-    return static_cast<std::uint16_t>(mDataReferenceBox.addEntry(dataEntryBox));
+    return static_cast<std::uint16_t>(mDataReferenceBox.addEntry(std::move(dataEntryBox)));
 }
 
 void DataInformationBox::writeBox(ISOBMFF::BitStream& bitstr) const

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -19,7 +19,7 @@ namespace HEIFPP
     class DerivedImageItem : public HEIFPP::ImageItem
     {
     public:
-        ~DerivedImageItem();
+        ~DerivedImageItem() override;
 
         /** Returns count of source images associated with this derived image.
          * @return count of source images*/
@@ -60,10 +60,10 @@ namespace HEIFPP
 
     private:
         DerivedImageItem& operator=(const DerivedImageItem&) = delete;
-        DerivedImageItem& operator=(DerivedImageItem&&)      = delete;
-        DerivedImageItem(const DerivedImageItem&)            = delete;
-        DerivedImageItem(DerivedImageItem&&)                 = delete;
-        DerivedImageItem()                                   = delete;
+        DerivedImageItem& operator=(DerivedImageItem&&) = delete;
+        DerivedImageItem(const DerivedImageItem&)       = delete;
+        DerivedImageItem(DerivedImageItem&&)            = delete;
+        DerivedImageItem()                              = delete;
     };
 
 }  // namespace HEIFPP

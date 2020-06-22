@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,39 +15,39 @@
 
 namespace HEIF
 {
-#define IdType(Y, X)                                                      \
-    class HEIF_DLL_PUBLIC X                                               \
-    {                                                                     \
-        Y mId;                                                            \
-                                                                          \
-    public:                                                               \
-        constexpr X()                                                     \
-            : mId(0)                                                      \
-        {                                                                 \
-        }                                                                 \
-        constexpr X(Y a)                                                  \
-            : mId(a)                                                      \
-        {                                                                 \
-        }                                                                 \
-        Y get() const                                                     \
-        {                                                                 \
-            return mId;                                                   \
-        }                                                                 \
-    };                                                                    \
-    inline bool operator<(const X& a, const X& b)                         \
-    {                                                                     \
-        return a.get() < b.get();                                         \
-    }                                                                     \
-    inline bool operator>(const X& a, const X& b)                         \
-    {                                                                     \
-        return a.get() > b.get();                                         \
-    }                                                                     \
-    inline bool operator!=(const X& a, const X& b)                        \
-    {                                                                     \
-        return a.get() != b.get();                                        \
-    }                                                                     \
-    inline bool operator==(const X& a, const X& b)                        \
-    {                                                                     \
-        return a.get() == b.get();                                        \
+#define IdType(Y, X)                               \
+    class HEIF_DLL_PUBLIC X                        \
+    {                                              \
+        Y mId;                                     \
+                                                   \
+    public:                                        \
+        constexpr X() noexcept                     \
+            : mId(0)                               \
+        {                                          \
+        }                                          \
+        constexpr X(Y a) noexcept                  \
+            : mId(a)                               \
+        {                                          \
+        }                                          \
+        Y get() const                              \
+        {                                          \
+            return mId;                            \
+        }                                          \
+    };                                             \
+    inline bool operator<(const X& a, const X& b)  \
+    {                                              \
+        return a.get() < b.get();                  \
+    }                                              \
+    inline bool operator>(const X& a, const X& b)  \
+    {                                              \
+        return a.get() > b.get();                  \
+    }                                              \
+    inline bool operator!=(const X& a, const X& b) \
+    {                                              \
+        return a.get() != b.get();                 \
+    }                                              \
+    inline bool operator==(const X& a, const X& b) \
+    {                                              \
+        return a.get() == b.get();                 \
     }
 }  // namespace HEIF

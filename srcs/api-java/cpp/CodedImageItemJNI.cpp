@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
  */
 
 #include <jni.h>
+
 #include "CodedImageItem.h"
 #include "Helpers.h"
 
@@ -29,16 +30,15 @@ extern "C"
     JNI_METHOD(jobject, getItemDataNative)
     {
         NATIVE_SELF;
-        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeSelf->getItemData()),
+        return env->NewDirectByteBuffer(const_cast<uint8_t *>(nativeSelf->getItemData()),
                                         static_cast<jlong>(nativeSelf->getItemDataSize()));
     }
 
     JNI_METHOD_ARG(void, setItemDataNative, jbyteArray data)
     {
         NATIVE_SELF;
-        jbyte *nativeData = env->GetByteArrayElements(data, 0);
-        nativeSelf->setItemData((uint8_t*)(nativeData),
-                                  static_cast<uint64_t>(env->GetArrayLength(data)));
+        jbyte *nativeData = env->GetByteArrayElements(data, nullptr);
+        nativeSelf->setItemData((uint8_t *) (nativeData), static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 
@@ -51,8 +51,8 @@ extern "C"
     JNI_METHOD_ARG(jobject, getBaseImageNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaItem(env, getJavaHEIF(env, self), (jobject) nativeSelf->getBaseImage(
-                static_cast<uint32_t>(index)));
+        return getJavaItem(env, getJavaHEIF(env, self),
+                           (jobject) nativeSelf->getBaseImage(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addBaseImageNative, jobject image)

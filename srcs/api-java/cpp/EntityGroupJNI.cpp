@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  *
  */
 #include <jni.h>
+
 #include "EntityGroup.h"
 #include "Heif.h"
 #include "Helpers.h"
@@ -24,8 +25,8 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        const char* nativeString          = env->GetStringUTFChars(javaFourCC, 0);
-        HEIFPP::EntityGroup* nativeObject = new HEIFPP::EntityGroup(nativeHeif, HEIF::FourCC(nativeString));
+        const char* nativeString = env->GetStringUTFChars(javaFourCC, nullptr);
+        auto* nativeObject       = new HEIFPP::EntityGroup(nativeHeif, HEIF::FourCC(nativeString));
         env->ReleaseStringUTFChars(javaFourCC, nativeString);
         return (jlong) nativeObject;
     }

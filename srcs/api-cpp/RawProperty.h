@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -21,7 +21,7 @@ namespace HEIFPP
     public:
         RawProperty(Heif* aHeif);
         RawProperty(Heif* aHeif, const HEIF::FourCC& aType, bool aIsTransform);
-        ~RawProperty();
+        ~RawProperty() override;
         /*
             Currently rawtype / istransform should not be changed if the property is attached to an item.
         */
@@ -34,15 +34,15 @@ namespace HEIFPP
     protected:
         HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
-        
+
         HEIF::RawProperty mRaw;
 
     private:
         RawProperty& operator=(const RawProperty&) = delete;
-        RawProperty& operator=(RawProperty&&)      = delete;
-        RawProperty(const RawProperty&)            = delete;
-        RawProperty(RawProperty&&)                 = delete;
-        RawProperty()                              = delete;
+        RawProperty& operator=(RawProperty&&) = delete;
+        RawProperty(const RawProperty&)       = delete;
+        RawProperty(RawProperty&&)            = delete;
+        RawProperty()                         = delete;
     };
 
 }  // namespace HEIFPP

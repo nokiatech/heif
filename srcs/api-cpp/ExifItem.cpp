@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,8 +11,10 @@
  */
 
 #include "ExifItem.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include <cstring>
 
 using namespace HEIFPP;
@@ -32,7 +34,9 @@ HEIF::ErrorCode ExifItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 {
     HEIF::ErrorCode error = MetaItem::load(aReader, aId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     const HEIF::ItemInformation* info = getHeif()->getItemInformation(aId);
     mBufferSize                       = info->size;
     if (getHeif()->mPreLoadMode == Heif::PreloadMode::LOAD_ALL_DATA ||

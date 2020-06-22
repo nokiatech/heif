@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,6 +15,7 @@
 #define WRITERIMPL_HPP
 
 #include "OutputStreamInterface.h"
+#include "extendedtypebox.hpp"
 #include "filetypebox.hpp"
 #include "heifcommondatatypes.h"
 #include "heifwriter.h"
@@ -30,85 +31,103 @@ namespace HEIF
     {
     public:
         WriterImpl();
-        ~WriterImpl();
+        ~WriterImpl() override;
 
-        virtual ErrorCode initialize(const OutputConfig& outputConfig);
-        virtual ErrorCode setMajorBrand(const FourCC& brand);
-        virtual ErrorCode addCompatibleBrand(const FourCC& brand);
-        virtual ErrorCode finalize();
+        ErrorCode initialize(const OutputConfig& outputConfig) override;
+        ErrorCode setMajorBrand(const FourCC& brand) override;
+        ErrorCode addCompatibleBrand(const FourCC& brand) override;
+        ErrorCode addCompatibleBrandCombination(const Array<FourCC>& compatibleBrandCombination) override;
 
-        virtual ErrorCode feedDecoderConfig(const Array<DecoderSpecificInfo>& config, DecoderConfigId& decoderConfigId);
-        virtual ErrorCode feedMediaData(const Data& data, MediaDataId& mediaDataId);
+        ErrorCode finalize() override;
 
-        virtual ErrorCode addImage(const MediaDataId& mediaDataId, ImageId& imageId);
-        virtual ErrorCode setPrimaryItem(const ImageId& imageId);
-        virtual ErrorCode setItemDescription(const ImageId& imageId, const ItemDescription& itemDescription);
-        virtual ErrorCode addMetadata(const MediaDataId& mediaDataId, MetadataItemId& metadataIemId);
-        virtual ErrorCode addThumbnail(const ImageId& thumbImageId, const ImageId& masterImageId);
-        virtual ErrorCode addProperty(const CleanAperture& clap, PropertyId& propertyId);
-        virtual ErrorCode addProperty(const Mirror& imir, PropertyId& propertyId);
-        virtual ErrorCode addProperty(const Rotate& irot, PropertyId& propertyId);
-        virtual ErrorCode addProperty(const RelativeLocation& rloc, PropertyId& propertyId);
-        virtual ErrorCode addProperty(const PixelAspectRatio& pasp, PropertyId& propertyId);
-        virtual ErrorCode addProperty(const PixelInformation& pixi, PropertyId& propertyId);
-        virtual ErrorCode addProperty(const ColourInformation& colr, PropertyId& propertyId);
-        virtual ErrorCode addProperty(const AuxiliaryType& auxC, PropertyId& propertyId);
-        virtual ErrorCode addProperty(const RawProperty& property, const bool isTransformative, PropertyId& propertyId);
-        virtual ErrorCode associateProperty(const ImageId& imageId,
-                                            const PropertyId& propertyId,
-                                            const bool isEssential = false);
-        virtual ErrorCode addDerivedImage(const ImageId& imageId, ImageId& derivedImageId);
-        virtual ErrorCode addDerivedImageItem(const Grid& grid, ImageId& gridId);
-        virtual ErrorCode addDerivedImageItem(const Overlay& iovl, ImageId& overlayId);
+        ErrorCode feedDecoderConfig(const Array<DecoderSpecificInfo>& config,
+                                    DecoderConfigId& decoderConfigId) override;
+        ErrorCode feedMediaData(const Data& data, MediaDataId& mediaDataId) override;
 
-        virtual ErrorCode addMetadataItemReference(const MetadataItemId& metadataItemId, const ImageId& toImageId);
-        virtual ErrorCode addTbasItemReference(const ImageId& fromImageId, const ImageId& toImageId);
-        virtual ErrorCode addBaseItemReference(const ImageId& fromImageId, const Array<ImageId>& toImageIds);
-        virtual ErrorCode addAuxiliaryReference(const ImageId& fromImageId, const ImageId& toImageId);
-        virtual ErrorCode setImageHidden(const ImageId& imageId, const bool hidden);
+        ErrorCode addImage(const MediaDataId& mediaDataId, ImageId& imageId) override;
+        ErrorCode addImage(const MediaDataId& mediaDataId,
+                           const Array<ImageId>& referenceImageIds,
+                           ImageId& imageId) override;
+        ErrorCode setPrimaryItem(const ImageId& imageId) override;
+        ErrorCode setItemDescription(const ImageId& imageId, const ItemDescription& itemDescription) override;
+        ErrorCode addMetadata(const MediaDataId& mediaDataId, MetadataItemId& metadataIemId) override;
+        ErrorCode addThumbnail(const ImageId& thumbImageId, const ImageId& masterImageId) override;
+        ErrorCode addProperty(const CleanAperture& clap, PropertyId& propertyId) override;
+        ErrorCode addProperty(const Mirror& imir, PropertyId& propertyId) override;
+        ErrorCode addProperty(const Rotate& irot, PropertyId& propertyId) override;
+        ErrorCode addProperty(const Scale& iscl, PropertyId& propertyId) override;
+        ErrorCode addProperty(const RelativeLocation& rloc, PropertyId& propertyId) override;
+        ErrorCode addProperty(const PixelAspectRatio& pasp, PropertyId& propertyId) override;
+        ErrorCode addProperty(const PixelInformation& pixi, PropertyId& propertyId) override;
+        ErrorCode addProperty(const ColourInformation& colr, PropertyId& propertyId) override;
+        ErrorCode addProperty(const AuxiliaryType& auxC, PropertyId& propertyId) override;
+        ErrorCode addProperty(const RequiredReferenceTypes& rref, PropertyId& propertyId) override;
+        ErrorCode addProperty(const UserDescription& udes, PropertyId& propertyId) override;
+        ErrorCode addProperty(const CreationTimeInformation& crtt, PropertyId& propertyId) override;
+        ErrorCode addProperty(const ModificationTimeInformation& mdft, PropertyId& propertyId) override;
+        ErrorCode addProperty(const AccessibilityText& altt, PropertyId& propertyId) override;
 
-        virtual ErrorCode addImageSequence(const Rational& timeBase,
-                                           const CodingConstraints& aCodingConstraints,
-                                           SequenceId& id);
-        virtual ErrorCode addImage(const SequenceId& sequenceId,
-                                   const MediaDataId& mediaDataId,
-                                   const SampleInfo& sampleInfo,
-                                   SequenceImageId& imageId);
-        virtual ErrorCode addMetadataItemReference(const MetadataItemId& metadataItemId,
-                                                   const SequenceId& sequenceId,
-                                                   const SequenceImageId& imageId);
-        virtual ErrorCode addThumbnails(const SequenceId& thumbSequenceId, const SequenceId& sequenceId);
-        virtual ErrorCode setImageHidden(const SequenceImageId& sequenceImageId, const bool hidden);
-        virtual ErrorCode addProperty(const CleanAperture& clap, const SequenceId& sequenceId);
-        virtual ErrorCode addAuxiliaryReference(const AuxiliaryType& auxC,
-                                                const SequenceId& auxiliarySequenceId,
-                                                const SequenceId& sequenceId);
-        virtual ErrorCode setEditList(const SequenceId& sequenceId, const EditList& editList);
-        virtual ErrorCode setMatrix(const Array<int32_t>& matrix);
-        virtual ErrorCode setMatrix(const SequenceId& sequenceId, const Array<int32_t>& matrix);
+        ErrorCode addProperty(const RawProperty& property,
+                              const bool isTransformative,
+                              PropertyId& propertyId) override;
+        ErrorCode associateProperty(const ImageId& imageId,
+                                    const PropertyId& propertyId,
+                                    const bool isEssential = false) override;
+        ErrorCode associateProperty(const GroupId& imageId,
+                                    const PropertyId& propertyId,
+                                    const bool isEssential) override;
+        ErrorCode addDerivedImage(const ImageId& imageId, ImageId& derivedImageId) override;
+        ErrorCode addDerivedImageItem(const Grid& grid, ImageId& gridId) override;
+        ErrorCode addDerivedImageItem(const Overlay& iovl, ImageId& overlayId) override;
 
-        virtual ErrorCode createEntityGroup(const FourCC& type, GroupId& id);
-        virtual ErrorCode createAlternativesGroup(GroupId& id);
-        virtual ErrorCode createEquivalenceGroup(GroupId& id);
-        virtual ErrorCode addToGroup(const GroupId& groupId, const ImageId& id);
-        virtual ErrorCode addToGroup(const GroupId& groupId, const SequenceId& id);
-        virtual ErrorCode addToEquivalenceGroup(const GroupId& equivalenceGroupId,
-                                                const SequenceId& sequenceId,
-                                                const SequenceImageId& id,
-                                                const EquivalenceTimeOffset& offset = {0, 1 << 8});
+        ErrorCode addMetadataItemReference(const MetadataItemId& metadataItemId, const ImageId& toImageId) override;
+        ErrorCode addTbasItemReference(const ImageId& fromImageId, const ImageId& toImageId) override;
+        ErrorCode addBaseItemReference(const ImageId& fromImageId, const Array<ImageId>& toImageIds) override;
+        ErrorCode addAuxiliaryReference(const ImageId& fromImageId, const ImageId& toImageId) override;
+        ErrorCode setImageHidden(const ImageId& imageId, const bool hidden) override;
 
-        virtual ErrorCode setAlternateGrouping(const SequenceId& sequenceId1, const SequenceId& sequenceId2);
+        ErrorCode addImageSequence(const Rational& timeBase,
+                                   const CodingConstraints& aCodingConstraints,
+                                   SequenceId& id) override;
+        ErrorCode addImage(const SequenceId& sequenceId,
+                           const MediaDataId& mediaDataId,
+                           const SampleInfo& sampleInfo,
+                           SequenceImageId& imageId) override;
+        ErrorCode addMetadataItemReference(const MetadataItemId& metadataItemId,
+                                           const SequenceId& sequenceId,
+                                           const SequenceImageId& imageId) override;
+        ErrorCode addThumbnails(const SequenceId& thumbSequenceId, const SequenceId& sequenceId) override;
+        ErrorCode setImageHidden(const SequenceImageId& sequenceImageId, const bool hidden) override;
+        ErrorCode addProperty(const CleanAperture& clap, const SequenceId& sequenceId) override;
+        ErrorCode addAuxiliaryReference(const AuxiliaryType& auxC,
+                                        const SequenceId& auxiliarySequenceId,
+                                        const SequenceId& sequenceId) override;
+        ErrorCode setEditList(const SequenceId& sequenceId, const EditList& editList) override;
+        ErrorCode setMatrix(const Array<int32_t>& matrix) override;
+        ErrorCode setMatrix(const SequenceId& sequenceId, const Array<int32_t>& matrix) override;
 
-        virtual ErrorCode addVideoTrack(const Rational& timeBase, SequenceId& id);
-        virtual ErrorCode addVideo(const SequenceId& sequenceId,
-                                   const MediaDataId& mediaDataId,
-                                   const SampleInfo& sampleInfo,
-                                   SequenceImageId& sampleid);
-        virtual ErrorCode addAudioTrack(const Rational& timeBase, const AudioParams& config, SequenceId& id);
-        virtual ErrorCode addAudio(const SequenceId& sequenceId,
-                                   const MediaDataId& mediaDataId,
-                                   const SampleInfo& sampleInfo,
-                                   SequenceImageId& sampleid);
+        ErrorCode createEntityGroup(const FourCC& type, GroupId& id) override;
+        ErrorCode createAlternativesGroup(GroupId& id) override;
+        ErrorCode createEquivalenceGroup(GroupId& id) override;
+        ErrorCode addToGroup(const GroupId& groupId, const ImageId& id) override;
+        ErrorCode addToGroup(const GroupId& groupId, const SequenceId& id) override;
+        ErrorCode addToEquivalenceGroup(const GroupId& equivalenceGroupId,
+                                        const SequenceId& sequenceId,
+                                        const SequenceImageId& id,
+                                        const EquivalenceTimeOffset& offset = {0, 1 << 8}) override;
+
+        ErrorCode setAlternateGrouping(const SequenceId& sequenceId1, const SequenceId& sequenceId2) override;
+
+        ErrorCode addVideoTrack(const Rational& timeBase, SequenceId& id) override;
+        ErrorCode addVideo(const SequenceId& sequenceId,
+                           const MediaDataId& mediaDataId,
+                           const SampleInfo& sampleInfo,
+                           SequenceImageId& sampleid) override;
+        ErrorCode addAudioTrack(const Rational& timeBase, const AudioParams& config, SequenceId& id) override;
+        ErrorCode addAudio(const SequenceId& sequenceId,
+                           const MediaDataId& mediaDataId,
+                           const SampleInfo& sampleInfo,
+                           SequenceImageId& sampleid) override;
 
     private:
         ErrorCode isValidSequenceImage(const SequenceId& sequenceId, const SequenceImageId& sequenceImageId) const;
@@ -215,6 +234,12 @@ namespace HEIF
          */
         uint64_t getTrackDuration(TrackBox* track, const ImageSequence& sequence) const;
 
+        /**
+         * @brief addCreationTimeInformation Add and associate CreationTimeProperty.
+         * @param imageId Id of the image item to associated property to.
+         */
+        void addCreationTimeInformation(const ImageId& imageId);
+
     private:
         enum class State
         {
@@ -244,6 +269,7 @@ namespace HEIF
         Map<PropertyId, PropertyInformation> mProperties;  ///< Manually added properties in the metabox.
 
         FileTypeBox mFileTypeBox;
+        ExtendedTypeBox mExtendedTypeBox;
         MetaBox mMetaBox;
         MovieBox mMovieBox;
         MediaDataBox mMediaDataBox;
@@ -259,6 +285,10 @@ namespace HEIF
         bool mPrimaryItemSet = false;  ///< True after a primary item has been set.
 
         bool mOwnsOutputHandle = false;  ///< True if the writer owns the output handle
+
+        bool mWriteItemCreationTimes = false;  ///< Create and associate CreationTimeProperty to added image items.
+
+        PropertyId mPredRrefPropertyId = 0;  ///< ID of 'pred' Required reference types property. 0 if not created.
     };
 
     namespace

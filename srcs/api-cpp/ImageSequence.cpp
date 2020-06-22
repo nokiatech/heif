@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,7 +11,9 @@
  */
 
 #include "ImageSequence.h"
+
 #include <cstring>
+
 #include "VideoSample.h"
 #include "heifreader.h"
 #include "heifwriter.h"
@@ -32,14 +34,14 @@ ImageSequence::ImageSequence(Heif* aHeif)
     mHandler = HEIF::FourCC("pict");
 }
 
-ImageSequence::~ImageSequence()
-{
-}
+ImageSequence::~ImageSequence() = default;
 
 const HEIF::AuxiliaryType* ImageSequence::aux() const
 {
     if (mHasAux)
+    {
         return &mAuxProperty;
+    }
     return nullptr;
 }
 
@@ -47,13 +49,13 @@ void ImageSequence::setAux(const HEIF::AuxiliaryType* aAux)
 {
     if (aAux == nullptr)
     {
-        mHasAux = false;
+        mHasAux      = false;
         mAuxProperty = {};
         mFeatures &= ~HEIF::TrackFeatureEnum::Feature::IsAuxiliaryImageSequence;
     }
     else
     {
-        mHasAux = true;
+        mHasAux              = true;
         mAuxProperty.auxType = aAux->auxType;
         // subtype is not used on sample description entry
         mFeatures |= HEIF::TrackFeatureEnum::Feature::IsAuxiliaryImageSequence;
@@ -63,7 +65,9 @@ void ImageSequence::setAux(const HEIF::AuxiliaryType* aAux)
 const HEIF::CleanAperture* ImageSequence::clap() const
 {
     if (mHasClap)
+    {
         return &mClapProperty;
+    }
     return nullptr;
 }
 
@@ -189,11 +193,11 @@ HEIF::ErrorCode ImageSequence::load(HEIF::Reader* aReader, const HEIF::SequenceI
 }
 HEIF::ErrorCode ImageSequence::save(HEIF::Writer* aWriter)
 {
-    HEIF::Rational tb={1,mTimeScale};
-    HEIF::ErrorCode err=HEIF::ErrorCode::OK;
+    HEIF::Rational tb   = {1, mTimeScale};
+    HEIF::ErrorCode err = HEIF::ErrorCode::OK;
     // see the comment in load about codingconstraints/aux/clap..
     err = aWriter->addImageSequence(tb, mCodingConstraints, mId);
-    if (HEIF::ErrorCode::OK!=err)
+    if (HEIF::ErrorCode::OK != err)
     {
         return err;
     }
@@ -203,14 +207,14 @@ HEIF::ErrorCode ImageSequence::save(HEIF::Writer* aWriter)
         auto ref = mIsAuxiliaryTo[0].first;
         if (ref->getId() == Heif::InvalidSequence)
         {
-            err=ref->save(aWriter);
-            if (HEIF::ErrorCode::OK!=err)
+            err = ref->save(aWriter);
+            if (HEIF::ErrorCode::OK != err)
             {
                 return err;
             }
         }
-        err=aWriter->addAuxiliaryReference(mAuxProperty, mId, ref->getId());
-        if (HEIF::ErrorCode::OK!=err)
+        err = aWriter->addAuxiliaryReference(mAuxProperty, mId, ref->getId());
+        if (HEIF::ErrorCode::OK != err)
         {
             return err;
         }
@@ -219,7 +223,7 @@ HEIF::ErrorCode ImageSequence::save(HEIF::Writer* aWriter)
     if (mHasClap)
     {
         err = aWriter->addProperty(mClapProperty, mId);
-        if (HEIF::ErrorCode::OK!=err)
+        if (HEIF::ErrorCode::OK != err)
         {
             return err;
         }

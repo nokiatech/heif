@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef ITEMPROPERTIESBOX_HPP
@@ -25,7 +27,7 @@ class ItemPropertiesBox : public Box
 {
 public:
     ItemPropertiesBox();
-    virtual ~ItemPropertiesBox() = default;
+    ~ItemPropertiesBox() override = default;
 
     /** Get an item property from the ItemPropertyContainer by index.
      *  @param [in] index 0-based index to to ItemPropertyContainerBox
@@ -41,19 +43,25 @@ public:
     enum class PropertyType
     {
         RAW,   ///< Property of an unrecognized type. It is accessible only as raw data. @see CustomPropertyBox.
+        ALTT,  ///< Acessibility text. @see AccessibilityText
         AUXC,  ///< Image properties for auxiliary images. @see AuxiliaryTypeProperty
         AVCC,  ///< AVC configuration item property. @see AvcConfigurationBox
         CLAP,  ///< Clean aperture. @see ImageCleanAperture
         COLR,  ///< Colour information. @see ColourInformationBox
+        CRTT,  ///< Creation time information. @see CreationTimeInformation
         FREE,  ///< FreeSpaceBox. An empty property which should be ignored.
         HVCC,  ///< HEVC configuration item property. @see HevcConfigurationBox
         IMIR,  ///< Image mirror. @see ImageMirror
         IROT,  ///< Image rotation. @see ImageRotation
+        ISCL,  ///< Image scaling. @see ImageScaling
         ISPE,  ///< Image spatial extents. @see ImageSpatialExtentsProperty
         JPGC,  ///< JPEG configuration item property. @see JpegConfigurationBox
+        MDFT,  ///< Modification time information. @see ModificationTimeInformation
         PASP,  ///< Pixel aspect ratio. @see PixelAspectRatioBox
         PIXI,  ///< Pixel information. @see PixelInformationProperty
-        RLOC   ///< Relative location. @see RelativeLocationProperty
+        RLOC,  ///< Relative location. @see RelativeLocationProperty
+        RREF,  ///< Required Reference Types Property. @see RequiredReferenceTypesProperty
+        UDES,  ///< User description. @see UserDescriptionProperty
     };
 
     /** Information about a property associated to an item. Information here comes from both contained boxes
@@ -62,7 +70,8 @@ public:
     {
         PropertyType type;    ///< Type of the property.
         std::uint32_t index;  ///< Index of the property in the Item Property Container (0-based).
-        bool essential;       ///< True if this property is marked as 'essential' meaning the reader is required to process it.
+        bool essential;  ///< True if this property is marked as 'essential' meaning the reader is required to process
+                         ///< it.
     };
 
     typedef Vector<PropertyInfo> PropertyInfos;
@@ -94,11 +103,11 @@ public:
 
     /** Write box to ISOBMFF::BitStream.
      *  @see Box::writeBox() */
-    virtual void writeBox(ISOBMFF::BitStream& output) const;
+    void writeBox(ISOBMFF::BitStream& output) const override;
 
     /** Read box from ISOBMFF::BitStream.
      *  @see Box::parseBox() */
-    virtual void parseBox(ISOBMFF::BitStream& input);
+    void parseBox(ISOBMFF::BitStream& input) override;
 
 private:
     /** ItemPropertyContainer contains properties extending from Properties (Box) and FullProperties (FullBox). */

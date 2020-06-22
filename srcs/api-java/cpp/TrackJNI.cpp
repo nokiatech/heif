@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include <jni.h>
+
 #include "Helpers.h"
 #include "Track.h"
 
@@ -66,8 +67,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getThumbnailNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaTrack(env, getJavaHEIF(env, self),
-                            nativeSelf->getThumbnail(static_cast<uint32_t>(index)));
+        return getJavaTrack(env, getJavaHEIF(env, self), nativeSelf->getThumbnail(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD(jint, getAuxiliaryCountNative)
@@ -79,8 +79,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getAuxiliaryNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaTrack(env, getJavaHEIF(env, self),
-                            nativeSelf->getAux(static_cast<uint32_t>(index)));
+        return getJavaTrack(env, getJavaHEIF(env, self), nativeSelf->getAux(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addAuxiliaryNative, jobject auxiliary)
@@ -114,8 +113,7 @@ extern "C"
     JNI_METHOD(jobject, getAlternativeTrackGroupNative)
     {
         NATIVE_SELF;
-        return getJavaAlternativeTrackGroup(env, getJavaHEIF(env, self),
-                                            nativeSelf->getAlternativeTrackGroup());
+        return getJavaAlternativeTrackGroup(env, getJavaHEIF(env, self), nativeSelf->getAlternativeTrackGroup());
     }
 
     JNI_METHOD(jint, getGroupCountNative)
@@ -127,8 +125,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getGroupNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaEntityGroup(env, getJavaHEIF(env, self),
-                                  nativeSelf->getGroup(static_cast<uint32_t>(index)));
+        return getJavaEntityGroup(env, getJavaHEIF(env, self), nativeSelf->getGroup(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD(jboolean, hasInfiniteLoopPlaybackNative)
@@ -158,10 +155,13 @@ extern "C"
         nativeSelf->getTimestamp(static_cast<uint32_t>(index), sampleId, timeStamp);
 
         jclass c = env->FindClass("com/nokia/heif/Track$TimeStamp");
-        if (c == nullptr) return nullptr;
-        jmethodID constructor = env->GetMethodID(c, "<init>", "()V");
-        jobject obj = env->NewObject(c, constructor);
-        jfieldID indexField = env->GetFieldID(c, "sampleIndex", "I");
+        if (c == nullptr)
+        {
+            return nullptr;
+        }
+        jmethodID constructor   = env->GetMethodID(c, "<init>", "()V");
+        jobject obj             = env->NewObject(c, constructor);
+        jfieldID indexField     = env->GetFieldID(c, "sampleIndex", "I");
         jfieldID timeStampField = env->GetFieldID(c, "timeStamp", "J");
 
         env->SetIntField(obj, indexField, static_cast<jint>(sampleId));
@@ -187,31 +187,35 @@ extern "C"
         NATIVE_SELF;
 
         const jclass c = env->GetObjectClass(editUnit);
-        if (c == nullptr) return;
+        if (c == nullptr)
+        {
+            return;
+        }
 
-        jfieldID fieldId = env->GetFieldID(c, "mediaTimeInTrackTS", "J");
+        jfieldID fieldId               = env->GetFieldID(c, "mediaTimeInTrackTS", "J");
         const jlong mediaTimeInTrackTS = env->GetLongField(editUnit, fieldId);
 
-        fieldId = env->GetFieldID(c, "durationInMovieTS", "J");
+        fieldId                 = env->GetFieldID(c, "durationInMovieTS", "J");
         jlong durationInMovieTS = env->GetLongField(editUnit, fieldId);
 
-        fieldId = env->GetFieldID(c, "mediaRateInteger", "I");
+        fieldId               = env->GetFieldID(c, "mediaRateInteger", "I");
         jint mediaRateInteger = env->GetIntField(editUnit, fieldId);
 
-        fieldId = env->GetFieldID(c, "mediaRateFraction", "I");
+        fieldId                = env->GetFieldID(c, "mediaRateFraction", "I");
         jint mediaRateFraction = env->GetIntField(editUnit, fieldId);
 
-        fieldId = env->GetFieldID(c, "editType", "Lcom/nokia/heif/Track$EditType;");
+        fieldId              = env->GetFieldID(c, "editType", "Lcom/nokia/heif/Track$EditType;");
         jobject editTypeJava = env->GetObjectField(editUnit, fieldId);
-        jmethodID editTypeGetValueMethod = env->GetMethodID(env->FindClass("com/nokia/heif/Track$EditType"), "ordinal", "()I");
+        jmethodID editTypeGetValueMethod =
+            env->GetMethodID(env->FindClass("com/nokia/heif/Track$EditType"), "ordinal", "()I");
         const jint editTypeValue = env->CallIntMethod(editTypeJava, editTypeGetValueMethod);
 
         HEIF::EditUnit unit;
-        unit.durationInMovieTS = static_cast<uint64_t>(durationInMovieTS);
+        unit.durationInMovieTS  = static_cast<uint64_t>(durationInMovieTS);
         unit.mediaTimeInTrackTS = mediaTimeInTrackTS;
-        unit.mediaRateFraction = mediaRateFraction;
-        unit.mediaRateInteger = mediaRateInteger;
-        unit.editType = HEIF::EditType(editTypeValue);
+        unit.mediaRateFraction  = mediaRateFraction;
+        unit.mediaRateInteger   = mediaRateInteger;
+        unit.editType           = HEIF::EditType(editTypeValue);
         nativeSelf->addEditListUnit(unit);
     }
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -10,33 +10,35 @@
  * of this material requires the prior written consent of Nokia.
  */
 #include "EntityGroup.h"
+
 #include "Item.h"
 #include "Sample.h"
 #include "Track.h"
 
 using namespace HEIFPP;
 
-EntityGroup::Entity::Entity(Item* aItem)
+EntityGroup::Entity::Entity(Item* aItem) noexcept
     : mItem(aItem)
     , mSample(nullptr)
     , mTrack(nullptr)
 {
 }
-EntityGroup::Entity::Entity(Sample* aSample)
+
+EntityGroup::Entity::Entity(Sample* aSample) noexcept
     : mItem(nullptr)
     , mSample(aSample)
     , mTrack(nullptr)
 {
 }
-EntityGroup::Entity::Entity(Track* aTrack)
+
+EntityGroup::Entity::Entity(Track* aTrack) noexcept
     : mItem(nullptr)
     , mSample(nullptr)
     , mTrack(aTrack)
 {
 }
-EntityGroup::Entity::~Entity()
-{
-}
+
+EntityGroup::Entity::~Entity() = default;
 bool EntityGroup::Entity::isItem() const
 {
     return (mItem != nullptr);
@@ -77,20 +79,32 @@ const Sample* EntityGroup::Entity::sample() const
 void EntityGroup::Entity::addToGroup(EntityGroup* aGroup)
 {
     if (mItem)
+    {
         mItem->addToGroup(aGroup);
+    }
     if (mTrack)
+    {
         mTrack->addToGroup(aGroup);
+    }
     if (mSample)
+    {
         mSample->addToGroup(aGroup);
+    }
 }
 void EntityGroup::Entity::removeFromGroup(EntityGroup* aGroup)
 {
     if (mItem)
+    {
         mItem->removeFromGroup(aGroup);
+    }
     if (mTrack)
+    {
         mTrack->removeFromGroup(aGroup);
+    }
     if (mSample)
+    {
         mSample->removeFromGroup(aGroup);
+    }
 }
 
 EntityGroup::EntityGroup(Heif* aHeif, const HEIF::FourCC& aType)
@@ -131,7 +145,7 @@ const HEIF::FourCC& EntityGroup::getType() const
 }
 std::uint32_t EntityGroup::getEntityCount() const
 {
-    return (std::uint32_t) mItems.size();
+    return static_cast<std::uint32_t>(mItems.size());
 }
 bool EntityGroup::isItem(std::uint32_t aIndex) const
 {
@@ -160,37 +174,49 @@ bool EntityGroup::isSample(std::uint32_t aIndex) const
 Item* EntityGroup::getItem(std::uint32_t aIndex)
 {
     if (isItem(aIndex))
+    {
         return mItems[aIndex].item();
+    }
     return nullptr;
 }
 Track* EntityGroup::getTrack(std::uint32_t aIndex)
 {
     if (isTrack(aIndex))
+    {
         return mItems[aIndex].track();
+    }
     return nullptr;
 }
 Sample* EntityGroup::getSample(std::uint32_t aIndex)
 {
     if (isSample(aIndex))
+    {
         return mItems[aIndex].sample();
+    }
     return nullptr;
 }
 const Item* EntityGroup::getItem(std::uint32_t aIndex) const
 {
     if (isItem(aIndex))
+    {
         return mItems[aIndex].item();
+    }
     return nullptr;
 }
 const Track* EntityGroup::getTrack(std::uint32_t aIndex) const
 {
     if (isTrack(aIndex))
+    {
         return mItems[aIndex].track();
+    }
     return nullptr;
 }
 const Sample* EntityGroup::getSample(std::uint32_t aIndex) const
 {
     if (isSample(aIndex))
+    {
         return mItems[aIndex].sample();
+    }
     return nullptr;
 }
 void EntityGroup::addItem(Item* aItem)
@@ -277,24 +303,24 @@ bool EntityGroup::addEntity(Item* aItem, Track* aTrack, Sample* aSample, std::in
     if (aItem)
     {
         aItem->addToGroup(this);
-        mItems.push_back(aItem);
+        mItems.emplace_back(aItem);
     }
     else if (aTrack)
     {
         aTrack->addToGroup(this);
-        mItems.push_back(aTrack);
+        mItems.emplace_back(aTrack);
     }
     else if (aSample)
     {
         aSample->addToGroup(this);
-        mItems.push_back(aSample);
+        mItems.emplace_back(aSample);
     }
     else
     {
         HEIF_ASSERT(false);
     }
 
-    aIndex = (std::int32_t)(mItems.size() - 1);
+    aIndex = static_cast<std::int32_t>(mItems.size() - 1);
     return true;
 }
 bool EntityGroup::removeEntity(Item* aItem, Track* aTrack, Sample* aSample, std::int32_t& aIndex)
@@ -323,7 +349,7 @@ void EntityGroup::removeEntity(std::uint32_t aIndex)
     if (aIndex < mItems.size())
     {
         mItems[aIndex].removeFromGroup(this);
-        mItems.erase(mItems.begin() + (std::int64_t) aIndex);
+        mItems.erase(mItems.begin() + static_cast<std::int64_t>(aIndex));
     }
 }
 void EntityGroup::removeItem(Item* aItem)

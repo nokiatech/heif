@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "audiosampleentrybox.hpp"
+
 #include <stdexcept>
 #include <string>
 
@@ -28,19 +29,7 @@ AudioSampleEntryBox::AudioSampleEntryBox(FourCCInt codingname)
 {
 }
 
-AudioSampleEntryBox::AudioSampleEntryBox(const AudioSampleEntryBox& box)
-    : SampleEntryBox(box)
-    , mVersion(box.mVersion)
-    , mChannelCount(box.mChannelCount)
-    , mSampleSize(box.mSampleSize)
-    , mSampleRate(box.mSampleRate)
-    , mHasChannelLayoutBox(box.mHasChannelLayoutBox)
-    , mHasSamplingRateBox(box.mHasSamplingRateBox)
-    , mChannelLayoutBox(box.mChannelLayoutBox)
-    , mSamplingRateBox(box.mSamplingRateBox)
-{
-}
-
+AudioSampleEntryBox::AudioSampleEntryBox(const AudioSampleEntryBox& box) = default;
 
 void AudioSampleEntryBox::setVersion(std::uint16_t version)
 {

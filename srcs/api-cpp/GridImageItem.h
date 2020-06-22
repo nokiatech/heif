@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -21,35 +21,35 @@ namespace HEIFPP
     public:
         GridImageItem(Heif* aHeif);
         GridImageItem(Heif* aHeif, std::uint32_t aColumns, std::uint32_t aRows);
-        ~GridImageItem() = default;
+        ~GridImageItem() override = default;
 
         /** Sets the dimensions for the grid
-         * @param [in] aColums: The column count for the grid
-         * @param [in] aRows: The row count for the grid */
-        void resize(std::uint32_t aColumns, std::uint32_t aRows);
+         * @param [in] columns The column count for the grid
+         * @param [in] rows    The row count for the grid */
+        void resize(std::uint32_t columns, std::uint32_t rows);
 
-        /** Returns the column count of the grid*/
+        /** Returns the column count of the grid */
         std::uint32_t columns() const;
-        /** Returns the row count of the grid*/
+        /** Returns the row count of the grid */
         std::uint32_t rows() const;
 
         /** Returns the image from the given index
-         * @param [in] aColumn: The column index of the image
-         * @param [in] aRow: The row index of the image
-         * @param [out] aImage: The image from the given index
+         * @param [in] column The column index of the image
+         * @param [in] row    The row index of the image
+         * @param [out] image The image from the given index
          * @return Result: Possible error code */
-        Result getImage(std::uint32_t aColumn, std::uint32_t aRow, ImageItem*& aImage);
+        Result getImage(std::uint32_t column, std::uint32_t row, ImageItem*& image);
 
         /** Sets an image to the given index
-         * @param [in] aColumn: The column index of the image
-         * @param [in] aRow: The row index of the image
-         * @param [in] aImage: The image for the given index
+         * @param [in] column The column index of the image
+         * @param [in] row    The row index of the image
+         * @param [in] image  The image for the given index
          * @return Result: Possible error code */
-        Result setImage(std::uint32_t column, std::uint32_t aRow, ImageItem* aImage);
+        Result setImage(std::uint32_t column, std::uint32_t row, ImageItem* image);
 
         /** Removes an image from the grid
-         * @param [in] aImage: Image to be removed */
-        Result removeImage(ImageItem* aImage) override;
+         * @param [in] image Image to be removed */
+        Result removeImage(ImageItem* image) override;
 
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
@@ -63,9 +63,9 @@ namespace HEIFPP
 
     private:
         GridImageItem& operator=(const GridImageItem&) = delete;
-        GridImageItem& operator=(GridImageItem&&)      = delete;
-        GridImageItem(const GridImageItem&)            = delete;
-        GridImageItem(GridImageItem&&)                 = delete;
-        GridImageItem()                       = delete;
+        GridImageItem& operator=(GridImageItem&&) = delete;
+        GridImageItem(const GridImageItem&)       = delete;
+        GridImageItem(GridImageItem&&)            = delete;
+        GridImageItem()                           = delete;
     };
 }  // namespace HEIFPP

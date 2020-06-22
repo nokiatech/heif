@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,9 +11,12 @@
  */
 
 #include "AVCCodedImageItem.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include <cstring>
+
 #include "H26xTools.h"
 
 using namespace HEIFPP;

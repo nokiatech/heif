@@ -1,18 +1,21 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef HEIFSTREAMFILE_HPP_
 #define HEIFSTREAMFILE_HPP_
 
 #include <cstdio>
+
 #include "customallocator.hpp"
 #include "heifstreaminterface.h"
 
@@ -26,7 +29,7 @@ namespace HEIF
 
         FileStream(const FileStream& other) = delete;
         FileStream& operator=(const FileStream& other) = delete;
-        FileStream& operator                           =(FileStream&& other);
+        FileStream& operator                           =(FileStream&& other) noexcept;
 
         ~FileStream() override;
 

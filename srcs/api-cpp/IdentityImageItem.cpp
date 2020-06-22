@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,6 +11,7 @@
  */
 
 #include "IdentityImageItem.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
 
@@ -23,13 +24,17 @@ IdentityImageItem::IdentityImageItem(Heif* aHeif)
 ImageItem* IdentityImageItem::getImage()
 {
     if (getSourceImageCount() == 0)
+    {
         return nullptr;
+    }
     return getSourceImage(0);
 }
 const ImageItem* IdentityImageItem::getImage() const
 {
     if (getSourceImageCount() == 0)
+    {
         return nullptr;
+    }
     return getSourceImage(0);
 }
 void IdentityImageItem::setImage(ImageItem* aImage)
@@ -39,7 +44,7 @@ void IdentityImageItem::setImage(ImageItem* aImage)
         addSourceImage(aImage);
         return;
     }
-    setSourceImage((uint32_t) 0, aImage);
+    setSourceImage(static_cast<uint32_t>(0), aImage);
 }
 
 Result IdentityImageItem::removeImage(ImageItem* aImage)
@@ -63,7 +68,7 @@ Result IdentityImageItem::removeImage(ImageItem* aImage)
         }
         return Result::INVALID_HANDLE;
     }
-    setSourceImage((uint32_t) 0, nullptr);
+    setSourceImage(static_cast<uint32_t>(0), nullptr);
     return Result::OK;
 }
 
@@ -80,13 +85,17 @@ HEIF::ErrorCode IdentityImageItem::save(HEIF::Writer* aWriter)
     {
         error = image->save(aWriter);
         if (HEIF::ErrorCode::OK != error)
+        {
             return error;
+        }
     }
     HEIF::ImageId newId;
     error = aWriter->addDerivedImage(image->getId(), newId);
     setId(newId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     error = DerivedImageItem::save(aWriter);
     return error;
 }

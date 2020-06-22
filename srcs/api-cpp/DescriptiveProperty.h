@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -19,7 +19,7 @@ namespace HEIFPP
     class DescriptiveProperty : public HEIFPP::ItemProperty
     {
     public:
-        ~DescriptiveProperty() = default;
+        ~DescriptiveProperty() override = default;
 
     protected:
         DescriptiveProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, const HEIF::FourCC& aRawType);
@@ -34,10 +34,10 @@ namespace HEIFPP
 
     private:
         DescriptiveProperty& operator=(const DescriptiveProperty&) = delete;
-        DescriptiveProperty& operator=(DescriptiveProperty&&)      = delete;
-        DescriptiveProperty(const DescriptiveProperty&)            = delete;
-        DescriptiveProperty(DescriptiveProperty&&)                 = delete;
-        DescriptiveProperty()                                      = delete;
+        DescriptiveProperty& operator=(DescriptiveProperty&&) = delete;
+        DescriptiveProperty(const DescriptiveProperty&)       = delete;
+        DescriptiveProperty(DescriptiveProperty&&)            = delete;
+        DescriptiveProperty()                                 = delete;
     };
 
     class PixelAspectRatioProperty : public HEIFPP::DescriptiveProperty
@@ -45,17 +45,18 @@ namespace HEIFPP
     public:
         HEIF::PixelAspectRatio mPixelAspectRatio;
         PixelAspectRatioProperty(Heif* aHeif);
-        ~PixelAspectRatioProperty() = default;
+        ~PixelAspectRatioProperty() override = default;
+
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         PixelAspectRatioProperty& operator=(const PixelAspectRatioProperty&) = delete;
-        PixelAspectRatioProperty& operator=(PixelAspectRatioProperty&&)      = delete;
-        PixelAspectRatioProperty(const PixelAspectRatioProperty&)            = delete;
-        PixelAspectRatioProperty(PixelAspectRatioProperty&&)                 = delete;
-        PixelAspectRatioProperty()                                           = delete;
+        PixelAspectRatioProperty& operator=(PixelAspectRatioProperty&&) = delete;
+        PixelAspectRatioProperty(const PixelAspectRatioProperty&)       = delete;
+        PixelAspectRatioProperty(PixelAspectRatioProperty&&)            = delete;
+        PixelAspectRatioProperty()                                      = delete;
     };
 
     class ColourInformationProperty : public HEIFPP::DescriptiveProperty
@@ -63,17 +64,18 @@ namespace HEIFPP
     public:
         HEIF::ColourInformation mColourInformation;
         ColourInformationProperty(Heif* aHeif);
-        ~ColourInformationProperty() = default;
+        ~ColourInformationProperty() override = default;
+
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         ColourInformationProperty& operator=(const ColourInformationProperty&) = delete;
-        ColourInformationProperty& operator=(ColourInformationProperty&&)      = delete;
-        ColourInformationProperty(const ColourInformationProperty&)            = delete;
-        ColourInformationProperty(ColourInformationProperty&&)                 = delete;
-        ColourInformationProperty()                                            = delete;
+        ColourInformationProperty& operator=(ColourInformationProperty&&) = delete;
+        ColourInformationProperty(const ColourInformationProperty&)       = delete;
+        ColourInformationProperty(ColourInformationProperty&&)            = delete;
+        ColourInformationProperty()                                       = delete;
     };
 
     class PixelInformationProperty : public HEIFPP::DescriptiveProperty
@@ -81,17 +83,18 @@ namespace HEIFPP
     public:
         HEIF::PixelInformation mPixelInformation;
         PixelInformationProperty(Heif* aHeif);
-        ~PixelInformationProperty() = default;
+        ~PixelInformationProperty() override = default;
+
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         PixelInformationProperty& operator=(const PixelInformationProperty&) = delete;
-        PixelInformationProperty& operator=(PixelInformationProperty&&)      = delete;
-        PixelInformationProperty(const PixelInformationProperty&)            = delete;
-        PixelInformationProperty(PixelInformationProperty&&)                 = delete;
-        PixelInformationProperty()                                           = delete;
+        PixelInformationProperty& operator=(PixelInformationProperty&&) = delete;
+        PixelInformationProperty(const PixelInformationProperty&)       = delete;
+        PixelInformationProperty(PixelInformationProperty&&)            = delete;
+        PixelInformationProperty()                                      = delete;
     };
 
     class RelativeLocationProperty : public HEIFPP::DescriptiveProperty
@@ -99,28 +102,30 @@ namespace HEIFPP
     public:
         HEIF::RelativeLocation mRelativeLocation;
         RelativeLocationProperty(Heif* aHeif);
-        ~RelativeLocationProperty() = default;
+        ~RelativeLocationProperty() override = default;
+
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
     private:
         RelativeLocationProperty& operator=(const RelativeLocationProperty&) = delete;
-        RelativeLocationProperty& operator=(RelativeLocationProperty&&)      = delete;
-        RelativeLocationProperty(const RelativeLocationProperty&)            = delete;
-        RelativeLocationProperty(RelativeLocationProperty&&)                 = delete;
-        RelativeLocationProperty()                                           = delete;
+        RelativeLocationProperty& operator=(RelativeLocationProperty&&) = delete;
+        RelativeLocationProperty(const RelativeLocationProperty&)       = delete;
+        RelativeLocationProperty(RelativeLocationProperty&&)            = delete;
+        RelativeLocationProperty()                                      = delete;
     };
 
     class AuxiliaryProperty : public HEIFPP::DescriptiveProperty
     {
     public:
         AuxiliaryProperty(Heif* aHeif);
-        ~AuxiliaryProperty() = default;
+        ~AuxiliaryProperty() override = default;
         const std::string& auxType();
         void auxType(const std::string&);
         const std::vector<std::uint8_t>& subType();
-        void subType(const std::vector<std::uint8_t>&);
+        void subType(const std::vector<std::uint8_t>& aType);
+
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
@@ -129,9 +134,9 @@ namespace HEIFPP
         std::vector<std::uint8_t> mSubType;  ///< Aux subtype, semantics depends on the auxType value
     private:
         AuxiliaryProperty& operator=(const AuxiliaryProperty&) = delete;
-        AuxiliaryProperty& operator=(AuxiliaryProperty&&)      = delete;
-        AuxiliaryProperty(const AuxiliaryProperty&)            = delete;
-        AuxiliaryProperty(AuxiliaryProperty&&)                 = delete;
-        AuxiliaryProperty()                              = delete;
+        AuxiliaryProperty& operator=(AuxiliaryProperty&&) = delete;
+        AuxiliaryProperty(const AuxiliaryProperty&)       = delete;
+        AuxiliaryProperty(AuxiliaryProperty&&)            = delete;
+        AuxiliaryProperty()                               = delete;
     };
 }  // namespace HEIFPP

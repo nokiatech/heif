@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef AUXILIARYTYPEPINFOBOX_HPP
@@ -27,7 +29,7 @@ class AuxiliaryTypeInfoBox : public FullBox
 {
 public:
     AuxiliaryTypeInfoBox();
-    virtual ~AuxiliaryTypeInfoBox() = default;
+    ~AuxiliaryTypeInfoBox() override = default;
 
     /// @param [in] type UTF-8 character string used to identify the type of the associated auxiliary image sequence.
     void setAuxType(const String& type);
@@ -36,10 +38,10 @@ public:
     const String& getAuxType() const;
 
     /// @see Box::writeBox()
-    virtual void writeBox(ISOBMFF::BitStream& output) const;
+    void writeBox(ISOBMFF::BitStream& output) const override;
 
     /// @see Box::parseBox()
-    virtual void parseBox(ISOBMFF::BitStream& input);
+    void parseBox(ISOBMFF::BitStream& input) override;
 
 private:
     String mAuxType;  ///< UTF-8 character string of the Uniform Resource Name (URN).

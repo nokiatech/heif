@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,9 +11,12 @@
  */
 
 #include "MimeItem.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include <cstring>
+
 #include "ErrorCodes.h"
 
 using namespace HEIFPP;
@@ -50,7 +53,9 @@ HEIF::ErrorCode MimeItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
     HEIF::ErrorCode error;
     error = MetaItem::load(aReader, aId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     const HEIF::ItemInformation* info = getHeif()->getItemInformation(aId);
 
     mBufferSize = info->size;
@@ -86,7 +91,9 @@ HEIF::ErrorCode MimeItem::save(HEIF::Writer* aWriter)
     // TODO: re-use of data?
     error = aWriter->feedMediaData(fr, mediaDataId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
 
     HEIF::MetadataItemId metadataItemId;
     error = aWriter->addMetadata(mediaDataId, metadataItemId);

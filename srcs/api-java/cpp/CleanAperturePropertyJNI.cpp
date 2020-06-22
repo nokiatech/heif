@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
  */
 
 #include <jni.h>
+
 #include "Helpers.h"
 #include "TransformativeProperty.h"
 
@@ -36,7 +37,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::CleanApertureProperty *nativeObject = new HEIFPP::CleanApertureProperty(nativeHeif);
+        auto *nativeObject = new HEIFPP::CleanApertureProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -10,10 +10,12 @@
  * of this material requires the prior written consent of Nokia.
  */
 
+#include "Item.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include "EntityGroup.h"
-#include "Item.h"
 #include "ItemProperty.h"
 #include "MimeItem.h"
 #include "RawProperty.h"
@@ -101,7 +103,7 @@ bool Item::isXMPItem() const
 {
     if (isMimeItem())
     {
-        const MimeItem* mime = static_cast<const MimeItem*>(this);
+        const auto* mime = static_cast<const MimeItem*>(this);
         return (mime->getContentType() == "application/rdf+xml");
     }
     return false;
@@ -111,7 +113,7 @@ bool Item::isMPEG7Item() const
     if (isMimeItem())
     {
         // TODO: Technically should do more verification.
-        const MimeItem* mime = static_cast<const MimeItem*>(this);
+        const auto* mime = static_cast<const MimeItem*>(this);
         return (mime->getContentType() == "text/xml");
     }
     return false;
@@ -152,7 +154,7 @@ HEIFPP::Result Item::setContentType(const std::string& aType)
     {
         if (mContentType != aType)
         {
-            //Error.
+            // Error.
             return HEIFPP::Result::ALREADY_SET;
         }
     }
@@ -179,7 +181,9 @@ HEIF::ErrorCode Item::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
     mId   = aId;
     error = aReader->getItemType(aId, type);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     HEIF_ASSERT(mType == type);
     const auto* i = mHeif->getItemInformation(aId);
     if (i)
@@ -200,7 +204,9 @@ HEIF::ErrorCode Item::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
 
     error = aReader->getItemProperties(aId, propertyInfos);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     for (uint32_t indx = 0; indx < propertyInfos.size; ++indx)
     {
         const HEIF::ItemPropertyInfo& p = propertyInfos[indx];
@@ -228,11 +234,15 @@ HEIF::ErrorCode Item::save(HEIF::Writer* aWriter)
             {
                 error = it.first->save(aWriter);
                 if (HEIF::ErrorCode::OK != error)
+                {
                     return error;
+                }
             }
             error = aWriter->associateProperty(mId, it.first->getId(), it.second);
             if (HEIF::ErrorCode::OK != error)
+            {
                 return error;
+            }
         }
     }
     HEIF::ItemDescription d;
@@ -268,7 +278,9 @@ HEIF::ErrorCode Item::save(HEIF::Writer* aWriter)
 void Item::removeProperty(ItemProperty* aProp)
 {
     if (aProp == nullptr)
+    {
         return;
+    }
     for (auto it = mProps.begin(); it != mProps.end(); it++)
     {
         if (it->first == aProp)
@@ -286,7 +298,7 @@ void Item::removeProperty(ItemProperty* aProp)
 }
 std::uint32_t Item::propertyCount() const
 {
-    return (uint32_t) mProps.size();
+    return static_cast<uint32_t>(mProps.size());
 }
 
 bool Item::isEssential(uint32_t aId) const
@@ -386,15 +398,15 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
     }
     }
 
-    for (auto it = mProps.begin(); it != mProps.end(); it++)
+    for (auto& prop : mProps)
     {
-        if (it->first == aProp)
+        if (prop.first == aProp)
         {
             // This property has already been associated with this image.
             invalidProp = true;
             break;
         }
-        if (it->first->getType() == type)
+        if (prop.first->getType() == type)
         {
             bool end = true;
             // yes it exists already.
@@ -418,8 +430,8 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
             {
                 // Low level reader does not currently support these types and returns them as raw props.
                 // Although 'lhv1' is not a valid image either.
-                const RawProperty* raw  = static_cast<const RawProperty*>(it->first);
-                const RawProperty* raw2 = static_cast<const RawProperty*>(aProp);
+                const auto* raw  = static_cast<const RawProperty*>(prop.first);
+                const auto* raw2 = static_cast<const RawProperty*>(aProp);
                 if (raw->rawType() == raw2->rawType())
                 {
                     if ((raw->rawType() == "lsel") ||  // Layer selection          (zero or one)
@@ -480,7 +492,7 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
     // keep list ordered, descriptives first then transformatives.
     if (aProp->isTransformative())
     {
-        mProps.push_back({aProp, aEssential});
+        mProps.emplace_back(aProp, aEssential);
         mTransformCount++;
     }
     else
@@ -510,7 +522,7 @@ void Item::removeFromGroup(EntityGroup* aGroup)
 }
 std::uint32_t Item::getGroupCount() const
 {
-    return (std::uint32_t) mGroups.size();
+    return static_cast<std::uint32_t>(mGroups.size());
 }
 EntityGroup* Item::getGroup(uint32_t aId)
 {
@@ -540,7 +552,9 @@ EntityGroup* Item::getGroupByType(const HEIF::FourCC& aType, std::uint32_t aId)
         if (grp->getType() == aType)
         {
             if (aId == cnt)
+            {
                 return grp;
+            }
             cnt++;
         }
     }

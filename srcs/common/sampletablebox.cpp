@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "sampletablebox.hpp"
+
 #include "log.hpp"
 #include "smallvector.hpp"
 
@@ -224,7 +225,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
 
     int64_t sampleCountMax = -1;
     int64_t absoluteSampleCountMax =
-        MP4VR_ABSOLUTE_MAX_SAMPLE_COUNT;  // 4 194 304  (more than day worth of 48hz samples)
+        IMPLEMENTATION_ABSOLUTE_MAX_SAMPLE_COUNT;  // 4 194 304  (more than day worth of 48hz samples)
 
     // if there a data available in the file
     while (bitstr.numBytesLeft() > 0)
@@ -262,7 +263,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         else if (boxType == "stts")
         {
             mTimeToSampleBox.parseBox(subBitstr);
-            uint32_t sampleCount = static_cast<uint32_t>(mTimeToSampleBox.getSampleCount());
+            auto sampleCount = static_cast<uint32_t>(mTimeToSampleBox.getSampleCount());
             if (sampleCountMax == -1)
             {
                 if (sampleCount > absoluteSampleCountMax)
@@ -304,7 +305,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         {
             SampleToGroupBox sampleToGroupBox;
             sampleToGroupBox.parseBox(subBitstr);
-            uint32_t sampleCount = static_cast<uint32_t>(sampleToGroupBox.getNumberOfSamples());
+            auto sampleCount = static_cast<uint32_t>(sampleToGroupBox.getNumberOfSamples());
             if (sampleCountMax == -1)
             {
                 if (sampleCount > absoluteSampleCountMax)
@@ -328,7 +329,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         {
             mCompositionOffsetBox = makeCustomShared<CompositionOffsetBox>();
             mCompositionOffsetBox->parseBox(subBitstr);
-            uint32_t sampleCount = static_cast<uint32_t>(mCompositionOffsetBox->getSampleCount());
+            auto sampleCount = static_cast<uint32_t>(mCompositionOffsetBox->getSampleCount());
             if (sampleCountMax == -1)
             {
                 if (sampleCount > absoluteSampleCountMax)
@@ -344,7 +345,8 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping unknown box of type '" << boxType.getString() << "' inside SampleTableBox" << endl;
+            logWarning() << "Skipping unknown box of type '" << boxType.getString() << "' inside SampleTableBox"
+                         << endl;
         }
     }
 
@@ -361,9 +363,9 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         auto lowerBound = mSampleToChunkBox.getSampleCountLowerBound(
             static_cast<unsigned int>(mChunkOffsetBox.getChunkOffsets().size()));
         auto referenceSize = sizes[0];
-        for (size_t c = 0; c < sizes.size(); ++c)
+        for (unsigned int size : sizes)
         {
-            if (sizes[c] != referenceSize || sizes[c] < lowerBound)
+            if (size != referenceSize || size < lowerBound)
             {
                 throw RuntimeError("SampleToTableBox contains boxes with mismatching sample counts");
             }

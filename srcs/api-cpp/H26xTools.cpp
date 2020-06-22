@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,6 +11,7 @@
  */
 
 #include "H26xTools.h"
+
 #include <cstring>
 
 using namespace HEIFPP;
@@ -47,7 +48,9 @@ bool NAL_State::init_parse(const std::uint8_t* aData, std::uint64_t aLength)
             return true;
         }
         if (mData[0] != 0)
+        {
             break;
+        }
         mData++;
         mLength--;
     }
@@ -132,7 +135,7 @@ bool NAL_State::parse_byte_stream(const std::uint8_t*& nal_unit, std::uint64_t& 
     This sequence of bytes is nal_unit( NumBytesInNalUnit ) and is decoded using the NAL unit decoding process.
     */
     nal_unit        = mData;
-    nal_unit_length = (uint64_t)(src - mData);
+    nal_unit_length = static_cast<uint64_t>(src - mData);
     mData += nal_unit_length;
     mLength -= nal_unit_length;
 
@@ -178,7 +181,9 @@ bool NAL_State::parse_byte_stream(const std::uint8_t*& nal_unit, std::uint64_t& 
 bool NAL_State::end_of_stream()
 {
     if (mLength == 0)
+    {
         return true;
+    }
     return false;
 }
 
@@ -194,10 +199,10 @@ bool NAL_State::convertToByteStream(std::uint8_t* aData, std::uint64_t aLength)
         }
 
         std::uint32_t len;
-        len = (std::uint32_t)(aData[i + 0] << 24u);
-        len |= (std::uint32_t)(aData[i + 1] << 16u);
-        len |= (std::uint32_t)(aData[i + 2] << 8u);
-        len |= (std::uint32_t)(aData[i + 3]);
+        len = static_cast<std::uint32_t>(aData[i + 0] << 24u);
+        len |= static_cast<std::uint32_t>(aData[i + 1] << 16u);
+        len |= static_cast<std::uint32_t>(aData[i + 2] << 8u);
+        len |= static_cast<std::uint32_t>(aData[i + 3]);
         if ((aLength - i) < len)
         {
             return false;
@@ -245,8 +250,8 @@ bool NAL_State::convertFromByteStream(uint8_t* aBuffer,
         std::uint64_t required = curSize + 4 + nal_len;
         if (required > aSize)
         {
-            std::uint8_t* tmp = new std::uint8_t[required];
-            aSize             = required;
+            auto* tmp = new std::uint8_t[required];
+            aSize     = required;
             std::memcpy(tmp, aData, curSize);
             delete[] aData;
             aData = tmp;

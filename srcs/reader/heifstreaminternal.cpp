@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,7 +12,9 @@
  */
 
 #include "heifstreaminternal.hpp"
+
 #include <iostream>
+
 #include "customallocator.hpp"
 #include "log.hpp"
 
@@ -30,11 +32,6 @@ namespace HEIF
         , m_eof(false)
     {
         m_error = !stream || !stream->absoluteSeek(0);
-    }
-
-    InternalStream::~InternalStream()
-    {
-        // nothing
     }
 
     void InternalStream::read(char* buffer, StreamInterface::offset_t size_)

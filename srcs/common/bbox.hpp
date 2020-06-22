@@ -1,22 +1,26 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef BBOX_HPP
 #define BBOX_HPP
 
 #include <cstdint>
+
 #include "customallocator.hpp"
 #include "fourccint.hpp"
 
-#define MP4VR_ABSOLUTE_MAX_SAMPLE_COUNT (1 << 22)  // 4 194 304  (more than day worth of 48hz samples)
+static const unsigned int IMPLEMENTATION_ABSOLUTE_MAX_SAMPLE_COUNT =
+    (1 << 22);  // 4 194 304  (more than day worth of 48Hz samples)
 
 namespace ISOBMFF
 {
@@ -45,8 +49,8 @@ public:
     void setLargeSize();
 
     /**
-    * @brief getLargeSize Whether 64-bit size field (true) instead of 32-bit for the box.
-    */
+     * @brief getLargeSize Whether 64-bit size field (true) instead of 32-bit for the box.
+     */
     bool getLargeSize() const;
 
     /** @brief Writes the Box structure as a bitstream.
@@ -82,8 +86,8 @@ protected:
     void setUserType(const Vector<uint8_t>& usertype);
 
     /** @brief Gets usertype of 'uuid' type box.
-    *  @return Vector containing 16 byte UUID code of usertype.
-    * */
+     *  @return Vector containing 16 byte UUID code of usertype.
+     * */
     const Vector<uint8_t>& getUserType() const;
 
     /** @brief Fills in the Box header data structure as defined in ISOBMFF standard.
@@ -92,8 +96,8 @@ protected:
     void writeBoxHeader(ISOBMFF::BitStream& bitstr) const;
 
     /** @brief Parses the Box header data structure as defined in ISOBMFF standard.
-     * @param [in,out] bitstr A ISOBMFF::BitStream object that contains Box data stream. ISOBMFF::BitStream internal pointers
-     *                         are updated accordingly. */
+     * @param [in,out] bitstr A ISOBMFF::BitStream object that contains Box data stream. ISOBMFF::BitStream internal
+     * pointers are updated accordingly. */
     void parseBoxHeader(ISOBMFF::BitStream& bitstr);
 
     /** @brief Updates the overall byte size of the ISOBMFF::BitStream object

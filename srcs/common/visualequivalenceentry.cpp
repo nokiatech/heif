@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -42,7 +42,7 @@ std::uint16_t VisualEquivalenceEntry::getTimescaleMultiplier() const
 
 std::uint32_t VisualEquivalenceEntry::getSize() const
 {
-    const uint32_t size = static_cast<uint32_t>(sizeof(mTimeOffset) + sizeof(mTimescaleMultiplier));
+    const auto size = static_cast<uint32_t>(sizeof(mTimeOffset) + sizeof(mTimescaleMultiplier));
     return size;
 }
 

@@ -1,22 +1,24 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef ITEMLOCATIONBOX_HPP
 #define ITEMLOCATIONBOX_HPP
 
+#include <iterator>
+
 #include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
-
-#include <iterator>
 
 /** @brief Item Location Extent data structure as defined in the ISOBMFF specification. */
 struct ItemLocationExtent
@@ -97,7 +99,7 @@ public:
     /** @brief Writes the ItemLocation to the bitstream in the standard-defined format
      *  @param [in] version version of the ItemLocation
      *  @param [out] bitstr output ISOBMFF::BitStream */
-    void write(ISOBMFF::BitStream& bitstr, unsigned int version); //TODO: not-implemented!
+    void write(ISOBMFF::BitStream& bitstr, unsigned int version);  // TODO: not-implemented!
 
 private:
     std::uint32_t mItemID;                   ///< Item ID
@@ -116,7 +118,7 @@ class ItemLocationBox : public FullBox
 {
 public:
     ItemLocationBox();
-    virtual ~ItemLocationBox() = default;
+    ~ItemLocationBox() override = default;
 
     /** @brief Set the offset size
      *  @param [in] offsetSize Offset size {0,4 or 8} */
@@ -180,11 +182,11 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses an ItemLocationBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
     /** @brief Get Item Location entry of the item with given ID
      *  @param [in] itemID Item ID to be searched.
@@ -199,8 +201,9 @@ private:
     std::uint8_t mIndexSize;            ///< Index size {0,4, or 8} and only if version == 1, otherwise reserved
     ItemLocationVector mItemLocations;  ///< Vector of item location entries
 
-    ItemLocationVector::const_iterator findItem(std::uint32_t itemId) const;  ///< Find an item with given itemId and return as a const
-    ItemLocationVector::iterator findItem(std::uint32_t itemId);              ///< Find an item with given itemId and return
+    ItemLocationVector::const_iterator
+    findItem(std::uint32_t itemId) const;  ///< Find an item with given itemId and return as a const
+    ItemLocationVector::iterator findItem(std::uint32_t itemId);  ///< Find an item with given itemId and return
 };
 
 #endif /* end of include guard: ITEMLOCATIONBOX_HPP */

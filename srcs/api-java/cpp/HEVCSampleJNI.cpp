@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,9 +12,9 @@
  *
  */
 
+#include <VideoSample.h>
 #include <jni.h>
 
-#include <VideoSample.h>
 #include "Helpers.h"
 
 #define CLASS_NAME HEVCSample
@@ -25,7 +25,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::VideoSample* nativeObject = new HEIFPP::VideoSample(nativeHeif);
+        auto* nativeObject = new HEIFPP::VideoSample(nativeHeif);
         nativeObject->setType(HEIF::FourCC("hvc1"));
         return reinterpret_cast<jlong>(nativeObject);
     }

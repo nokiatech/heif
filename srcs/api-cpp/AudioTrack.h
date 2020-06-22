@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -20,7 +20,7 @@ namespace HEIFPP
     {
     public:
         AudioTrack(Heif* aHeif);
-        ~AudioTrack();
+        ~AudioTrack() override;
         void addSample(AudioSample* aSample);
         void setSample(std::uint32_t, AudioSample* aSample);
         void setSample(AudioSample* aOldSample, AudioSample* aNewSample);
@@ -31,10 +31,10 @@ namespace HEIFPP
 
     private:
         AudioTrack& operator=(const AudioTrack&) = delete;
-        AudioTrack& operator=(AudioTrack&&)      = delete;
-        AudioTrack(const AudioTrack&)            = delete;
-        AudioTrack(AudioTrack&&)                 = delete;
-        AudioTrack()                             = delete;
+        AudioTrack& operator=(AudioTrack&&) = delete;
+        AudioTrack(const AudioTrack&)       = delete;
+        AudioTrack(AudioTrack&&)            = delete;
+        AudioTrack()                        = delete;
     };
 
 }  // namespace HEIFPP

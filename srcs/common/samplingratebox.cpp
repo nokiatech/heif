@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,12 +16,6 @@
 SamplingRateBox::SamplingRateBox()
     : FullBox("srat", 0, 0)
     , mSamplingRate(0)
-{
-}
-
-SamplingRateBox::SamplingRateBox(const SamplingRateBox& box)
-    : FullBox(box.getType(), 0, 0)
-    , mSamplingRate(box.mSamplingRate)
 {
 }
 

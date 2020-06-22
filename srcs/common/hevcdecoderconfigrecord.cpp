@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "hevcdecoderconfigrecord.hpp"
+
 #include "bitstream.hpp"
 #include "nalutil.hpp"
 
@@ -43,19 +44,14 @@ HevcDecoderConfigurationRecord::HevcDecoderConfigurationRecord()
 {
 }
 
-void HevcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t> &srcSps, float frameRate)
+void HevcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t> &srcSps)
 {
     unsigned int maxNumSubLayersMinus1;
-    Vector<bool> subLayerProfilePresentFlag(8, 0);
-    Vector<bool> subLayerLevelPresentFlag(8, 0);
+    Vector<bool> subLayerProfilePresentFlag(8, false);
+    Vector<bool> subLayerLevelPresentFlag(8, false);
     Vector<uint8_t> sps = convertByteStreamToRBSP(srcSps);
 
-    /// @todo Verify this does what is intended. Casts look a bit unusual?
-    if (frameRate > ((float) 0xffff / 256))
-    {
-        frameRate = (float) 0xffff / 256;
-    }
-    mAvgFrameRate      = static_cast<uint16_t>(frameRate * 256 + 0.5);
+    mAvgFrameRate      = 0;  // Unspecified average frame rate.
     mConstantFrameRate = 0;
     mLengthSizeMinus1  = 3;  // NAL length fields are 4 bytes long (3+1)
 
@@ -277,7 +273,7 @@ void HevcDecoderConfigurationRecord::parseConfig(ISOBMFF::BitStream &bitstr)
 
         arrayCompleteness = (bitstr.readBits(1) != 0);
         bitstr.readBits(1);  // reserved = 0
-        nalUnitType = (HevcNalUnitType) bitstr.readBits(6);
+        nalUnitType = static_cast<HevcNalUnitType>(bitstr.readBits(6));
         numNalus    = bitstr.readBits(16);
         for (unsigned int j = 0; j < numNalus; j++)
         {

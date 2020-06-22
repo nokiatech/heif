@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -20,7 +20,9 @@ public final class StereoPairGroup extends EntityGroup
     /**
      * Constructor, abstract class so not called directly
      *
-     * @param heif The parent HEIF instance for the new object
+     * @param heif      The parent HEIF instance for the new object
+     * @param leftView  The left view Image
+     * @param rightView The right view Image
      * @throws java.lang.Exception Thrown if the parent HEIF instance is invalid
      */
     public StereoPairGroup(HEIF heif, ImageItem leftView, ImageItem rightView)

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,8 +11,10 @@
  */
 
 #include "DecoderConfiguration.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include "CodedImageItem.h"
 #include "Sample.h"
 
@@ -53,7 +55,7 @@ DecoderConfig::~DecoderConfig()
     }
     mHeif->removeDecoderConfig(this);
     delete[] mBuffer;
-    mBuffer     = 0;
+    mBuffer     = nullptr;
     mBufferSize = 0;
 }
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -51,15 +51,15 @@ namespace HEIFPP
         bool hasLinkedThumbnailImageSequence() const;  ///< There is a 'thmb' track reference pointing to this track.
         bool hasSampleToItemGrouping() const;  ///< The track has one or more SampleToMetadataItemEntry ('stmi') sample
                                                ///< groups present.
-        bool hasExifSampleEntry() const;            ///< From SampleEntryBox, not implemented yet
-        bool hasXmlSampleEntry() const;             ///< From SampleEntryBox, not implemented yet
-        bool hasEditList() const;                   ///< Track has an edit list
-        bool hasInfiniteLoopPlayback() const;       ///< Infinite looping has been set on in the edit list
+        bool hasExifSampleEntry() const;       ///< From SampleEntryBox, not implemented yet
+        bool hasXmlSampleEntry() const;        ///< From SampleEntryBox, not implemented yet
+        bool hasEditList() const;              ///< Track has an edit list
+        bool hasInfiniteLoopPlayback() const;  ///< Infinite looping has been set on in the edit list
         bool hasSampleEquivalenceGrouping() const;  ///< The track has one or more VisualSampleGroupEntry ('eqiv')
                                                     ///< sample group entries present.
-        bool isAudioTrack() const;       ///< Track is an audio track (handler type 'soun').
-        bool isVideoTrack() const;       ///< Track is a video track (handler type 'vide').
-        bool isImageSequence() const;    ///< Track is a video track (handler type 'pict').
+        bool isAudioTrack() const;                  ///< Track is an audio track (handler type 'soun').
+        bool isVideoTrack() const;                  ///< Track is a video track (handler type 'vide').
+        bool isImageSequence() const;               ///< Track is a video track (handler type 'pict').
         bool displayAllSamples() const;  ///< Edit List presentation indicates 0 or 1 samples. The player should ignore
                                          ///< timestamps and display all non-hidden samples.
 
@@ -194,9 +194,9 @@ namespace HEIFPP
 
     private:
         Track& operator=(const Track&) = delete;
-        Track& operator=(Track&&)      = delete;
-        Track(const Track&)            = delete;
-        Track(Track&&)                 = delete;
-        Track()                        = delete;
+        Track& operator=(Track&&) = delete;
+        Track(const Track&)       = delete;
+        Track(Track&&)            = delete;
+        Track()                   = delete;
     };
 }  // namespace HEIFPP

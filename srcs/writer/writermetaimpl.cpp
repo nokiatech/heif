@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,10 +15,13 @@
 #include <cassert>
 #include <cstring>
 #include <memory>
+
+#include "accessibilitytext.hpp"
 #include "auxiliarytypeproperty.hpp"
 #include "avcconfigurationbox.hpp"
 #include "cleanaperturebox.hpp"
 #include "colourinformationbox.hpp"
+#include "creationtimeinformation.hpp"
 #include "customallocator.hpp"
 #include "heifallocator.h"
 #include "hevcconfigurationbox.hpp"
@@ -27,12 +30,17 @@
 #include "imageoverlay.hpp"
 #include "imagerelativelocationproperty.hpp"
 #include "imagerotation.hpp"
+#include "imagescaling.hpp"
 #include "imagespatialextentsproperty.hpp"
 #include "jpegconfigurationbox.hpp"
 #include "jpegparser.hpp"
+#include "modificationtimeinformation.hpp"
 #include "pixelaspectratiobox.hpp"
 #include "pixelinformationproperty.hpp"
 #include "rawpropertybox.hpp"
+#include "requiredreferencetypesproperty.hpp"
+#include "timeutility.hpp"
+#include "userdescriptionproperty.hpp"
 #include "writerimpl.hpp"
 
 using namespace std;
@@ -101,7 +109,7 @@ namespace HEIF
                 {
                     spsFound = true;
                     configRecord.addNalUnit(nalVector, HevcNalUnitType::SPS, true);
-                    configRecord.makeConfigFromSPS(nalVector, 0.0);
+                    configRecord.makeConfigFromSPS(nalVector);
                 }
                 else
                 {
@@ -115,6 +123,11 @@ namespace HEIF
             }
 
             return ErrorCode::OK;
+        }
+
+        String charArrayToString(const Array<char>& input)
+        {
+            return String(input.begin(), input.end());
         }
     }  // anonymous namespace
 
@@ -215,7 +228,58 @@ namespace HEIF
         {
             mFileTypeBox.addCompatibleBrand("mif1");
         }
+
+        if (mWriteItemCreationTimes)
+        {
+            addCreationTimeInformation(aImageId);
+        }
+
         return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addImage(const MediaDataId& mediaDataId,
+                                   const Array<ImageId>& referenceImageIds,
+                                   ImageId& imageId)
+    {
+        if (!checkImageIds({referenceImageIds}))
+        {
+            return ErrorCode::INVALID_ITEM_ID;
+        }
+
+        auto error = addImage(mediaDataId, imageId);
+        if (error != ErrorCode::OK)
+        {
+            return error;
+        }
+
+        for (const auto& referenceId : referenceImageIds)
+        {
+            mMetaBox.addItemReference("pred", imageId.get(), referenceId.get());
+        }
+
+        // If not yet done, create a Required reference types property containing value 'pred'.
+        if (mPredRrefPropertyId == 0)
+        {
+            RequiredReferenceTypes rref;
+            rref.referenceTypes = {"pred"};
+            error               = addProperty(rref, mPredRrefPropertyId);
+            if (error != ErrorCode::OK)
+            {
+                return error;
+            }
+
+            addCompatibleBrandCombination({"pred", "heic"});
+            addCompatibleBrand("mif2");
+        }
+
+        error = associateProperty(imageId, mPredRrefPropertyId, true);
+
+        if (mWriteItemCreationTimes)
+        {
+            addCreationTimeInformation(imageId);
+        }
+
+        return error;
     }
 
     ErrorCode WriterImpl::setItemDescription(const ImageId& imageId, const ItemDescription& itemDescription)
@@ -317,6 +381,18 @@ namespace HEIF
                 itemIds.push_back(entity.id);
             }
 
+            for (const auto& property : group.descriptiveProperties)
+            {
+                mMetaBox.addProperty(static_cast<uint16_t>(property.propertyId.get()), {group.id.get()},
+                                     property.essential);
+            }
+            for (const auto& property : group.transformativeProperties)
+            {
+                mMetaBox.addProperty(static_cast<uint16_t>(property.propertyId.get()), {group.id.get()},
+                                     property.essential);
+            }
+
+
             mMetaBox.addEntityGrouping(FourCCInt(group.type.value), entityGroup.first.get(), itemIds);
         }
 
@@ -365,8 +441,8 @@ namespace HEIF
         clapBox->setVertOffset(value);
 
         PropertyInformation info;
-        info.isTransformative = true;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(clapBox), {}, false));
+        info.isTransformative   = true;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(clapBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -383,8 +459,8 @@ namespace HEIF
         imirBox->setHorizontalAxis(imir.horizontalAxis);
 
         PropertyInformation info;
-        info.isTransformative = true;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(imirBox), {}, false));
+        info.isTransformative   = true;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(imirBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -401,8 +477,38 @@ namespace HEIF
         irotBox->setAngle(irot.angle);
 
         PropertyInformation info;
-        info.isTransformative = true;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(irotBox), {}, false));
+        info.isTransformative   = true;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(irotBox), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const Scale& iscl, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        if ((iscl.targetWidthD == 0) || (iscl.targetWidthN == 0) ||
+                (iscl.targetHeightD == 0) || (iscl.targetHeightN == 0))
+        {
+            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+        }
+
+        auto isclBox = makeCustomShared<ImageScaling>();
+        ::ImageScaling::Fraction value;
+        value.numerator   = iscl.targetWidthN;
+        value.denominator = iscl.targetWidthD;
+        isclBox->setWidth(value);
+        value.numerator   = iscl.targetHeightN;
+        value.denominator = iscl.targetHeightD;
+        isclBox->setHeight(value);
+
+        PropertyInformation info;
+        info.isTransformative   = true;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(isclBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -420,8 +526,8 @@ namespace HEIF
         rlocBox->setVerticalOffset(rloc.verticalOffset);
 
         PropertyInformation info;
-        info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(rlocBox), {}, false));
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(rlocBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -440,8 +546,8 @@ namespace HEIF
         paspBox->setRelativeHeight(pasp.relativeHeight);
 
         PropertyInformation info;
-        info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(paspBox), {}, false));
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(paspBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -463,8 +569,8 @@ namespace HEIF
         pixiBox->setBitsPerChannels(bitsPerChannelVector);
 
         PropertyInformation info;
-        info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(pixiBox), {}, false));
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(pixiBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -500,8 +606,8 @@ namespace HEIF
         colrBox->setIccProfile(iccProfileVector);
 
         PropertyInformation info;
-        info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(colrBox), {}, false));
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(colrBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -524,8 +630,110 @@ namespace HEIF
         }
 
         PropertyInformation info;
-        info.isTransformative = false;
-        propertyId            = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(auxCBox), {}, false));
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(auxCBox), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const RequiredReferenceTypes& rref, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto rrefBox = makeCustomShared<RequiredReferenceTypesProperty>();
+
+        for (const auto& type : rref.referenceTypes)
+        {
+            rrefBox->addReferenceType(type.value);
+        }
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(rrefBox), {}, true));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const UserDescription& udes, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto udesProperty = makeCustomShared<UserDescriptionProperty>();
+
+        udesProperty->setLang(charArrayToString(udes.lang));
+        udesProperty->setName(charArrayToString(udes.name));
+        udesProperty->setDescription(charArrayToString(udes.description));
+        udesProperty->setTags(charArrayToString(udes.tags));
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(udesProperty), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const AccessibilityText& altt, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto alttProperty = makeCustomShared<AccessibilityTextProperty>();
+
+        alttProperty->setLang(charArrayToString(altt.lang));
+        alttProperty->setText(charArrayToString(altt.text));
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(alttProperty), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const CreationTimeInformation& crtt, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto crttProperty = makeCustomShared<CreationTimeProperty>();
+
+        crttProperty->setCreationTime(crtt.time);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(crttProperty), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addProperty(const ModificationTimeInformation& mdft, PropertyId& propertyId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto mdftProperty = makeCustomShared<ModificationTimeProperty>();
+
+        mdftProperty->setModificationTime(mdft.time);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(mdftProperty), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -544,8 +752,8 @@ namespace HEIF
         customBox->setData(data);
 
         PropertyInformation info;
-        info.isTransformative = isTransformative;
-        propertyId = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(customBox), {}, false));
+        info.isTransformative   = isTransformative;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(customBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
@@ -577,6 +785,46 @@ namespace HEIF
         assert(ispeIndex != 0);
         mMetaBox.addProperty(static_cast<uint16_t>(ispeIndex), {derivedImageId.get()}, false);
 
+        if (mWriteItemCreationTimes)
+        {
+            addCreationTimeInformation(derivedImageId);
+        }
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::associateProperty(const GroupId& groupId,
+                                            const PropertyId& propertyId,
+                                            const bool isEssential)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        if (mEntityGroups.count(groupId) == 0)
+        {
+            return ErrorCode::INVALID_GROUP_ID;
+        }
+
+        if (mProperties.count(propertyId) == 0)
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+
+        PropertyAssociation association;
+        association.propertyId = propertyId;
+        association.essential  = isEssential;
+
+        if (mProperties.at(propertyId).isTransformative)
+        {
+            mEntityGroups.at(groupId).transformativeProperties.push_back(association);
+        }
+        else
+        {
+            mEntityGroups.at(groupId).descriptiveProperties.push_back(association);
+        }
+
         return ErrorCode::OK;
     }
 
@@ -599,7 +847,7 @@ namespace HEIF
             return ErrorCode::INVALID_PROPERTY_INDEX;
         }
 
-        ImageCollection::PropertyAssociation association;
+        PropertyAssociation association;
         association.propertyId = propertyId;
         association.essential  = isEssential;
 
@@ -658,6 +906,11 @@ namespace HEIF
         const auto ispeIndex = getIspeIndex(gridItem.outputWidth, gridItem.outputHeight);
         mMetaBox.addProperty(static_cast<uint16_t>(ispeIndex), {gridId.get()}, false);
 
+        if (mWriteItemCreationTimes)
+        {
+            addCreationTimeInformation(gridId);
+        }
+
         return ErrorCode::OK;
     }
 
@@ -715,6 +968,11 @@ namespace HEIF
         }
         const auto ispeIndex = getIspeIndex(iovlItem.outputWidth, iovlItem.outputHeight);
         mMetaBox.addProperty(static_cast<uint16_t>(ispeIndex), {overlayId.get()}, false);
+
+        if (mWriteItemCreationTimes)
+        {
+            addCreationTimeInformation(overlayId);
+        }
 
         return ErrorCode::OK;
     }
@@ -893,8 +1151,7 @@ namespace HEIF
         if (mIspeIndexes.count(size) == 0)
         {
             mIspeIndexes[size] = mMetaBox.addProperty(
-                static_pointer_cast<Box>(makeCustomShared<ImageSpatialExtentsProperty>(width, height)), {},
-                false);
+                static_pointer_cast<Box>(makeCustomShared<ImageSpatialExtentsProperty>(width, height)), {}, false);
         }
 
         return mIspeIndexes[size];
@@ -961,4 +1218,20 @@ namespace HEIF
         propertyIndex = mDecoderConfigs.at(decoderConfigId);
         return ErrorCode::OK;
     }
+
+    void WriterImpl::addCreationTimeInformation(const ImageId& imageId)
+    {
+        auto crttProperty = makeCustomShared<CreationTimeProperty>();
+
+        const unsigned int SECONDS_TO_MICROSECONDS = 1000 * 1000;
+        crttProperty->setCreationTime(TimeUtility::getSecondsSince1904() * SECONDS_TO_MICROSECONDS);
+
+        PropertyInformation info;
+        info.isTransformative = false;
+        const auto propertyId =
+            PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(crttProperty), {imageId.get()}, false));
+        mProperties[propertyId] = info;
+    }
+
+
 }  // namespace HEIF

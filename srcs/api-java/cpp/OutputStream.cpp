@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,7 +11,8 @@
  *
  */
 #include "OutputStream.h"
-#include <assert.h>
+
+#include <cassert>
 #include <cstring>
 
 OutputStream::OutputStream(JNIEnv* env, jobject javaStream)
@@ -19,16 +20,16 @@ OutputStream::OutputStream(JNIEnv* env, jobject javaStream)
 {
     mJavaStream = env->NewGlobalRef(javaStream);
     mJavaClass  = env->GetObjectClass(javaStream);
-    assert(mJavaClass != 0);
+    assert(mJavaClass != nullptr);
 
     mSeekMethodId = env->GetMethodID(mJavaClass, "seek", "(J)V");
-    assert(mSeekMethodId != 0);
+    assert(mSeekMethodId != nullptr);
     mPositionMethodId = env->GetMethodID(mJavaClass, "position", "()J");
-    assert(mPositionMethodId != 0);
+    assert(mPositionMethodId != nullptr);
     mRemoveMethodId = env->GetMethodID(mJavaClass, "clear", "()V");
-    assert(mRemoveMethodId != 0);
+    assert(mRemoveMethodId != nullptr);
     mWriteMethodId = env->GetMethodID(mJavaClass, "write", "(Ljava/nio/ByteBuffer;J)V");
-    assert(mWriteMethodId != 0);
+    assert(mWriteMethodId != nullptr);
 }
 
 OutputStream::~OutputStream()
@@ -49,7 +50,7 @@ void OutputStream::seekp(std::uint64_t aPosition)
 
 std::uint64_t OutputStream::tellp()
 {
-    return (std::uint64_t)mJNIEnv->CallLongMethod(mJavaStream, mPositionMethodId);
+    return static_cast<std::uint64_t>(mJNIEnv->CallLongMethod(mJavaStream, mPositionMethodId));
 }
 
 void OutputStream::remove()

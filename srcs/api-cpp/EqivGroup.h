@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -20,19 +20,19 @@ namespace HEIFPP
     {
     public:
         EquivalenceGroup(Heif* aHeif);
-        void addSample(Sample* aItem, std::int16_t aOffset, std::uint16_t aMultiplier);
+        void addSample(Sample* aSample, std::int16_t aOffset, std::uint16_t aMultiplier);
         std::int16_t getOffset(Sample* aItem);
         std::uint16_t getMultiplier(Sample* aItem);
-        virtual void removeEntity(std::uint32_t aIndex);
-        virtual void removeSample(Sample* aSample);
+        void removeEntity(std::uint32_t aIndex) override;
+        void removeSample(Sample* aSample) override;
 
     protected:
         std::map<Sample*, std::pair<std::int16_t, std::uint16_t>> mOffsets;
 
     private:
-        EquivalenceGroup& operator=(const EquivalenceGroup&)  = delete;
-        EquivalenceGroup& operator=(EquivalenceGroup&&)       = delete;
-        EquivalenceGroup(const EquivalenceGroup&)             = delete;
-        EquivalenceGroup(EquivalenceGroup&&)                  = delete;
+        EquivalenceGroup& operator=(const EquivalenceGroup&) = delete;
+        EquivalenceGroup& operator=(EquivalenceGroup&&) = delete;
+        EquivalenceGroup(const EquivalenceGroup&)       = delete;
+        EquivalenceGroup(EquivalenceGroup&&)            = delete;
     };
 }  // namespace HEIFPP

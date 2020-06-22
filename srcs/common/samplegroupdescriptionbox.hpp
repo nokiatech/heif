@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef SAMPLEGROUPDESCRIPTIONBOX_HPP
@@ -24,11 +26,11 @@ class SampleGroupDescriptionBox : public FullBox
 {
 public:
     SampleGroupDescriptionBox();
-    virtual ~SampleGroupDescriptionBox() = default;
+    ~SampleGroupDescriptionBox() override = default;
 
     /** @brief Set the version of the Box.
      *  @param [in] version Box version */
-    void setVersion(std::uint8_t version); //TODO: Not-Implemented!
+    void setVersion(std::uint8_t version);  // TODO: Not-Implemented!
 
     /** @brief Set the grouping type to use.
      *  @param [in] groupingType Grouping Type as defined in ISOBMFF standard.
@@ -71,11 +73,11 @@ public:
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data.
      *  @throws Run-time Error if there are no sample description entries or groiping type is not properly set. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a SampleGroupDescriptionBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     FourCCInt mGroupingType;       ///< Grouping type

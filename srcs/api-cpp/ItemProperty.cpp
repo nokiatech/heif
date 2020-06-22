@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -10,20 +10,25 @@
  * of this material requires the prior written consent of Nokia.
  */
 
+#include "ItemProperty.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include "ImageItem.h"
-#include "ItemProperty.h"
 
 using namespace HEIFPP;
 
-ItemProperty::ItemProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, const HEIF::FourCC& aRawType, bool aIsTransform)
+ItemProperty::ItemProperty(Heif* aHeif,
+                           const HEIF::ItemPropertyType& aType,
+                           const HEIF::FourCC& aRawType,
+                           bool aIsTransform)
     : mHeif(aHeif)
     , mId(Heif::InvalidProperty)
     , mRawType(aRawType)
     , mType(aType)
     , mContext(nullptr)
-    , mIsTransform(aIsTransform)    
+    , mIsTransform(aIsTransform)
 {
     mHeif->addProperty(this);
 }
@@ -77,10 +82,7 @@ const HEIF::FourCC& ItemProperty::rawType() const
 
 HEIFPP::Result ItemProperty::setRawType(const HEIF::FourCC& aFourCC)
 {
-    if ((mRawType.value[0] == 0) &&
-        (mRawType.value[1] == 0) &&
-        (mRawType.value[2] == 0)&&
-        (mRawType.value[3] == 0))
+    if ((mRawType.value[0] == 0) && (mRawType.value[1] == 0) && (mRawType.value[2] == 0) && (mRawType.value[3] == 0))
     {
         mRawType = aFourCC;
         return HEIFPP::Result::OK;
@@ -99,10 +101,14 @@ void ItemProperty::setIsTransformative(bool aIsTransformative)
 void ItemProperty::link(Item* aItem)
 {
     if (aItem)
+    {
         mLinks.addLink(aItem);
+    }
 }
 void ItemProperty::unlink(Item* aItem)
 {
     if (aItem)
+    {
         mLinks.removeLink(aItem);
+    }
 }
