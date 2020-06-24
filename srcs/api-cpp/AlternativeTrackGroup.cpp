@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -10,6 +10,7 @@
  * of this material requires the prior written consent of Nokia.
  */
 #include "AlternativeTrackGroup.h"
+
 #include "Track.h"
 
 using namespace HEIFPP;
@@ -55,7 +56,7 @@ const Heif* AlternativeTrackGroup::getHeif() const
 
 std::uint32_t AlternativeTrackGroup::getTrackCount() const
 {
-    return (std::uint32_t) mTracks.size();
+    return static_cast<std::uint32_t>(mTracks.size());
 }
 Track* AlternativeTrackGroup::getTrack(std::uint32_t aId)
 {

@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef MOVIEHEADERBOX_HPP
@@ -24,7 +26,7 @@ class MovieHeaderBox : public FullBox
 {
 public:
     MovieHeaderBox();
-    virtual ~MovieHeaderBox() = default;
+    ~MovieHeaderBox() override = default;
 
     void setCreationTime(std::uint64_t creationTime);
     std::uint64_t getCreationTime() const;
@@ -48,13 +50,13 @@ public:
      * @brief Serialize box data to the ISOBMFF::BitStream.
      * @see Box::writeBox()
      */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /**
      * @brief Deserialize box data from the ISOBMFF::BitStream.
      * @see Box::parseBox()
      */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     std::uint64_t mCreationTime;

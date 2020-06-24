@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "itempropertiesbox.hpp"
+
 #include "hevcconfigurationbox.hpp"
 #include "imagespatialextentsproperty.hpp"
 #include "log.hpp"
@@ -57,65 +58,24 @@ Vector<std::uint8_t> ItemPropertiesBox::getPropertyDataByIndex(std::uint32_t ind
 
 ItemPropertiesBox::PropertyType ItemPropertiesBox::getPropertyType(const Box* property) const
 {
-    PropertyType type = PropertyType::RAW;
-    FourCCInt boxType = property->getType();
-    if (boxType == "auxC")
+    const FourCCInt boxType = property->getType();
+    const Map<FourCCInt, PropertyType> TYPE_MAPPING{
+        {"altt", PropertyType::ALTT}, {"auxC", PropertyType::AUXC}, {"avcC", PropertyType::AVCC},
+        {"clap", PropertyType::CLAP}, {"colr", PropertyType::COLR}, {"crtt", PropertyType::CRTT},
+        {"free", PropertyType::FREE}, {"hvcC", PropertyType::HVCC}, {"imir", PropertyType::IMIR},
+        {"irot", PropertyType::IROT}, {"iscl", PropertyType::ISCL}, {"ispe", PropertyType::ISPE},
+        {"jpgC", PropertyType::JPGC}, {"mdft", PropertyType::MDFT}, {"pasp", PropertyType::PASP},
+        {"pixi", PropertyType::PIXI}, {"rloc", PropertyType::RLOC}, {"rref", PropertyType::RREF},
+        {"skip", PropertyType::FREE}, {"udes", PropertyType::UDES},
+    };
+
+    const auto found = TYPE_MAPPING.find(boxType);
+    if (found == TYPE_MAPPING.end())
     {
-        type = PropertyType::AUXC;
+        return PropertyType::RAW;
     }
-    else if (boxType == "avcC")
-    {
-        type = PropertyType::AVCC;
-    }
-    else if (boxType == "clap")
-    {
-        type = PropertyType::CLAP;
-    }
-    else if (boxType == "colr")
-    {
-        type = PropertyType::COLR;
-    }
-    else if (boxType == "free")
-    {
-        type = PropertyType::FREE;
-    }
-    else if (boxType == "hvcC")
-    {
-        type = PropertyType::HVCC;
-    }
-    else if (boxType == "imir")
-    {
-        type = PropertyType::IMIR;
-    }
-    else if (boxType == "irot")
-    {
-        type = PropertyType::IROT;
-    }
-    else if (boxType == "ispe")
-    {
-        type = PropertyType::ISPE;
-    }
-    else if (boxType == "jpgC")
-    {
-        type = PropertyType::JPGC;
-    }
-    else if (boxType == "pasp")
-    {
-        type = PropertyType::PASP;
-    }
-    else if (boxType == "pixi")
-    {
-        type = PropertyType::PIXI;
-    }
-    else if (boxType == "rloc")
-    {
-        type = PropertyType::RLOC;
-    }
-    else if (boxType == "skip")
-    {
-        type = PropertyType::FREE;
-    }
-    return type;
+
+    return found->second;
 }
 
 ItemPropertiesBox::PropertyInfos ItemPropertiesBox::getItemProperties(const std::uint32_t itemId) const
@@ -165,7 +125,7 @@ uint16_t ItemPropertiesBox::addProperty(std::shared_ptr<Box> box,
                                         const Vector<std::uint32_t>& itemIds,
                                         const bool essential)
 {
-    const std::uint16_t propertyIndex = mContainer.addProperty(box);
+    const std::uint16_t propertyIndex = mContainer.addProperty(std::move(box));
     associateProperty(propertyIndex, itemIds, essential);
     return propertyIndex;
 }

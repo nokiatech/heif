@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -80,7 +80,7 @@ const ItemPropertiesBox& MetaBox::getItemPropertiesBox() const
 
 std::uint16_t MetaBox::addProperty(std::shared_ptr<Box> box, const Vector<std::uint32_t>& itemIds, const bool essential)
 {
-    return mItemPropertiesBox.addProperty(box, itemIds, essential);
+    return mItemPropertiesBox.addProperty(std::move(box), itemIds, essential);
 }
 
 void MetaBox::addProperty(const std::uint16_t index, const Vector<std::uint32_t>& itemIds, const bool essential)

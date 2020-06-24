@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef AVCDECODERCONFIGRECORD_HPP
@@ -28,7 +30,7 @@ class AvcDecoderConfigurationRecord : public DecoderConfigurationRecord
 {
 public:
     AvcDecoderConfigurationRecord();
-    ~AvcDecoderConfigurationRecord() = default;
+    ~AvcDecoderConfigurationRecord() override = default;
 
     /**
      * Read configuration parameters from a SPS NAL unit. You still
@@ -52,7 +54,8 @@ public:
 
     /**
      * Deserialize AvcDecoderConfigurationRecord from ISOBMFF::BitStream
-     * @param [in,out] bitstr ISOBMFF::BitStream including decoder configuration data. ISOBMFF::BitStream position is modified accordingly.
+     * @param [in,out] bitstr ISOBMFF::BitStream including decoder configuration data. ISOBMFF::BitStream position is
+     * modified accordingly.
      */
     void parseConfig(ISOBMFF::BitStream& bitstr);
 
@@ -111,7 +114,7 @@ public:
     void setBitDepthChromaMinus8(std::uint8_t bitDepthChromaMinus8);
 
     /* @brief Returns configuration parameter map for this record */
-    virtual void getConfigurationMap(ConfigurationMap& aMap) const override;
+    void getConfigurationMap(ConfigurationMap& aMap) const override;
 
 private:
     // Member variable descriptions can be found from the Advanced Video Coding (AVC) specification.

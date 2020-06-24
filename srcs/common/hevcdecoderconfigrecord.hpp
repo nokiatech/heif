@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -29,14 +29,13 @@ class HevcDecoderConfigurationRecord : public DecoderConfigurationRecord
 {
 public:
     HevcDecoderConfigurationRecord();
-    ~HevcDecoderConfigurationRecord() = default;
+    ~HevcDecoderConfigurationRecord() override = default;
 
     /**
      * Read configuration parameters from a SPS NAL unit.
      * @param sps       Sequence Parameter Set data
-     * @param frameRate Frame rate of video
      */
-    void makeConfigFromSPS(const Vector<std::uint8_t> &sps, float frameRate);
+    void makeConfigFromSPS(const Vector<std::uint8_t> &sps);
 
     /**
      * Add NAL unit to the NAL unit array
@@ -87,7 +86,7 @@ public:
     std::uint16_t getAvgFrameRate() const;
 
     /* @brief Returns configuration parameter map for this record */
-    virtual void getConfigurationMap(ConfigurationMap &aMap) const override;
+    void getConfigurationMap(ConfigurationMap &aMap) const override;
 
     /**
      * @return Returns chroma_format_idc value.

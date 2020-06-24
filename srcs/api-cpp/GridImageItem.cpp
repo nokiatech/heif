@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,6 +11,7 @@
  */
 
 #include "GridImageItem.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
 
@@ -123,11 +124,15 @@ HEIF::ErrorCode GridImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& 
     HEIF::ErrorCode error;
     error = DerivedImageItem::load(aReader, aId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     HEIF::Grid grid;
     error = aReader->getItem(aId, grid);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     if ((grid.outputWidth != width()) || (grid.outputHeight != height()))
     {
         return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
@@ -162,7 +167,9 @@ HEIF::ErrorCode GridImageItem::save(HEIF::Writer* aWriter)
         {
             error = image->save(aWriter);
             if (HEIF::ErrorCode::OK != error)
+            {
                 return error;
+            }
         }
         ids[i] = image->getId();
     }
@@ -171,6 +178,8 @@ HEIF::ErrorCode GridImageItem::save(HEIF::Writer* aWriter)
     error = aWriter->addDerivedImageItem(grid, newId);
     setId(newId);
     if (HEIF::ErrorCode::OK != error)
+    {
         return error;
+    }
     return DerivedImageItem::save(aWriter);
 }

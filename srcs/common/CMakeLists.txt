@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -18,6 +18,7 @@ endif()
 project( common LANGUAGES CXX )
 
 set(COMMON_SRCS
+    accessibilitytext.cpp
     audiosampleentrybox.cpp
     auxiliarytypeinfobox.cpp
     auxiliarytypeproperty.cpp
@@ -27,6 +28,7 @@ set(COMMON_SRCS
     avcsampleentry.cpp
     bbox.cpp
     bitstream.cpp
+    boxfactory.cpp
     brandandcompatiblebrandsbasebox.cpp
     channellayoutbox.cpp
     chunkoffsetbox.cpp
@@ -35,6 +37,7 @@ set(COMMON_SRCS
     colourinformationbox.cpp
     compositionoffsetbox.cpp
     compositiontodecodebox.cpp
+    creationtimeinformation.cpp
     datainformationbox.cpp
     datareferencebox.cpp
     decodepts.cpp
@@ -42,6 +45,7 @@ set(COMMON_SRCS
     editbox.cpp
     elementarystreamdescriptorbox.cpp
     entitytogroupbox.cpp
+    extendedtypebox.cpp
     filetypebox.cpp
     fourccint.cpp
     freespacebox.cpp
@@ -52,6 +56,7 @@ set(COMMON_SRCS
     hevcdecoderconfigrecord.cpp
     hevcsampleentry.cpp
     imagemirror.cpp
+    imagescaling.cpp
     imagespatialextentsproperty.cpp
     imagerotation.cpp
     imagerelativelocationproperty.cpp
@@ -73,7 +78,12 @@ set(COMMON_SRCS
     mediaheaderbox.cpp
     mediainformationbox.cpp
     metabox.cpp
+    modificationtimeinformation.cpp
     moviebox.cpp
+    movieextendsbox.cpp
+    movieextendsheaderbox.cpp
+    moviefragmentbox.cpp
+    moviefragmentheaderbox.cpp
     movieheaderbox.cpp
     mp4audiodecoderconfigrecord.cpp
     mp4audiosampleentrybox.cpp
@@ -84,6 +94,7 @@ set(COMMON_SRCS
     primaryitembox.cpp
     protectionschemeinfobox.cpp
     rawpropertybox.cpp
+    requiredreferencetypesproperty.cpp
     sampledescriptionbox.cpp
     sampleentrybox.cpp
     samplegroupdescriptionentry.cpp
@@ -94,21 +105,32 @@ set(COMMON_SRCS
     sampletometadataitementry.cpp
     samplegroupdescriptionbox.cpp
     samplingratebox.cpp
+    segmentindexbox.cpp
+    segmenttypebox.cpp
     soundmediaheaderbox.cpp
     syncsamplebox.cpp
     timetosamplebox.cpp
     trackbox.cpp
+    trackextendsbox.cpp
+    trackfragmentbasemediadecodetimebox.cpp
+    trackfragmentbox.cpp
+    trackfragmentheaderbox.cpp
+    trackgroupbox.cpp
+    trackgrouptypebox.cpp
     trackheaderbox.cpp
     trackreferencebox.cpp
     trackreferencetypebox.cpp
     trackrunbox.cpp
     tracktypebox.cpp
+    typecombinationbox.cpp
+    userdescriptionproperty.cpp
     videomediaheaderbox.cpp
     visualequivalenceentry.cpp
     visualsampleentrybox.cpp
     )
 
 set(COMMON_HDRS
+    accessibilitytext.hpp
     customallocator.hpp
     audiosampleentrybox.hpp
     avccommondefs.hpp
@@ -119,6 +141,7 @@ set(COMMON_HDRS
     auxiliarytypeproperty.hpp
     bbox.hpp
     bitstream.hpp
+    boxfactory.hpp
     brandandcompatiblebrandsbasebox.hpp
     channellayoutbox.hpp
     chunkoffsetbox.hpp
@@ -127,6 +150,7 @@ set(COMMON_HDRS
     colourinformationbox.hpp
     compositionoffsetbox.hpp
     compositiontodecodebox.hpp
+    creationtimeinformation.hpp
     datainformationbox.hpp
     datareferencebox.hpp
     decodepts.hpp
@@ -136,6 +160,7 @@ set(COMMON_HDRS
     editbox.hpp
     elementarystreamdescriptorbox.hpp
     entitytogroupbox.hpp
+    extendedtypebox.hpp
     filetypebox.hpp
     fourccint.hpp
     freespacebox.hpp
@@ -151,6 +176,7 @@ set(COMMON_HDRS
     imageoverlay.hpp
     imagerelativelocationproperty.hpp
     imagerotation.hpp
+    imagescaling.hpp
     imagespatialextentsproperty.hpp
     itemdatabox.hpp
     iteminfobox.hpp
@@ -168,7 +194,12 @@ set(COMMON_HDRS
     mediaheaderbox.hpp
     mediainformationbox.hpp
     metabox.hpp
+    modificationtimeinformation.hpp
     moviebox.hpp
+    movieextendsbox.hpp
+    movieextendsheaderbox.hpp
+    moviefragmentbox.cpp
+    moviefragmentheaderbox.cpp
     moviefragmentsdatatypes.hpp
     movieheaderbox.hpp
     mp4audiosampleentrybox.hpp
@@ -180,6 +211,7 @@ set(COMMON_HDRS
     primaryitembox.hpp
     protectionschemeinfobox.hpp
     rawpropertybox.hpp
+    requiredreferencetypesproperty.hpp
     sampledescriptionbox.hpp
     sampleentrybox.hpp
     samplegroupdescriptionbox.hpp
@@ -190,16 +222,26 @@ set(COMMON_HDRS
     sampletogroupbox.hpp
     sampletometadataitementry.hpp
     samplingratebox.hpp
+    segmentindexbox.hpp
+    segmenttypebox.hpp
     smallvector.hpp
     soundmediaheaderbox.hpp
     syncsamplebox.hpp
     timetosamplebox.hpp
     trackbox.hpp
+    trackextendsbox.hpp
+    trackfragmentbasemediadecodetimebox.cpp
+    trackfragmentbox.hpp
+    trackfragmentheaderbox.hpp
+    trackgroupbox.hpp
+    trackgrouptypebox.hpp
     trackheaderbox.hpp
     trackreferencebox.hpp
     trackreferencetypebox.hpp
     trackrunbox.hpp
     tracktypebox.hpp
+    typecombinationbox.hpp
+    userdescriptionproperty.hpp
     videomediaheaderbox.hpp
     visualequivalenceentry.hpp
     visualsampleentrybox.hpp

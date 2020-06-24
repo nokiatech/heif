@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -129,7 +129,7 @@ execute_process(
 
 if(GIT_ERROR)
     message( "Could not get version information from git")
-    set(GIT_DESCRIBE "v3.5.1")
+    set(GIT_DESCRIBE "v3.6.0")
 endif()
 
 # Get build timestamp
@@ -149,12 +149,10 @@ endif()
 
 add_subdirectory(api-cpp)
 
-if (NOT ANDROID)
-  if (NOT IOS)
-    find_package(JNI)
-    if (JNI_FOUND)
-      add_subdirectory(api-java/cpp)
-      endif()
+if ((NOT ANDROID) AND (NOT IOS) AND (NOT BUILD_ONLY_STATIC_LIB))
+  find_package(JNI)
+  if (JNI_FOUND)
+    add_subdirectory(api-java/cpp)
   endif()
 endif()
 

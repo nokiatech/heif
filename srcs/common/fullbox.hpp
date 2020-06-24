@@ -1,22 +1,24 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef FULLBOX_HPP
 #define FULLBOX_HPP
 
+#include <cstdint>
+
 #include "bbox.hpp"
 #include "bitstream.hpp"
 #include "customallocator.hpp"
-
-#include <cstdint>
 
 /** @brief Full Box class. Extends from Box.
  *  @details 'ftyp' box implementation as specified in the ISOBMFF specification
@@ -26,7 +28,7 @@ class FullBox : public Box
 {
 public:
     FullBox(FourCCInt boxType, std::uint8_t version, std::uint32_t flags = 0);
-    virtual ~FullBox() = default;
+    ~FullBox() override = default;
 
     /** @brief Set version field of the Full Box header
      *  @param [in] version version field of the full box header*/
@@ -46,11 +48,11 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const = 0;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override = 0;
 
     /** @brief Parses a Full box bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr) = 0;
+    void parseBox(ISOBMFF::BitStream& bitstr) override = 0;
 
     /** @brief Parses a bitstream that contains a full Box Header and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the full box header data */

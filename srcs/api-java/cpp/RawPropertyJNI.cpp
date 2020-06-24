@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
  */
 
 #include <jni.h>
+
 #include "Helpers.h"
 #include "RawProperty.h"
 #define CLASS_NAME RawProperty
@@ -20,7 +21,7 @@ extern "C"
 {
     JNI_METHOD(jstring, getRawTypeNative)
     {
-        HEIFPP::RawProperty *instance = (HEIFPP::RawProperty *) getNativeHandle(env, self);
+        auto *instance = (HEIFPP::RawProperty *) getNativeHandle(env, self);
         return env->NewStringUTF(instance->rawType().value);
     }
 
@@ -28,7 +29,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::RawProperty *nativeObject = new HEIFPP::RawProperty(nativeHeif);
+        auto *nativeObject = new HEIFPP::RawProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -51,7 +52,7 @@ extern "C"
     JNI_METHOD_ARG(void, setDataNative, jbyteArray data)
     {
         NATIVE_SELF;
-        jbyte *nativeData = env->GetByteArrayElements(data, 0);
+        jbyte *nativeData = env->GetByteArrayElements(data, nullptr);
         nativeSelf->setData((uint8_t *) (nativeData), static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
@@ -59,7 +60,7 @@ extern "C"
     JNI_METHOD_ARG(void, setRawTypeNative, jstring type)
     {
         NATIVE_SELF;
-        const char *nativeType = env->GetStringUTFChars(type, 0);
+        const char *nativeType = env->GetStringUTFChars(type, nullptr);
 
         HEIFPP::Result error = nativeSelf->setRawType(HEIF::FourCC(nativeType), false);
         env->ReleaseStringUTFChars(type, nativeType);

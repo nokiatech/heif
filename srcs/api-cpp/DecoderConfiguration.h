@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -84,10 +84,10 @@ namespace HEIFPP
 
     private:
         DecoderConfig& operator=(const DecoderConfig&) = delete;
-        DecoderConfig& operator=(DecoderConfig&&)      = delete;
-        DecoderConfig(const DecoderConfig&)            = delete;
-        DecoderConfig(DecoderConfig&&)                 = delete;
-        DecoderConfig()                                       = delete;
+        DecoderConfig& operator=(DecoderConfig&&) = delete;
+        DecoderConfig(const DecoderConfig&)       = delete;
+        DecoderConfig(DecoderConfig&&)            = delete;
+        DecoderConfig()                           = delete;
     };
 
 }  // namespace HEIFPP

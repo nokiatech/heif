@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,9 +12,11 @@
  *
  */
 
-#include <algorithm>
 #include <jni.h>
+
+#include <algorithm>
 #include <cstring>
+
 #include "Helpers.h"
 #include "ImageSequence.h"
 
@@ -27,7 +29,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::ImageSequence *nativeObject = new HEIFPP::ImageSequence(nativeHeif);
+        auto* nativeObject = new HEIFPP::ImageSequence(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -35,15 +37,19 @@ extern "C"
     {
         NATIVE_SELF;
         const auto aux = nativeSelf->aux();
-        if (aux == nullptr) return NULL;
+        if (aux == nullptr)
+        {
+            return nullptr;
+        }
         return env->NewStringUTF(aux->auxType.elements);
     }
 
     JNI_METHOD_ARG(void, setAuxNative, jstring auxType)
     {
         NATIVE_SELF;
-        const char* inCStr = env->GetStringUTFChars(auxType, NULL);
-        if (NULL == inCStr) {
+        const char* inCStr = env->GetStringUTFChars(auxType, nullptr);
+        if (nullptr == inCStr)
+        {
             nativeSelf->setAux(nullptr);
             return;
         }

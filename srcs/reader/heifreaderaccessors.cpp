@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,8 +11,14 @@
  * written consent of Nokia.
  */
 
-#include "heifreaderimpl.hpp"
+#include <algorithm>
+#include <bitset>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
 
+#include "accessibilitytext.hpp"
 #include "auxiliarytypeproperty.hpp"
 #include "avcconfigurationbox.hpp"
 #include "avcdecoderconfigrecord.hpp"
@@ -21,7 +27,9 @@
 #include "cleanaperturebox.hpp"
 #include "codingconstraintsbox.hpp"
 #include "colourinformationbox.hpp"
+#include "creationtimeinformation.hpp"
 #include "heiffiledatatypesinternal.hpp"
+#include "heifreaderimpl.hpp"
 #include "hevccommondefs.hpp"
 #include "hevcconfigurationbox.hpp"
 #include "hevcdecoderconfigrecord.hpp"
@@ -31,25 +39,39 @@
 #include "imageoverlay.hpp"
 #include "imagerelativelocationproperty.hpp"
 #include "imagerotation.hpp"
+#include "imagescaling.hpp"
 #include "log.hpp"
 #include "mediadatabox.hpp"
 #include "metabox.hpp"
+#include "modificationtimeinformation.hpp"
 #include "moviebox.hpp"
 #include "pixelaspectratiobox.hpp"
 #include "pixelinformationproperty.hpp"
 #include "rawpropertybox.hpp"
-
-#include <algorithm>
-#include <bitset>
-#include <cassert>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
+#include "requiredreferencetypesproperty.hpp"
+#include "userdescriptionproperty.hpp"
 
 using namespace std;
 
 namespace HEIF
 {
+    namespace
+    {
+        Array<FourCCToIds> mapToArray(const TypeToIdsMap& typeToIdsMap)
+        {
+            Array<FourCCToIds> array(typeToIdsMap.size());
+            unsigned int i = 0;
+            for (const auto& iter : typeToIdsMap)
+            {
+                array[i].type     = iter.first;
+                array[i].trackIds = makeArray<SequenceId>(iter.second);
+                ++i;
+            }
+
+            return array;
+        }
+    }  // anonymous namespace
+
     ErrorCode HeifReaderImpl::getFileInformation(FileInformation& fileInfo) const
     {
         if (isInitialized() != ErrorCode::OK)
@@ -102,6 +124,31 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
+    ErrorCode HeifReaderImpl::getCompatibleBrandCombinations(Array<Array<FourCC>>& compatibleBrandCombinations) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto& tycos           = mEtyp.getTypeCombinationBoxes();
+        compatibleBrandCombinations = Array<Array<FourCC>>(tycos.size());
+        unsigned int i              = 0;
+        for (const auto& tyco : tycos)
+        {
+            const auto& brandsFourCCint    = tyco.getCompatibleBrands();
+            compatibleBrandCombinations[i] = Array<FourCC>(brandsFourCCint.size());
+            unsigned int j                 = 0;
+            for (const auto fourCCIntBrand : brandsFourCCint)
+            {
+                compatibleBrandCombinations[i][j] = FourCC(fourCCIntBrand.getUInt32());
+                ++j;
+            }
+            ++i;
+        }
+
+        return ErrorCode::OK;
+    }
+
 
     ErrorCode HeifReaderImpl::getDisplayWidth(const SequenceId& sequenceId, uint32_t& displayWidth) const
     {
@@ -110,7 +157,7 @@ namespace HEIF
         {
             return error;
         }
-        displayWidth = mTrackInfo.at(sequenceId.get()).width;
+        displayWidth = getInitTrackInfo(sequenceId).width;
         return ErrorCode::OK;
     }
 
@@ -122,7 +169,7 @@ namespace HEIF
         {
             return error;
         }
-        displayHeight = mTrackInfo.at(sequenceId.get()).height;
+        displayHeight = getInitTrackInfo(sequenceId).height;
         return ErrorCode::OK;
     }
 
@@ -134,8 +181,7 @@ namespace HEIF
         {
             return error;
         }
-        const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        width                = mMetaBoxInfo.at(contextId).itemInfoMap.at(itemId.get()).width;
+        width = mMetaBoxInfo.itemInfoMap.at(itemId.get()).width;
         return ErrorCode::OK;
     }
 
@@ -144,11 +190,13 @@ namespace HEIF
                                        uint32_t& width) const
     {
         ErrorCode error;
-        if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
+        SampleProperties sampleInfo;
+        if ((error = getSampleInfo(sequenceId, itemId, sampleInfo)) != ErrorCode::OK)
         {
             return error;
         }
-        width = mTrackInfo.at(sequenceId).samples.at(itemId.get()).width;
+        width = sampleInfo.width;
+
         return ErrorCode::OK;
     }
 
@@ -160,8 +208,7 @@ namespace HEIF
         {
             return error;
         }
-        const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        height               = mMetaBoxInfo.at(contextId).itemInfoMap.at(itemId.get()).height;
+        height = mMetaBoxInfo.itemInfoMap.at(itemId.get()).height;
         return ErrorCode::OK;
     }
 
@@ -170,12 +217,13 @@ namespace HEIF
                                         uint32_t& height) const
     {
         ErrorCode error;
-        if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
+        SampleProperties sampleInfo;
+        if ((error = getSampleInfo(sequenceId, itemId, sampleInfo)) != ErrorCode::OK)
         {
             return error;
         }
+        height = sampleInfo.height;
 
-        height = mTrackInfo.at(sequenceId.get()).samples.at(itemId.get()).height;
         return ErrorCode::OK;
     }
 
@@ -187,12 +235,12 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        if (mMatrix.size() == 0)
+        if (mFileProperties.moovProperties.mMatrix.empty())
         {
             return ErrorCode::NOT_APPLICABLE;
         }
 
-        matrix = makeArray<int32_t>(mMatrix);
+        matrix = makeArray<int32_t>(mFileProperties.moovProperties.mMatrix);
         return ErrorCode::OK;
     }
 
@@ -208,7 +256,7 @@ namespace HEIF
         {
             return error;
         }
-        matrix = makeArray<int32_t>(mTrackInfo.at(sequenceId.get()).matrix);
+        matrix = makeArray<int32_t>(mFileProperties.initTrackInfos.at(sequenceId.get()).matrix);
         return ErrorCode::OK;
     }
 
@@ -219,7 +267,26 @@ namespace HEIF
         {
             return error;
         }
-        durationInSecs = mTrackInfo.at(sequenceId).duration;
+
+        std::int64_t maxTimeUs  = 0;
+        std::uint32_t timescale = mFileProperties.initTrackInfos.at(sequenceId).timeScale;
+        for (const auto& segment : mFileProperties.segmentPropertiesMap)
+        {
+            const auto& trackInfo = segment.second.trackInfos.find(sequenceId);
+            if (trackInfo != segment.second.trackInfos.end())
+            {
+                for (const auto& sample : trackInfo->second.samples)
+                {
+                    for (const auto& compositionTimesTS : sample.compositionTimesTS)
+                    {
+                        maxTimeUs = std::max(
+                            maxTimeUs, int64_t((compositionTimesTS + sample.sampleDurationTS) * 1000000 / timescale));
+                    }
+                }
+            }
+        }
+        durationInSecs = maxTimeUs / 1000000.0;
+
         return ErrorCode::OK;
     }
 
@@ -230,21 +297,18 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-
-        IdVector allItems;
+        Vector<ImageId> allItems;
         getCollectionItems(allItems);
 
-        IdVector masterItemIds;
+        Vector<ImageId> masterItemIds;
         for (auto itemId : allItems)
         {
-            const auto rawType =
-                mMetaBoxMap.at(contextId).getItemInfoBox().getItemById(itemId).getItemType().getString();
+            const auto rawType = mMetaBox.getItemInfoBox().getItemById(itemId.get()).getItemType().getString();
             if ((rawType == "avc1") || (rawType == "hvc1"))
             {
                 // A master image is an image that is not an auxiliary image or a thumbnail image.
-                if (!doReferencesFromItemIdExist(mMetaBoxMap.at(contextId), itemId, "auxl") &&
-                    !doReferencesFromItemIdExist(mMetaBoxMap.at(contextId), itemId, "thmb"))
+                if (!doReferencesFromItemIdExist(mMetaBox, itemId.get(), "auxl") &&
+                    !doReferencesFromItemIdExist(mMetaBox, itemId.get(), "thmb"))
                 {
                     masterItemIds.push_back(itemId);
                 }
@@ -263,12 +327,12 @@ namespace HEIF
             return error;
         }
 
-        IdVector allItems;
-        getSequenceItems(sequenceId, allItems);
-        if (mFileProperties.trackProperties.at(sequenceId.get())
+        Vector<SequenceImageId> allImages;
+        getSamples(sequenceId, allImages);
+        if (mFileProperties.initTrackInfos.at(sequenceId.get())
                 .trackFeature.hasFeature(TrackFeatureEnum::IsMasterImageSequence))
         {
-            itemIds = makeArray<SequenceImageId>(allItems);
+            itemIds = makeArray<SequenceImageId>(allImages);
         }
 
         return ErrorCode::OK;
@@ -281,8 +345,8 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        Vector<uint32_t> itemIdVector;
-        IdVector allItems;
+        Vector<ImageId> itemIdVector;
+        Vector<ImageId> allItems;
         getCollectionItems(allItems);
         for (auto itemId : allItems)
         {
@@ -299,8 +363,8 @@ namespace HEIF
     }
 
     ErrorCode HeifReaderImpl::getItemListByType(const SequenceId& sequenceId,
-                                                const TrackSampleType& itemType,
-                                                Array<SequenceImageId>& itemIds) const
+                                                const TrackSampleType& sampleType,
+                                                Array<SequenceImageId>& sampleIdsApi) const
     {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
@@ -308,89 +372,121 @@ namespace HEIF
             return error;
         }
 
-        const auto contextId = sequenceId.get();
-        Vector<uint32_t> itemIdVector;
-        IdVector allItems;
-        if (getSequenceItems(sequenceId, allItems) != ErrorCode::OK)
+        Vector<SequenceImageId> allSamples;
+        error = getSamples(sequenceId, allSamples);
+        if (error != ErrorCode::OK)
+        {
+            return error;
+        }
+
+        Vector<SequenceImageId> matches;
+        bool foundSegment = false;
+        for (const auto& segment : segmentsBySequence())
+        {
+            foundSegment              = true;
+            SegmentTrackId segTrackId = std::make_pair(segment.segmentId, sequenceId);
+            if (sampleType == TrackSampleType::out_ref)
+            {
+                if (hasTrackInfo(segTrackId))
+                {
+                    SequenceImageId sampleBase;
+                    const SamplePropertyVector& sampleInfo = getSampleInfo(segTrackId, sampleBase);
+                    for (uint32_t index = 0; index < sampleInfo.size(); ++index)
+                    {
+                        if (sampleInfo[index].sampleType == SampleType::OUTPUT_REFERENCE_FRAME)
+                        {
+                            matches.push_back(index + sampleBase.get());
+                        }
+                    }
+                }
+            }
+            else if (sampleType == TrackSampleType::non_out_ref)
+            {
+                if (hasTrackInfo(segTrackId))
+                {
+                    SequenceImageId sampleBase;
+                    const SamplePropertyVector& sampleInfo = getSampleInfo(segTrackId, sampleBase);
+                    for (uint32_t index = 0; index < sampleInfo.size(); ++index)
+                    {
+                        if (sampleInfo[index].sampleType == SampleType::NON_OUTPUT_REFERENCE_FRAME)
+                        {
+                            matches.push_back(index + sampleBase.get());
+                        }
+                    }
+                }
+            }
+            else if (sampleType == TrackSampleType::out_non_ref)
+            {
+                if (hasTrackInfo(segTrackId))
+                {
+                    SequenceImageId sampleBase;
+                    const SamplePropertyVector& sampleInfo = getSampleInfo(segTrackId, sampleBase);
+                    for (uint32_t index = 0; index < sampleInfo.size(); ++index)
+                    {
+                        if (sampleInfo[index].sampleType == SampleType::OUTPUT_NON_REFERENCE_FRAME)
+                        {
+                            matches.push_back(index + sampleBase.get());
+                        }
+                    }
+                }
+            }
+            else if (sampleType == TrackSampleType::display)
+            {
+                if (hasTrackInfo(segTrackId))
+                {
+                    Vector<SequenceImageId> sampleIds;
+                    // Collect frames to display
+                    SequenceImageId sampleBase;
+                    const SamplePropertyVector& sampleInfo = getSampleInfo(segTrackId, sampleBase);
+                    for (uint32_t index = 0; index < sampleInfo.size(); ++index)
+                    {
+                        if (sampleInfo[index].sampleType == SampleType::OUTPUT_NON_REFERENCE_FRAME ||
+                            sampleInfo[index].sampleType == SampleType::OUTPUT_REFERENCE_FRAME)
+                        {
+                            sampleIds.push_back(index + sampleBase.get());
+                        }
+                    }
+
+                    // Collect every presentation time stamp of every sample
+                    Vector<ItemIdTimestampPair> samplePresentationTimes;
+                    for (auto sampleId : sampleIds)
+                    {
+                        const auto& trackInfo = getTrackInfo(segTrackId);
+                        const auto singleSamplePresentationTimes =
+                            trackInfo.samples.at(sampleId.get() - trackInfo.itemIdBase.get()).compositionTimes;
+                        for (auto sampleTime : singleSamplePresentationTimes)
+                        {
+                            samplePresentationTimes.push_back(std::make_pair(sampleId, sampleTime));
+                        }
+                    }
+
+                    // Sort to display order using composition times
+                    std::sort(samplePresentationTimes.begin(), samplePresentationTimes.end(),
+                              [&](ItemIdTimestampPair a, ItemIdTimestampPair b) { return a.second < b.second; });
+
+                    // Push sample ids to the result
+                    for (auto pair : samplePresentationTimes)
+                    {
+                        matches.push_back(pair.first.get());
+                    }
+                }
+            }
+            else if (sampleType == TrackSampleType::samples)
+            {
+                matches = allSamples;
+            }
+            else
+            {
+                return ErrorCode::INVALID_FUNCTION_PARAMETER;
+            }
+        }
+
+        sampleIdsApi = makeArray<SequenceImageId>(matches);
+
+        if (foundSegment == false)
         {
             return ErrorCode::INVALID_SEQUENCE_ID;
         }
-
-        if (itemType == TrackSampleType::out_ref)
-        {
-            for (const auto& sampleProperty : mFileProperties.trackProperties.at(contextId).sampleProperties)
-            {
-                if (sampleProperty.second.sampleType == SampleType::OUTPUT_REFERENCE_FRAME)
-                {
-                    itemIdVector.push_back(sampleProperty.first);
-                }
-            }
-        }
-        else if (itemType == TrackSampleType::non_out_ref)
-        {
-            for (const auto& sampleProperty : mFileProperties.trackProperties.at(contextId).sampleProperties)
-            {
-                if (sampleProperty.second.sampleType == SampleType::NON_OUTPUT_REFERENCE_FRAME)
-                {
-                    itemIdVector.push_back(sampleProperty.first);
-                }
-            }
-        }
-        else if (itemType == TrackSampleType::out_non_ref)
-        {
-            for (const auto& sampleProperty : mFileProperties.trackProperties.at(contextId).sampleProperties)
-            {
-                if (sampleProperty.second.sampleType == SampleType::OUTPUT_NON_REFERENCE_FRAME)
-                {
-                    itemIdVector.push_back(sampleProperty.first);
-                }
-            }
-        }
-        else if (itemType == TrackSampleType::display)
-        {
-            IdVector sampleIds;
-            // Collect frames to display
-            for (const auto& sampleProperty : mFileProperties.trackProperties.at(contextId).sampleProperties)
-            {
-                if (sampleProperty.second.sampleType == SampleType::OUTPUT_NON_REFERENCE_FRAME ||
-                    sampleProperty.second.sampleType == SampleType::OUTPUT_REFERENCE_FRAME)
-                {
-                    sampleIds.push_back(sampleProperty.first);
-                }
-            }
-
-            // Collect every presentation time stamp of every sample
-            Vector<ItemIdTimestampPair> samplePresentationTimes;
-            for (auto sampleId : sampleIds)
-            {
-                const Vector<int64_t>& singleSamplePresentationTimes =
-                    mTrackInfo.at(contextId).samples.at(sampleId).compositionTimes;
-                for (auto sampleTime : singleSamplePresentationTimes)
-                {
-                    samplePresentationTimes.push_back(std::make_pair(sampleId, sampleTime));
-                }
-            }
-
-            // Sort to display order using composition times
-            std::sort(samplePresentationTimes.begin(), samplePresentationTimes.end(),
-                      [&](ItemIdTimestampPair a, ItemIdTimestampPair b) { return a.second < b.second; });
-
-            // Push sample ids to the result
-            for (auto pair : samplePresentationTimes)
-            {
-                itemIdVector.push_back(pair.first);
-            }
-        }
-        else if (itemType == TrackSampleType::samples)
-        {
-            itemIdVector = allItems;
-        }
-        else
-        {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;
-        }
-
-        itemIds = makeArray<SequenceImageId>(itemIdVector);
 
         return ErrorCode::OK;
     }
@@ -403,10 +499,9 @@ namespace HEIF
             return error;
         }
 
-        const auto rootMetaId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        if (mMetaBoxInfo.at(rootMetaId).itemInfoMap.count(itemId.get()))
+        if (mMetaBoxInfo.itemInfoMap.count(itemId.get()) != 0u)
         {
-            type = mMetaBoxInfo.at(rootMetaId).itemInfoMap.at(itemId.get()).type.getUInt32();
+            type = mMetaBoxInfo.itemInfoMap.at(itemId.get()).type.getUInt32();
             return ErrorCode::OK;
         }
 
@@ -418,14 +513,13 @@ namespace HEIF
                                           FourCC& type) const
     {
         ErrorCode error;
-        if ((error = isValidSample(sequenceId, sequenceImageId)) != ErrorCode::OK)
+        SampleProperties sampleInfo;
+        if ((error = getSampleInfo(sequenceId, sequenceImageId, sampleInfo)) != ErrorCode::OK)
         {
             return error;
         }
+        type = sampleInfo.sampleEntryType.getUInt32();
 
-        type = mFileProperties.trackProperties.at(sequenceId)
-                   .sampleProperties.at(sequenceImageId.get())
-                   .sampleEntryType.value;
         return ErrorCode::OK;
     }
 
@@ -439,17 +533,16 @@ namespace HEIF
             return error;
         }
 
-        const ItemReferenceBox& itemReferenceBox =
-            mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId).getItemReferenceBox();
+        const ItemReferenceBox& itemReferenceBox = mMetaBox.getItemReferenceBox();
         const Vector<SingleItemTypeReferenceBox>& references =
             itemReferenceBox.getReferencesOfType(FourCCInt(referenceType.value));
 
-        IdVector itemIdVector;
+        Vector<ImageId> itemIdVector;
         for (const auto& reference : references)
         {
             if (reference.getFromItemID() == fromItemId.get())
             {
-                const Vector<uint32_t>& toIds = reference.getToItemIds();
+                const auto& toIds = reference.getToItemIds();
                 itemIdVector.insert(itemIdVector.end(), toIds.cbegin(), toIds.cend());
             }
         }
@@ -469,15 +562,14 @@ namespace HEIF
             return error;
         }
 
-        const ItemReferenceBox& itemReferenceBox =
-            mMetaBoxMap.at(mFileProperties.rootLevelMetaBoxProperties.contextId).getItemReferenceBox();
+        const ItemReferenceBox& itemReferenceBox = mMetaBox.getItemReferenceBox();
         const Vector<SingleItemTypeReferenceBox>& references =
             itemReferenceBox.getReferencesOfType(FourCCInt(referenceType.value));
 
-        IdVector itemIdVector;
+        Vector<ImageId> itemIdVector;
         for (const auto& reference : references)
         {
-            const auto toIds = reference.getToItemIds();
+            const auto& toIds = reference.getToItemIds();
             for (const auto id : toIds)
             {
                 if (id == toItemId.get())
@@ -498,7 +590,7 @@ namespace HEIF
         {
             return ErrorCode::UNINITIALIZED;
         }
-        if (mIsPrimaryItemSet == false)
+        if (!mIsPrimaryItemSet)
         {
             return ErrorCode::PRIMARY_ITEM_NOT_SET;
         }
@@ -519,18 +611,18 @@ namespace HEIF
         {
             return error;
         }
-        const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        std::uint64_t itemLength(0);
 
+        std::uint64_t itemLength(0);
         try
         {
-            List<ItemId> pastReferences;
-            error = getItemLength(mMetaBoxMap.at(contextId), itemId.get(), itemLength, pastReferences);
+            List<ImageId> pastReferences;
+            error = getItemLength(mMetaBox, itemId.get(), itemLength, pastReferences);
             if (error != ErrorCode::OK)
             {
                 return error;
             }
-            else if (static_cast<int64_t>(itemLength) > mIo.size)
+
+            if (static_cast<int64_t>(itemLength) > mFileProperties.segmentPropertiesMap.at(0).io.size)
             {
                 return ErrorCode::FILE_HEADER_ERROR;
             }
@@ -551,7 +643,7 @@ namespace HEIF
         bool processData = false;
         try
         {
-            error = readItem(mMetaBoxMap.at(contextId), itemId.get(), memoryBuffer, memoryBufferSize);
+            error = readItem(mMetaBox, itemId, memoryBuffer, memoryBufferSize);
             if (error != ErrorCode::OK)
             {
                 return error;
@@ -569,13 +661,13 @@ namespace HEIF
         }
 
         FourCCInt rawType;
-        error = getRawItemType(mMetaBoxMap.at(contextId), itemId.get(), rawType);
+        error = getRawItemType(mMetaBox, itemId, rawType);
         if (error != ErrorCode::OK)
         {
             return error;
         }
-        bool isProtected;
-        error = getProtection(itemId.get(), isProtected);
+        bool isProtected = false;
+        error            = getProtection(itemId, isProtected);
         if (error != ErrorCode::OK)
         {
             return error;
@@ -589,7 +681,7 @@ namespace HEIF
         {
             // Process bitstream by codec
             FourCC codeType;
-            error = getDecoderCodeType(itemId.get(), codeType);
+            error = getDecoderCodeType(itemId, codeType);
             if (error != ErrorCode::OK)
             {
                 return error;
@@ -627,7 +719,7 @@ namespace HEIF
                                           const SequenceImageId& itemId,
                                           uint8_t* memoryBuffer,
                                           uint64_t& memoryBufferSize,
-                                          bool bytestreamHeaders) const
+                                          bool bytestreamHeaders)
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -636,7 +728,7 @@ namespace HEIF
         }
 
         // read NAL data to bitstream object
-        error = getTrackFrameData(itemId.get(), mTrackInfo.at(sequenceId.get()), memoryBuffer, memoryBufferSize);
+        error = getTrackSampleData(sequenceId, itemId, memoryBuffer, memoryBufferSize);
         if (error != ErrorCode::OK)
         {
             return error;
@@ -644,7 +736,7 @@ namespace HEIF
 
         // Process bitstream by codec
         FourCC codeType;
-        error = getDecoderCodeType(sequenceId, itemId.get(), codeType);
+        error = getDecoderCodeType(sequenceId, itemId, codeType);
         if (error != ErrorCode::OK)
         {
             return error;
@@ -670,6 +762,11 @@ namespace HEIF
                     return error;
                 }
             }
+            else if ((codeType == "mp4a") || (codeType == "mp4v"))
+            {
+                // already valid data - do nothing.
+                return ErrorCode::OK;
+            }
             else
             {
                 // Code type not supported
@@ -679,6 +776,97 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
+    ErrorCode HeifReaderImpl::getTrackSampleData(const SequenceId& trackId,
+                                                 const SequenceImageId& itemIdApi,
+                                                 uint8_t* memoryBuffer,
+                                                 uint64_t& memoryBufferSize)
+    {
+        ErrorCode error;
+        if ((error = isInitialized()) != ErrorCode::OK)
+        {
+            return error;
+        }
+
+        SegmentId segmentId;
+        ErrorCode result = segmentIdOf(trackId, itemIdApi, segmentId);
+        if (result != ErrorCode::OK)
+        {
+            return result;
+        }
+        SegmentTrackId segTrackId = std::make_pair(segmentId, trackId);
+        SequenceImageId itemId    = itemIdApi.get() - getTrackInfo(segTrackId).itemIdBase.get();
+
+        auto& io = mFileProperties.segmentPropertiesMap.at(segmentId).io;
+        // read NAL data to bitstream object
+
+        // The requested frame should be one that is available
+        if (itemId.get() >= getTrackInfo(segTrackId).samples.size())
+        {
+            return ErrorCode::INVALID_ITEM_ID;
+        }
+
+        const uint32_t sampleLength = getTrackInfo(segTrackId).samples.at(itemId.get()).dataLength;
+        if (memoryBufferSize < sampleLength)
+        {
+            memoryBufferSize = sampleLength;
+            return ErrorCode::MEMORY_TOO_SMALL_BUFFER;
+        }
+
+        seekInput(io, static_cast<std::int64_t>(getTrackInfo(segTrackId).samples.at(itemId.get()).dataOffset));
+        io.stream->read(reinterpret_cast<char*>(memoryBuffer), sampleLength);
+        memoryBufferSize = sampleLength;
+
+        if (!io.stream->good())
+        {
+            return ErrorCode::FILE_READ_ERROR;
+        }
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::segmentIdOf(SequenceId sequenceId, SequenceImageId itemId, SegmentId& segmentId) const
+    {
+        bool wentPast = false;
+
+        if (mFileProperties.segmentPropertiesMap.empty())
+        {
+            return ErrorCode::INVALID_SEGMENT;
+        }
+
+        const auto& segs = segmentsBySequence();
+        for (auto segmentIt = segs.begin(); !wentPast && segmentIt != segs.end(); ++segmentIt)
+        {
+            auto track = segmentIt->trackInfos.find(sequenceId);
+            if (track != segmentIt->trackInfos.end())
+            {
+                if (track->second.itemIdBase > itemId)
+                {
+                    wentPast = true;
+                }
+                else
+                {
+                    segmentId = segmentIt->segmentId;
+                }
+            }
+        }
+
+        auto ret     = ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
+        auto segment = mFileProperties.segmentPropertiesMap.find(segmentId);
+        if (segment != mFileProperties.segmentPropertiesMap.end())
+        {
+            auto track = segment->second.trackInfos.find(sequenceId);
+            if (track != segment->second.trackInfos.end())
+            {
+                if (itemId.get() - track->second.itemIdBase.get() < std::uint32_t(track->second.samples.size()))
+                {
+                    ret = ErrorCode::OK;
+                }
+            }
+        }
+        return ret;
+    }
+
+
     ErrorCode HeifReaderImpl::getItem(const ImageId& itemId, Overlay& iovlItem) const
     {
         if (isInitialized() != ErrorCode::OK)
@@ -686,9 +874,8 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        bool isProtected;
-        ErrorCode error = getProtection(itemId.get(), isProtected);
+        bool isProtected = false;
+        ErrorCode error  = getProtection(itemId, isProtected);
         if (error != ErrorCode::OK)
         {
             return error;
@@ -697,11 +884,11 @@ namespace HEIF
         {
             return ErrorCode::PROTECTED_ITEM;
         }
-        if (mMetaBoxInfo.at(contextId).iovlItems.count(itemId.get()) == 0)
+        if (mMetaBoxInfo.iovlItems.count(itemId) == 0)
         {
             return ErrorCode::INVALID_ITEM_ID;
         }
-        iovlItem = mMetaBoxInfo.at(contextId).iovlItems.at(itemId.get());
+        iovlItem = mMetaBoxInfo.iovlItems.at(itemId);
         return ErrorCode::OK;
     }
 
@@ -713,9 +900,8 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        bool isProtected;
-        ErrorCode error = getProtection(itemId.get(), isProtected);
+        bool isProtected = false;
+        ErrorCode error  = getProtection(itemId, isProtected);
         if (error != ErrorCode::OK)
         {
             return error;
@@ -724,11 +910,121 @@ namespace HEIF
         {
             return ErrorCode::PROTECTED_ITEM;
         }
-        if (mMetaBoxInfo.at(contextId).gridItems.count(itemId.get()) == 0)
+        if (mMetaBoxInfo.gridItems.count(itemId) == 0)
         {
             return ErrorCode::INVALID_ITEM_ID;
         }
-        gridItem = mMetaBoxInfo.at(contextId).gridItems.at(itemId.get());
+        gridItem = mMetaBoxInfo.gridItems.at(itemId);
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, Scale& iscl) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto* boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "iscl")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+        const auto isclPtr = static_cast<const ImageScaling*>(boxPtr);
+        iscl.targetWidthD  = isclPtr->getWidth().denominator;
+        iscl.targetWidthN  = isclPtr->getWidth().numerator;
+        iscl.targetHeightD = isclPtr->getHeight().denominator;
+        iscl.targetHeightN = isclPtr->getHeight().numerator;
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, CreationTimeInformation& crtt) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto* boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "crtt")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+        const auto crttPtr = static_cast<const CreationTimeProperty*>(boxPtr);
+        crtt.time          = crttPtr->getCreationTime();
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, ModificationTimeInformation& mdft) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto* boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "mdft")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+        const auto mdftPtr = static_cast<const ModificationTimeProperty*>(boxPtr);
+        mdft.time          = mdftPtr->getModificationTime();
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, AccessibilityText& altt) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto* boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "altt")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+        const auto alttPtr = static_cast<const AccessibilityTextProperty*>(boxPtr);
+        altt.lang          = makeArray<char>(alttPtr->getLang());
+        altt.text          = makeArray<char>(alttPtr->getText());
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, RequiredReferenceTypes& rref) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto* boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "rref")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+        auto rrefPtr    = static_cast<const RequiredReferenceTypesProperty*>(boxPtr);
+        auto references = rrefPtr->getReferenceTypes();
+
+        rref.referenceTypes = Array<FourCC>(references.size());
+        for (uint64_t i = 0; i < references.size(); ++i)
+        {
+            rref.referenceTypes[i] = references[i].getUInt32();
+        }
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getProperty(const PropertyId& index, UserDescription& udes) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        const auto* boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
+        if (boxPtr->getType() != "udes")
+        {
+            return ErrorCode::INVALID_PROPERTY_INDEX;
+        }
+        auto udesPtr = static_cast<const UserDescriptionProperty*>(boxPtr);
+
+        udes.lang        = makeArray<char>(udesPtr->getLang());
+        udes.name        = makeArray<char>(udesPtr->getName());
+        udes.description = makeArray<char>(udesPtr->getDescription());
+        udes.tags        = makeArray<char>(udesPtr->getTags());
         return ErrorCode::OK;
     }
 
@@ -738,19 +1034,18 @@ namespace HEIF
         {
             return ErrorCode::UNINITIALIZED;
         }
-        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        const auto* boxPtr   = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        const auto* boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
         if (boxPtr->getType() != "auxC")
         {
             return ErrorCode::INVALID_PROPERTY_INDEX;
         }
         auto auxcPtr = static_cast<const AuxiliaryTypeProperty*>(boxPtr);
 
-        const String auxType = auxcPtr->getAuxType();
-        auxc.auxType         = makeArray<char>(auxType);
+        const String& auxType = auxcPtr->getAuxType();
+        auxc.auxType          = makeArray<char>(auxType);
 
-        const auto subType = auxcPtr->getAuxSubType();
-        auxc.subType       = Array<uint8_t>(subType.size());
+        const auto& subType = auxcPtr->getAuxSubType();
+        auxc.subType        = Array<uint8_t>(subType.size());
         for (uint64_t i = 0; i < subType.size(); ++i)
         {
             auxc.subType[i] = subType[i];
@@ -767,12 +1062,12 @@ namespace HEIF
         {
             return error;
         }
-        if (mTrackInfo.at(sequenceId).auxiProperties.count(index) == 0)
+        if (mFileProperties.initTrackInfos.at(sequenceId).auxiProperties.count(index) == 0)
         {
             return ErrorCode::INVALID_SAMPLE_DESCRIPTION_INDEX;
         }
 
-        auxc.auxType = mTrackInfo.at(sequenceId).auxiProperties.at(index).auxType;
+        auxc.auxType = mFileProperties.initTrackInfos.at(sequenceId).auxiProperties.at(index).auxType;
         auxc.subType = {};  /// @todo Should read also SEI messages from sample entry to here.
         return ErrorCode::OK;
     }
@@ -785,8 +1080,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        auto boxPtr          = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        auto boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
         if (boxPtr->getType() != "imir")
         {
             return ErrorCode::INVALID_PROPERTY_INDEX;
@@ -805,8 +1099,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        auto boxPtr          = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        auto boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
         if (boxPtr->getType() != "irot")
         {
             return ErrorCode::INVALID_PROPERTY_INDEX;
@@ -825,8 +1118,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        auto boxPtr          = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        auto boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
         if (boxPtr->getType() != "rloc")
         {
             return ErrorCode::INVALID_PROPERTY_INDEX;
@@ -844,16 +1136,15 @@ namespace HEIF
         {
             return ErrorCode::UNINITIALIZED;
         }
-        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        auto boxPtr          = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        auto boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
         if (boxPtr->getType() != "pixi")
         {
             return ErrorCode::INVALID_PROPERTY_INDEX;
         }
         auto pixiPtr = static_cast<const PixelInformationProperty*>(boxPtr);
 
-        const auto bitsPerChannels = pixiPtr->getBitsPerChannels();
-        pixi.bitsPerChannel        = makeArray<uint8_t>(bitsPerChannels);
+        const auto& bitsPerChannels = pixiPtr->getBitsPerChannels();
+        pixi.bitsPerChannel         = makeArray<uint8_t>(bitsPerChannels);
         return ErrorCode::OK;
     }
 
@@ -864,8 +1155,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        auto boxPtr          = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        auto boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
         if (boxPtr->getType() != "colr")
         {
             return ErrorCode::INVALID_PROPERTY_INDEX;
@@ -889,8 +1179,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        auto boxPtr          = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        auto boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
         if (boxPtr->getType() != "pasp")
         {
             return ErrorCode::INVALID_PROPERTY_INDEX;
@@ -909,8 +1198,7 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        auto boxPtr          = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyByIndex(index.get());
+        auto boxPtr = mMetaBox.getItemPropertiesBox().getPropertyByIndex(index.get());
         if (boxPtr->getType() != "clap")
         {
             return ErrorCode::INVALID_PROPERTY_INDEX;
@@ -927,9 +1215,8 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        const auto metaBoxId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        const auto data      = mMetaBoxMap.at(metaBoxId).getItemPropertiesBox().getPropertyDataByIndex(index.get());
-        if (data.size() == 0)
+        const auto data = mMetaBox.getItemPropertiesBox().getPropertyDataByIndex(index.get());
+        if (data.empty())
         {
             return ErrorCode::INVALID_PROPERTY_INDEX;
         }
@@ -947,13 +1234,46 @@ namespace HEIF
         {
             return error;
         }
-        if (mTrackInfo.at(sequenceId.get()).clapProperties.count(index) == 0)
+        if (mFileProperties.initTrackInfos.at(sequenceId).clapProperties.count(index) == 0)
         {
             return ErrorCode::INVALID_SAMPLE_DESCRIPTION_INDEX;
         }
 
-        clap = mTrackInfo.at(sequenceId.get()).clapProperties.at(index);
+        clap = mFileProperties.initTrackInfos.at(sequenceId).clapProperties.at(index);
 
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::isValidEntityGroup(const GroupId& groupId) const
+    {
+        const auto& entityGroupings = mFileProperties.rootLevelMetaBoxProperties.entityGroupings;
+
+        auto found = std::find_if(entityGroupings.cbegin(), entityGroupings.cend(),
+                                  [&groupId](const EntityGrouping& x) { return x.groupId == groupId; });
+        if (found == entityGroupings.cend())
+        {
+            return ErrorCode::INVALID_GROUP_ID;
+        }
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::getItemProperties(const GroupId& groupId, Array<ItemPropertyInfo>& propertyTypes) const
+    {
+        ErrorCode error;
+
+        if ((error = isValidEntityGroup(groupId)) != ErrorCode::OK)
+        {
+            return error;
+        }
+
+        if (mMetaBoxInfo.properties.count(groupId.get()) == 0)
+        {
+            propertyTypes = Array<ItemPropertyInfo>();
+            return ErrorCode::OK;
+        }
+
+        propertyTypes = makeArray<ItemPropertyInfo>(mMetaBoxInfo.properties.at(groupId.get()));
         return ErrorCode::OK;
     }
 
@@ -966,13 +1286,12 @@ namespace HEIF
             return error;
         }
 
-        const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        if (mMetaBoxInfo.at(contextId).properties.count(itemId.get()) == 0)
+        if (mMetaBoxInfo.properties.count(itemId.get()) == 0)
         {
             return ErrorCode::INVALID_ITEM_ID;
         }
 
-        propertyTypes = makeArray<ItemPropertyInfo>(mMetaBoxInfo.at(contextId).properties.at(itemId.get()));
+        propertyTypes = makeArray<ItemPropertyInfo>(mMetaBoxInfo.properties.at(itemId.get()));
         return ErrorCode::OK;
     }
 
@@ -987,8 +1306,8 @@ namespace HEIF
             return error;
         }
 
-        bool isProtected;
-        error = getProtection(itemId.get(), isProtected);
+        bool isProtected = false;
+        error            = getProtection(itemId, isProtected);
         if (error != ErrorCode::OK)
         {
             return error;
@@ -1039,7 +1358,7 @@ namespace HEIF
         }
 
         // Copy item data to the buffer
-        error = getItemData(itemId.get(), &memoryBuffer[parameterSize], itemSize);
+        error = getItemData(itemId, &memoryBuffer[parameterSize], itemSize);
         if (error != ErrorCode::OK)
         {
             if (error == ErrorCode::BUFFER_SIZE_TOO_SMALL)
@@ -1056,7 +1375,7 @@ namespace HEIF
     ErrorCode HeifReaderImpl::getItemDataWithDecoderParameters(const SequenceId& sequenceId,
                                                                const SequenceImageId& itemId,
                                                                uint8_t* memoryBuffer,
-                                                               uint64_t& memoryBufferSize) const
+                                                               uint64_t& memoryBufferSize)
     {
         ErrorCode error;
         if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
@@ -1127,61 +1446,65 @@ namespace HEIF
             return error;
         }
 
-        Vector<TimestampIDPair> timestampVector;
-        for (size_t i = 0; i < mTrackInfo.at(sequenceId.get()).samples.size(); i++)
+        WriteOnceMap<Timestamp, SequenceImageId> timestampMap;
+
+        for (const auto& segment : mFileProperties.segmentPropertiesMap)
         {
-            if (mFileProperties.trackProperties.at(sequenceId)
-                    .sampleProperties.at(static_cast<uint32_t>(i))
-                    .sampleType != SampleType::NON_OUTPUT_REFERENCE_FRAME)
+            SegmentId segmentId       = segment.first;
+            SegmentTrackId segTrackId = std::make_pair(segmentId, sequenceId);
+            if (hasTrackInfo(segTrackId))
             {
-                const auto& sampleInfo = mTrackInfo.at(sequenceId).samples.at(i);
-                for (auto compositionTime : sampleInfo.compositionTimes)
+                for (const auto& sampleInfo : getTrackInfo(segTrackId).samples)
                 {
-                    timestampVector.push_back(TimestampIDPair{compositionTime, sampleInfo.decodingOrder});
+                    if (sampleInfo.sampleType == SampleType::NON_OUTPUT_REFERENCE_FRAME)
+                    {
+                        continue;
+                    }
+                    for (auto compositionTime : sampleInfo.compositionTimes)
+                    {
+                        timestampMap.insert(std::make_pair(compositionTime, sampleInfo.sampleId));
+                    }
                 }
             }
         }
 
-        // Sort using composition times
-        std::sort(timestampVector.begin(), timestampVector.end(),
-                  [&](TimestampIDPair a, TimestampIDPair b) { return a.timeStamp < b.timeStamp; });
+        timestamps = Array<TimestampIDPair>(timestampMap.size());
+        uint32_t i = 0;
+        for (auto const& entry : timestampMap)
+        {
+            TimestampIDPair pair;
+            pair.timeStamp           = entry.first;
+            pair.itemId              = entry.second;
+            timestamps.elements[i++] = pair;
+        }
 
-        timestamps = makeArray<TimestampIDPair>(timestampVector);
         return ErrorCode::OK;
     }
 
-
     ErrorCode HeifReaderImpl::getTimestampsOfItem(const SequenceId& sequenceId,
-                                                  const SequenceImageId& itemId,
+                                                  const SequenceImageId& itemIdApi,
                                                   Array<int64_t>& timestamps) const
     {
         ErrorCode error;
-        if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
+        if ((error = isValidSample(sequenceId, itemIdApi)) != ErrorCode::OK)
         {
             return error;
         }
 
-        Vector<std::int64_t> timestampVector;
-
-        if (mFileProperties.trackProperties.at(sequenceId).sampleProperties.count(itemId.get()))
+        SegmentId segmentId;
+        error = segmentIdOf(sequenceId, itemIdApi, segmentId);
+        if (error != ErrorCode::OK)
         {
-            if (mFileProperties.trackProperties.at(sequenceId).sampleProperties.at(itemId.get()).sampleType !=
-                SampleType::NON_OUTPUT_REFERENCE_FRAME)
-            {
-                const Vector<std::int64_t>& displayTimes =
-                    mTrackInfo.at(sequenceId).samples.at(itemId.get()).compositionTimes;
-                timestampVector.insert(timestampVector.begin(), displayTimes.begin(), displayTimes.end());
-            }
+            return error;
         }
-        else
-        {
-            return ErrorCode::INVALID_ITEM_ID;
-        }
+        SequenceImageId itemId = itemIdApi.get() - getTrackInfo(SegmentTrackId(segmentId, sequenceId)).itemIdBase.get();
+        SegmentTrackId segTrackId = std::make_pair(segmentId, sequenceId);
 
-        timestamps = makeArray<int64_t>(timestampVector);
+        const auto& displayTimes = getTrackInfo(segTrackId).samples.at(itemId.get()).compositionTimes;
+
+        timestamps = makeArray<int64_t>(displayTimes);
         return ErrorCode::OK;
     }
-
 
     ErrorCode HeifReaderImpl::getItemsInDecodingOrder(const SequenceId& sequenceId,
                                                       Array<TimestampIDPair>& decodingOrder) const
@@ -1192,45 +1515,62 @@ namespace HEIF
             return error;
         }
 
-        Vector<TimestampIDPair> decodingOrderVector;
-        for (const auto& sample : mTrackInfo.at(sequenceId.get()).samples)
+        DecodingOrderVector decodingOrderVector;
+
+        for (const auto& segment : mFileProperties.segmentPropertiesMap)
         {
-            for (const auto compositionTime : sample.compositionTimes)
+            SegmentId segmentId       = segment.first;
+            SegmentTrackId segTrackId = std::make_pair(segmentId, sequenceId);
+
+            if (hasTrackInfo(segTrackId))
             {
-                decodingOrderVector.push_back(TimestampIDPair{compositionTime, sample.decodingOrder});
+                const auto& samples = getTrackInfo(segTrackId).samples;
+                decodingOrderVector.reserve(samples.size());
+                for (const auto& sample : samples)
+                {
+                    for (const auto compositionTime : sample.compositionTimes)
+                    {
+                        decodingOrderVector.push_back({compositionTime, sample.sampleId});
+                    }
+                }
+
+                // Sort using composition times
+                std::sort(decodingOrderVector.begin(), decodingOrderVector.end(),
+                          [&](TimestampIDPair a, TimestampIDPair b) { return a.timeStamp < b.timeStamp; });
             }
         }
-        // Sort using composition times
-        std::sort(decodingOrderVector.begin(), decodingOrderVector.end(),
-                  [&](TimestampIDPair a, TimestampIDPair b) { return a.timeStamp < b.timeStamp; });
 
         // Add possible decoding dependencies
-        decodingOrderVector = addDecodingDependencies(sequenceId.get(), decodingOrderVector);
+        decodingOrderVector = addDecodingDependencies(sequenceId, decodingOrderVector);
 
         decodingOrder = makeArray<TimestampIDPair>(decodingOrderVector);
         return ErrorCode::OK;
     }
 
+    ErrorCode HeifReaderImpl::getDecodeDependencies(const ImageId& imageId, Array<ImageId>& dependencies) const
+    {
+        return getReferencedFromItemListByType(imageId, "pred", dependencies);
+    }
 
     ErrorCode HeifReaderImpl::getDecodeDependencies(const SequenceId& sequenceId,
                                                     const SequenceImageId& itemId,
                                                     Array<SequenceImageId>& dependencies) const
     {
         ErrorCode error;
-        if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
+        SampleProperties sampleInfo;
+        if ((error = getSampleInfo(sequenceId, itemId, sampleInfo)) != ErrorCode::OK)
         {
             return error;
         }
 
-        IdVector dependencyVector;
-        const IdVector& decodeDependencies =
-            mTrackInfo.at(sequenceId.get()).samples.at(itemId.get()).decodeDependencies;
+        Vector<SequenceImageId> dependencyVector;
+        const auto& decodeDependencies = sampleInfo.decodeDependencies;
         dependencyVector.insert(dependencyVector.begin(), decodeDependencies.cbegin(), decodeDependencies.cend());
 
         // For I-frames return item id itself.
-        if (dependencyVector.size() == 0)
+        if (dependencyVector.empty())
         {
-            dependencyVector.push_back(itemId.get());
+            dependencyVector.push_back(itemId);
         }
 
         dependencies = makeArray<SequenceImageId>(dependencyVector);
@@ -1245,9 +1585,8 @@ namespace HEIF
             return error;
         }
 
-        const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        const auto iter      = mDecoderCodeTypeMap.find(Id(contextId, itemId.get()));
-        if (iter != mDecoderCodeTypeMap.end())
+        const auto iter = mImageItemCodeTypeMap.find(itemId);
+        if (iter != mImageItemCodeTypeMap.end())
         {
             type = FourCC(iter->second.getUInt32());
             return ErrorCode::OK;
@@ -1256,24 +1595,45 @@ namespace HEIF
         return ErrorCode::INVALID_ITEM_ID;
     }
 
-    ErrorCode HeifReaderImpl::getDecoderCodeType(const SequenceId& sequenceId,
-                                                 const SequenceImageId& itemId,
-                                                 FourCC& type) const
+    ErrorCode HeifReaderImpl::getDecoderCodeType(const SequenceId& trackId,
+                                                 const SequenceImageId& sampleId,
+                                                 FourCC& decoderCodeType) const
     {
         ErrorCode error;
-        if ((error = isValidSample(sequenceId, itemId)) != ErrorCode::OK)
+        if ((error = isValidTrack(trackId)) != ErrorCode::OK)
         {
             return error;
         }
 
-        const auto iter = mDecoderCodeTypeMap.find(Id(sequenceId.get(), itemId.get()));
-        if (iter != mDecoderCodeTypeMap.end())
+        SegmentId segmentId;
+        ErrorCode result = segmentIdOf(trackId, sampleId, segmentId);
+        if (result != ErrorCode::OK)
         {
-            type = FourCC(iter->second.getUInt32());
+            return result;
+        }
+        SegmentTrackId segTrackId      = std::make_pair(segmentId, trackId);
+        const auto segmentPropertiesIt = mFileProperties.segmentPropertiesMap.find(segmentId);
+        if (segmentPropertiesIt == mFileProperties.segmentPropertiesMap.end())
+        {
+            return ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
+        }
+        const auto& segmentProperties = segmentPropertiesIt->second;
+        const auto trackInfoIt        = segmentProperties.trackInfos.find(segTrackId.second);
+        if (trackInfoIt == segmentProperties.trackInfos.end())
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+        const TrackInfoInSegment& trackInfo = trackInfoIt->second;
+        const auto& decoderCodeTypeMap      = trackInfo.decoderCodeTypeMap;
+
+        auto iter = decoderCodeTypeMap.find(sampleId);
+        if (iter != decoderCodeTypeMap.end())
+        {
+            decoderCodeType = iter->second.getUInt32();
             return ErrorCode::OK;
         }
 
-        return ErrorCode::INVALID_ITEM_ID;
+        return ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
     }
 
     ErrorCode HeifReaderImpl::getDecoderParameterSets(const ImageId& itemId, DecoderConfiguration& decoderInfos) const
@@ -1284,21 +1644,20 @@ namespace HEIF
             return error;
         }
 
-        const Id imageFullId = Id(mFileProperties.rootLevelMetaBoxProperties.contextId, itemId.get());
-        if (mImageToParameterSetMap.count(imageFullId) == 0)
+        if (mImageToParameterSetMap.count(itemId) == 0)
         {
             return ErrorCode::INVALID_ITEM_ID;
         }
-        Id parameterSetId = mImageToParameterSetMap.at(imageFullId);
+        DecoderConfigId parameterSetId = mImageToParameterSetMap.at(itemId);
 
-        const auto iter = mParameterSetMap.find(parameterSetId);
-        if (iter == mParameterSetMap.cend())
+        const auto iter = mImageItemParameterSetMap.find(parameterSetId);
+        if (iter == mImageItemParameterSetMap.cend())
         {
             return ErrorCode::FILE_HEADER_ERROR;
         }
 
         const auto& parameterSetMap      = iter->second;
-        decoderInfos.decoderConfigId     = parameterSetId.second;
+        decoderInfos.decoderConfigId     = parameterSetId;
         decoderInfos.decoderSpecificInfo = Array<DecoderSpecificInfo>(parameterSetMap.size());
 
         int i = 0;
@@ -1323,34 +1682,22 @@ namespace HEIF
             return error;
         }
 
-        const Id imageFullId = Id(sequenceId.get(), itemId.get());
-        if (mImageToParameterSetMap.count(imageFullId) == 0)
+        if (auto* parameterSetMap = getParameterSetMap(sequenceId, itemId))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            decoderInfos.decoderConfigId     = 0;  /// @todo check this
+            decoderInfos.decoderSpecificInfo = Array<DecoderSpecificInfo>(parameterSetMap->size());
+
+            unsigned int i = 0;
+            for (auto const& entry : *parameterSetMap)
+            {
+                DecoderSpecificInfo decSpecInfo;
+                decSpecInfo.decSpecInfoType                    = entry.first;
+                decSpecInfo.decSpecInfoData                    = makeArray<unsigned char>(entry.second);
+                decoderInfos.decoderSpecificInfo.elements[i++] = decSpecInfo;
+            }
+            return ErrorCode::OK;
         }
-        Id parameterSetId = mImageToParameterSetMap.at(imageFullId);
-
-        const auto iter = mParameterSetMap.find(parameterSetId);
-        if (iter == mParameterSetMap.cend())
-        {
-            return ErrorCode::INVALID_ITEM_ID;
-        }
-        assert(iter != mParameterSetMap.cend());
-
-        const auto& parameterSetMap      = iter->second;
-        decoderInfos.decoderConfigId     = parameterSetId.second;
-        decoderInfos.decoderSpecificInfo = Array<DecoderSpecificInfo>(parameterSetMap.size());
-
-        int i = 0;
-        for (auto const& entry : parameterSetMap)
-        {
-            DecoderSpecificInfo decSpecInfo;
-            decSpecInfo.decSpecInfoType                    = entry.first;
-            decSpecInfo.decSpecInfoData                    = makeArray<unsigned char>(entry.second);
-            decoderInfos.decoderSpecificInfo.elements[i++] = decSpecInfo;
-        }
-
-        return ErrorCode::OK;
+        return ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
     }
 
     ErrorCode HeifReaderImpl::getItemProtectionScheme(const ImageId& itemId,
@@ -1363,9 +1710,8 @@ namespace HEIF
             return error;
         }
 
-        const auto contextId = mFileProperties.rootLevelMetaBoxProperties.contextId;
-        bool isProtected;
-        error = getProtection(itemId.get(), isProtected);
+        bool isProtected = false;
+        error            = getProtection(itemId.get(), isProtected);
         if (error != ErrorCode::OK)
         {
             return error;
@@ -1375,7 +1721,7 @@ namespace HEIF
             return ErrorCode::UNPROTECTED_ITEM;
         }
 
-        const auto& meta     = mMetaBoxMap.at(contextId);
+        const auto& meta     = mMetaBox;
         const uint16_t index = static_cast<uint16_t>(
             meta.getItemInfoBox().getItemById(itemId.get()).getItemProtectionIndex() - 1);  // convert index to 0-based
 
@@ -1391,4 +1737,170 @@ namespace HEIF
 
         return ErrorCode::OK;
     }
+
+    ErrorCode HeifReaderImpl::getTrackInformations(Array<TrackInformation>& trackInfos) const
+    {
+        if (isInitialized() != ErrorCode::OK)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        const size_t totalSize   = mFileProperties.initTrackInfos.size();
+        trackInfos               = Array<TrackInformation>(totalSize);
+        uint32_t outTrackIdxBase = 0;
+        size_t i                 = 0;
+
+        uint32_t outTrackIdx = outTrackIdxBase;
+
+        for (auto const& trackPropsKv : mFileProperties.initTrackInfos)
+        {
+            SequenceId trackId                                = trackPropsKv.first;
+            const InitTrackInfo& initTrackInfo                = trackPropsKv.second;
+            trackInfos.elements[outTrackIdx].trackId          = trackId;
+            trackInfos.elements[outTrackIdx].alternateGroupId = initTrackInfo.alternateGroupId;
+            trackInfos.elements[outTrackIdx].features         = initTrackInfo.trackFeature.getFeatureMask();
+            trackInfos.elements[outTrackIdx].timeScale        = mFileProperties.initTrackInfos.at(trackId).timeScale;
+
+            trackInfos.elements[outTrackIdx].alternateTrackIds = makeArray<SequenceId>(initTrackInfo.alternateTrackIds);
+
+            trackInfos.elements[outTrackIdx].referenceTrackIds = mapToArray(initTrackInfo.referenceTrackIds);
+
+            trackInfos.elements[outTrackIdx].trackGroupIds = Array<FourCCToIds>(initTrackInfo.trackGroupInfoMap.size());
+            i                                              = 0;
+            for (auto const& group : initTrackInfo.trackGroupInfoMap)
+            {
+                trackInfos.elements[outTrackIdx].trackGroupIds[i].type     = FourCC(group.first.getUInt32());
+                trackInfos.elements[outTrackIdx].trackGroupIds[i].trackIds = makeArray<SequenceId>(group.second.ids);
+                i++;
+            }
+            outTrackIdx++;
+        }
+
+        // rewind and loop again, but this time we are interested only in samples
+
+        Map<uint32_t, size_t> trackSampleCounts;  // sum of the number of samples for each outTrackIdx
+
+        Vector<SequenceId> initSegTrackIds;
+        {
+            uint32_t count = 0;
+            for (auto const& initTrackInfosKv : mFileProperties.initTrackInfos)
+            {
+                initSegTrackIds.push_back(initTrackInfosKv.first);
+                trackSampleCounts[count + outTrackIdxBase] = 0u;
+                ++count;
+            }
+        }
+
+        for (auto const& allSegmentProperties : mFileProperties.segmentPropertiesMap)
+        {
+            const auto& segTrackInfos = allSegmentProperties.second.trackInfos;
+            outTrackIdx               = outTrackIdxBase;
+            for (SequenceId trackId : initSegTrackIds)
+            {
+                auto trackInfo = segTrackInfos.find(trackId);
+                if (trackInfo != segTrackInfos.end())
+                {
+                    trackSampleCounts[outTrackIdx] += trackInfo->second.samples.size();
+                }
+                ++outTrackIdx;
+            }
+        }
+
+        for (auto const& trackSampleCount : trackSampleCounts)
+        {
+            auto counttrackid                                  = trackSampleCount.first;
+            auto count                                         = trackSampleCount.second;
+            trackInfos.elements[counttrackid].sampleProperties = Array<SampleInformation>(count);
+            trackInfos.elements[counttrackid].maxSampleSize    = 0;
+        }
+
+        Map<uint32_t, size_t> sampleOffset;
+        for (auto const& segment : segmentsBySequence())
+        {
+            outTrackIdx = outTrackIdxBase;
+            for (SequenceId trackId : initSegTrackIds)
+            {
+                auto trackInfoIt = segment.trackInfos.find(trackId);
+                if (trackInfoIt != segment.trackInfos.end())
+                {
+                    const auto& trackInfo = trackInfoIt->second;
+                    i                     = sampleOffset[outTrackIdx];
+
+                    if (trackInfo.hasTtyp)
+                    {
+                        const auto& tBox                                    = trackInfo.ttyp;
+                        trackInfos.elements[outTrackIdx].hasTypeInformation = true;
+                        trackInfos.elements[outTrackIdx].type.majorBrand    = tBox.getMajorBrand().getUInt32();
+                        trackInfos.elements[outTrackIdx].type.minorVersion  = tBox.getMinorVersion();
+
+                        Vector<FourCC> convertedCompatibleBrands;
+                        for (const auto& compatibleBrand : tBox.getCompatibleBrands())
+                        {
+                            convertedCompatibleBrands.push_back(FourCC(compatibleBrand.getUInt32()));
+                        }
+                        trackInfos.elements[outTrackIdx].type.compatibleBrands =
+                            makeArray<FourCC>(convertedCompatibleBrands);
+                    }
+                    else
+                    {
+                        trackInfos.elements[outTrackIdx].hasTypeInformation = false;
+                    }
+
+                    if (!trackInfo.samples.empty())
+                    {
+                        std::uint64_t sum = 0;
+                        for (const auto& sample : trackInfo.samples)
+                        {
+                            sum += static_cast<std::uint64_t>(sample.sampleDurationTS);
+                        }
+                        auto timeScale = mFileProperties.initTrackInfos.at(trackId).timeScale;
+                        trackInfos.elements[outTrackIdx].frameRate =
+                            Rational{timeScale, sum / trackInfo.samples.size()};
+                    }
+
+                    for (auto const& sample : trackInfo.samples)
+                    {
+                        trackInfos.elements[outTrackIdx].sampleProperties[i].sampleId = sample.sampleId.get();
+                        trackInfos.elements[outTrackIdx].sampleProperties[i].sampleEntryType =
+                            sample.sampleEntryType.getUInt32();
+                        trackInfos.elements[outTrackIdx].sampleProperties[i].sampleDescriptionIndex =
+                            sample.sampleDescriptionIndex.get();
+                        trackInfos.elements[outTrackIdx].sampleProperties[i].sampleType = sample.sampleType;
+                        trackInfos.elements[outTrackIdx].sampleProperties[i].segmentId  = segment.segmentId.get();
+                        if (!sample.compositionTimes.empty() != 0u)
+                        {
+                            // Edit list has been applied to these timestamps already, so negative times shouldn't be
+                            // present.
+                            trackInfos.elements[outTrackIdx].sampleProperties[i].earliestTimestamp =
+                                static_cast<std::uint64_t>(sample.compositionTimes.at(0));
+                            trackInfos.elements[outTrackIdx].sampleProperties[i].earliestTimestampTS =
+                                sample.compositionTimesTS.at(0);
+                        }
+                        else
+                        {
+                            trackInfos.elements[outTrackIdx].sampleProperties[i].earliestTimestamp   = 0;
+                            trackInfos.elements[outTrackIdx].sampleProperties[i].earliestTimestampTS = 0;
+                        }
+                        trackInfos.elements[outTrackIdx].sampleProperties[i].sampleFlags.flagsAsUInt =
+                            sample.sampleFlags.flagsAsUInt;
+                        trackInfos.elements[outTrackIdx].sampleProperties[i].sampleDurationTS = sample.sampleDurationTS;
+
+                        unsigned int sampleSize = sample.dataLength;
+                        if (sampleSize > trackInfos.elements[outTrackIdx].maxSampleSize)
+                        {
+                            trackInfos.elements[outTrackIdx].maxSampleSize = sampleSize;
+                        }
+                        i++;
+                    }
+                    sampleOffset[outTrackIdx] = i;
+                }
+                ++outTrackIdx;
+            }
+
+            // outTrackIdxBase += static_cast<uint32_t>(mFileProperties.initTrackInfos.size());
+        }
+
+        return ErrorCode::OK;
+    }
+
 }  // namespace HEIF

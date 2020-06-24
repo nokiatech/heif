@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef CODINGCONSTRAINTSBOX_HPP
@@ -23,7 +25,7 @@ class CodingConstraintsBox : public FullBox
 public:
     CodingConstraintsBox();
     CodingConstraintsBox(const CodingConstraintsBox& other);
-    virtual ~CodingConstraintsBox() = default;
+    ~CodingConstraintsBox() override = default;
 
     /** @param [in] flag Set to true to indicate that samples that are not sync samples, if any,
      *                   are predicted only from sync samples. */
@@ -49,10 +51,10 @@ public:
     std::uint8_t getMaxRefPicUsed() const;
 
     /** @see Box::writeBox() */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @see Box::parseBox() */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     bool mAllRefPicsIntra;        ///< CodingConstraintsBox field all_ref_pics_intra

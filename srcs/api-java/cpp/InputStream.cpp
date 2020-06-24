@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,7 +12,8 @@
  *
  */
 #include "InputStream.h"
-#include <assert.h>
+
+#include <cassert>
 #include <cstring>
 
 InputStream::InputStream(JNIEnv* env, jobject javaStream)
@@ -20,16 +21,16 @@ InputStream::InputStream(JNIEnv* env, jobject javaStream)
 {
     mJavaStream = env->NewGlobalRef(javaStream);
     mJavaClass  = env->GetObjectClass(javaStream);
-    assert(mJavaClass != 0);
+    assert(mJavaClass != nullptr);
 
     mSeekMethodId = env->GetMethodID(mJavaClass, "seek", "(J)Z");
-    assert(mSeekMethodId != 0);
+    assert(mSeekMethodId != nullptr);
     mPositionMethodId = env->GetMethodID(mJavaClass, "position", "()J");
-    assert(mPositionMethodId != 0);
+    assert(mPositionMethodId != nullptr);
     mSizeMethodId = env->GetMethodID(mJavaClass, "size", "()J");
-    assert(mSizeMethodId != 0);
+    assert(mSizeMethodId != nullptr);
     mReadMethodId = env->GetMethodID(mJavaClass, "read", "(Ljava/nio/ByteBuffer;J)J");
-    assert(mReadMethodId != 0);
+    assert(mReadMethodId != nullptr);
 }
 
 InputStream::~InputStream()

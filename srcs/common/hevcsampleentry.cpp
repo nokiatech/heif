@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "hevcsampleentry.hpp"
+
 #include "log.hpp"
 
 HevcSampleEntry::HevcSampleEntry()
@@ -22,13 +23,7 @@ HevcSampleEntry::HevcSampleEntry()
 {
 }
 
-HevcSampleEntry::HevcSampleEntry(const HevcSampleEntry& box)
-    : VisualSampleEntryBox(box)
-    , mHevcConfigurationBox(box.mHevcConfigurationBox)
-    , mCodingConstraintsBox(box.mCodingConstraintsBox)
-    , mIsCodingConstraintsPresent(box.mIsCodingConstraintsPresent)
-{
-}
+HevcSampleEntry::HevcSampleEntry(const HevcSampleEntry& box) = default;
 
 HevcConfigurationBox& HevcSampleEntry::getHevcConfigurationBox()
 {
@@ -92,7 +87,8 @@ void HevcSampleEntry::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping unknown box of type '" << boxType.getString() << "' inside HevcSampleEntry" << std::endl;
+            logWarning() << "Skipping unknown box of type '" << boxType.getString() << "' inside HevcSampleEntry"
+                         << std::endl;
         }
     }
 }

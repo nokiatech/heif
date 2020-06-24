@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,14 +17,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+
+#include "OutputStreamInterface.h"
 #include "heifcommondatatypes.h"
 #include "heifexport.h"
 #include "heifid.h"
-#include "OutputStreamInterface.h"
 
 namespace HEIF
 {
-    IdType(std::uint32_t, GroupId);
     IdType(std::uint32_t, MediaDataId);
 
     struct HEIF_DLL_PUBLIC OutputConfig
@@ -34,8 +34,8 @@ namespace HEIF
         const char* fileName;
 
         /**
-          * Output stream interface 
-          * If set all writes will be directed here*/
+         * Output stream interface
+         * If set all writes will be directed here*/
         OutputStreamInterface* outputStream = nullptr;
 
         /**
@@ -53,9 +53,16 @@ namespace HEIF
          * Brand four character code information stored to 'ftyp' box at the start of the file indicating content of the
          * file. If progressiveFile = false, then this information needs to be available when initialize() is called. If
          * progressiveFile = true, then further brands can be added between initialize() and finalize() with calls to
-         *                            setMajorBrand() and addCompatibleBrand(). */
+         * setMajorBrand(), addCompatibleBrand() and addCompatibleBrandCombination(). */
         FourCC majorBrand;
         Array<FourCC> compatibleBrands;
+        Array<Array<FourCC>> compatibleCombinations;
+
+        /**
+         * If true: Automatically add and associate Creation time property ('crtt') for each added image and derived
+         * image item. If false: Creation time properties are not created and associated automatically.
+         */
+        bool itemCreationTimes = false;
     };
 
     enum class MediaFormat

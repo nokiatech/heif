@@ -1,18 +1,21 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef HEIFSTREAMLINUX_HPP_
 #define HEIFSTREAMLINUX_HPP_
 
 #include <cstdio>
+
 #include "customallocator.hpp"
 #include "heifstreaminterface.h"
 
@@ -57,10 +60,10 @@ namespace HEIF
         offset_t m_size;
 
         /** Buffer contents offset from the file beginning. May be
-     * negative in case we need to reset buffer contents but preserve
-     * position.
-     * m_bufFileOffset + m_bufRead indicates the file offset of the
-     * next byte returned by read() */
+         * negative in case we need to reset buffer contents but preserve
+         * position.
+         * m_bufFileOffset + m_bufRead indicates the file offset of the
+         * next byte returned by read() */
         offset_t m_bufFileOffset;
         int m_bufRead;  //< Current read offset within the buffer. Is always <= m_bufEnd.
         int m_bufEnd;   //< Current buffer size

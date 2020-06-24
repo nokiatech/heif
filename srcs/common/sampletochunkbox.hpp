@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef SAMPLETOCHUNKBOX_HPP
@@ -23,7 +25,7 @@ class SampleToChunkBox : public FullBox
 {
 public:
     SampleToChunkBox();
-    ~SampleToChunkBox() = default;
+    ~SampleToChunkBox() override = default;
 
     /** @brief Gets the sample description index
      *  @param [in] sampleIndex sample index value
@@ -53,14 +55,14 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a SampleToChunkBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data. */
-    void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
-    /* @brief Calculate a lower bound for the number of samples
-       @param [in] chunkEntryCount number of total chunk entries from 'stco'
+    /** @brief Calculate a lower bound for the number of samples
+        @param [in] chunkEntryCount number of total chunk entries from 'stco'
     */
     uint32_t getSampleCountLowerBound(uint32_t chunkEntryCount) const;
 

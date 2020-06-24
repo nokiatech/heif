@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,9 +11,12 @@
  */
 
 #include "HEVCDecoderConfiguration.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include <cstring>
+
 #include "H26xTools.h"
 
 using namespace HEIFPP;
@@ -41,7 +44,7 @@ HEIF::ErrorCode HEVCDecoderConfiguration::convertToRawData(const HEIF::Array<HEI
         }
 
 
-        aSize += (uint32_t) aConfig[i].decSpecInfoData.size;
+        aSize += static_cast<uint32_t>(aConfig[i].decSpecInfoData.size);
     }
     std::uint8_t* d = aData = new std::uint8_t[aSize];
     for (std::size_t i = 0; i < aConfig.size; i++)
@@ -72,14 +75,20 @@ HEIF::ErrorCode HEVCDecoderConfiguration::convertFromRawData(const std::uint8_t*
             break;
         }
         HEIF::DecoderSpecInfoType type;
-        type                = (HEIF::DecoderSpecInfoType)((nal_data[0] >> 1) & 0x3f);
+        type                = static_cast<HEIF::DecoderSpecInfoType>((nal_data[0] >> 1) & 0x3f);
         std::uint32_t index = 0;
         if (type == HEIF::DecoderSpecInfoType::HEVC_VPS)
+        {
             index = 0;
+        }
         else if (type == HEIF::DecoderSpecInfoType::HEVC_SPS)
+        {
             index = 1;
+        }
         else if (type == HEIF::DecoderSpecInfoType::HEVC_PPS)
+        {
             index = 2;
+        }
         else
         {
             return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
@@ -106,7 +115,7 @@ HEIF::ErrorCode HEVCDecoderConfiguration::convertFromRawData(const std::uint8_t*
 HEIF::ErrorCode HEVCDecoderConfiguration::setConfig(const std::uint8_t* aData, std::uint32_t aSize)
 {
     delete[] mBuffer;
-    mBuffer     = 0;
+    mBuffer     = nullptr;
     mBufferSize = 0;
     mBuffer     = new std::uint8_t[aSize];
     std::memcpy(mBuffer, aData, aSize);

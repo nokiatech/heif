@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
  */
 
 #include <jni.h>
+
 #include "Helpers.h"
 #include "ImageItem.h"
 #define CLASS_NAME ImageItem
@@ -58,8 +59,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getThumbnailNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaItem(env, getJavaHEIF(env, self),
-                           nativeSelf->getThumbnail(static_cast<uint32_t>(index)));
+        return getJavaItem(env, getJavaHEIF(env, self), nativeSelf->getThumbnail(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addThumbnailNative, jobject thumbnail)
@@ -85,8 +85,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getAuxiliaryNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaItem(env, getJavaHEIF(env, self),
-                           nativeSelf->getAux(static_cast<uint32_t>(index)));
+        return getJavaItem(env, getJavaHEIF(env, self), nativeSelf->getAux(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addAuxiliaryImageNative, jobject auxiliary)
@@ -169,8 +168,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getMetadataNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaItem(env, getJavaHEIF(env, self),
-                           nativeSelf->getMetadata(static_cast<uint32_t>(index)));
+        return getJavaItem(env, getJavaHEIF(env, self), nativeSelf->getMetadata(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addMetadataNative, jobject item)

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
  */
 
 #include <jni.h>
+
 #include "DerivedImageItem.h"
 #include "Helpers.h"
 #define CLASS_NAME DerivedImageItem
@@ -28,7 +29,6 @@ extern "C"
     JNI_METHOD_ARG(jobject, getSourceImageNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaItem(env, getJavaHEIF(env, self),
-                           nativeSelf->getSourceImage(static_cast<uint32_t>(index)));
+        return getJavaItem(env, getJavaHEIF(env, self), nativeSelf->getSourceImage(static_cast<uint32_t>(index)));
     }
 }

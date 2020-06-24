@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef HEVCCONFIGURATIONBOX_HPP
@@ -24,7 +26,7 @@ class HevcConfigurationBox : public DecoderConfigurationBox
 public:
     HevcConfigurationBox();
     HevcConfigurationBox(const HevcConfigurationBox& box);
-    virtual ~HevcConfigurationBox() = default;
+    ~HevcConfigurationBox() override = default;
 
     /// @return Contained DecoderConfigurationRecord
     const HevcDecoderConfigurationRecord& getHevcConfiguration() const;
@@ -34,10 +36,10 @@ public:
     void setConfiguration(const HevcDecoderConfigurationRecord& config);
 
     /// @see Box::writeBox()
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const override;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /// @see Box::parseBox()
-    virtual void parseBox(ISOBMFF::BitStream& bitstr) override;
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     HevcDecoderConfigurationRecord mHevcConfig;  ///< HEVCConfigurationBox field HEVCConfig

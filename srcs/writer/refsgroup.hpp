@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef REFSGROUP_HPP
@@ -14,6 +16,7 @@
 
 #include <set>
 #include <tuple>
+
 #include "samplegroup.hpp"
 
 class SampleGroupDescriptionBox;
@@ -27,7 +30,7 @@ class RefsGroup : public SampleGroup
 {
 public:
     RefsGroup();
-    virtual ~RefsGroup() = default;
+    ~RefsGroup() override = default;
 
     typedef Vector<Vector<std::uint32_t>> RefsList;  ///< List of reference groups as a vector of vectors
 
@@ -43,13 +46,13 @@ public:
      * method to tie entries to sample.
      * @param [out] sgpd SampleGroupDescriptionBox.
      */
-    void fillSgpd(SampleGroupDescriptionBox* sgpd);
+    void fillSgpd(SampleGroupDescriptionBox* sgpd) override;
 
     /**
      * @brief Fill the SampleToGroup Box
      * @param [in] sbgp SampleToGroupBox.
      */
-    void fillSbgp(SampleToGroupBox& sbgp);
+    void fillSbgp(SampleToGroupBox& sbgp) override;
 
 private:
     typedef std::tuple<std::uint32_t, Vector<std::uint32_t>> RefsEntry;  ///< Internal storage of refs entries

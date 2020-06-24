@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef ITEMPROTECTIONBOX_HPP
@@ -22,7 +24,7 @@ class ItemProtectionBox : public FullBox
 {
 public:
     ItemProtectionBox();
-    virtual ~ItemProtectionBox() = default;
+    ~ItemProtectionBox() override = default;
 
     /** @return Number of contained Protection Scheme Info Boxes */
     std::uint16_t getProtectionCount() const;
@@ -38,11 +40,11 @@ public:
 
     /** Write box to ISOBMFF::BitStream.
      *  @see Box::writeBox() */
-    virtual void writeBox(ISOBMFF::BitStream& bitstream) const;
+    void writeBox(ISOBMFF::BitStream& bitstream) const override;
 
     /** Read box from ISOBMFF::BitStream.
      *  @see Box::parseBox() */
-    virtual void parseBox(ISOBMFF::BitStream& bitstream);
+    void parseBox(ISOBMFF::BitStream& bitstream) override;
 
 private:
     Vector<ProtectionSchemeInfoBox> mProtectionInformation;  ///< 'sinf' boxes

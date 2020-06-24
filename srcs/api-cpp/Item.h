@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -66,7 +66,7 @@ namespace HEIFPP
         const ItemProperty* getProperty(uint32_t aIndex) const;
 
         /** Returns if the property is essential
-         * @param [in] aIndex: The index of the property */
+         * @param [in] aId: The index of the property */
         bool isEssential(uint32_t aId) const;
 
         /** Returns if the property is essential
@@ -74,7 +74,7 @@ namespace HEIFPP
         bool isEssential(const ItemProperty* aProperty) const;
 
         /** Sets the essential flag for the property
-         * @param [in] aIndex: Index of the property
+         * @param [in] aId: Index of the property
          * @param [in] aEssential: If the property is essential */
         void setEssential(uint32_t aId, bool aEssential);
 
@@ -87,9 +87,9 @@ namespace HEIFPP
         Heif* getHeif();
         const Heif* getHeif() const;
 
-
         const std::string& getName() const;
         void setName(const std::string& aName);
+
         // groups
         std::uint32_t getGroupCount() const;
         EntityGroup* getGroup(uint32_t aId);
@@ -113,14 +113,14 @@ namespace HEIFPP
         const std::string& getContentType() const;
 
         /** Sets the content type of the MimeItem
-        * @param [in] aType: Content type */
+         * @param [in] aType: Content type */
         HEIFPP::Result setContentType(const std::string& aType);
 
         /** Gets the content encoding of the MimeItem */
         const std::string& getContentEncoding() const;
 
         /** Sets the content encoding of the MimeItem
-        * @param [in] aType: Encoding type */
+         * @param [in] aType: Encoding type */
         HEIFPP::Result setContentEncoding(const std::string& aType);
 
 

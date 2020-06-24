@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
  */
 
 #include <jni.h>
+
 #include "Helpers.h"
 #include "MPEG7Item.h"
 #define CLASS_NAME MPEG7Item
@@ -22,7 +23,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::MPEG7Item* nativeObject = new HEIFPP::MPEG7Item(nativeHeif);
+        auto* nativeObject = new HEIFPP::MPEG7Item(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
  */
 
 #include <jni.h>
+
 #include "Helpers.h"
 #include "OverlayImageItem.h"
 
@@ -24,7 +25,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::OverlayImageItem *nativeObject = new HEIFPP::OverlayImageItem(nativeHeif);
+        auto *nativeObject = new HEIFPP::OverlayImageItem(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 

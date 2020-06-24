@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,7 +13,9 @@
  */
 
 #include <jni.h>
+
 #include <cstring>
+
 #include "DescriptiveProperty.h"
 #include "Helpers.h"
 
@@ -25,7 +27,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        HEIFPP::PixelInformationProperty *nativeObject = new HEIFPP::PixelInformationProperty(nativeHeif);
+        auto *nativeObject = new HEIFPP::PixelInformationProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -40,8 +42,8 @@ extern "C"
     JNI_METHOD_ARG(void, setPixelInformationNative, jbyteArray data)
     {
         NATIVE_SELF;
-        jbyte *nativeData = env->GetByteArrayElements(data, 0);
-        uint32_t dataSize = static_cast<uint32_t>(env->GetArrayLength(data));
+        jbyte *nativeData = env->GetByteArrayElements(data, nullptr);
+        auto dataSize     = static_cast<uint32_t>(env->GetArrayLength(data));
 
         nativeSelf->mPixelInformation.bitsPerChannel = HEIF::Array<uint8_t>(dataSize);
         std::memcpy(nativeSelf->mPixelInformation.bitsPerChannel.elements, nativeData, dataSize);

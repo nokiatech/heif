@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -91,6 +91,7 @@ namespace HEIF
     instance(uint16_t);
     instance(uint32_t);
     instance(uint64_t);
+    instance(Array<FourCC>);
 
 #if HEIF_READER_LIB
     instance(EntityGrouping);
@@ -107,6 +108,7 @@ namespace HEIF
     instance(TimestampIDPair);
     instance(TrackInformation);
     instance(EditUnit);
+    instance(SegmentInformation);
 
 #endif
 #if HEIF_WRITER_LIB

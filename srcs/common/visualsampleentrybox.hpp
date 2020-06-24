@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef VISUALSAMPLEENTRYBOX_HPP
@@ -22,17 +24,17 @@ class CodingConstraintsBox;
 class AuxiliaryTypeInfoBox;
 
 /** @brief VisualSampleEntryBox class. Extends from SampleEntryBox.
- *  @details This box contains information related to the visual samples of the track as defined in the ISOBMFF standard.
+ *  @details This box contains information related to the visual samples of the track as defined in the ISOBMFF
+ * standard.
  *  @details there may be multiple visual sample entries which map to different samples in the track. */
 
 class VisualSampleEntryBox : public SampleEntryBox
 {
 public:
-    VisualSampleEntryBox(FourCCInt codingName,
-                         const String& compressorName);
+    VisualSampleEntryBox(FourCCInt codingName, String compressorName);
     VisualSampleEntryBox(const VisualSampleEntryBox& box);
 
-    virtual ~VisualSampleEntryBox() = default;
+    ~VisualSampleEntryBox() override = default;
 
     /** @brief Sets sample's display width as defined in ISOBMFF
      *  @param [in] width sample's display width */
@@ -62,7 +64,7 @@ public:
     void createAuxi();
 
     /** @brief Gets sample's AuxiliaryTypeInfoBox as defined in ISOBMFF
-    *  @returns Sample's AuxiliaryTypeInfoBox */
+     *  @returns Sample's AuxiliaryTypeInfoBox */
     const AuxiliaryTypeInfoBox* getAuxi() const;
     AuxiliaryTypeInfoBox* getAuxi();
 
@@ -87,7 +89,7 @@ public:
     }
 
     /** @brief Check if CodingConstraintsBox is present
- *  @return TRUE if CodingConstraintsBox is present, FALSE otherwise */
+     *  @return TRUE if CodingConstraintsBox is present, FALSE otherwise */
     bool isCodingConstraintsBoxPresent() const
     {
         // Check if pointer to CodingConstraintsBox is valid, doesn't modify anything.
@@ -96,15 +98,16 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const override;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a VisualSampleEntryBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr) override;
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
     /** @brief Check if this sample entry is a visual sample
-    *  @return TRUE */
-    virtual bool isVisual() const override;
+     *  @return TRUE */
+    bool isVisual() const override;
+
 private:
     std::uint16_t mWidth;                         ///< Sample display width
     std::uint16_t mHeight;                        ///< Sample display height

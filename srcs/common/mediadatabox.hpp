@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,11 +14,11 @@
 #ifndef MEDIADATABOX_HPP
 #define MEDIADATABOX_HPP
 
+#include <cstdint>
+
 #include "bbox.hpp"
 #include "bitstream.hpp"
 #include "customallocator.hpp"
-
-#include <cstdint>
 
 /** @brief Media Data Box class. Extends from Box.
  *  @details 'mdat' box contains media data as defined in the ISOBMFF and HEIF standards. */
@@ -26,7 +26,7 @@ class MediaDataBox : public Box
 {
 public:
     MediaDataBox();
-    ~MediaDataBox() = default;
+    ~MediaDataBox() override = default;
 
     /** @brief Add data to the media data container.
      *  @details the data is inserted to the mData private member but not serialized until writeBox() is called.
@@ -54,22 +54,23 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a MediaDataBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
     /** @brief Update box size information in header data */
     void updateSize(ISOBMFF::BitStream& bitstr);
 
     /** @brief returns raw serialized data ready to be written to file.
-    *  @param [out] output headerdata and mediadata. */
+     *  @param [out] output headerdata and mediadata. */
     std::pair<const ISOBMFF::BitStream&, const List<Vector<uint8_t>>&> getSerializedData() const;
+
 private:
-    ISOBMFF::BitStream mHeaderData;         // header container
-    List<Vector<uint8_t>> mMediaData;       // media data container
-    uint64_t mTotalDataSize;                // total size of mMediaData vectors
+    ISOBMFF::BitStream mHeaderData;    // header container
+    List<Vector<uint8_t>> mMediaData;  // media data container
+    uint64_t mTotalDataSize;           // total size of mMediaData vectors
 
 
     Vector<std::uint64_t> mDataOffsetArray;  // offsets relative to the beginning of the media data box

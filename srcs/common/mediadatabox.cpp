@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -31,20 +31,9 @@ MediaDataBox::MediaDataBox()
     writeBoxHeader(mHeaderData);  // write Box header
 }
 
-//void MediaDataBox::writeBox(std::ofstream& output) const
-/*void MediaDataBox::writeBox(InternalOutputStream* output) const
-{
-    output->write(reinterpret_cast<const char*>(mHeaderData.getStorage().data()),
-                 static_cast<streamsize>(mHeaderData.getStorage().size()));
-    for (const auto& dataBlock : mMediaData)
-    {
-        output->write(reinterpret_cast<const char*>(dataBlock.data()), static_cast<streamsize>(dataBlock.size()));
-    }
-}*/
-
 std::pair<const ISOBMFF::BitStream&, const List<Vector<uint8_t>>&> MediaDataBox::getSerializedData() const
 {
-    return { mHeaderData,mMediaData };
+    return {mHeaderData, mMediaData};
 }
 
 void MediaDataBox::writeBox(ISOBMFF::BitStream& bitstr) const
@@ -176,8 +165,7 @@ void MediaDataBox::addNalData(const Vector<uint8_t>& srcData)
         mediaDataEntry.push_back(static_cast<uint8_t>((uint32_t(nalLen) >> 8) & 0xff));
         mediaDataEntry.push_back(static_cast<uint8_t>(uint32_t(nalLen) & 0xff));
 
-        Vector<uint8_t>::const_iterator sourceIt =
-            srcData.begin() + static_cast<Vector<uint8_t>::difference_type>(currPos);
+        auto sourceIt = srcData.begin() + static_cast<Vector<uint8_t>::difference_type>(currPos);
         mediaDataEntry.insert(mediaDataEntry.end(), sourceIt,
                               sourceIt + static_cast<Vector<uint8_t>::difference_type>(nalLen));
 

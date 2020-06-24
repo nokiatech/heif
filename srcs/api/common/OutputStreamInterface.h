@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,6 +15,7 @@
 #define OUTPUTSTREAMINTERFACE_HPP
 
 #include <cstdint>
+
 #include "heifexport.h"
 
 namespace HEIF
@@ -25,30 +26,34 @@ namespace HEIF
         virtual ~OutputStreamInterface() = default;
 
         /** Sets current write position
-        @param [aPosition] Position in stream where next write will occur. */
-        virtual void seekp(std::uint64_t aPosition) = 0;
+         * @param position [in] Position in stream where next write will occur.
+         */
+        virtual void seekp(std::uint64_t position) = 0;
 
         /** Returns current position in stream.
-        @return Current position in stream. */
+         * @return Current position in stream.
+         */
         virtual std::uint64_t tellp() = 0;
 
         /** Writes data to stream
-        @param [buffer] The buffer of date to write to the stream
-        @param [size]   The number of bytes to write to the stream
-        */
-        virtual void write(const void* aBuffer, std::uint64_t aSize) = 0;
+         * @param buffer [in] The buffer of date to write to the stream.
+         * @param size   [in] The number of bytes to write to the stream.
+         */
+        virtual void write(const void* buffer, std::uint64_t size) = 0;
 
         /** Request to remove the file.
-            Called on error cases to cleanup partial files.
-        */
+         *  Called on error cases to cleanup partial files.
+         */
         virtual void remove() = 0;
-    protected:
-        OutputStreamInterface() = default;  //ctor    
-        OutputStreamInterface & operator=(const OutputStreamInterface&) = delete;   //copy assignment
-        OutputStreamInterface & operator=(OutputStreamInterface&&) = delete;        //move assignment
-        OutputStreamInterface(OutputStreamInterface&) = delete;                     //copy ctor
-        OutputStreamInterface(OutputStreamInterface&&) = delete;                    //move ctor
 
+    protected:
+        OutputStreamInterface()        = default;                                 // ctor
+        OutputStreamInterface& operator=(const OutputStreamInterface&) = delete;  // copy assignment
+        OutputStreamInterface& operator=(OutputStreamInterface&&) = delete;       // move assignment
+        OutputStreamInterface(OutputStreamInterface&)             = delete;       // copy ctor
+        OutputStreamInterface(OutputStreamInterface&&)            = delete;       // move ctor
     };
-}
+
+    OutputStreamInterface* ConstructFileStream(const char* aFilename);
+}  // namespace HEIF
 #endif

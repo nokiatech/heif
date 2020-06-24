@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -66,16 +66,24 @@ Vector<uint8_t> convertByteStreamToRBSP(const Vector<uint8_t>& byteStr)
         {
         case State::COPY_DATA:
             if (byte != 0)
+            {
                 state = State::COPY_DATA;
+            }
             else
+            {
                 state = State::ONE_ZERO_FOUND;
+            }
             break;
 
         case State::ONE_ZERO_FOUND:
             if (byte != 0)
+            {
                 state = State::COPY_DATA;
+            }
             else
+            {
                 state = State::TWO_ZEROS_FOUND;
+            }
             break;
 
         case State::TWO_ZEROS_FOUND:
@@ -89,9 +97,13 @@ Vector<uint8_t> convertByteStreamToRBSP(const Vector<uint8_t>& byteStr)
                 state = State::COPY_DATA;
             }
             else if (byte == 0)
+            {
                 state = State::TWO_ZEROS_FOUND;
+            }
             else
+            {
                 state = State::COPY_DATA;
+            }
             break;
         }
     }

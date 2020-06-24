@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -20,7 +20,7 @@ namespace HEIFPP
     {
     public:
         OverlayImageItem(Heif* aHeif);
-        ~OverlayImageItem() = default;
+        ~OverlayImageItem() override = default;
 
         /** Returns the red component of the background color. The RGB values are in the sRGB color space as defined in
          * IEC 61966-2-1.
@@ -43,19 +43,19 @@ namespace HEIFPP
         std::uint16_t a() const;
 
         /** Sets the red component for the background color
-         * @param [in] aR: The value in the range of 0 to 65535 */
+         * @param [in] aR The value in the range of 0 to 65535 */
         void setR(std::uint16_t aR);
 
         /** Sets the green component for the background color
-         * @param [in] aR: The value in the range of 0 to 65535 */
+         * @param [in] aG The value in the range of 0 to 65535 */
         void setG(std::uint16_t aG);
 
         /** Sets the blue component for the background color
-         * @param [in] aR: The value in the range of 0 to 65535 */
+         * @param [in] aB The value in the range of 0 to 65535 */
         void setB(std::uint16_t aB);
 
         /** Sets the alpha component for the background color
-         * @param [in] aR: The value in the range of 0 to 65535 */
+         * @param [in] aA The value in the range of 0 to 65535 */
         void setA(std::uint16_t aA);
 
         /** Returns the count of images in the overlay */
@@ -95,10 +95,10 @@ namespace HEIFPP
 
     private:
         OverlayImageItem& operator=(const OverlayImageItem&) = delete;
-        OverlayImageItem& operator=(OverlayImageItem&&)      = delete;
-        OverlayImageItem(const OverlayImageItem&)            = delete;
-        OverlayImageItem(OverlayImageItem&&)                 = delete;
-        OverlayImageItem()                          = delete;
+        OverlayImageItem& operator=(OverlayImageItem&&) = delete;
+        OverlayImageItem(const OverlayImageItem&)       = delete;
+        OverlayImageItem(OverlayImageItem&&)            = delete;
+        OverlayImageItem()                              = delete;
     };
 
 }  // namespace HEIFPP

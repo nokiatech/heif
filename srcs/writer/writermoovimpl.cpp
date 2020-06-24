@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
 
 #include <cassert>
 #include <limits>
+
 #include "auxiliarytypeinfobox.hpp"
 #include "avcsampleentry.hpp"
 #include "cleanaperturebox.hpp"
@@ -173,7 +174,7 @@ namespace HEIF
                 {
                     spsFound = true;
                     decCfg.addNalUnit(nalVector, HevcNalUnitType::SPS, true);
-                    decCfg.makeConfigFromSPS(nalVector, 0.0);
+                    decCfg.makeConfigFromSPS(nalVector);
                 }
                 else
                 {
@@ -293,7 +294,7 @@ namespace HEIF
             return ErrorCode::INVALID_FUNCTION_PARAMETER;  // timebase / timebase can't be zero
         }
 
-        uint32_t currentTime = getSecondsSince1904();
+        uint32_t currentTime = TimeUtility::getSecondsSince1904();
         if (!mImageSequences.size())
         {
             mMovieBox.getMovieHeaderBox().setCreationTime(currentTime);
@@ -565,14 +566,6 @@ namespace HEIF
             {
                 if (sample.sequenceImageId == sequenceImageId)
                 {
-                    if (hidden && !sample.isHidden)
-                    {
-                        sequence.second.duration -= sample.sampleDuration;
-                    }
-                    else if (!hidden && sample.isHidden)
-                    {
-                        sequence.second.duration += sample.sampleDuration;
-                    }
                     sample.isHidden = hidden;
                     success         = true;
                 }
@@ -685,7 +678,7 @@ namespace HEIF
     /* *************************************************************** */
     ErrorCode WriterImpl::generateMoovBox()
     {
-        uint32_t modificationTime = getSecondsSince1904();
+        uint32_t modificationTime = TimeUtility::getSecondsSince1904();
         uint64_t movieDuration    = 0;
         uint32_t movieTimescale   = 1000;
 
@@ -1451,7 +1444,7 @@ namespace HEIF
         // Set total duration based on repetitions
         if (editList.looping && editList.repetitions > 0.0)
         {
-            duration = static_cast<uint64_t>((double) duration * editList.repetitions);
+            duration = static_cast<uint64_t>(static_cast<double>(duration) * editList.repetitions);
         }
 
         return duration * movieTimeScale / sequence.timeBase.den;
@@ -1593,7 +1586,7 @@ namespace HEIF
             return ErrorCode::INVALID_FUNCTION_PARAMETER;  // timebase / timebase can't be zero
         }
 
-        uint32_t currentTime = getSecondsSince1904();
+        uint32_t currentTime = TimeUtility::getSecondsSince1904();
         if (!mImageSequences.size())
         {
             mMovieBox.getMovieHeaderBox().setCreationTime(currentTime);
@@ -1664,7 +1657,7 @@ namespace HEIF
             return ErrorCode::INVALID_FUNCTION_PARAMETER;  // timebase / timebase can't be zero
         }
 
-        uint32_t currentTime = getSecondsSince1904();
+        uint32_t currentTime = TimeUtility::getSecondsSince1904();
         if (!mImageSequences.size())
         {
             mMovieBox.getMovieHeaderBox().setCreationTime(currentTime);

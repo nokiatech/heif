@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,8 +12,10 @@
  */
 
 #include "chunkoffsetbox.hpp"
+
 #include <algorithm>
 #include <limits>
+
 #include "bitstream.hpp"
 
 ChunkOffsetBox::ChunkOffsetBox()
@@ -53,17 +55,17 @@ void ChunkOffsetBox::writeBox(ISOBMFF::BitStream& bitstr) const
     bitstr.write32Bits(static_cast<uint32_t>(mChunkOffsets.size()));
     if (getType() == "stco")
     {
-        for (uint32_t i = 0; i < mChunkOffsets.size(); ++i)
+        for (unsigned long chunkOffset : mChunkOffsets)
         {
-            bitstr.write32Bits(static_cast<uint32_t>(mChunkOffsets.at(i)));
+            bitstr.write32Bits(static_cast<uint32_t>(chunkOffset));
         }
     }
     else
     {
         // This is a ChunkLargeOffsetBox 'co64' with unsigned int (64) chunk_offsets.
-        for (uint32_t i = 0; i < mChunkOffsets.size(); ++i)
+        for (unsigned long chunkOffset : mChunkOffsets)
         {
-            bitstr.write64Bits(mChunkOffsets.at(i));
+            bitstr.write64Bits(chunkOffset);
         }
     }
 

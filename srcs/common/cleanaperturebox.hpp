@@ -1,18 +1,21 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef CLEANAPERTUREBOX_HPP
 #define CLEANAPERTUREBOX_HPP
 
 #include <cstdint>
+
 #include "bbox.hpp"
 #include "customallocator.hpp"
 
@@ -22,7 +25,7 @@ class CleanApertureBox : public Box
 {
 public:
     CleanApertureBox();
-    virtual ~CleanApertureBox() = default;
+    ~CleanApertureBox() override = default;
 
     /// A helper for getting and setting class data fractional numbers
     struct Fraction
@@ -58,10 +61,10 @@ public:
     Fraction getVertOffset() const;
 
     /// @see Box::writeBox()
-    virtual void writeBox(ISOBMFF::BitStream& output) const;
+    void writeBox(ISOBMFF::BitStream& output) const override;
 
     /// @see Box::parseBox()
-    virtual void parseBox(ISOBMFF::BitStream& input);
+    void parseBox(ISOBMFF::BitStream& input) override;
 
 private:
     Fraction mWidth;        ///< Clean aperture width, @see setWidth()

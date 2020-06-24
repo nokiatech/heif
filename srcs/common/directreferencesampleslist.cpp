@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -49,8 +49,8 @@ const Vector<std::uint32_t>& DirectReferenceSamplesList::getDirectReferenceSampl
 std::uint32_t DirectReferenceSamplesList::getSize() const
 {
     // Sizes: sample_id (4 bytes), num_referenced_samples (1 byte), reference_sample_id (4 bytes) * number of references
-    const uint32_t size = static_cast<uint32_t>(sizeof(mSampleId) + sizeof(uint8_t) +
-                                                (sizeof(uint32_t) * mDirectReferenceSampleIds.size()));
+    const auto size = static_cast<uint32_t>(sizeof(mSampleId) + sizeof(uint8_t) +
+                                            (sizeof(uint32_t) * mDirectReferenceSampleIds.size()));
     return size;
 }
 

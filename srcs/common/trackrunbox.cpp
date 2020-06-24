@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "trackrunbox.hpp"
+
 #include <stdexcept>
 
 TrackRunBox::TrackRunBox(uint8_t version, std::uint32_t tr_flags)
@@ -138,7 +139,7 @@ void TrackRunBox::parseBox(ISOBMFF::BitStream& bitstr)
 {
     parseFullBoxHeader(bitstr);
     mSampleCount = bitstr.read32Bits();
-    if (mSampleCount > MP4VR_ABSOLUTE_MAX_SAMPLE_COUNT)
+    if (mSampleCount > IMPLEMENTATION_ABSOLUTE_MAX_SAMPLE_COUNT)
     {
         throw RuntimeError("Over max sample counts from TrackRunBox::parseBox");
     }

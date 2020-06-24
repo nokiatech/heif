@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,9 +16,10 @@
 #include <heifcommondatatypes.h>
 #include <heifreaderdatatypes.h>
 #include <heifwriterdatatypes.h>
-
 #include <helpers.h>
+
 #include <string>
+
 #include "ErrorCodes.h"
 
 namespace HEIF
@@ -51,7 +52,6 @@ namespace HEIFPP
     class PixelInformationProperty;
     class RelativeLocationProperty;
     class AuxiliaryProperty;
-    class RawProperty;
     class Heif;
     class DecoderConfig;
     class EntityGroup;
@@ -108,23 +108,25 @@ namespace HEIFPP
 
         /** Load content from file.
          *  @param [in] fileName File to open.
+         *  @param [in] loadMode Control how data is loaded, see PreloadMode.
          *  @return Result: Possible error code */
-        Result load(const char* aFilename, PreloadMode loadMode = LOAD_ALL_DATA);
+        Result load(const char* fileName, PreloadMode loadMode = LOAD_ALL_DATA);
 
         /** Load content from a stream.
-         *  @param [in] aStream Stream to read the file from.
+         *  @param [in] stream   Stream to read the file from.
+         *  @param [in] loadMode Control how data is loaded, see PreloadMode.
          *  @return Result: Possible error code */
-        Result load(HEIF::StreamInterface* aStream, PreloadMode loadMode = LOAD_ALL_DATA);
+        Result load(HEIF::StreamInterface* stream, PreloadMode loadMode = LOAD_ALL_DATA);
 
         /** Save content to file.
-         *  @param [in] fileName File to open.
-         *  @return Result: Possible error code*/
-        Result save(const char* aFileName);
+         *  @param [in] fileName Name of the saved file.
+         *  @return Result: Possible error code */
+        Result save(const char* fileName);
 
-        /** Save content to file.
-         *  @param [in] fileName File to open.
-         *  @return Result: Possible error code*/
-        Result save(HEIF::OutputStreamInterface* aStream);
+        /** Save content to stream.
+         *  @param [in] stream Stream to save the file to.
+         *  @return Result: Possible error code */
+        Result save(HEIF::OutputStreamInterface* stream);
 
         /** Clears the container to initial state. */
         void reset();
@@ -249,7 +251,7 @@ namespace HEIFPP
         std::uint32_t getMinorVersion() const;
 
         /** Sets the minor version of the file
-         * @param [in]: aVersion: Minor version of the file
+         * @param [in] aVersion: Minor version of the file
          */
         void setMinorVersion(std::uint32_t aVersion);
 
@@ -332,13 +334,16 @@ namespace HEIFPP
         static HEIF::MediaFormat mediaFormatFromFourCC(const HEIF::FourCC& aType);
 
     protected:
-        Track* constructTrack(HEIF::Reader* aReader, const HEIF::SequenceId& aItemId, HEIF::ErrorCode& aErrorCode);
+        Track* constructTrack(HEIF::Reader* aReader, const HEIF::SequenceId& aTrackId, HEIF::ErrorCode& aErrorCode);
         Sample* constructSample(HEIF::Reader* aReader,
                                 const HEIF::SequenceId& aTrack,
-                                const HEIF::SampleInformation& aId,
+                                const HEIF::SampleInformation& aInfo,
                                 HEIF::ErrorCode& aErrorCode);
         /** aItemInfo may be null to indicate there is no associated ItemInfo object */
-        ImageItem* constructImageItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, const HEIF::ItemInformation* aItemInfo, HEIF::ErrorCode& aErrorCode);
+        ImageItem* constructImageItem(HEIF::Reader* aReader,
+                                      const HEIF::ImageId& aItemId,
+                                      const HEIF::ItemInformation* aItemInfo,
+                                      HEIF::ErrorCode& aErrorCode);
         MetaItem* constructMetaItem(HEIF::Reader* aReader, const HEIF::ImageId& aItemId, HEIF::ErrorCode& aErrorCode);
         ItemProperty* constructItemProperty(HEIF::Reader* aReader,
                                             const HEIF::ItemPropertyInfo& aItemInfo,
@@ -365,8 +370,8 @@ namespace HEIFPP
 
         // the following should never be called by users.
         void addItem(Item* aItem);
-        void addSample(Sample* aItem);
-        void addTrack(Track* aItem);
+        void addSample(Sample* aSample);
+        void addTrack(Track* aTrack);
         void addDecoderConfig(DecoderConfig* aDecoderConfig);
         void addProperty(ItemProperty* aProperty);
         void addGroup(EntityGroup* aGroup);
@@ -417,4 +422,4 @@ namespace HEIFPP
     };
 }  // namespace HEIFPP
 
-#endif //HEIF_H
+#endif  // HEIF_H

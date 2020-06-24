@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,7 +15,6 @@
 
 namespace HEIFPP
 {
-
     class EntityGroup
     {
         friend class Heif;
@@ -45,17 +44,18 @@ namespace HEIFPP
 
 
         void addItem(Item* aItem);
-        void addTrack(Track* aItem);
-        void addSample(Sample* aItem);
+        void addTrack(Track* aTrack);
+        void addSample(Sample* aSample);
 
         virtual void removeEntity(std::uint32_t);
-        void removeItem(Item* aSample);
-        void removeTrack(Track* aSample);
+        void removeItem(Item* aItem);
+        void removeTrack(Track* aTrack);
         virtual void removeSample(Sample* aSample);
 
         bool hasItems() const;
         bool hasTracks() const;
         bool hasSamples() const;
+
     protected:
         void setId(const HEIF::GroupId& aId);
         bool addEntity(Item*, Track*, Sample*, std::int32_t&);
@@ -68,9 +68,9 @@ namespace HEIFPP
         class Entity
         {
         public:
-            Entity(Item* aItem);
-            Entity(Track* aTrack);
-            Entity(Sample* aSample);
+            Entity(Item* aItem) noexcept;
+            Entity(Track* aTrack) noexcept;
+            Entity(Sample* aSample) noexcept;
             virtual ~Entity();
             bool isItem() const;
             bool isTrack() const;
@@ -91,9 +91,9 @@ namespace HEIFPP
         };
         std::vector<Entity> mItems;
         const void* mContext;
-        EntityGroup& operator=(const EntityGroup&)  = delete;
-        EntityGroup& operator=(EntityGroup&&)       = delete;
-        EntityGroup(const EntityGroup&)             = delete;
-        EntityGroup(EntityGroup&&)                  = delete;
+        EntityGroup& operator=(const EntityGroup&) = delete;
+        EntityGroup& operator=(EntityGroup&&) = delete;
+        EntityGroup(const EntityGroup&)       = delete;
+        EntityGroup(EntityGroup&&)            = delete;
     };
 }  // namespace HEIFPP

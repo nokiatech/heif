@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef CONFIGURATIONBOX_HPP
@@ -15,7 +17,7 @@
 #include "bbox.hpp"
 #include "decoderconfigrecord.hpp"
 
- /// @brief Configuration Box class
+/// @brief Configuration Box class
 /// @details base class for decoder configuration boxes.
 class DecoderConfigurationBox : public Box
 {
@@ -24,9 +26,9 @@ public:
     virtual const DecoderConfigurationRecord& getConfiguration() const = 0;
 
 protected:
-    DecoderConfigurationBox(FourCCInt boxType) : Box(boxType) {};
-    virtual ~DecoderConfigurationBox() = default;
-
+    DecoderConfigurationBox(FourCCInt boxType)
+        : Box(boxType){};
+    ~DecoderConfigurationBox() override = default;
 };
 
 #endif /* end of include guard: CONFIGURATIONBOX_HPP */

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -116,7 +116,7 @@ void ItemPropertyAssociation::parseBox(BitStream& bitstream)
         }
 
         AssociationEntries& propertyIndexVector = mAssociations[itemId];
-        const unsigned int associationCount = bitstream.read8Bits();
+        const unsigned int associationCount     = bitstream.read8Bits();
         propertyIndexVector.reserve(associationCount);
         for (unsigned int i = 0; i < associationCount; ++i)
         {

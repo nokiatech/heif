@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "avcparser.hpp"
+
 #include "bitstream.hpp"
 
 bool parseHRD(BitStream& bitstr, HRDParameters& retHdr)
@@ -54,7 +55,9 @@ bool parseVUI(BitStream& bitstr, VUIParameters& retVui)
     };
     vui.overscan_info_present_flag = static_cast<uint8_t>(bitstr.readBits(1));  // 0  u(1)
     if (vui.overscan_info_present_flag)
+    {
         vui.overscan_appropriate_flag = static_cast<uint8_t>(bitstr.readBits(1));  // 0  u(1)
+    }
     vui.video_signal_type_present_flag = static_cast<uint8_t>(bitstr.readBits(1));
     ;  // 0  u(1)
     if (vui.video_signal_type_present_flag)

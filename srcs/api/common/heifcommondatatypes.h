@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include <iterator>
+
 #include "heifexport.h"
 #include "heifid.h"
 
@@ -42,7 +43,6 @@ namespace HEIF
         FILE_READ_ERROR,
         FTYP_ALREADY_WRITTEN,
         HIDDEN_PRIMARY_ITEM,
-        INVALID_CONTEXT_ID,
         INVALID_FUNCTION_PARAMETER,
         INVALID_GROUP_ID,
         INVALID_ITEM_ID,
@@ -52,10 +52,12 @@ namespace HEIF
         INVALID_PROPERTY_INDEX,
         INVALID_REFERENCE_COUNT,
         INVALID_SAMPLE_DESCRIPTION_INDEX,
+        INVALID_SEGMENT,
         INVALID_SEQUENCE_ID,
         INVALID_DECODER_CONFIG_ID,
         INVALID_SEQUENCE_IMAGE_ID,
         MEDIA_PARSING_ERROR,
+        MEMORY_TOO_SMALL_BUFFER,
         NOT_APPLICABLE,
         PRIMARY_ITEM_NOT_SET,
         PROTECTED_ITEM,
@@ -100,7 +102,7 @@ namespace HEIF
             : value{}
         {
         }
-        inline FourCC(uint32_t v)
+        inline FourCC(uint32_t v) noexcept
         {
             value[0] = char((v >> 24) & 0xff);
             value[1] = char((v >> 16) & 0xff);
@@ -108,7 +110,7 @@ namespace HEIF
             value[3] = char((v >> 0) & 0xff);
             value[4] = '\0';
         }
-        inline FourCC(const char* str)
+        inline FourCC(const char* str) noexcept
         {
             value[0] = str[0];
             value[1] = str[1];
@@ -116,7 +118,7 @@ namespace HEIF
             value[3] = str[3];
             value[4] = '\0';
         }
-        inline FourCC(const FourCC& fourcc)
+        inline FourCC(const FourCC& fourcc) noexcept
         {
             value[0] = fourcc.value[0];
             value[1] = fourcc.value[1];
@@ -157,9 +159,7 @@ namespace HEIF
                                                ? true
                                                : (value[2] > other.value[2])
                                                      ? false
-                                                     : (value[3] < other.value[3])
-                                                           ? true
-                                                           : (value[3] > other.value[3]) ? false : false;
+                                                     : (value[3] < other.value[3]) ? true : false;
         }
         inline bool operator<=(const FourCC& other) const
         {
@@ -188,7 +188,7 @@ namespace HEIF
         Array();
         Array(size_t n);
         Array(const Array& other);
-        virtual Array& operator=(const Array& other);
+        Array& operator=(const Array& other);
         inline T& operator[](size_t index)
         {
             return elements[index];
@@ -230,7 +230,9 @@ namespace HEIF
         virtual ~Array();
     };
 
+    IdType(std::uint32_t, GroupId);
     IdType(std::uint32_t, ImageId);
+    IdType(std::uint32_t, SegmentId);
     IdType(std::uint32_t, SequenceImageId);
     IdType(std::uint32_t, SequenceId);
     IdType(std::uint32_t, DecoderConfigId);
@@ -293,6 +295,17 @@ namespace HEIF
         uint32_t angle;  ///< Angle of rotation in anti-clockwise direction. Valid values are 0, 90, 180 and 270.
     };
 
+    /// Data of Image scaling transformative item property 'iscl'.
+    struct HEIF_DLL_PUBLIC Scale
+    {
+        uint16_t targetWidthN;  ///< Numerator of the scaling ratio in the horizontal dimension. Value 0 is not allowed.
+        uint16_t
+            targetWidthD;  ///< Denominator of the scaling ratio in the horizontal dimension. Value 0 is not allowed.
+        uint16_t targetHeightN;  ///< Numerator of the scaling ratio in the vertical dimension. Value 0 is not allowed.
+        uint16_t
+            targetHeightD;  ///< Denominator of the scaling ratio in the vertical dimension. Value 0 is not allowed.
+    };
+
     /// Data of descriptive item property Relative location 'rloc'.
     struct HEIF_DLL_PUBLIC RelativeLocation
     {
@@ -352,6 +365,42 @@ namespace HEIF
     {
         Array<char> auxType;     ///< Type of the associated auxiliary image item. This is not null-terminated.
         Array<uint8_t> subType;  ///< Aux subtype, semantics depends on the auxType value
+    };
+
+    /// Data of Required reference types descriptive item property.
+    struct HEIF_DLL_PUBLIC RequiredReferenceTypes
+    {
+        Array<FourCC>
+            referenceTypes;  ///< Reference types required to understand and process the associated image item.
+    };
+
+    /// Data of User description descriptive item property.
+    struct HEIF_DLL_PUBLIC UserDescription
+    {
+        Array<char> lang;         ///< An RFC 5646 compliant language tag string (e.g. "en-US", "de")
+        Array<char> name;         ///< Name for the item or group of entities.
+        Array<char> description;  ///< Description of the item or group of entities.
+        Array<char> tags;         ///< Comma-separated user-defined tags related to the item(s).
+    };
+
+    /// Data of Accessibility text descriptive item property.
+    struct HEIF_DLL_PUBLIC AccessibilityText
+    {
+        Array<char>
+            text;  ///< An alternate text for image, if the image can not be display. String in UTF-8 characters.
+        Array<char> lang;  ///< An RFC 5646 compliant language tag string (e.g. "en-US", "de")
+    };
+
+    /// Data of Creation time information descriptive item property.
+    struct HEIF_DLL_PUBLIC CreationTimeInformation
+    {
+        uint64_t time;  ///< Microseconds since midnight, January 1st, 1904, in UTC time.
+    };
+
+    /// Data of Modification time information descriptive item property.
+    struct HEIF_DLL_PUBLIC ModificationTimeInformation
+    {
+        uint64_t time;  ///< Microseconds since midnight, January 1st, 1904, in UTC time.
     };
 
     /// Data of raw/custom item property.

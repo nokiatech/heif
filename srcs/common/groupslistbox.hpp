@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef GROUPSLISTBOX_HPP
@@ -23,7 +25,7 @@ class GroupsListBox : public Box
 {
 public:
     GroupsListBox();
-    virtual ~GroupsListBox() = default;
+    ~GroupsListBox() override = default;
 
     /** @brief Add an EntitytoGroups Box.
      *  @details There may be multiple such boxes for different entity groupings.
@@ -36,11 +38,11 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF compliant file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a GroupsListBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     Vector<EntityToGroupBox> mEntityToGroupBoxVector;  ///< Vector of EntityToGroup Boxes.

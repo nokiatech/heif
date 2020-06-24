@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,13 +12,15 @@
  */
 
 #include "writerimpl.hpp"
+
+#include <cassert>
 #include <cstring>
 #include <limits>
+
 #include "buildinfo.hpp"
 #include "customallocator.hpp"
 #include "jpegparser.hpp"
 #include "miafchecker.hpp"
-#include <cassert>
 
 using namespace std;
 
@@ -42,10 +44,13 @@ namespace HEIF
 
             return completeImage;
         }
+
+        void writeBitstream(BitStream& input, OutputStreamInterface* output)
+        {
+            const Vector<uint8_t>& data = input.getStorage();
+            output->write(data.data(), static_cast<uint64_t>(data.size()));
+        }
     }  // namespace
-
-
-    OutputStreamInterface* ConstructFileStream(const char* aFilename);
 
     HEIF_DLL_PUBLIC ErrorCode Writer::SetCustomAllocator(CustomAllocator* customAllocator)
     {
@@ -66,18 +71,12 @@ namespace HEIF
 
     HEIF_DLL_PUBLIC void Writer::Destroy(Writer* writer)
     {
-        CUSTOM_DELETE(writer, Writer);
+        CUSTOM_DELETE(writer, Writer);  // Extra semicolon prevents clang-format from wrapping this to one line.
     }
 
     HEIF_DLL_PUBLIC const char* Writer::GetVersion()
     {
         return BuildInfo::Version;
-    }
-
-    void writeBitstream(BitStream& input, OutputStreamInterface* output)
-    {
-        const Vector<uint8_t>& data = input.getStorage();
-        output->write(data.data(), static_cast<uint64_t>(data.size()));
     }
 
     WriterImpl::WriterImpl()
@@ -95,6 +94,7 @@ namespace HEIF
         , mJpegDimensions()
         , mMatrix({0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000})
         , mFileTypeBox()
+        , mExtendedTypeBox()
         , mMetaBox()
         , mMovieBox()
         , mMediaDataBox()
@@ -127,14 +127,17 @@ namespace HEIF
         mMatrix.clear();
         mMatrix = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
 
-        mFileTypeBox  = {};
-        mMetaBox      = {};
-        mMediaDataBox = {};
+        mFileTypeBox     = {};
+        mExtendedTypeBox = {};
+        mMetaBox         = {};
+        mMediaDataBox    = {};
         mMovieBox.clear();
 
         mMdatOffset     = 0;
         mInitialMdat    = false;
         mPrimaryItemSet = false;
+
+        mPredRrefPropertyId = 0;
 
         if (mState == State::WRITING)
         {
@@ -170,6 +173,8 @@ namespace HEIF
             mInitialMdat = true;
         }
 
+        mWriteItemCreationTimes = outputConfig.itemCreationTimes;
+
         mFile = nullptr;
         if (outputConfig.outputStream)
         {
@@ -186,9 +191,19 @@ namespace HEIF
             return ErrorCode::FILE_OPEN_ERROR;
         }
 
-        for (auto brand : outputConfig.compatibleBrands)
+        for (const auto& brand : outputConfig.compatibleBrands)
         {
             mFileTypeBox.addCompatibleBrand(brand.value);
+        }
+
+        for (const auto& combination : outputConfig.compatibleCombinations)
+        {
+            TypeCombinationBox tyco;
+            for (const auto& brand : combination)
+            {
+                tyco.addCompatibleBrand(brand.value);
+            }
+            mExtendedTypeBox.addTypeCombinationBox(tyco);
         }
 
         if (outputConfig.majorBrand != FourCC())
@@ -201,6 +216,10 @@ namespace HEIF
         {
             BitStream output;
             mFileTypeBox.writeBox(output);
+            if (!mExtendedTypeBox.getTypeCombinationBoxes().empty())
+            {
+                mExtendedTypeBox.writeBox(output);
+            }
             writeBitstream(output, mFile);
 
             // Write Media Data Box 'mdat' header. We can not know input data size, so use 64-bit large size field for
@@ -322,10 +341,6 @@ namespace HEIF
                         return ErrorCode::INVALID_DECODER_CONFIG_ID;
                     }
                 }
-                else if (decoderSpecInfo.size > 1)
-                {
-                    return ErrorCode::INVALID_DECODER_CONFIG_ID;
-                }
                 else
                 {
                     // If there is decoderConfigId, we expect at least some decoder config data for it
@@ -362,10 +377,9 @@ namespace HEIF
                 JpegParser parser;
                 JpegParser::JpegInfo info;
 
-                const Array<DecoderSpecificInfo>* decoderSpecInfo =
-                    mAllDecoderConfigs.count(aData.decoderConfigId)
-                    ? &mAllDecoderConfigs.at(aData.decoderConfigId)
-                    : nullptr;
+                const Array<DecoderSpecificInfo>* decoderSpecInfo = mAllDecoderConfigs.count(aData.decoderConfigId)
+                                                                        ? &mAllDecoderConfigs.at(aData.decoderConfigId)
+                                                                        : nullptr;
                 // Compose a complete image out of decoder specific info and the data
                 if (decoderSpecInfo && decoderSpecInfo->size == 1)
                 {
@@ -511,6 +525,43 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
+    ErrorCode WriterImpl::addCompatibleBrandCombination(const Array<FourCC>& compatibleBrandCombination)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        // Check if file type box has already been written. If so, return error in case a new type combination box would
+        // be needed.
+        if (mInitialMdat)
+        {
+            Vector<FourCCInt> brandVector;
+            for (const auto& brand : compatibleBrandCombination)
+            {
+                brandVector.push_back(brand.value);
+            }
+            if (mExtendedTypeBox.checkCompatibility(brandVector) == false)
+            {
+                return ErrorCode::FTYP_ALREADY_WRITTEN;
+            }
+        }
+
+        if (compatibleBrandCombination.size == 0)
+        {
+            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+        }
+
+        TypeCombinationBox tyco;
+        for (auto const& brand : compatibleBrandCombination)
+        {
+            tyco.addCompatibleBrand(brand.value);
+        }
+        mExtendedTypeBox.addTypeCombinationBox(tyco);
+
+        return ErrorCode::OK;
+    }
+
     ErrorCode WriterImpl::finalize()
     {
         MIAF::MiafChecker checker(this);
@@ -570,6 +621,11 @@ namespace HEIF
             }
 
             mFileTypeBox.writeBox(output);
+            if (!mExtendedTypeBox.getTypeCombinationBoxes().empty())
+            {
+                mExtendedTypeBox.writeBox(output);
+            }
+
             writeBitstream(output, mFile);
             mdatOffset = output.getSize();
             output.clear();

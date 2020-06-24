@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,6 +15,7 @@
 #define HEIFREADER_H
 
 #include <cstdint>
+
 #include "heifallocator.h"
 #include "heifexport.h"
 #include "heifreaderdatatypes.h"
@@ -85,6 +86,12 @@ namespace HEIF
          *  @return ErrorCode: OK, UNINITIALIZED */
         virtual ErrorCode getCompatibleBrands(Array<FourCC>& compatibleBrands) const = 0;
 
+        /** @param [out] compatibleBrandCombinations Compatible brand combinations from the
+         *                                           (optional)root-level Extended Type Box.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED */
+        virtual ErrorCode getCompatibleBrandCombinations(Array<Array<FourCC>>& compatibleBrandCombinations) const = 0;
+
         /** Get file information.
          *  This information can be used to further initialize the presentation of the data in the file.
          *  Information also give hints about the way and means to request data from the file.
@@ -92,6 +99,14 @@ namespace HEIF
          *  @param [out] fileinfo FileInformation struct that hold file information.
          *  @return ErrorCode: OK or UNINITIALIZED */
         virtual ErrorCode getFileInformation(FileInformation& fileinfo) const = 0;
+
+        /** Get track information.
+         *  These properties can be used to further initialize the presentation of the data in the track.
+         *  Properties also give hints about the way and means to request data from the track.
+         *  @pre initialize() has been called successfully.
+         *  @param [out] trackInfos Array of TrackInformation struct that hold track information.
+         *  @return ErrorCode: OK or UNINITIALIZED */
+        virtual ErrorCode getTrackInformations(Array<TrackInformation>& trackInfos) const = 0;
 
         /** Get maximum display width from track headers.
          *  @param [in]  sequenceId    Image sequence ID (track ID).
@@ -280,7 +295,7 @@ namespace HEIF
                                       const SequenceImageId& imageId,
                                       uint8_t* memoryBuffer,
                                       uint64_t& memoryBufferSize,
-                                      bool bytestreamHeaders = true) const = 0;
+                                      bool bytestreamHeaders = true) = 0;
 
         /** Get data of an image overlay item (item type 'iovl').
          *  @param [in]  imageId   Id of Image overlay item
@@ -309,6 +324,13 @@ namespace HEIF
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
         virtual ErrorCode getProperty(const PropertyId& index, Rotate& irot) const = 0;
+
+        /** Get property Image scaling ('iscl')
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] iscl   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, Scale& iscl) const = 0;
 
         /** Get item property Relative Location ('rloc')
          *  @param [in]  index  Id of the property. @see getItemProperties()
@@ -352,6 +374,41 @@ namespace HEIF
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
         virtual ErrorCode getProperty(const PropertyId& index, AuxiliaryType& auxC) const = 0;
 
+        /** Get property Required reference types ('rref')
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] rref   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, RequiredReferenceTypes& rref) const = 0;
+
+        /** Get property User description property ('udes')
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] udes   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, UserDescription& udes) const = 0;
+
+        /** Get property Accessibility text property ('altt')
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] altt   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, AccessibilityText& altt) const = 0;
+
+        /** Get property Creation time information property ('crtt')
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] crtt   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, CreationTimeInformation& crtt) const = 0;
+
+        /** Get property Modification time information property ('mdft')
+         *  @param [in]  index  Id of the property. @see getItemProperties()
+         *  @param [out] mdft   Data of the property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_PROPERTY_INDEX */
+        virtual ErrorCode getProperty(const PropertyId& index, ModificationTimeInformation& mdft) const = 0;
+
         /** Get raw data of an item property.
          *  @param [in]  index     Id of the property. @see getItemProperties()
          *  @param [out] property  Property data.
@@ -385,6 +442,13 @@ namespace HEIF
          *  @return ErrorCode: OK, UNINITIALIZED, INVALID_ITEM_ID */
         virtual ErrorCode getItemProperties(const ImageId& imageId, Array<ItemPropertyInfo>& propertyTypes) const = 0;
 
+        /** Get properties of an entity group.
+         *  @param [in]  groupId       Group ID which properties to get.
+         *  @param [out] propertyTypes Associated properties of the entity groups.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_GROUP_ID */
+        virtual ErrorCode getItemProperties(const GroupId& groupId, Array<ItemPropertyInfo>& propertyTypes) const = 0;
+
         /** Get data of an encoded image item.
          *  This method shall not be used if the item is not of 'hvc1', 'avc1' or 'master' type. @see getItemData()
          *  @param [in] imageId               Item id.
@@ -409,7 +473,7 @@ namespace HEIF
         virtual ErrorCode getItemDataWithDecoderParameters(const SequenceId& sequenceId,
                                                            const SequenceImageId& imageId,
                                                            uint8_t* memoryBuffer,
-                                                           uint64_t& memoryBufferSize) const = 0;
+                                                           uint64_t& memoryBufferSize) = 0;
 
         /** Get Protection Scheme Information Box for a protected item.
          *  @param [in] imageId               Item id.
@@ -463,6 +527,16 @@ namespace HEIF
                                                 const SequenceImageId& imageId,
                                                 Array<SequenceImageId>& dependencies) const = 0;
 
+        /** Retrieve decoding dependencies for given image id, in decoding order.
+         *  Information here comes from "pred" item references referenced from itemId.
+         *  @param [in]  imageId       Identifier of an image.
+         *  @param [out] dependencies  Array including direct and indirect decoding dependencies.
+         *                             Parameter imageId itself is not included in the array.
+         *                             An empty array indicates imageId in independently decodable.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED, INVALID_IMAGE_ID */
+        virtual ErrorCode getDecodeDependencies(const ImageId& imageId, Array<ImageId>& dependencies) const = 0;
+
         /** Get coding type for image collection image.
          *  @param [in]  imageId Identifier of an image item.
          *  @param [out] type    Decoder code type, e.g. "hvc1" or "avc1".
@@ -507,6 +581,61 @@ namespace HEIF
         virtual ErrorCode getDecoderParameterSets(const SequenceId& sequenceId,
                                                   const SequenceImageId& imageId,
                                                   DecoderConfiguration& decoderInfos) const = 0;
+
+    public:  // segment parsing methods (streaming)
+        /** Parse Initialization Segment
+         *
+         *  @param [in]  streamInterface   StreamInterface*  Interface to read initialization segment from.
+         *  @return ErrorCode: OK */
+        virtual ErrorCode parseInitializationSegment(StreamInterface* streamInterface) = 0;
+
+        /** Parse Segment
+         *
+         *  Note that the segment id must be globally unique per an instance of
+         *  reader and must be different from any init segment id as well.
+         *
+         *  @pre Initialization Segment has been parsed before feeding in segment.
+         *  @param [in]  streamInterface   StreamInterface*  Interface to read segment from.
+         *  @param [in]  segmentId       uint32_t Segment Id of the segment being fed to method through segmentData
+         *                                        pointer
+         *  @param [in]  earliestPTSinTS uint64_t Optional - in case of feeding partial segment without 'sidx' box this
+         *                                        can be used to give earliest presentation time in timescale for
+         * samples.
+         *  @return ErrorCode: OK, FILE_READ_ERROR  */
+        virtual ErrorCode parseSegment(StreamInterface* streamInterface,
+                                       SegmentId segmentId,
+                                       uint64_t earliestPTSinTS = UINT64_MAX) = 0;
+
+        /** Invalidate Segment
+         *  Invalidates the data buffer pointer to given media segment id - data from this segment can no longer be
+         * read.
+         *
+         *  Note! Must be called for all fed media segments if client is seeking.
+         *
+         *  @pre Segment with segmentId has been parsed with reader using parseSegment.
+         *  @param [in]  segmentId     uint32_t Segment Id of the Initialize Segment
+         *  @return ErrorCode: OK, INVALID_SEGMENT */
+        virtual ErrorCode invalidateSegment(SegmentId segmentId) = 0;
+
+        /** Get Segment Index
+         *  Provides segment index contents for use with DASH ISO Base Media File Format On-Demand profile.
+         *
+         *  Returned array will contain segmentId for each of the byte ranges, that must be used to feed
+         *  those byte ranges through parseInitializationSegment() to parse the file.
+         *
+         *  @pre Byte range which contains ISO BMFF On-Demand profile initialization byte range has been parsed
+         *       with reader using parseInitializeSegment.
+         *  @param [out] segmentIndex    Array of SegmentInformation struct that hold segment index information.
+         *  @return ErrorCode: OK, INVALID_SEGMENT */
+        virtual ErrorCode getSegmentIndex(Array<SegmentInformation>& segmentIndex) = 0;
+
+        /** Parse Segment Index ('sidx' box) from given stream.
+         *
+         *  @param [in]  streamInterface   StreamInterface*  Interface to read segment from.
+         *  @param [out] segmentIndex    Array of SegmentInformation struct that hold segment index information.
+         *  @return ErrorCode: OK, INVALID_SEGMENT */
+        virtual ErrorCode parseSegmentIndex(StreamInterface* streamInterface,
+                                            Array<SegmentInformation>& segmentIndex) = 0;
 
     protected:
         virtual ~Reader() = default;

@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -45,21 +45,22 @@ set(WRITER_SRCS
 
 if (MSVC)
 	#Use native windows file api
-	set(WRITER_SRCS ${WRITER_SRCS} FileOutputStream_win32.cpp)
+	set(WRITER_SRCS ${WRITER_SRCS} fileoutputstream_win32.cpp)
 else()
 	#Use std::ofstream
-	set(WRITER_SRCS ${WRITER_SRCS} FileOutputStream_std.cpp)
+	set(WRITER_SRCS ${WRITER_SRCS} fileoutputstream_std.cpp)
 endif()
 
 set(API_HDRS
-    ../api/writer/heifwriter.h
-    ../api/writer/heifwriterdatatypes.h
     ../api/common/heifallocator.h
     ../api/common/heifexport.h
     ../api/common/heifid.h
+    ../api/writer/heifwriter.h
+    ../api/writer/heifwriterdatatypes.h
     )
 
 set(WRITER_HDRS
+    fileoutputstream.hpp
     idgenerators.hpp
     miafchecker.hpp
     refsgroup.hpp
@@ -96,7 +97,7 @@ target_include_directories(${HEIF_WRITER_LIB_NAME} PRIVATE ../common
                                                    PUBLIC ../api/common
                                                    PUBLIC ../api/writer)
 
-if(NOT IOS)
+if((NOT IOS) AND (NOT BUILD_ONLY_STATIC_LIB))
     add_library(${HEIF_SHARED_WRITER_LIB_NAME} SHARED ${WRITER_SRCS} ${API_HDRS} ${WRITER_HDRS} $<TARGET_OBJECTS:common> )
     set_property(TARGET ${HEIF_SHARED_WRITER_LIB_NAME} PROPERTY CXX_STANDARD 11)
     if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
@@ -108,4 +109,4 @@ if(NOT IOS)
     target_include_directories(${HEIF_SHARED_WRITER_LIB_NAME} PRIVATE ../common
                                                               PUBLIC ../api/common
                                                               PUBLIC ../api/writer)
-endif(NOT IOS)
+endif()

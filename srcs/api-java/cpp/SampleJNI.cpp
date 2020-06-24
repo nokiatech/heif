@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  *
  */
 #include <jni.h>
+
 #include "Helpers.h"
 #include "Sample.h"
 
@@ -48,16 +49,15 @@ extern "C"
     JNI_METHOD(jobject, getSampleDataNative)
     {
         NATIVE_SELF;
-        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeSelf->getSampleData()),
+        return env->NewDirectByteBuffer(const_cast<uint8_t *>(nativeSelf->getSampleData()),
                                         static_cast<jlong>(nativeSelf->getSampleDataSize()));
     }
 
     JNI_METHOD_ARG(void, setSampleDataNative, jbyteArray data)
     {
         NATIVE_SELF;
-        jbyte *nativeData = env->GetByteArrayElements(data, 0);
-        nativeSelf->setItemData((uint8_t *) nativeData,
-                                static_cast<uint64_t>(env->GetArrayLength(data)));
+        jbyte *nativeData = env->GetByteArrayElements(data, nullptr);
+        nativeSelf->setItemData((uint8_t *) nativeData, static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 
@@ -133,8 +133,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getMetadataNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaItem(env, getJavaHEIF(env, self),
-                           nativeSelf->getMetadata(static_cast<uint32_t>(index)));
+        return getJavaItem(env, getJavaHEIF(env, self), nativeSelf->getMetadata(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD_ARG(void, addMetadataNative, jobject item)
@@ -160,14 +159,13 @@ extern "C"
     JNI_METHOD_ARG(jobject, getGroupNative, jint index)
     {
         NATIVE_SELF;
-        return getJavaEntityGroup(env, getJavaHEIF(env, self),
-                                  nativeSelf->getGroup(static_cast<uint32_t>(index)));
+        return getJavaEntityGroup(env, getJavaHEIF(env, self), nativeSelf->getGroup(static_cast<uint32_t>(index)));
     }
 
     JNI_METHOD(jobject, getTrackNative)
     {
         NATIVE_SELF;
-        return getJavaTrack(env, getJavaHEIF(env,self), nativeSelf->getTrack());
+        return getJavaTrack(env, getJavaHEIF(env, self), nativeSelf->getTrack());
     }
 
     JNI_METHOD(jint, getSampleTypeNative)
@@ -178,7 +176,7 @@ extern "C"
 
     JNI_METHOD(jstring, getTypeNative)
     {
-        HEIFPP::Sample* instance = (HEIFPP::Sample*) getNativeHandle(env, self);
+        auto *instance = (HEIFPP::Sample *) getNativeHandle(env, self);
         return env->NewStringUTF(instance->getType().value);
     }
 }

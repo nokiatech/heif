@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef PRIMARYITEMBOX_HPP
@@ -23,7 +25,7 @@ class PrimaryItemBox : public FullBox
 {
 public:
     PrimaryItemBox();
-    virtual ~PrimaryItemBox() = default;
+    ~PrimaryItemBox() override = default;
 
     void setItemId(std::uint32_t itemId);
     std::uint32_t getItemId() const;
@@ -32,13 +34,13 @@ public:
      * @brief Serialize box data to the ISOBMFF::BitStream.
      * @see Box::writeBox()
      */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /**
      * @brief Deserialize box data from the ISOBMFF::BitStream.
      * @see Box::parseBox()
      */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     std::uint32_t mItemId;  ///< The identifier of the primary item

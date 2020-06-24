@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef TRACKBOX_HPP
@@ -17,6 +19,7 @@
 #include "customallocator.hpp"
 #include "editbox.hpp"
 #include "mediabox.hpp"
+#include "trackgroupbox.hpp"
 #include "trackheaderbox.hpp"
 #include "trackreferencebox.hpp"
 #include "tracktypebox.hpp"
@@ -27,7 +30,7 @@ class TrackBox : public Box
 {
 public:
     TrackBox();
-    virtual ~TrackBox() = default;
+    ~TrackBox() override = default;
 
     /** @brief Sets information about whether the track has other reference tracks associated with it.
      *  @param [in] value TRUE if track has reference to other tracks, FALSE otherwise */
@@ -61,6 +64,22 @@ public:
      *  @return Reference to the  Track Reference Box. */
     const TrackReferenceBox& getTrackReferenceBox() const;
 
+    /** @brief Gets the reference of the Track Group Box.
+     *  @return Reference to the  Track Group Box. **/
+    TrackGroupBox& getTrackGroupBox();
+
+    /** @brief Gets the reference of the Track Group Box.
+     *  @return Reference to the  Track Group Box. **/
+    const TrackGroupBox& getTrackGroupBox() const;
+
+    /** @brief Sets information about whether the track has track group box.
+     *  @param [in] value TRUE if track has track group box, FALSE otherwise **/
+    void setHasTrackGroup(bool value);
+
+    /** @brief Gets information about whether the track has other track group boxes associated with it.
+     *  @return TRUE if track has track group, FALSE otherwise **/
+    bool getHasTrackGroup() const;
+
     /** @brief Gets the reference of the contained box
      *  @return Reference to the TrackTypeBox. */
     TrackTypeBox& getTrackTypeBox();
@@ -85,19 +104,24 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a TrackBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    TrackHeaderBox mTrackHeaderBox;        ///< Track Header Box
-    MediaBox mMediaBox;                    ///< Media Box related to this track
+    TrackHeaderBox mTrackHeaderBox;  ///< Track Header Box
+    MediaBox mMediaBox;              ///< Media Box related to this track
+
     TrackReferenceBox mTrackReferenceBox;  ///< Track Reference Box
     bool mHasTrackReferences;              ///< Flag that shows whether the track has references from other tracks
-    TrackTypeBox mTrackTypeBox;            ///< Track Type Box
-    bool mHasTrackTypeBox;                 ///< Flag that shows whether the track has a track type box
+
+    TrackGroupBox mTrackGroupBox;  ///< Track Group Box
+    bool mHasTrackGroupBox;        ///< Flag that shows whether the track has a track group box
+
+    TrackTypeBox mTrackTypeBox;  ///< Track Type Box
+    bool mHasTrackTypeBox;       ///< Flag that shows whether the track has a track type box
 
     std::shared_ptr<EditBox> mEditBox;  ///< Edit box (optional)
 };

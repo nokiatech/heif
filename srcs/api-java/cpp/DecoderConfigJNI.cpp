@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,6 +15,7 @@
 #include <jni.h>
 
 #include <cstring>
+
 #include "DecoderConfiguration.h"
 #include "Helpers.h"
 
@@ -32,9 +33,8 @@ extern "C"
     JNI_METHOD_ARG(void, setConfigNative, jbyteArray configdata)
     {
         NATIVE_SELF;
-        jbyte* nativeData = env->GetByteArrayElements(configdata, 0);
-        nativeSelf->setConfig((uint8_t*) nativeData,
-                                static_cast<uint32_t>(env->GetArrayLength(configdata)));
+        jbyte* nativeData = env->GetByteArrayElements(configdata, nullptr);
+        nativeSelf->setConfig((uint8_t*) nativeData, static_cast<uint32_t>(env->GetArrayLength(configdata)));
         env->ReleaseByteArrayElements(configdata, nativeData, 0);
     }
 
@@ -47,7 +47,7 @@ extern "C"
         {
             totalSize += codecInfo[index].decSpecInfoData.size;
         }
-        jbyte* data       = new jbyte[totalSize];
+        auto* data        = new jbyte[totalSize];
         size_t writeIndex = 0;
         for (size_t index = 0; index < codecInfo.size; index++)
         {

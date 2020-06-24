@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -34,6 +34,7 @@ endif()
 set(READER_SRCS
     heifreaderimpl.cpp
     heifreaderaccessors.cpp
+    heifreadersegment.cpp
     heifstreamfile.cpp
     heifstreamgeneric.cpp
     heifstreaminterface.cpp
@@ -54,6 +55,7 @@ set(API_HDRS
 set(READER_HDRS
     heiffiledatatypesinternal.hpp
     heifreaderimpl.hpp
+    heifreadersegment.hpp
     heifstreamfile.hpp
     heifstreamgeneric.hpp
     heifstreaminternal.hpp
@@ -85,7 +87,7 @@ target_include_directories(${HEIF_LIB_NAME} PRIVATE ../common
                                             PUBLIC ../api/common
                                             PUBLIC ../api/reader)
 
-if(NOT IOS)
+if((NOT IOS) AND (NOT BUILD_ONLY_STATIC_LIB))
     add_library(${HEIF_SHARED_LIB_NAME} SHARED ${READER_SRCS} ${API_HDRS} ${READER_HDRS} $<TARGET_OBJECTS:common> )
     set_property(TARGET ${HEIF_SHARED_LIB_NAME} PROPERTY CXX_STANDARD 11)
     if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
@@ -97,4 +99,4 @@ if(NOT IOS)
     target_include_directories(${HEIF_SHARED_LIB_NAME} PRIVATE ../common
                                                        PUBLIC ../api/common
                                                        PUBLIC ../api/reader)
-endif(NOT IOS)
+endif()

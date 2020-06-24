@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef EDITBOX_HPP
@@ -42,7 +44,7 @@ public:
     };
 
     EditListBox();
-    virtual ~EditListBox() = default;
+    ~EditListBox() override = default;
 
     /** @brief Add an edit list entry of version 0
      *  @param [in] entry edit list entry of version 0 */
@@ -63,11 +65,11 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses an Edit List Box bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     Vector<EntryVersion0> mEntryVersion0;  ///< vector of edit list entries of type verison 0
@@ -101,14 +103,14 @@ class EditBox : public Box
 {
 public:
     EditBox();
-    virtual ~EditBox() = default;
+    ~EditBox() override = default;
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    void writeBox(ISOBMFF::BitStream& bitstr) const;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
     /** @brief Parses an Edit Box bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    void parseBox(ISOBMFF::BitStream& bitstr);
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
     /** @brief Sets the Edit List Box to be used.
      *  @param [in]  editListBox Pointer of the Edit List Box */

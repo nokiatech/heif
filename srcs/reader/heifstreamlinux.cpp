@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,15 +11,17 @@
  * written consent of Nokia.
  */
 
+#include "heifstreamlinux.hpp"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <algorithm>
-#include "customallocator.hpp"
 
-#include "heifstreamlinux.hpp"
+#include <algorithm>
+
+#include "customallocator.hpp"
 
 
 namespace HEIF

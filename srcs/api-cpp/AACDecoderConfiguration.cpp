@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,8 +11,10 @@
  */
 
 #include "AACDecoderConfiguration.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
 #include <cstring>
 
 using namespace HEIFPP;
@@ -43,7 +45,7 @@ HEIF::ErrorCode AACDecoderConfiguration::convertToRawData(const HEIF::Array<HEIF
         {
             return HEIF::ErrorCode::MEDIA_PARSING_ERROR;
         }
-        aSize += (std::uint32_t) aConfig[i].decSpecInfoData.size;
+        aSize += static_cast<std::uint32_t>(aConfig[i].decSpecInfoData.size);
     }
     std::uint8_t* d = aData = new std::uint8_t[aSize];
     for (std::size_t i = 0; i < aConfig.size; i++)
@@ -65,7 +67,7 @@ HEIF::ErrorCode AACDecoderConfiguration::convertFromRawData(const std::uint8_t* 
 HEIF::ErrorCode AACDecoderConfiguration::setConfig(const std::uint8_t* aData, std::uint32_t aSize)
 {
     delete[] mBuffer;
-    mBuffer     = 0;
+    mBuffer     = nullptr;
     mBufferSize = 0;
     mBuffer     = new std::uint8_t[aSize];
     std::memcpy(mBuffer, aData, aSize);
@@ -82,72 +84,72 @@ void AACDecoderConfiguration::getConfig(uint8_t*& aData, std::uint32_t& aSize) c
 #define PARSE_UNSUPPORTED_OBJECT_TYPES 0
 uint8_t AACDecoderConfiguration::GetAudioObjectType(BitStream& bs)
 {
-    std::uint8_t audioObjectType = (std::uint8_t) bs.getBits(5);
+    auto audioObjectType = static_cast<std::uint8_t>(bs.getBits(5));
     if (audioObjectType == 31)
     {
-        audioObjectType = 32 + (std::uint8_t) bs.getBits(6);
+        audioObjectType = 32 + static_cast<std::uint8_t>(bs.getBits(6));
     }
     return audioObjectType;
 }
 bool AACDecoderConfiguration::program_config_element(BitStream& bs)
 {
     std::uint32_t i;
-    mProgramConfig.element_instance_tag = (std::uint8_t) bs.getBits(4);
-    mProgramConfig.object_type          = (std::uint8_t) bs.getBits(2);  // 0 AAC-Main 1 AAC-LC 2 AAC-SSR 3 AAC-LTP
+    mProgramConfig.element_instance_tag = static_cast<std::uint8_t>(bs.getBits(4));
+    mProgramConfig.object_type = static_cast<std::uint8_t>(bs.getBits(2));  // 0 AAC-Main 1 AAC-LC 2 AAC-SSR 3 AAC-LTP
     if (mProgramConfig.object_type != 2)
     {
         return false;
     }
-    mProgramConfig.sampling_frequency_index   = (std::uint8_t) bs.getBits(4);
-    mProgramConfig.num_front_channel_elements = (std::uint8_t) bs.getBits(4);
-    mProgramConfig.num_side_channel_elements  = (std::uint8_t) bs.getBits(4);
-    mProgramConfig.num_back_channel_elements  = (std::uint8_t) bs.getBits(4);
-    mProgramConfig.num_lfe_channel_elements   = (std::uint8_t) bs.getBits(2);
-    mProgramConfig.num_assoc_data_elements    = (std::uint8_t) bs.getBits(3);
-    mProgramConfig.num_valid_cc_elements      = (std::uint8_t) bs.getBits(4);
-    mProgramConfig.mono_mixdown_present       = (std::uint8_t) bs.getBits(1);
+    mProgramConfig.sampling_frequency_index   = static_cast<std::uint8_t>(bs.getBits(4));
+    mProgramConfig.num_front_channel_elements = static_cast<std::uint8_t>(bs.getBits(4));
+    mProgramConfig.num_side_channel_elements  = static_cast<std::uint8_t>(bs.getBits(4));
+    mProgramConfig.num_back_channel_elements  = static_cast<std::uint8_t>(bs.getBits(4));
+    mProgramConfig.num_lfe_channel_elements   = static_cast<std::uint8_t>(bs.getBits(2));
+    mProgramConfig.num_assoc_data_elements    = static_cast<std::uint8_t>(bs.getBits(3));
+    mProgramConfig.num_valid_cc_elements      = static_cast<std::uint8_t>(bs.getBits(4));
+    mProgramConfig.mono_mixdown_present       = static_cast<std::uint8_t>(bs.getBits(1));
     if (mProgramConfig.mono_mixdown_present == 1)
     {
-        mProgramConfig.mono_mixdown_element_number = (std::uint8_t) bs.getBits(4);
+        mProgramConfig.mono_mixdown_element_number = static_cast<std::uint8_t>(bs.getBits(4));
     }
-    mProgramConfig.stereo_mixdown_present = (std::uint8_t) bs.getBits(1);
+    mProgramConfig.stereo_mixdown_present = static_cast<std::uint8_t>(bs.getBits(1));
     if (mProgramConfig.stereo_mixdown_present == 1)
     {
-        mProgramConfig.stereo_mixdown_element_number = (std::uint8_t) bs.getBits(4);
+        mProgramConfig.stereo_mixdown_element_number = static_cast<std::uint8_t>(bs.getBits(4));
     }
-    mProgramConfig.matrix_mixdown_idx_present = (std::uint8_t) bs.getBits(1);
+    mProgramConfig.matrix_mixdown_idx_present = static_cast<std::uint8_t>(bs.getBits(1));
     if (mProgramConfig.matrix_mixdown_idx_present == 1)
     {
-        mProgramConfig.matrix_mixdown_idx     = (std::uint8_t) bs.getBits(2);
-        mProgramConfig.pseudo_surround_enable = (std::uint8_t) bs.getBits(1);
+        mProgramConfig.matrix_mixdown_idx     = static_cast<std::uint8_t>(bs.getBits(2));
+        mProgramConfig.pseudo_surround_enable = static_cast<std::uint8_t>(bs.getBits(1));
     }
     for (i = 0; i < mProgramConfig.num_front_channel_elements; i++)
     {
-        mProgramConfig.front_element_is_cpe[i]     = (std::uint8_t) bs.getBits(1);
-        mProgramConfig.front_element_tag_select[i] = (std::uint8_t) bs.getBits(4);
+        mProgramConfig.front_element_is_cpe[i]     = static_cast<std::uint8_t>(bs.getBits(1));
+        mProgramConfig.front_element_tag_select[i] = static_cast<std::uint8_t>(bs.getBits(4));
     }
     for (i = 0; i < mProgramConfig.num_side_channel_elements; i++)
     {
-        mProgramConfig.side_element_is_cpe[i]     = (std::uint8_t) bs.getBits(1);
-        mProgramConfig.side_element_tag_select[i] = (std::uint8_t) bs.getBits(4);
+        mProgramConfig.side_element_is_cpe[i]     = static_cast<std::uint8_t>(bs.getBits(1));
+        mProgramConfig.side_element_tag_select[i] = static_cast<std::uint8_t>(bs.getBits(4));
     }
     for (i = 0; i < mProgramConfig.num_back_channel_elements; i++)
     {
-        mProgramConfig.back_element_is_cpe[i]     = (std::uint8_t) bs.getBits(1);
-        mProgramConfig.back_element_tag_select[i] = (std::uint8_t) bs.getBits(4);
+        mProgramConfig.back_element_is_cpe[i]     = static_cast<std::uint8_t>(bs.getBits(1));
+        mProgramConfig.back_element_tag_select[i] = static_cast<std::uint8_t>(bs.getBits(4));
     }
     for (i = 0; i < mProgramConfig.num_lfe_channel_elements; i++)
     {
-        mProgramConfig.lfe_element_tag_select[i] = (std::uint8_t) bs.getBits(4);
+        mProgramConfig.lfe_element_tag_select[i] = static_cast<std::uint8_t>(bs.getBits(4));
     }
     for (i = 0; i < mProgramConfig.num_assoc_data_elements; i++)
     {
-        mProgramConfig.assoc_data_element_tag_select[i] = (std::uint8_t) bs.getBits(4);
+        mProgramConfig.assoc_data_element_tag_select[i] = static_cast<std::uint8_t>(bs.getBits(4));
     }
     for (i = 0; i < mProgramConfig.num_valid_cc_elements; i++)
     {
-        mProgramConfig.cc_element_is_ind_sw[i]        = (std::uint8_t) bs.getBits(1);
-        mProgramConfig.valid_cc_element_tag_select[i] = (std::uint8_t) bs.getBits(4);
+        mProgramConfig.cc_element_is_ind_sw[i]        = static_cast<std::uint8_t>(bs.getBits(1));
+        mProgramConfig.valid_cc_element_tag_select[i] = static_cast<std::uint8_t>(bs.getBits(4));
     }
     // byte_alignment(); //Note 1 : If called from within an AudioSpecificConfig(), this byte_alignment shall be
     // relative to the start of the AudioSpecificConfig().
@@ -156,27 +158,29 @@ bool AACDecoderConfiguration::program_config_element(BitStream& bs)
         bs.getBits(1);
     }
 
-    mProgramConfig.comment_field_bytes = (std::uint8_t) bs.getBits(8);
+    mProgramConfig.comment_field_bytes = static_cast<std::uint8_t>(bs.getBits(8));
     for (i = 0; i < mProgramConfig.comment_field_bytes; i++)
     {
-        mProgramConfig.comment_field_data[i] = (std::uint8_t) bs.getBits(8);
+        mProgramConfig.comment_field_data[i] = static_cast<std::uint8_t>(bs.getBits(8));
     }
     return true;
 }
 
 bool AACDecoderConfiguration::GASpecificConfig(BitStream& bs)
 {
-    mGaSpecific.frameLengthFlag    = (std::uint8_t) bs.getBits(1);
-    mGaSpecific.dependsOnCoreCoder = (std::uint8_t) bs.getBits(1);
+    mGaSpecific.frameLengthFlag    = static_cast<std::uint8_t>(bs.getBits(1));
+    mGaSpecific.dependsOnCoreCoder = static_cast<std::uint8_t>(bs.getBits(1));
     if (mGaSpecific.dependsOnCoreCoder)
     {
-        mGaSpecific.coreCoderDelay = (std::uint8_t) bs.getBits(14);
+        mGaSpecific.coreCoderDelay = static_cast<std::uint8_t>(bs.getBits(14));
     }
-    mGaSpecific.extensionFlag = (std::uint8_t) bs.getBits(1);
+    mGaSpecific.extensionFlag = static_cast<std::uint8_t>(bs.getBits(1));
     if (mAudioSpecificConfig.channelConfiguration == 0)
     {
         if (!program_config_element(bs))
+        {
             return false;
+        }
     }
 #if PARSE_UNSUPPORTED_OBJECT_TYPES
     if ((mAudioSpecificConfig.audioObjectType == 6) || (mAudioSpecificConfig.audioObjectType == 20))
@@ -200,7 +204,7 @@ bool AACDecoderConfiguration::GASpecificConfig(BitStream& bs)
             mGaSpecific.aacSpectralDataResilienceFlag    = bs.getBits(1);
         }
 #endif
-        mGaSpecific.extensionFlag3 = (std::uint8_t) bs.getBits(1);
+        mGaSpecific.extensionFlag3 = static_cast<std::uint8_t>(bs.getBits(1));
         if (mGaSpecific.extensionFlag3)
         {
             /* tbd in version 3 */
@@ -221,12 +225,12 @@ bool AACDecoderConfiguration::parse()
         return false;
     }
 #endif
-    mAudioSpecificConfig.samplingFrequencyIndex = (std::uint8_t) bs.getBits(4);
+    mAudioSpecificConfig.samplingFrequencyIndex = static_cast<std::uint8_t>(bs.getBits(4));
     if (mAudioSpecificConfig.samplingFrequencyIndex == 15)
     {
         mAudioSpecificConfig.samplingFrequency = bs.getBits(24);
     }
-    mAudioSpecificConfig.channelConfiguration = (std::uint8_t) bs.getBits(4);
+    mAudioSpecificConfig.channelConfiguration = static_cast<std::uint8_t>(bs.getBits(4));
 #if PARSE_UNSUPPORTED_OBJECT_TYPES == 0
     if (mAudioSpecificConfig.channelConfiguration == 0)
     {
@@ -378,7 +382,7 @@ bool AACDecoderConfiguration::parse()
 #endif
     if (mAudioSpecificConfig.extensionAudioObjectType != 5 && bs.bits_to_decode() >= 16)
     {
-        mAudioSpecificConfig.syncExtensionType = (std::uint16_t) bs.getBits(11);  // bslbf
+        mAudioSpecificConfig.syncExtensionType = static_cast<std::uint16_t>(bs.getBits(11));  // bslbf
         if (mAudioSpecificConfig.syncExtensionType == 0x2b7)
         {
             mAudioSpecificConfig.extensionAudioObjectType = GetAudioObjectType(bs);
@@ -387,14 +391,14 @@ bool AACDecoderConfiguration::parse()
                 mAudioSpecificConfig.sbrPresentFlag = bs.getBits(1) != 0;
                 if (mAudioSpecificConfig.sbrPresentFlag == 1)
                 {
-                    mAudioSpecificConfig.extensionSamplingFrequencyIndex = (std::uint8_t) bs.getBits(4);
+                    mAudioSpecificConfig.extensionSamplingFrequencyIndex = static_cast<std::uint8_t>(bs.getBits(4));
                     if (mAudioSpecificConfig.extensionSamplingFrequencyIndex == 0xf)
                     {
                         mAudioSpecificConfig.extensionSamplingFrequency = bs.getBits(24);
                     }
                     if (bs.bits_to_decode() >= 12)
                     {
-                        mAudioSpecificConfig.syncExtensionType = (std::uint16_t) bs.getBits(11);  // bslbf
+                        mAudioSpecificConfig.syncExtensionType = static_cast<std::uint16_t>(bs.getBits(11));  // bslbf
                         if (mAudioSpecificConfig.syncExtensionType == 0x548)
                         {
                             mAudioSpecificConfig.psPresentFlag = bs.getBits(1) != 0;  // uimsbf
@@ -407,13 +411,13 @@ bool AACDecoderConfiguration::parse()
                 mAudioSpecificConfig.sbrPresentFlag = bs.getBits(1) != 0;
                 if (mAudioSpecificConfig.sbrPresentFlag == 1)
                 {
-                    mAudioSpecificConfig.extensionSamplingFrequencyIndex = (std::uint8_t) bs.getBits(4);
+                    mAudioSpecificConfig.extensionSamplingFrequencyIndex = static_cast<std::uint8_t>(bs.getBits(4));
                     if (mAudioSpecificConfig.extensionSamplingFrequencyIndex == 0xf)
                     {
                         mAudioSpecificConfig.extensionSamplingFrequency = bs.getBits(24);
                     }
                 }
-                mAudioSpecificConfig.extensionChannelConfiguration = (std::uint8_t) bs.getBits(4);
+                mAudioSpecificConfig.extensionChannelConfiguration = static_cast<std::uint8_t>(bs.getBits(4));
             }
         }
     }

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,20 +12,9 @@
  */
 
 #include "itempropertycontainer.hpp"
-#include "auxiliarytypeproperty.hpp"
-#include "avcconfigurationbox.hpp"
-#include "cleanaperturebox.hpp"
-#include "colourinformationbox.hpp"
-#include "freespacebox.hpp"
-#include "hevcconfigurationbox.hpp"
-#include "imagemirror.hpp"
-#include "imagerelativelocationproperty.hpp"
-#include "imagerotation.hpp"
-#include "imagespatialextentsproperty.hpp"
-#include "jpegconfigurationbox.hpp"
+
+#include "boxfactory.hpp"
 #include "log.hpp"
-#include "pixelaspectratiobox.hpp"
-#include "pixelinformationproperty.hpp"
 #include "rawpropertybox.hpp"
 
 ItemPropertyContainer::ItemPropertyContainer()
@@ -72,69 +61,16 @@ void ItemPropertyContainer::parseBox(BitStream& bitstream)
         logError() << "Reading ipco, found '" << getType().getString() << "' instead." << std::endl;
     }
 
-    // Read as many ItemProperty- or ItemFullProperty -derived boxes as there is
+    BoxFactory boxFactory;
+
     while (bitstream.numBytesLeft() > 0)
     {
         FourCCInt boxType;
-        BitStream subBitStream = bitstream.readSubBoxBitStream(boxType);
-
-        std::shared_ptr<Box> property;
-        if (boxType == "avcC")
+        BitStream subBitStream        = bitstream.readSubBoxBitStream(boxType);
+        std::shared_ptr<Box> property = boxFactory.makeNewBox(boxType);
+        if (property == nullptr)
         {
-            property = makeCustomShared<AvcConfigurationBox>();
-        }
-        else if (boxType == "hvcC")
-        {
-            property = makeCustomShared<HevcConfigurationBox>();
-        }
-        else if (boxType == "jpgC")
-        {
-            property = makeCustomShared<JpegConfigurationBox>();
-        }
-        else if (boxType == "imir")
-        {
-            property = makeCustomShared<ImageMirror>();
-        }
-        else if (boxType == "ispe")
-        {
-            property = makeCustomShared<ImageSpatialExtentsProperty>();
-        }
-        else if (boxType == "irot")
-        {
-            property = makeCustomShared<ImageRotation>();
-        }
-        else if (boxType == "rloc")
-        {
-            property = makeCustomShared<ImageRelativeLocationProperty>();
-        }
-        else if (boxType == "clap")
-        {
-            property = makeCustomShared<CleanApertureBox>();
-        }
-        else if (boxType == "auxC")
-        {
-            property = makeCustomShared<AuxiliaryTypeProperty>();
-        }
-        else if (boxType == "pixi")
-        {
-            property = makeCustomShared<PixelInformationProperty>();
-        }
-        else if (boxType == "colr")
-        {
-            property = makeCustomShared<ColourInformationBox>();
-        }
-        else if (boxType == "pasp")
-        {
-            property = makeCustomShared<PixelAspectRatioBox>();
-        }
-        else if (boxType == "free" || boxType == "skip")
-        {
-            property = makeCustomShared<FreeSpaceBox>();
-        }
-        else
-        {
-            // Read unknown properties as binary blobs.
-            property = makeCustomShared<RawPropertyBox>();
+            property = std::make_shared<RawPropertyBox>();
         }
         property->parseBox(subBitStream);
         mProperties.push_back(property);

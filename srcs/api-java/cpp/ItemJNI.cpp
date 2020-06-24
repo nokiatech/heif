@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
  */
 
 #include <jni.h>
+
 #include "Helpers.h"
 #include "Item.h"
 #define CLASS_NAME Item
@@ -20,7 +21,7 @@ extern "C"
 {
     JNI_METHOD(jstring, getTypeNative)
     {
-        HEIFPP::Item *instance = (HEIFPP::Item *) getNativeHandle(env, self);
+        auto *instance = (HEIFPP::Item *) getNativeHandle(env, self);
         return env->NewStringUTF(instance->getType().value);
     }
 
@@ -68,5 +69,4 @@ extern "C"
         NATIVE_SELF;
         return getJavaItemProperty(env, getJavaHEIF(env, self), nativeSelf->getProperty(static_cast<uint32_t>(index)));
     }
-
 }

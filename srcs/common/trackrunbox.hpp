@@ -1,12 +1,14 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef TRACKRUNBOX_HPP
@@ -18,14 +20,14 @@
 #include "moviefragmentsdatatypes.hpp"
 
 /**
-* @brief  Track Run Box class
-* @details 'trun' box implementation as specified in the ISOBMFF specification.
-*/
+ * @brief  Track Run Box class
+ * @details 'trun' box implementation as specified in the ISOBMFF specification.
+ */
 class TrackRunBox : public FullBox
 {
 public:
     TrackRunBox(uint8_t version = 0, std::uint32_t tr_flags = 0);
-    virtual ~TrackRunBox() = default;
+    ~TrackRunBox() override = default;
 
     struct SampleDetailsVersion0
     {
@@ -43,7 +45,8 @@ public:
         int32_t sampleCompositionTimeOffset;
     };
 
-    union SampleDetails {
+    union SampleDetails
+    {
         SampleDetailsVersion0 version0;
         SampleDetailsVersion1 version1;
     };
@@ -95,16 +98,16 @@ public:
     void setSampleDefaults(MOVIEFRAGMENTS::SampleDefaults& sampleDefaults);
 
     /**
-    * @brief Serialize box data to the ISOBMFF::BitStream.
-    * @see Box::writeBox()
-    */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const;
+     * @brief Serialize box data to the ISOBMFF::BitStream.
+     * @see Box::writeBox()
+     */
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /**
-    * @brief Deserialize box data from the ISOBMFF::BitStream.
-    * @see Box::parseBox()
-    */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr);
+     * @brief Deserialize box data from the ISOBMFF::BitStream.
+     * @see Box::parseBox()
+     */
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
     bool mSampleDefaultsSet;

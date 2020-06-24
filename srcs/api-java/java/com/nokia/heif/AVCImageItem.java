@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -51,6 +51,7 @@ public final class AVCImageItem extends CodedImageItem
      * Creates a new AVCImageItem to the given HEIF instance with the given image data
      * and AVCDecoderConfig
      * @param heif The parent HEIF instance for the new object
+     * @param size Size of the image
      * @param decoderConfig DecoderConfig for the image
      * @param imageData Byte array containing the image data as an encoded AVC frame
      * @throws Exception Thrown if the parent HEIF instance or the decoderconfig is invalid

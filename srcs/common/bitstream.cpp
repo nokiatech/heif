@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,9 +12,12 @@
  */
 
 #include "bitstream.hpp"
+
 #include <cstring>
 #include <limits>
 #include <stdexcept>
+#include <utility>
+
 #include "log.hpp"
 
 namespace ISOBMFF
@@ -28,8 +31,8 @@ namespace ISOBMFF
     {
     }
 
-    BitStream::BitStream(const Vector<std::uint8_t>& strData)
-        : mStorage(strData)
+    BitStream::BitStream(Vector<std::uint8_t> strData)
+        : mStorage(std::move(strData))
         , mCurrByte(0)
         , mByteOffset(0)
         , mBitOffset(0)
@@ -37,7 +40,7 @@ namespace ISOBMFF
     {
     }
 
-    BitStream::BitStream(BitStream&& other)
+    BitStream::BitStream(BitStream&& other) noexcept
         : mStorage(std::move(other.mStorage))
         , mCurrByte(other.mCurrByte)
         , mByteOffset(other.mByteOffset)
@@ -51,7 +54,7 @@ namespace ISOBMFF
         other.mStorage.clear();
     }
 
-    BitStream& BitStream::operator=(BitStream&& other)
+    BitStream& BitStream::operator=(BitStream&& other) noexcept
     {
         mCurrByte         = other.mCurrByte;
         mByteOffset       = other.mByteOffset;
@@ -215,19 +218,18 @@ namespace ISOBMFF
                 const unsigned int numBitsLeftInByte = 8 - mBitOffset;
                 if (numBitsLeftInByte > len)
                 {
-                    mCurrByte =
-                        mCurrByte |
-                        (static_cast<unsigned int>((bits & (std::numeric_limits<std::uint64_t>::max() >> (64 - len)))
-                                                   << (numBitsLeftInByte - len)));
+                    mCurrByte = mCurrByte | static_cast<unsigned int>(
+                                                (bits & (std::numeric_limits<std::uint64_t>::max() >> (64 - len)))
+                                                << (numBitsLeftInByte - len));
                     mBitOffset += len;
                     len = 0;
                 }
                 else
                 {
-                    mCurrByte = mCurrByte | (static_cast<unsigned int>((bits >> (len - numBitsLeftInByte)) &
-                                                                       ~((std::numeric_limits<std::uint64_t>::max()
-                                                                          << (64 - numBitsLeftInByte)))));
-                    mStorage.push_back((uint8_t) mCurrByte);
+                    mCurrByte = mCurrByte | static_cast<unsigned int>((bits >> (len - numBitsLeftInByte)) &
+                                                                      ~((std::numeric_limits<std::uint64_t>::max()
+                                                                         << (64 - numBitsLeftInByte))));
+                    mStorage.push_back(static_cast<uint8_t>(mCurrByte));
                     mBitOffset = 0;
                     mCurrByte  = 0;
                     len -= numBitsLeftInByte;
@@ -254,7 +256,12 @@ namespace ISOBMFF
         for (const auto character : srcString)
         {
             mStorage.push_back(static_cast<unsigned char>(character));
+            if (character == 0)
+            {
+                return;
+            }
         }
+        // append terminating null, if needed
         mStorage.push_back(0);
     }
 
@@ -373,14 +380,14 @@ namespace ISOBMFF
 
         if (numBitsLeftInByte >= len)
         {
-            returnBits = (unsigned int) ((mStorage).at(mByteOffset) >> (numBitsLeftInByte - len)) &
-                         (unsigned int) ((1 << len) - 1);
-            mBitOffset += (unsigned int) len;
+            returnBits = static_cast<unsigned int>((mStorage).at(mByteOffset) >> (numBitsLeftInByte - len)) &
+                         static_cast<unsigned int>((1 << len) - 1);
+            mBitOffset += static_cast<unsigned int>(len);
         }
         else
         {
             std::uint32_t numBitsToGo = len - numBitsLeftInByte;
-            returnBits                = (mStorage).at(mByteOffset) & (((unsigned int) 1 << numBitsLeftInByte) - 1);
+            returnBits = (mStorage).at(mByteOffset) & ((static_cast<unsigned int>(1) << numBitsLeftInByte) - 1);
             mByteOffset++;
             mBitOffset = 0;
             while (numBitsToGo > 0)
@@ -394,9 +401,9 @@ namespace ISOBMFF
                 else
                 {
                     returnBits = (returnBits << numBitsToGo) |
-                                 ((unsigned int) ((mStorage).at(mByteOffset) >> (8 - numBitsToGo)) &
-                                  (((unsigned int) 1 << numBitsToGo) - 1));
-                    mBitOffset += (unsigned int) (numBitsToGo);
+                                 (static_cast<unsigned int>((mStorage).at(mByteOffset) >> (8 - numBitsToGo)) &
+                                  ((static_cast<unsigned int>(1) << numBitsToGo) - 1));
+                    mBitOffset += static_cast<unsigned int>(numBitsToGo);
                     numBitsToGo = 0;
                 }
             }
@@ -462,8 +469,8 @@ namespace ISOBMFF
             leadingZeroBits++;
         }
 
-        std::uint32_t shiftAmount = static_cast<std::uint32_t>(leadingZeroBits);
-        codeNum                   = ((std::uint32_t) 1 << shiftAmount) - 1 + readBits(shiftAmount);
+        auto shiftAmount = static_cast<std::uint32_t>(leadingZeroBits);
+        codeNum          = (static_cast<std::uint32_t>(1) << shiftAmount) - 1 + readBits(shiftAmount);
         return codeNum;
     }
 

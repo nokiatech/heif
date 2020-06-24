@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,12 +13,12 @@
 
 #include "avcdecoderconfigrecord.hpp"
 
+#include <cassert>
+
 #include "avccommondefs.hpp"
 #include "avcparser.hpp"
 #include "bitstream.hpp"
 #include "nalutil.hpp"
-
-#include <cassert>
 
 AvcDecoderConfigurationRecord::AvcDecoderConfigurationRecord()
     : mConfigurationVersion(1)
@@ -109,7 +109,7 @@ void AvcDecoderConfigurationRecord::writeDecConfigRecord(BitStream& bitstr) cons
     // SPS NALS
     bitstr.writeBits(0xff, 3);  // reserved = '111'b
     const NALArray* nalArray = getNALArray(AvcNalUnitType::SPS);
-    unsigned int count       = static_cast<unsigned int>(nalArray ? nalArray->nalList.size() : 0);
+    auto count               = static_cast<unsigned int>(nalArray ? nalArray->nalList.size() : 0);
 
     assert(count < (1 << 6));  // Must fit into 5 bits
     bitstr.writeBits(count, 5);

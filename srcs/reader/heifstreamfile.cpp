@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,7 @@
  */
 
 #include "heifstreamfile.hpp"
+
 #include "customallocator.hpp"
 
 
@@ -65,7 +66,7 @@ namespace HEIF
         }
     }
 
-    FileStream& FileStream::operator=(FileStream&& other)
+    FileStream& FileStream::operator=(FileStream&& other) noexcept
     {
         if (m_file)
         {
@@ -95,7 +96,7 @@ namespace HEIF
     {
         if (m_file)
         {
-            offset_t n = offset_t(fread(buffer, 1, size_t(size_), m_file));
+            auto n = offset_t(fread(buffer, 1, size_t(size_), m_file));
             if (n > 0)
             {
                 m_curOffset += n;

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -21,7 +21,7 @@ namespace HEIFPP
     {
     public:
         MPEG7Item(Heif* aHeif);
-        ~MPEG7Item() = default;
+        ~MPEG7Item() override = default;
 
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
@@ -29,9 +29,9 @@ namespace HEIFPP
 
     private:
         MPEG7Item& operator=(const MPEG7Item&) = delete;
-        MPEG7Item& operator=(MPEG7Item&&)      = delete;
-        MPEG7Item(const MPEG7Item&)            = delete;
-        MPEG7Item(MPEG7Item&&)                 = delete;
-        MPEG7Item()                            = delete;
+        MPEG7Item& operator=(MPEG7Item&&) = delete;
+        MPEG7Item(const MPEG7Item&)       = delete;
+        MPEG7Item(MPEG7Item&&)            = delete;
+        MPEG7Item()                       = delete;
     };
 }  // namespace HEIFPP

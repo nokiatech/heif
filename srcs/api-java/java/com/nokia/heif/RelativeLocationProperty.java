@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -22,6 +22,8 @@ public final class RelativeLocationProperty extends DescriptiveProperty
     /**
      * Creates a RelativeLocationProperty to the given HEIF instance
      * @param heif The parent HEIF instance for the new object
+     * @param horizontalOffset Horizontal offset in pixels
+     * @param verticalOffset   Vertical offset in pixels
      * @throws Exception Thrown if the parent HEIF instance is invalid
      */
     public RelativeLocationProperty(HEIF heif, int horizontalOffset, int verticalOffset)

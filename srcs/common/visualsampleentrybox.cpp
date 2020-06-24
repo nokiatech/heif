@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,22 +12,24 @@
  */
 
 #include "visualsampleentrybox.hpp"
-#include "auxiliarytypeinfobox.hpp"
-#include "cleanaperturebox.hpp"
-#include "log.hpp"
 
 #include <cassert>
 #include <cstring>
 #include <stdexcept>
+#include <utility>
+
+#include "auxiliarytypeinfobox.hpp"
+#include "cleanaperturebox.hpp"
+#include "log.hpp"
 
 /// Length of compressorname string in VisualSampleEntry class
 static const unsigned int COMPRESSORNAME_STRING_LENGTH = 31;
 
-VisualSampleEntryBox::VisualSampleEntryBox(FourCCInt codingName, const String& compressorName)
+VisualSampleEntryBox::VisualSampleEntryBox(FourCCInt codingName, String compressorName)
     : SampleEntryBox(codingName)
     , mWidth(0)
     , mHeight(0)
-    , mCompressorName(compressorName)
+    , mCompressorName(std::move(compressorName))
     , mClap(nullptr)
     , mAuxi(nullptr)
 {

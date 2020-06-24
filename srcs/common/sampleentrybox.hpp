@@ -1,18 +1,21 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
- * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its
+ * subsidiaries. All rights are reserved.
  *
- * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
+ * written consent of Nokia.
  */
 
 #ifndef SAMPLEENTRYBOX_HPP
 #define SAMPLEENTRYBOX_HPP
 
 #include <cstdint>
+
 #include "bbox.hpp"
 #include "customallocator.hpp"
 #include "decoderconfigrecord.hpp"
@@ -24,7 +27,7 @@ class SampleEntryBox : public Box
 public:
     SampleEntryBox(FourCCInt codingname);
     SampleEntryBox(const SampleEntryBox& box);
-    virtual ~SampleEntryBox() = default;
+    ~SampleEntryBox() override = default;
 
     /** @brief Get Data Reference Index.
      *  @returns Data reference index value */
@@ -36,11 +39,11 @@ public:
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */
-    virtual void writeBox(ISOBMFF::BitStream& bitstr) const override;
+    void writeBox(ISOBMFF::BitStream& bitstr) const override;
 
     /** @brief Parses a SampleEntryBox bitstream and fills in the necessary member variables
      *  @param [in]  bitstr Bitstream that contains the box data */
-    virtual void parseBox(ISOBMFF::BitStream& bitstr) override;
+    void parseBox(ISOBMFF::BitStream& bitstr) override;
 
     /* @brief Make a copy of this box that has dynamically the same type as this */
     virtual SampleEntryBox* clone() const = 0;
@@ -52,7 +55,7 @@ public:
     virtual const Box* getConfigurationBox() const = 0;
 
     /** @brief Check if this sample entry is a visual sample
-    *  @return TRUE if visual sample. */
+     *  @return TRUE if visual sample. */
     virtual bool isVisual() const = 0;
 
 private:

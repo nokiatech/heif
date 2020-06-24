@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -140,9 +140,7 @@ ItemInfoEntry::ItemInfoEntry()
 {
 }
 
-ItemInfoEntry::~ItemInfoEntry()
-{
-}
+ItemInfoEntry::~ItemInfoEntry() = default;
 
 void ItemInfoEntry::setItemID(const uint32_t id)
 {
@@ -270,10 +268,10 @@ void FDItemInfoExtension::write(ISOBMFF::BitStream& bitstr)
 {
     bitstr.writeZeroTerminatedString(mContentLocation);
     bitstr.writeZeroTerminatedString(mContentMD5);
-    bitstr.write32Bits((uint32_t)((mContentLength >> 32) & 0xffffffff));
-    bitstr.write32Bits((uint32_t)(mContentLength & 0xffffffff));
-    bitstr.write32Bits((uint32_t)((mTransferLength >> 32) & 0xffffffff));
-    bitstr.write32Bits((uint32_t)(mTransferLength & 0xffffffff));
+    bitstr.write32Bits(static_cast<uint32_t>((mContentLength >> 32) & 0xffffffff));
+    bitstr.write32Bits(static_cast<uint32_t>(mContentLength & 0xffffffff));
+    bitstr.write32Bits(static_cast<uint32_t>((mTransferLength >> 32) & 0xffffffff));
+    bitstr.write32Bits(static_cast<uint32_t>(mTransferLength & 0xffffffff));
     bitstr.write8Bits(mEntryCount);
     for (unsigned int i = 0; i < mEntryCount; i++)
     {
@@ -304,7 +302,7 @@ void ItemInfoEntry::parseBox(ISOBMFF::BitStream& bitstr)
         }
         if (bitstr.numBytesLeft() > 0)  // This is an optional field
         {
-            FDItemInfoExtension* itemInfoExt = CUSTOM_NEW(FDItemInfoExtension, ());
+            auto* itemInfoExt = CUSTOM_NEW(FDItemInfoExtension, ());
             mItemInfoExtension.reset(itemInfoExt);
             itemInfoExt->parse(bitstr);
         }
@@ -341,9 +339,9 @@ void FDItemInfoExtension::parse(ISOBMFF::BitStream& bitstr)
 {
     bitstr.readZeroTerminatedString(mContentLocation);
     bitstr.readZeroTerminatedString(mContentMD5);
-    mContentLength = ((uint64_t) bitstr.read32Bits()) << 32;
+    mContentLength = static_cast<uint64_t>(bitstr.read32Bits()) << 32;
     mContentLength += bitstr.read32Bits();
-    mTransferLength = ((uint64_t) bitstr.read32Bits()) << 32;
+    mTransferLength = static_cast<uint64_t>(bitstr.read32Bits()) << 32;
     mTransferLength += bitstr.read32Bits();
     mEntryCount = bitstr.read8Bits();
     for (unsigned int i = 0; i < mEntryCount; i++)
@@ -357,13 +355,13 @@ ItemInfoEntry* ItemInfoBox::findItemWithType(FourCCInt itemType, const unsigned 
     ItemInfoEntry* entry   = nullptr;
     unsigned int currIndex = 0;
 
-    for (auto i = mItemInfoList.begin(); i != mItemInfoList.end(); ++i)
+    for (auto& i : mItemInfoList)
     {
-        if (i->getItemType() == itemType)
+        if (i.getItemType() == itemType)
         {
             if (index == currIndex)
             {
-                entry = &(*i);
+                entry = &i;
                 break;
             }
             else
