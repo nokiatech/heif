@@ -20,7 +20,6 @@
 #include "buildinfo.hpp"
 #include "customallocator.hpp"
 #include "jpegparser.hpp"
-#include "miafchecker.hpp"
 
 using namespace std;
 

@@ -88,11 +88,15 @@ namespace HEIF
         MIAF_CODEC_PROFILE,           ///< a codec profile is not present among FileTypeBox compatible brands
         MIAF_TRACK_DURATION,          ///< duration of tracks differs
         MIAF_ALPHA_TRACK_DIMENSIONS,  ///< alpha plane auxiliary and master track dimensions differ
-        MIAF_THUMBNAIL_SIZE,          ///< thumbnail size constraints are not followed
+        MIAF_ALPHA_TRACK_COMPOSITION_TIMES,  ///< alpha plane auxiliary and master track composition times differ
+        MIAF_THUMBNAIL_SIZE,                 ///< thumbnail size constraints are not followed
         MIAF_TRANSFORMATIVE_PROPERTY_ORDER,  ///< association order of transformative properties is invalid
         MIAF_MULTIPLE_IDEN_DIMGS,            ///< an identity derived image has several derivation inputs
         MIAF_PRIMARY_NOT_MIAF_ITEM,          ///< the primary item is not a miaf image item
         MIAF_PRIMARY_NOT_MASTER,             ///< the primary item is not a master image
+        MIAF_SYNC_SAMPLES,                   ///< there is a reverse edit list entry, but sync samples are too sparse
+        MIAF_NO_SMALL_ALTERNATIVE,           ///< there is no small alternate or thumb for a large (>128megapix) grid or overlay
+        MIAF_FILENAME_EXTENSION,             ///< filename extension does not correspond to file content
     };
 
     struct HEIF_DLL_PUBLIC FourCC

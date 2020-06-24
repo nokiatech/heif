@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2019-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,20 +12,22 @@
  */
 
 #include "miafchecker.hpp"
+
+#include <algorithm>
+#include <bitset>
+#include <cmath>
+#include <cstdint>
+
 #include "avcconfigurationbox.hpp"
 #include "cleanaperturebox.hpp"
 #include "decodepts.hpp"
+#include "fileoutputstream.hpp"
 #include "fourccint.hpp"
 #include "hevcconfigurationbox.hpp"
 #include "imagegrid.hpp"
 #include "imagespatialextentsproperty.hpp"
 #include "writerconstants.hpp"
 #include "writerimpl.hpp"
-
-#include <algorithm>
-#include <bitset>
-#include <cmath>
-#include <cstdint>
 
 using namespace HEIF;
 
@@ -70,6 +72,9 @@ namespace MIAF
             &MiafChecker::checkAnimationApplicationBrand,
             &MiafChecker::checkMatchedDuration,
             &MiafChecker::checkAlphaTrackDimensions,
+            &MiafChecker::checkAlphaSequenceCompositionTimes,
+            &MiafChecker::checkLargeDerivedImageAlternatives,
+            &MiafChecker::checkFilenameExtension,
         };
 
         for (const auto& checker : checkers)
@@ -84,6 +89,178 @@ namespace MIAF
         return ErrorCode::OK;
     }
 
+    /*
+     * Filename extensions specified by HEIF are used to identify the presence
+     * of image coding formats:
+     *  Coding format   Image collection        Sequence
+     *  HEVC            .heic, .hif             .heics, .hif
+     *  AVC             .avci                   .avcs
+     *  any             .heif, .hif             .heifs, .hif
+     */
+    HEIF::ErrorCode MiafChecker::checkFilenameExtension() const
+    {
+        const auto fileStream   = dynamic_cast<FileOutputStream*>(mWriter->mFile);
+        // It is possible to check only files that are written to file, not stream.
+        if (!fileStream)
+        {
+            return HEIF::ErrorCode::OK;
+        }
+
+        const String filename  = fileStream->getFileName();
+        const String extension = filename.substr(filename.find_last_of(".") + 1);
+
+        if (extension.length() < 3 || extension.length() > 4)
+        {
+            return ErrorCode::MIAF_FILENAME_EXTENSION;
+        }
+
+        enum class ContentType
+        {
+            SEQUENCE_ANY,
+            SEQUENCE_AVC,
+            SEQUENCE_HEVC,
+            STILL_ANY,
+            STILL_AVC,
+            STILL_HEVC,
+        };
+        Set<ContentType> foundContent;
+
+        for (const auto& image : mWriter->mImageCollection.images)
+        {
+            const auto imageId  = image.first.get();
+            const auto itemType = getItemType(imageId);
+            if (itemType == "hvc1")
+            {
+                foundContent.insert(ContentType::STILL_HEVC);
+            }
+            else if (itemType == "avc1")
+            {
+                foundContent.insert(ContentType::STILL_AVC);
+            }
+
+            foundContent.insert(ContentType::STILL_ANY);
+        }
+
+        for (const auto& s : mWriter->mImageSequences)
+        {
+            const auto sequence = s.second;
+
+            if (sequence.mediaFormat == MediaFormat::AVC)
+            {
+                foundContent.insert(ContentType::SEQUENCE_AVC);
+            }
+            else if (sequence.mediaFormat == MediaFormat::HEVC)
+            {
+                foundContent.insert(ContentType::SEQUENCE_HEVC);
+            }
+            foundContent.insert(ContentType::SEQUENCE_ANY);
+        }
+
+        const Map<ContentType, Vector<String>> VALID_EXTENSIONS = {
+            {ContentType::SEQUENCE_ANY, {"heifs", "hif"}},
+            {ContentType::SEQUENCE_AVC, {"avcs"}},
+            {ContentType::SEQUENCE_HEVC, {"heics", "hif"}},
+            {ContentType::STILL_ANY, {"heif", "hif"}},
+            {ContentType::STILL_AVC, {"avci"}},
+            {ContentType::STILL_HEVC, {"heic", "hif"}},
+        };
+
+        bool validSuffixFound = false;
+        for (const auto content : foundContent)
+        {
+            if (VALID_EXTENSIONS.count(content))
+            {
+                const auto& extensions = VALID_EXTENSIONS.at(content);
+                const auto found       = find(extensions.cbegin(), extensions.cend(), extension);
+                if (found != extensions.cend())
+                {
+                    validSuffixFound = true;
+                    break;
+                }
+            }
+        }
+
+        if (!validSuffixFound)
+        {
+            return ErrorCode::MIAF_FILENAME_EXTENSION;
+        }
+
+        return HEIF::ErrorCode::OK;
+    }
+
+    bool MiafChecker::isAlphaPlaneSequence(const HEIF::ImageSequence& sequence) const
+    {
+        if (((sequence.auxiliaryType == "urn:mpeg:mpegB:cicp:systems:auxiliary:alpha") ||
+             (sequence.auxiliaryType == "urn:mpeg:hevc:2015:auxid:1")) &&
+            (sequence.trackReferences.count("auxl") > 0))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    std::vector<HEIF::SequenceId> MiafChecker::getAuxMasterSequences(const HEIF::SequenceId auxSequenceId) const
+    {
+        std::vector<HEIF::SequenceId> masterSequencesIds;
+
+        const auto& masterTrackIds = mWriter->mImageSequences.at(auxSequenceId).trackReferences.at("auxl");
+        for (const auto& masterTrackId : masterTrackIds)
+        {
+            const auto& masterSequence =
+                std::find_if(mWriter->mImageSequences.cbegin(), mWriter->mImageSequences.cend(),
+                             [&masterTrackId](std::pair<SequenceId, ImageSequence> const& mapItem) {
+                                 return masterTrackId == mapItem.second.trackId;
+                             });
+            masterSequencesIds.push_back(masterSequence->first);
+        }
+
+        return masterSequencesIds;
+    }
+
+    HEIF::ErrorCode MiafChecker::checkAlphaSequenceCompositionTimes() const
+    {
+        for (const auto& it : mWriter->mImageSequences)
+        {
+            const auto& sequenceId = it.first;
+            const auto& sequence   = it.second;
+            if (isAlphaPlaneSequence(sequence))
+            {
+                double duration;
+                DecodePts::PMap auxPresentationMap;
+                getTrackTimeStamps(sequence, duration, auxPresentationMap);
+
+                const auto& masterSequenceIds = getAuxMasterSequences(sequenceId);
+                for (const auto& masterSequence : masterSequenceIds)
+                {
+                    DecodePts::PMap masterPresentationMap;
+
+                    getTrackTimeStamps(mWriter->mImageSequences.at(masterSequence), duration, masterPresentationMap);
+
+                    auto it1 = auxPresentationMap.cbegin();
+                    auto it2 = masterPresentationMap.cbegin();
+                    while (true)
+                    {
+                        const bool end1 = (it1 == auxPresentationMap.cend());
+                        const bool end2 = (it2 == masterPresentationMap.cend());
+                        if (end1 && end2)
+                        {
+                            break;
+                        }
+                        if ((end1 || end2) || (it1->first != it2->first) || (it1->second != it2->second))
+                        {
+                            return HEIF::ErrorCode::MIAF_ALPHA_TRACK_COMPOSITION_TIMES;
+                        }
+                        ++it1;
+                        ++it2;
+                    }
+                }
+            }
+        }
+
+        return ErrorCode::OK;
+    }
+
     HEIF::ErrorCode MiafChecker::checkAlphaTrackDimensions() const
     {
         for (const auto& it : mWriter->mImageSequences)
@@ -91,21 +268,15 @@ namespace MIAF
             const auto& sequence = it.second;
 
             // Check alpha auxiliary tracks
-            if (((sequence.auxiliaryType == "urn:mpeg:mpegB:cicp:systems:auxiliary:alpha") ||
-                 (sequence.auxiliaryType == "urn:mpeg:hevc:2015:auxid:1")) &&
-                (sequence.trackReferences.count("auxl") > 0))
+            if (isAlphaPlaneSequence(sequence))
             {
                 // Check that dimensions of all auxl-referenced sequences match.
-                const auto& masterTrackIds = sequence.trackReferences.at("auxl");
-                for (const auto& masterTrackId : masterTrackIds)
+                const auto& masterSequenceIds = getAuxMasterSequences(it.first);
+                for (const auto& masterSequenceId : masterSequenceIds)
                 {
-                    const auto& masterSequence =
-                        std::find_if(mWriter->mImageSequences.cbegin(), mWriter->mImageSequences.cend(),
-                                     [&masterTrackId](std::pair<SequenceId, ImageSequence> const& mapItem) {
-                                         return masterTrackId == mapItem.second.trackId;
-                                     });
-                    if ((masterSequence->second.maxDimensions.width != sequence.maxDimensions.width) ||
-                        (masterSequence->second.maxDimensions.height != sequence.maxDimensions.height))
+                    const auto& masterSequence = mWriter->mImageSequences.at(masterSequenceId);
+                    if ((masterSequence.maxDimensions.width != sequence.maxDimensions.width) ||
+                        (masterSequence.maxDimensions.height != sequence.maxDimensions.height))
                     {
                         return ErrorCode::MIAF_ALPHA_TRACK_DIMENSIONS;
                     }
@@ -131,7 +302,7 @@ namespace MIAF
                 return ErrorCode::MIAF_TRACK_DURATION;
             }
 
-            if (durationFound == false)
+            if (!durationFound)
             {
                 firstSequenceDuration = duration;
                 durationFound         = true;
@@ -268,11 +439,11 @@ namespace MIAF
                 if ((editBox->getEditListBox()->getFlags() & 1) == 1)
                 {
                     DecodePts::PMap repeatingPMap;
-                    const int64_t trackDuration    = static_cast<int64_t>(duration * 1000u);
-                    const int64_t editListDuration = static_cast<int64_t>(decodePts.getSpan() * 1000u / mediaTimeScale);
-                    auto iter                      = presentationMap.cbegin();
-                    int64_t nextSampleTimestamp    = iter->first;
-                    int64_t offset                 = 0;
+                    const auto trackDuration    = static_cast<int64_t>(duration * 1000u);
+                    const auto editListDuration = static_cast<int64_t>(decodePts.getSpan() * 1000u / mediaTimeScale);
+                    auto iter                   = presentationMap.cbegin();
+                    int64_t nextSampleTimestamp = iter->first;
+                    int64_t offset              = 0;
 
                     while (nextSampleTimestamp < trackDuration)
                     {
@@ -348,7 +519,7 @@ namespace MIAF
                 // 4. empty edit, media edit (forward), media edit (reverse)
                 if (editlist.editUnits.size == 1)
                 {
-                    if (isValidMediaEdit(editlist.editUnits[0], false, false) == false)
+                    if (!isValidMediaEdit(editlist.editUnits[0], false, false))
                     {
                         return ErrorCode::MIAF_EDIT_LIST;
                     }
@@ -394,6 +565,40 @@ namespace MIAF
                     return ErrorCode::MIAF_EDIT_LIST;
                 }
             }
+
+            // In case a reverse edit is present, check that sync sample condition is fulfilled.
+            bool reverseEditFound = false;
+            for (unsigned int i = 0; i < editlist.editUnits.size; ++i)
+            {
+                if (isValidMediaEdit(editlist.editUnits[i], false, true))
+                {
+                    reverseEditFound = true;
+                    break;
+                }
+            }
+
+            if (reverseEditFound)
+            {
+                const auto& samples                                 = it.second.samples;
+                const unsigned int MAX_SAMPLES_BETWEEN_SYNC_SAMPLES = 3;
+                unsigned int sampleCount                            = 0;
+                for (const auto& sample : samples)
+                {
+                    if (sample.isSyncSample)
+                    {
+                        sampleCount = 0;
+                    }
+                    else
+                    {
+                        ++sampleCount;
+                    }
+
+                    if (sampleCount > MAX_SAMPLES_BETWEEN_SYNC_SAMPLES)
+                    {
+                        return ErrorCode::MIAF_SYNC_SAMPLES;
+                    }
+                }
+            }
         }
 
         return ErrorCode::OK;
@@ -429,11 +634,7 @@ namespace MIAF
             // Check if it is a reverse edit.
             if ((editUnit.mediaRateInteger == -1) && (editUnit.mediaRateFraction == 0))
             {
-                if (onlyForward)
-                {
-                    return false;
-                }
-                return true;
+                return !onlyForward;
             }
 
             if (onlyReverse)
@@ -555,7 +756,7 @@ namespace MIAF
         }
 
         // Using initial 'mdat' mode is not compatible with the progressive application brand.
-        if (mWriter->mInitialMdat == true)
+        if (mWriter->mInitialMdat)
         {
             return ErrorCode::MIAF_PROGRESSIVE_APPLICATION;
         }
@@ -624,11 +825,14 @@ namespace MIAF
             MAIN_10_STILL_PICTURE,
             MAIN_422_10,
             MAIN_422_10_INTRA,
+            MAIN_INTRA,
             // HEVC Extended profile
             MAIN_444_10,
             MAIN_444_STILL_PICTURE,
             MAIN_444_10_INTRA,
-            MONOCHROME_10
+            MAIN_444,
+            MONOCHROME_10,
+            MONOCHROME,
         };
 
         HevcProfile profile;
@@ -680,7 +884,7 @@ namespace MIAF
                 }
             };
 
-            ExtensionProfile configFlags;
+            ExtensionProfile configFlags{};
             const std::bitset<8> constraintFlagBits1(constraintFlags.at(0));
             const std::bitset<8> constraintFlagBits2(constraintFlags.at(1));
             configFlags.generalMax12bitConstraint       = constraintFlagBits1.test(3);
@@ -703,9 +907,12 @@ namespace MIAF
                 {HevcProfile::MAIN_422_10_INTRA, true, true, false, true, false, false, true, false, true},
                 {HevcProfile::MAIN_444_STILL_PICTURE, true, true, true, false, false, false, true, true, false},
                 {HevcProfile::MAIN_444_STILL_PICTURE, true, true, true, false, false, false, true, true, true},
+                {HevcProfile::MAIN_444, true, true, true, false, false, false, false, false, true},
                 {HevcProfile::MAIN_444_10, true, true, false, false, false, false, false, false, true},
                 {HevcProfile::MAIN_444_10_INTRA, true, true, false, false, false, false, true, false, false},
                 {HevcProfile::MAIN_444_10_INTRA, true, true, false, false, false, false, true, false, true},
+                {HevcProfile::MAIN_INTRA, true, true, true, true, true, false, true, false, true},
+                {HevcProfile::MONOCHROME, true, true, true, true, true, true, false, false, true},
                 {HevcProfile::MONOCHROME_10, true, true, false, true, true, true, false, false, true},
             };
 
@@ -761,8 +968,9 @@ namespace MIAF
                 return false;
             }
 
-            if ((profile == HevcProfile::MAIN_444_10) || (profile == HevcProfile::MAIN_444_STILL_PICTURE) ||
-                (profile == HevcProfile::MAIN_444_10_INTRA) || (profile == HevcProfile::MONOCHROME_10))
+            if ((profile == HevcProfile::MAIN_444) || (profile == HevcProfile::MAIN_444_10) ||
+                (profile == HevcProfile::MAIN_444_STILL_PICTURE) || (profile == HevcProfile::MAIN_444_10_INTRA) ||
+                (profile == HevcProfile::MONOCHROME_10) || (profile == HevcProfile::MONOCHROME))
             {
                 if (mMiafHevcExtendedProfile)
                 {
@@ -770,8 +978,9 @@ namespace MIAF
                 }
             }
 
-            if ((profile == HevcProfile::MAIN_10) || (profile == HevcProfile::MAIN_10_INTRA) ||
-                (profile == HevcProfile::MAIN_10_STILL_PICTURE) || (profile == HevcProfile::MAIN_422_10_INTRA))
+            if ((profile == HevcProfile::MAIN_INTRA) || (profile == HevcProfile::MAIN_10) ||
+                (profile == HevcProfile::MAIN_10_INTRA) || (profile == HevcProfile::MAIN_10_STILL_PICTURE) ||
+                (profile == HevcProfile::MAIN_422_10_INTRA))
             {
                 if (mMiafHevcAdvancedProfile || mMiafHevcExtendedProfile)
                 {
@@ -878,8 +1087,8 @@ namespace MIAF
 
             if (itemType == "hvc1")
             {
-                const HevcConfigurationBox* configBox = dynamic_cast<const HevcConfigurationBox*>(config);
-                if (isHevcConfigurationBoxConforming(configBox, false) == false)
+                const auto* configBox = dynamic_cast<const HevcConfigurationBox*>(config);
+                if (!isHevcConfigurationBoxConforming(configBox, false))
                 {
                     return ErrorCode::MIAF_ENCODING;
                 }
@@ -887,8 +1096,8 @@ namespace MIAF
 
             if (itemType == "avc1")
             {
-                const AvcConfigurationBox* configBox = dynamic_cast<const AvcConfigurationBox*>(config);
-                if (isAvcConfigurationBoxConforming(configBox, false) == false)
+                const auto* configBox = dynamic_cast<const AvcConfigurationBox*>(config);
+                if (!isAvcConfigurationBoxConforming(configBox, false))
                 {
                     return ErrorCode::MIAF_ENCODING;
                 }
@@ -902,15 +1111,15 @@ namespace MIAF
             const Vector<UniquePtr<SampleEntryBox>>& sampleEntries = stbl.getSampleDescriptionBox().getSampleEntries();
             for (const auto& sampleEntry : sampleEntries)
             {
-                const Box* configBox                      = sampleEntry->getConfigurationBox();
-                const HevcConfigurationBox* hevcConfigBox = dynamic_cast<const HevcConfigurationBox*>(configBox);
-                if (hevcConfigBox && isHevcConfigurationBoxConforming(hevcConfigBox, handler == "vide") == false)
+                const Box* configBox      = sampleEntry->getConfigurationBox();
+                const auto* hevcConfigBox = dynamic_cast<const HevcConfigurationBox*>(configBox);
+                if ((hevcConfigBox != nullptr) && !isHevcConfigurationBoxConforming(hevcConfigBox, handler == "vide"))
                 {
                     return ErrorCode::MIAF_ENCODING;
                 }
 
-                const AvcConfigurationBox* avcConfigBox = dynamic_cast<const AvcConfigurationBox*>(configBox);
-                if (avcConfigBox && isAvcConfigurationBoxConforming(avcConfigBox, handler == "vide") == false)
+                const auto* avcConfigBox = dynamic_cast<const AvcConfigurationBox*>(configBox);
+                if ((avcConfigBox != nullptr) && !isAvcConfigurationBoxConforming(avcConfigBox, handler == "vide"))
                 {
                     return ErrorCode::MIAF_ENCODING;
                 }
@@ -931,8 +1140,7 @@ namespace MIAF
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::CLAP, image.first.get());
             if (index > 0)
             {
-                const CleanApertureBox* clap =
-                    dynamic_cast<const CleanApertureBox*>(iprp.getPropertyByIndex(index - 1));
+                const auto* clap = dynamic_cast<const CleanApertureBox*>(iprp.getPropertyByIndex(index - 1));
                 const CleanApertureBox::Fraction heightFraction           = clap->getHeight();
                 const CleanApertureBox::Fraction widthFraction            = clap->getWidth();
                 const CleanApertureBox::Fraction horizontalOffsetFraction = clap->getHorizOffset();
@@ -1103,7 +1311,8 @@ namespace MIAF
                 const auto& sources = getDerivationSourcesForItem(itemId);
                 for (const auto sourceId : sources)
                 {
-                    uint32_t width, height;
+                    uint32_t width;
+                    uint32_t height;
                     getItemSize(sourceId, width, height);
                     // Tile dimensions should also follow (width % 64 != 0) || (height % 64 != 0), but
                     // check is skipped as it is not mandatory.
@@ -1132,7 +1341,7 @@ namespace MIAF
             {
                 Vector<unsigned int> sizes;
                 const auto& thumbIds = getThumbnails(masterItemId);
-                if (thumbIds.size() > 0)
+                if (!thumbIds.empty())
                 {
                     for (const auto thumbId : thumbIds)
                     {
@@ -1147,7 +1356,7 @@ namespace MIAF
                             return ErrorCode::MIAF_THUMBNAIL_SIZE;
                         }
                     }
-                    if (sizes.size())
+                    if (!sizes.empty())
                     {
                         if (sizes.back() * MAX_TOTAL_PIXEL_FACTOR < getItemPixelCount(masterItemId))
                         {
@@ -1159,6 +1368,115 @@ namespace MIAF
         }
 
         return ErrorCode::OK;
+    }
+
+    HEIF::ErrorCode MiafChecker::checkLargeDerivedImageAlternatives() const
+    {
+        const Vector<EntityToGroupBox>& entityToGroupBoxes =
+            mWriter->mMetaBox.getGroupsListBox().getEntityToGroupsBoxes();
+        const auto infe    = mWriter->mMetaBox.getItemInfoBox();
+        const auto itemIds = infe.getItemIds();
+        for (const auto itemId : itemIds)
+        {
+            const bool isGrid    = isItemGrid(itemId);
+            const bool isOverlay = isItemOverlay(itemId);
+
+            // When an overlay or grid derived image item is
+            // -the primary item or
+            // -in an alternate group that contains the primary item...
+            if ((isGrid || isOverlay) && isPrimaryItemOrAlternative(itemId))
+            {
+                const auto pixelCount      = getItemInputPixelCount(itemId);
+                const auto MAX_PIXEL_COUNT = 128000000;
+                // ... if the sum of the pixel counts of the input images of
+                // the derived image item exceeds 128,000,000 pixels...
+                if (pixelCount > MAX_PIXEL_COUNT)
+                {
+                    bool smallerFound  = false;
+                    const auto minSize = pixelCount / 200;
+
+                    // there must be thumbnail with 128,000,000 or less pixels...
+                    const auto thumbIds = getThumbnails(itemId);
+                    for (const auto thumbId : thumbIds)
+                    {
+                        if (getItemInputPixelCount(thumbId) <= minSize)
+                        {
+                            smallerFound = true;
+                            break;
+                        }
+                    }
+
+                    // .. or a grid/overlay in the same alternate group (max size is pixelCount/200).
+                    for (const auto& entityToGroup : entityToGroupBoxes)
+                    {
+                        if (entityToGroup.getType() == "altr")
+                        {
+                            const auto& altrIds = entityToGroup.getEntityIds();
+                            if (find(altrIds.cbegin(), altrIds.cend(), itemId) != altrIds.cend())
+                            {
+                                for (const auto alternateId : altrIds)
+                                {
+                                    // Check it is item, as it could be also a track id.
+                                    if (isValidItemId(alternateId))
+                                    {
+                                        if ((isGrid && isItemGrid(alternateId)) ||
+                                            (isOverlay && isItemOverlay(alternateId)))
+                                        {
+                                            if (getItemInputPixelCount(alternateId) <= minSize)
+                                            {
+                                                smallerFound = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (!smallerFound)
+                    {
+                        return ErrorCode::MIAF_NO_SMALL_ALTERNATIVE;
+                    }
+                }
+            }
+        }
+        return ErrorCode::OK;
+    }
+
+    bool MiafChecker::isItemGrid(uint32_t itemId) const
+    {
+        const auto infe     = mWriter->mMetaBox.getItemInfoBox();
+        const auto itemType = infe.getItemById(itemId).getItemType();
+        return itemType == FourCCInt("grid");
+    }
+
+    bool MiafChecker::isItemOverlay(uint32_t itemId) const
+    {
+        const auto infe     = mWriter->mMetaBox.getItemInfoBox();
+        const auto itemType = infe.getItemById(itemId).getItemType();
+        return itemType == FourCCInt("iovl");
+    }
+
+    unsigned int MiafChecker::getItemInputPixelCount(const uint32_t itemId) const
+    {
+        unsigned int totalPixels = 0;
+        const auto& sourceIds    = getDerivationSourcesForItem(itemId);
+
+        // For derived items, add pixel counts of input images.
+        if (!sourceIds.empty())
+        {
+            for (auto sourceId : sourceIds)
+            {
+                totalPixels += getItemInputPixelCount(sourceId);
+            }
+        }
+        else  // Otherwise add pixel count from ispe.
+        {
+            totalPixels += getItemPixelCount(itemId);
+        }
+
+        return totalPixels;
     }
 
     unsigned int MiafChecker::getItemPixelCount(const uint32_t itemId) const
@@ -1175,8 +1493,7 @@ namespace MIAF
         const auto& iprp     = mWriter->mMetaBox.getItemPropertiesBox();
         const auto ispeIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::ISPE, itemId);
 
-        const ImageSpatialExtentsProperty* ispe =
-            static_cast<const ImageSpatialExtentsProperty*>(iprp.getPropertyByIndex(ispeIndex - 1));
+        const auto* ispe = dynamic_cast<const ImageSpatialExtentsProperty*>(iprp.getPropertyByIndex(ispeIndex - 1));
 
         height = ispe->getDisplayHeight();
         width  = ispe->getDisplayWidth();
@@ -1471,6 +1788,36 @@ namespace MIAF
         return false;
     }
 
+    bool MiafChecker::isPrimaryItemOrAlternative(uint32_t itemId) const
+    {
+        const auto primaryItemId = mWriter->mMetaBox.getPrimaryItemBox().getItemId();
+        if (itemId == primaryItemId)
+        {
+            return true;
+        }
+
+        const Vector<EntityToGroupBox>& entityToGroupBoxes =
+            mWriter->mMetaBox.getGroupsListBox().getEntityToGroupsBoxes();
+        for (const auto& entityToGroup : entityToGroupBoxes)
+        {
+            if (entityToGroup.getType() == "altr")
+            {
+                const auto& ids = entityToGroup.getEntityIds();
+                // Find the alterntive group with primary item id.
+                if (find(ids.cbegin(), ids.cend(), primaryItemId) != ids.cend())
+                {
+                    // Check if the searched item is present too.
+                    if (find(ids.cbegin(), ids.cend(), itemId) != ids.cend())
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     /* Transformative properties, if present, must be associated always in the same order:
      * 1. clean aperture
      * 2. rotation
@@ -1550,14 +1897,14 @@ namespace MIAF
         const FourCCInt itemType = getItemType(itemId);
         const auto& sources      = getDerivationSourcesForItem(itemId);
 
-        if (isCodedImage(itemId) && sources.size() == 0)
+        if (isCodedImage(itemId) && sources.empty())
         {
             return ErrorCode::OK;
         }
 
         if (itemType == "grid")
         {
-            if (gridFound || sources.size() == 0)
+            if (gridFound || sources.empty())
             {
                 return ErrorCode::MIAF_DERIVATION_CHAIN;
             }
@@ -1566,7 +1913,7 @@ namespace MIAF
 
         if (itemType == "iovl")
         {
-            if (overlayFound || gridFound || sources.size() == 0)
+            if (overlayFound || gridFound || sources.empty())
             {
                 return ErrorCode::MIAF_DERIVATION_CHAIN;
             }
@@ -1761,13 +2108,13 @@ namespace MIAF
         ChromaFormat chromaFormat;
         if (decoderConfigType == "hvcC")
         {
-            const HevcConfigurationBox* hvc1 = dynamic_cast<const HevcConfigurationBox*>(config);
-            chromaFormat = static_cast<ChromaFormat>(hvc1->getHevcConfiguration().getChromaFormat());
+            const auto* hvc1 = dynamic_cast<const HevcConfigurationBox*>(config);
+            chromaFormat     = static_cast<ChromaFormat>(hvc1->getHevcConfiguration().getChromaFormat());
         }
         else if (decoderConfigType == "avcC")
         {
-            const AvcConfigurationBox* avc1 = dynamic_cast<const AvcConfigurationBox*>(config);
-            chromaFormat                    = static_cast<ChromaFormat>(avc1->getAvcConfiguration().getChromaFormat());
+            const auto* avc1 = dynamic_cast<const AvcConfigurationBox*>(config);
+            chromaFormat     = static_cast<ChromaFormat>(avc1->getAvcConfiguration().getChromaFormat());
         }
         else
         {

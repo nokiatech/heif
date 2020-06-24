@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,17 +14,17 @@
 #ifndef MIAFCHECKER_HPP
 #define MIAFCHECKER_HPP
 
+#include <vector>
+
 #include "decodepts.hpp"
 #include "fourccint.hpp"
 #include "heifcommondatatypes.h"
 #include "writerdatatypesinternal.hpp"
 
-#include <vector>
-
 namespace HEIF
 {
     class WriterImpl;
-}
+}  // namespace HEIF
 
 class AvcConfigurationBox;
 class HevcConfigurationBox;
@@ -62,6 +62,9 @@ namespace MIAF
         HEIF::ErrorCode checkBurstCaptureApplicationBrand() const;
         HEIF::ErrorCode checkAnimationApplicationBrand() const;
         HEIF::ErrorCode checkAlphaTrackDimensions() const;
+        HEIF::ErrorCode checkAlphaSequenceCompositionTimes() const;
+        HEIF::ErrorCode checkLargeDerivedImageAlternatives() const;
+        HEIF::ErrorCode checkFilenameExtension() const;
 
         // Shared checkers
         HEIF::ErrorCode checkEditLists() const;
@@ -75,11 +78,37 @@ namespace MIAF
         bool hasItemReferencesOfType(uint32_t itemId, FourCCInt referenceType) const;
         bool hasTrackReferencesOfType(uint32_t trackId, FourCCInt reference) const;
         bool isInMasterAlternateGroup(uint32_t trackId) const;
+
+        /**
+         * @param itemId Item id to check.
+         * @return Return true if the item is the primary item or in same alternative entity group with the primary
+         * item.
+         */
+        bool isPrimaryItemOrAlternative(uint32_t itemId) const;
+
+        /**
+         * @param itemId Item id of the image.
+         * @return Total sum of input pixels, which considers also input images of derived images.
+         */
+        unsigned int getItemInputPixelCount(uint32_t itemId) const;
+
+        /**
+         * @param itemId Item id to check.
+         * @return True if the item is a derived grid item, false otherwise.
+         */
+        bool isItemGrid(uint32_t itemId) const;
+
+        /**
+         * @param itemId Item id to check.
+         * @return True if the item is a derived overlay item, false otherwise.
+         */
+        bool isItemOverlay(uint32_t itemId) const;
+
         bool isValidItemId(uint32_t itemId) const;
         bool isMasterTrack(uint32_t trackId) const;
         bool isMasterImage(uint32_t itemId) const;
         Vector<std::uint32_t> getThumbnails(uint32_t itemId) const;
-        unsigned int getItemPixelCount(const uint32_t itemId) const;
+        unsigned int getItemPixelCount(uint32_t itemId) const;
         void getItemSize(uint32_t itemId, uint32_t& width, uint32_t& height) const;
         std::vector<std::uint32_t> getDerivationSourcesForItem(std::uint32_t itemId) const;
         FourCCInt getItemType(std::uint32_t itemId) const;
@@ -108,8 +137,7 @@ namespace MIAF
          * @return Number of decoded samples needed to present this sample (sample itself and direct and non-direct
          * reference samples), meaning 1 or more.
          */
-        unsigned int getDependencyCount(const Vector<HEIF::ImageSequence::Sample>& samples,
-                                        const uint32_t sample) const;
+        unsigned int getDependencyCount(const Vector<HEIF::ImageSequence::Sample>& samples, uint32_t sample) const;
 
         enum ChromaFormat
         {
@@ -127,6 +155,8 @@ namespace MIAF
         bool getTrackTimeStamps(const HEIF::ImageSequence& sequence,
                                 double& duration,
                                 DecodePts::PMap& presentationMap) const;
+        bool isAlphaPlaneSequence(const HEIF::ImageSequence& sequence) const;
+        std::vector<HEIF::SequenceId> getAuxMasterSequences(HEIF::SequenceId auxSequenceId) const;
 
     private:
         HEIF::WriterImpl* mWriter;
