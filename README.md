@@ -7,6 +7,8 @@ You can also check the **[Wiki](https://github.com/nokiatech/heif/wiki)** pages 
 For MIAF specific code, please switch to the [MIAF branch](https://github.com/nokiatech/heif/tree/miaf).
 
 ## News:
+[25.06.2020] v3.6.0 Release: Added support for several new properties, image items with decoding dependencies, Extended type box and Type combination box, associating properties for entity groups, and reader support for segmented tracks. Minor improvements and code cleanup.
+
 [10.07.2019] v3.5.0 Release: Improved support for JPEGs and edit lists. Bug fixes, minor improvements and code cleanup.
 
 [06.11.2018] v3.4.0 Release: Java API improvements. Bug fixes, code cleanup and robustness improvements.
@@ -83,6 +85,6 @@ All the example media files (*.heic, *.png, *.jpg, *.gif) in this repository are
 
 For more information/questions/source code/commercial licensing related issues, please contact: <heif@nokia.com>
 
-### **Copyright (c) 2015-2019, Nokia Technologies Ltd.**
+### **Copyright (c) 2015-2020, Nokia Technologies Ltd.**
 ### **All rights reserved.**
 
