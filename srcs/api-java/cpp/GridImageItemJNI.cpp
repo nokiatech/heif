@@ -24,7 +24,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        auto *nativeObject = new HEIFPP::GridImageItem(nativeHeif);
+        auto* nativeObject = new HEIFPP::GridImageItem(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -50,7 +50,7 @@ extern "C"
     {
         NATIVE_SELF;
 
-        HEIFPP::ImageItem *imageItem = nullptr;
+        HEIFPP::ImageItem* imageItem = nullptr;
         CHECK_ERROR(nativeSelf->getImage(static_cast<uint32_t>(column), static_cast<uint32_t>(row), imageItem),
                     "getImage failed");
         return imageItem ? GET_JAVA_ITEM(imageItem) : nullptr;

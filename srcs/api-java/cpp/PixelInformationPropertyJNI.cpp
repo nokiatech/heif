@@ -27,7 +27,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        auto *nativeObject = new HEIFPP::PixelInformationProperty(nativeHeif);
+        auto* nativeObject = new HEIFPP::PixelInformationProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -42,7 +42,7 @@ extern "C"
     JNI_METHOD_ARG(void, setPixelInformationNative, jbyteArray data)
     {
         NATIVE_SELF;
-        jbyte *nativeData = env->GetByteArrayElements(data, nullptr);
+        jbyte* nativeData = env->GetByteArrayElements(data, nullptr);
         auto dataSize     = static_cast<uint32_t>(env->GetArrayLength(data));
 
         nativeSelf->mPixelInformation.bitsPerChannel = HEIF::Array<uint8_t>(dataSize);

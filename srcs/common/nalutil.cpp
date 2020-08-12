@@ -33,21 +33,27 @@ unsigned int findStartCodeLen(const Vector<uint8_t>& data)
     }
 }
 
-Vector<uint8_t> convertByteStreamToRBSP(const Vector<uint8_t>& byteStr)
+bool convertByteStreamToRBSP(const Vector<uint8_t>& byteStr, Vector<uint8_t>& output)
 {
-    Vector<uint8_t> dest;
     const size_t numBytesInNalUnit = byteStr.size();
 
+    output.clear();
     // this is a reasonable guess, as the result Vector can not be larger than the original
-    dest.reserve(numBytesInNalUnit);
+    output.reserve(numBytesInNalUnit);
 
     // find start code end
     uint32_t i = findStartCodeLen(byteStr);
 
     // copy NALU header
     static const size_t NALU_HEADER_LENGTH = 2;
-    dest.insert(dest.end(), byteStr.cbegin() + static_cast<int32_t>(i),
-                byteStr.cbegin() + static_cast<int32_t>(i) + NALU_HEADER_LENGTH);
+
+    if (i + NALU_HEADER_LENGTH > numBytesInNalUnit)
+    {
+        return false;
+    }
+
+    output.insert(output.end(), byteStr.cbegin() + static_cast<int32_t>(i),
+                  byteStr.cbegin() + static_cast<int32_t>(i) + NALU_HEADER_LENGTH);
     i += NALU_HEADER_LENGTH;
 
     // copy rest of the data while removing start code emulation prevention bytes
@@ -91,7 +97,8 @@ Vector<uint8_t> convertByteStreamToRBSP(const Vector<uint8_t>& byteStr)
             if (byte == 0x03)
             {
                 // skip copying 0x03
-                dest.insert(dest.end(), byteStr.cbegin() + copyStartOffset, byteStr.cbegin() + static_cast<int32_t>(i));
+                output.insert(output.end(), byteStr.cbegin() + copyStartOffset,
+                              byteStr.cbegin() + static_cast<int32_t>(i));
                 copyStartOffset = static_cast<int32_t>(i) + 1;
                 // continue byte stream copying
                 state = State::COPY_DATA;
@@ -107,6 +114,6 @@ Vector<uint8_t> convertByteStreamToRBSP(const Vector<uint8_t>& byteStr)
             break;
         }
     }
-    dest.insert(dest.end(), byteStr.cbegin() + copyStartOffset, byteStr.cend());
-    return dest;
+    output.insert(output.end(), byteStr.cbegin() + copyStartOffset, byteStr.cend());
+    return true;
 }

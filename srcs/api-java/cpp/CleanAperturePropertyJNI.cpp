@@ -21,8 +21,8 @@
 
 extern "C"
 {
-    jobject createFraction(JNIEnv *env, jobject obj, int numerator, int denominator);
-    jobject createFraction(JNIEnv *env, jobject obj, int numerator, int denominator)
+    jobject createFraction(JNIEnv* env, jobject obj, int numerator, int denominator);
+    jobject createFraction(JNIEnv* env, jobject obj, int numerator, int denominator)
     {
         const jclass javaClass = env->GetObjectClass(obj);
 
@@ -37,7 +37,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        auto *nativeObject = new HEIFPP::CleanApertureProperty(nativeHeif);
+        auto* nativeObject = new HEIFPP::CleanApertureProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 

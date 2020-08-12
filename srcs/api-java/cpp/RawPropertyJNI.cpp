@@ -21,7 +21,7 @@ extern "C"
 {
     JNI_METHOD(jstring, getRawTypeNative)
     {
-        auto *instance = (HEIFPP::RawProperty *) getNativeHandle(env, self);
+        auto* instance = (HEIFPP::RawProperty*) getNativeHandle(env, self);
         return env->NewStringUTF(instance->rawType().value);
     }
 
@@ -29,7 +29,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        auto *nativeObject = new HEIFPP::RawProperty(nativeHeif);
+        auto* nativeObject = new HEIFPP::RawProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -43,24 +43,24 @@ extern "C"
     JNI_METHOD(jobject, getDataNative)
     {
         NATIVE_SELF;
-        const uint8_t *data;
+        const uint8_t* data;
         uint64_t length;
         nativeSelf->getData(data, length);
-        return env->NewDirectByteBuffer(const_cast<uint8_t *>(data), static_cast<jlong>(length));
+        return env->NewDirectByteBuffer(const_cast<uint8_t*>(data), static_cast<jlong>(length));
     }
 
     JNI_METHOD_ARG(void, setDataNative, jbyteArray data)
     {
         NATIVE_SELF;
-        jbyte *nativeData = env->GetByteArrayElements(data, nullptr);
-        nativeSelf->setData((uint8_t *) (nativeData), static_cast<uint64_t>(env->GetArrayLength(data)));
+        jbyte* nativeData = env->GetByteArrayElements(data, nullptr);
+        nativeSelf->setData((uint8_t*) (nativeData), static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 
     JNI_METHOD_ARG(void, setRawTypeNative, jstring type)
     {
         NATIVE_SELF;
-        const char *nativeType = env->GetStringUTFChars(type, nullptr);
+        const char* nativeType = env->GetStringUTFChars(type, nullptr);
 
         HEIFPP::Result error = nativeSelf->setRawType(HEIF::FourCC(nativeType), false);
         env->ReleaseStringUTFChars(type, nativeType);

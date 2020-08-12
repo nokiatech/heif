@@ -49,15 +49,15 @@ extern "C"
     JNI_METHOD(jobject, getSampleDataNative)
     {
         NATIVE_SELF;
-        return env->NewDirectByteBuffer(const_cast<uint8_t *>(nativeSelf->getSampleData()),
+        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeSelf->getSampleData()),
                                         static_cast<jlong>(nativeSelf->getSampleDataSize()));
     }
 
     JNI_METHOD_ARG(void, setSampleDataNative, jbyteArray data)
     {
         NATIVE_SELF;
-        jbyte *nativeData = env->GetByteArrayElements(data, nullptr);
-        nativeSelf->setItemData((uint8_t *) nativeData, static_cast<uint64_t>(env->GetArrayLength(data)));
+        jbyte* nativeData = env->GetByteArrayElements(data, nullptr);
+        nativeSelf->setItemData((uint8_t*) nativeData, static_cast<uint64_t>(env->GetArrayLength(data)));
         env->ReleaseByteArrayElements(data, nativeData, 0);
     }
 
@@ -176,7 +176,7 @@ extern "C"
 
     JNI_METHOD(jstring, getTypeNative)
     {
-        auto *instance = (HEIFPP::Sample *) getNativeHandle(env, self);
+        auto* instance = (HEIFPP::Sample*) getNativeHandle(env, self);
         return env->NewStringUTF(instance->getType().value);
     }
 }

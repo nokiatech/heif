@@ -21,7 +21,7 @@ extern "C"
 {
     JNI_METHOD(jstring, getTypeNative)
     {
-        auto *instance = (HEIFPP::Item *) getNativeHandle(env, self);
+        auto* instance = (HEIFPP::Item*) getNativeHandle(env, self);
         return env->NewStringUTF(instance->getType().value);
     }
 

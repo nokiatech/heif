@@ -34,8 +34,9 @@ public:
     /**
      * Read configuration parameters from a SPS NAL unit.
      * @param sps       Sequence Parameter Set data
+     * @return True if success, false if there was no input data or processing SPS failed.
      */
-    void makeConfigFromSPS(const Vector<std::uint8_t> &sps);
+    bool makeConfigFromSPS(const Vector<std::uint8_t>& sps);
 
     /**
      * Add NAL unit to the NAL unit array
@@ -43,21 +44,21 @@ public:
      * @param nalUnitType       Type of the NAL unit
      * @param arrayCompleteness TBD
      */
-    void addNalUnit(const Vector<std::uint8_t> &sps, HevcNalUnitType nalUnitType, bool arrayCompleteness);
+    void addNalUnit(const Vector<std::uint8_t>& sps, HevcNalUnitType nalUnitType, bool arrayCompleteness);
 
     /**
      * Serialize decoder configuration to ISOBMFF::BitStream.
      * @param [in,out] bitstr Decoder configuration appended is appended to
      * bitstr.
      */
-    void writeDecConfigRecord(ISOBMFF::BitStream &bitstr) const;
+    void writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const;
 
     /**
      * Deserialize HevcDecoderConfigurationRecord from ISOBMFF::BitStream
      * @param [in,out] bitstr ISOBMFF::BitStream including decoder configuration
      * data. ISOBMFF::BitStream position is modified accordingly.
      */
-    void parseConfig(ISOBMFF::BitStream &bitstr);
+    void parseConfig(ISOBMFF::BitStream& bitstr);
 
     /**
      * @brief Append one parameter set of type nalUnitType.
@@ -65,7 +66,7 @@ public:
      * @param [in,out] byteStream  Vector where the parameter set is appended
      * @param          nalUnitType NAL unit type to append
      */
-    void getOneParameterSet(Vector<std::uint8_t> &byteStream, HevcNalUnitType nalUnitType) const;
+    void getOneParameterSet(Vector<std::uint8_t>& byteStream, HevcNalUnitType nalUnitType) const;
 
     /**
      * @pre makeConfigFromSPS has been called successfully.
@@ -86,7 +87,7 @@ public:
     std::uint16_t getAvgFrameRate() const;
 
     /* @brief Returns configuration parameter map for this record */
-    void getConfigurationMap(ConfigurationMap &aMap) const override;
+    void getConfigurationMap(ConfigurationMap& aMap) const override;
 
     /**
      * @return Returns chroma_format_idc value.

@@ -26,7 +26,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        auto *nativeObject = new HEIFPP::AuxiliaryProperty(nativeHeif);
+        auto* nativeObject = new HEIFPP::AuxiliaryProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -34,7 +34,7 @@ extern "C"
     JNI_METHOD_ARG(void, setTypeNative, jstring javaString)
     {
         NATIVE_SELF;
-        const char *nativeString = env->GetStringUTFChars(javaString, nullptr);
+        const char* nativeString = env->GetStringUTFChars(javaString, nullptr);
         nativeSelf->auxType(nativeString);
         env->ReleaseStringUTFChars(javaString, nativeString);
     }
@@ -48,7 +48,7 @@ extern "C"
     JNI_METHOD_ARG(void, setSubTypeNative, jbyteArray subType)
     {
         NATIVE_SELF;
-        jbyte *nativeData = env->GetByteArrayElements(subType, nullptr);
+        jbyte* nativeData = env->GetByteArrayElements(subType, nullptr);
         auto dataSize     = static_cast<uint32_t>(env->GetArrayLength(subType));
         std::vector<uint8_t> dataAsVector;
         dataAsVector.reserve(dataSize);
@@ -60,7 +60,7 @@ extern "C"
     JNI_METHOD(jobject, getSubTypeNative)
     {
         NATIVE_SELF;
-        return env->NewDirectByteBuffer(const_cast<uint8_t *>(nativeSelf->subType().data()),
+        return env->NewDirectByteBuffer(const_cast<uint8_t*>(nativeSelf->subType().data()),
                                         static_cast<jlong>(nativeSelf->subType().size()));
     }
 }

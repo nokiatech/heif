@@ -74,6 +74,6 @@ All the example media files (*.heic, *.png, *.jpg, *.gif) in this repository are
 
 For more information/questions/source code/commercial licensing related issues, please contact: <heif@nokia.com>
 
-### **Copyright (c) 2015-2019, Nokia Technologies Ltd.**
+### **Copyright (c) 2015-2020, Nokia Technologies Ltd.**
 ### **All rights reserved.**
 

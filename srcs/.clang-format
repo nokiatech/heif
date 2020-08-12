@@ -38,3 +38,5 @@ MaxEmptyLinesToKeep: 2
 NamespaceIndentation: All
 ReflowComments: true
 UseTab: Never
+DerivePointerAlignment: false
+PointerAlignment: Left

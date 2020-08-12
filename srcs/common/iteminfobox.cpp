@@ -302,9 +302,8 @@ void ItemInfoEntry::parseBox(ISOBMFF::BitStream& bitstr)
         }
         if (bitstr.numBytesLeft() > 0)  // This is an optional field
         {
-            auto* itemInfoExt = CUSTOM_NEW(FDItemInfoExtension, ());
-            mItemInfoExtension.reset(itemInfoExt);
-            itemInfoExt->parse(bitstr);
+            mItemInfoExtension = makeCustomShared<FDItemInfoExtension>();
+            mItemInfoExtension->parse(bitstr);
         }
     }
     if (getVersion() >= 2)

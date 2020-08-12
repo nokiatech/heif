@@ -25,7 +25,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        auto *nativeObject = new HEIFPP::OverlayImageItem(nativeHeif);
+        auto* nativeObject = new HEIFPP::OverlayImageItem(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 
@@ -46,7 +46,7 @@ extern "C"
             env->GetMethodID(javaClass, "createOverlayedImage",
                              "(Lcom/nokia/heif/ImageItem;II)Lcom/nokia/heif/OverlayImageItem$OverlayedImage;");
         HEIF::Overlay::Offset overlayOffset;
-        HEIFPP::ImageItem *image = nativeSelf->getImage(static_cast<uint32_t>(index), overlayOffset);
+        HEIFPP::ImageItem* image = nativeSelf->getImage(static_cast<uint32_t>(index), overlayOffset);
         env->DeleteLocalRef(javaClass);
         return env->CallObjectMethod(self, createMethodId, getJavaItem(env, getJavaHEIF(env, self), image),
                                      overlayOffset.horizontal, overlayOffset.vertical);

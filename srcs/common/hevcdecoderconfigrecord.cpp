@@ -44,12 +44,16 @@ HevcDecoderConfigurationRecord::HevcDecoderConfigurationRecord()
 {
 }
 
-void HevcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t> &srcSps)
+bool HevcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t>& srcSps)
 {
     unsigned int maxNumSubLayersMinus1;
     Vector<bool> subLayerProfilePresentFlag(8, false);
     Vector<bool> subLayerLevelPresentFlag(8, false);
-    Vector<uint8_t> sps = convertByteStreamToRBSP(srcSps);
+    Vector<uint8_t> sps;
+    if (convertByteStreamToRBSP(srcSps, sps) == false)
+    {
+        return false;
+    }
 
     mAvgFrameRate      = 0;  // Unspecified average frame rate.
     mConstantFrameRate = 0;
@@ -129,6 +133,11 @@ void HevcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t> &sr
     {
         bitstr.readBits(1);  // separate_colour_plane_flag
     }
+    else if (mChromaFormat > 3)
+    {
+        return false;
+    }
+
     mPicWidthInLumaSamples  = static_cast<uint16_t>(bitstr.readExpGolombCode());  // pic_width_in_luma_samples
     mPicHeightInLumaSamples = static_cast<uint16_t>(bitstr.readExpGolombCode());  // pic_height_in_luma_samples
 
@@ -153,18 +162,20 @@ void HevcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t> &sr
 
     mMinSpatialSegmentationIdc = 0;
     mParallelismType           = 0;
+
+    return true;
 }
 
-void HevcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t> &nalUnit,
+void HevcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t>& nalUnit,
                                                 const HevcNalUnitType nalUnitType,
                                                 const bool arrayCompleteness)
 {
-    NALArray *nalArray = nullptr;
+    NALArray* nalArray = nullptr;
     Vector<uint8_t> tmpNalUnit;
     unsigned int startCodeLen;
 
     // find array for the given NAL unit type
-    for (auto &i : mNalArray)
+    for (auto& i : mNalArray)
     {
         if (static_cast<uint8_t>(nalUnitType) == static_cast<uint8_t>(i.nalUnitType))
         {
@@ -191,7 +202,7 @@ void HevcDecoderConfigurationRecord::addNalUnit(const Vector<uint8_t> &nalUnit,
     nalArray->nalList.push_back(tmpNalUnit);
 }
 
-void HevcDecoderConfigurationRecord::writeDecConfigRecord(ISOBMFF::BitStream &bitstr) const
+void HevcDecoderConfigurationRecord::writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const
 {
     bitstr.writeBits(mConfigurationVersion, 8);
     bitstr.writeBits(mGeneralProfileSpace, 2);
@@ -220,13 +231,13 @@ void HevcDecoderConfigurationRecord::writeDecConfigRecord(ISOBMFF::BitStream &bi
     bitstr.writeBits(mLengthSizeMinus1, 2);
 
     bitstr.writeBits(mNalArray.size(), 8);
-    for (const auto &i : mNalArray)
+    for (const auto& i : mNalArray)
     {
         bitstr.writeBits(i.arrayCompleteness, 1);
         bitstr.writeBits(0, 1);  // reserved = 0
         bitstr.writeBits(static_cast<uint8_t>(i.nalUnitType), 6);
         bitstr.writeBits(static_cast<unsigned int>(i.nalList.size()), 16);
-        for (const auto &j : i.nalList)
+        for (const auto& j : i.nalList)
         {
             bitstr.writeBits(static_cast<unsigned int>(j.size()), 16);
             bitstr.write8BitsArray(j, j.size());  // write parameter set NAL unit
@@ -234,7 +245,7 @@ void HevcDecoderConfigurationRecord::writeDecConfigRecord(ISOBMFF::BitStream &bi
     }
 }
 
-void HevcDecoderConfigurationRecord::parseConfig(ISOBMFF::BitStream &bitstr)
+void HevcDecoderConfigurationRecord::parseConfig(ISOBMFF::BitStream& bitstr)
 {
     unsigned int numOfArrays;
 
@@ -288,10 +299,10 @@ void HevcDecoderConfigurationRecord::parseConfig(ISOBMFF::BitStream &bitstr)
     }
 }
 
-void HevcDecoderConfigurationRecord::getOneParameterSet(Vector<uint8_t> &byteStream,
+void HevcDecoderConfigurationRecord::getOneParameterSet(Vector<uint8_t>& byteStream,
                                                         const HevcNalUnitType nalUnitType) const
 {
-    for (const auto &array : mNalArray)
+    for (const auto& array : mNalArray)
     {
         if (array.nalUnitType == nalUnitType && array.nalList.size() > 0)
         {
@@ -307,14 +318,14 @@ void HevcDecoderConfigurationRecord::getOneParameterSet(Vector<uint8_t> &byteStr
 
 uint16_t HevcDecoderConfigurationRecord::getPicWidth() const
 {
-    const uint16_t subWidthC[4] = {1, 2, 2, 1};
-    return mPicWidthInLumaSamples - subWidthC[mChromaFormat] * (mConfWinLeftOffset + mConfWinRightOffset);
+    const Vector<uint16_t> subWidthC = {1, 2, 2, 1};
+    return mPicWidthInLumaSamples - subWidthC.at(mChromaFormat) * (mConfWinLeftOffset + mConfWinRightOffset);
 }
 
 uint16_t HevcDecoderConfigurationRecord::getPicHeight() const
 {
-    const uint16_t subHeightC[4] = {1, 2, 1, 1};
-    return mPicHeightInLumaSamples - subHeightC[mChromaFormat] * (mConfWinTopOffset + mConfWinBottomOffset);
+    const Vector<uint16_t> subHeightC = {1, 2, 1, 1};
+    return mPicHeightInLumaSamples - subHeightC.at(mChromaFormat) * (mConfWinTopOffset + mConfWinBottomOffset);
 }
 
 uint16_t HevcDecoderConfigurationRecord::getAvgFrameRate() const
@@ -347,7 +358,7 @@ std::uint8_t HevcDecoderConfigurationRecord::getGeneralLevelIdc() const
     return mGeneralLevelIdc;
 }
 
-void HevcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap &aMap) const
+void HevcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap) const
 {
     Vector<std::uint8_t> sps;
     Vector<std::uint8_t> pps;
