@@ -36,7 +36,7 @@ extern "C"
 {
     JNI_METHOD(void, createInstanceNative)
     {
-        auto *instance = new HEIFPP::Heif();
+        auto* instance = new HEIFPP::Heif();
         setNativeHandle(env, self, (jlong) instance);
     }
 
@@ -50,7 +50,7 @@ extern "C"
     JNI_METHOD_ARG(void, loadNative, jstring filename, jint preloadMode)
     {
         NATIVE_HEIF(nativeHandle, self);
-        const char *nativeFilename = env->GetStringUTFChars(filename, nullptr);
+        const char* nativeFilename = env->GetStringUTFChars(filename, nullptr);
 
         HEIFPP::Result error = nativeHandle->load(nativeFilename, static_cast<HEIFPP::Heif::PreloadMode>(preloadMode));
         env->ReleaseStringUTFChars(filename, nativeFilename);
@@ -60,7 +60,7 @@ extern "C"
     JNI_METHOD_ARG(void, loadStreamNative, jobject stream, jint preloadMode)
     {
         NATIVE_HEIF(nativeHandle, self);
-        auto *inputStream    = new InputStream(env, stream);
+        auto* inputStream    = new InputStream(env, stream);
         HEIFPP::Result error = nativeHandle->load(inputStream, static_cast<HEIFPP::Heif::PreloadMode>(preloadMode));
         delete inputStream;
         CHECK_ERROR(error, "Loading failed");
@@ -69,7 +69,7 @@ extern "C"
     JNI_METHOD_ARG(void, saveNative, jstring filename)
     {
         NATIVE_HEIF(nativeHandle, self);
-        const char *nativeFilename = env->GetStringUTFChars(filename, nullptr);
+        const char* nativeFilename = env->GetStringUTFChars(filename, nullptr);
 
         HEIFPP::Result error = nativeHandle->save(nativeFilename);
 
@@ -80,7 +80,7 @@ extern "C"
     JNI_METHOD_ARG(void, saveStreamNative, jobject stream)
     {
         NATIVE_HEIF(nativeHandle, self);
-        auto *outputStream   = new OutputStream(env, stream);
+        auto* outputStream   = new OutputStream(env, stream);
         HEIFPP::Result error = nativeHandle->save(outputStream);
         delete outputStream;
         CHECK_ERROR(error, "Saving failed");
@@ -95,7 +95,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getItemNative, jint itemIndex)
     {
         NATIVE_HEIF(nativeHandle, self);
-        HEIFPP::Item *item = nativeHandle->getItem(static_cast<uint32_t>(itemIndex));
+        HEIFPP::Item* item = nativeHandle->getItem(static_cast<uint32_t>(itemIndex));
         return getJavaItem(env, self, item);
     }
 
@@ -108,7 +108,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getImageNative, jint itemIndex)
     {
         NATIVE_HEIF(nativeHandle, self);
-        HEIFPP::ImageItem *item = nativeHandle->getImage(static_cast<uint32_t>(itemIndex));
+        HEIFPP::ImageItem* item = nativeHandle->getImage(static_cast<uint32_t>(itemIndex));
         return getJavaItem(env, self, item);
     }
 
@@ -121,14 +121,14 @@ extern "C"
     JNI_METHOD_ARG(jobject, getMasterImageNative, jint itemIndex)
     {
         NATIVE_HEIF(nativeHandle, self);
-        HEIFPP::ImageItem *item = nativeHandle->getMasterImage(static_cast<uint32_t>(itemIndex));
+        HEIFPP::ImageItem* item = nativeHandle->getMasterImage(static_cast<uint32_t>(itemIndex));
         return getJavaItem(env, self, item);
     }
 
     JNI_METHOD_ARG(jint, getItemsOfTypeCountNative, jstring type)
     {
         NATIVE_HEIF(nativeHandle, self);
-        const char *nativeString = env->GetStringUTFChars(type, nullptr);
+        const char* nativeString = env->GetStringUTFChars(type, nullptr);
 
         jint itemCount = static_cast<jint>(nativeHandle->getItemsOfTypeCount(HEIF::FourCC(nativeString)));
 
@@ -139,7 +139,7 @@ extern "C"
     JNI_METHOD_ARG(jobject, getItemOfTypeNative, jstring type, jint index)
     {
         NATIVE_HEIF(nativeHandle, self);
-        const char *nativeString = env->GetStringUTFChars(type, nullptr);
+        const char* nativeString = env->GetStringUTFChars(type, nullptr);
         jobject javaObject       = getJavaItem(
             env, self, nativeHandle->getItemOfType(HEIF::FourCC(nativeString), static_cast<uint32_t>(index)));
         env->ReleaseStringUTFChars(type, nativeString);
@@ -175,7 +175,7 @@ extern "C"
     JNI_METHOD_ARG(void, addCompatibleBrandNative, jstring brand)
     {
         NATIVE_HEIF(nativeHandle, self);
-        const char *nativeBrand = env->GetStringUTFChars(brand, nullptr);
+        const char* nativeBrand = env->GetStringUTFChars(brand, nullptr);
         nativeHandle->addCompatibleBrand(HEIF::FourCC(nativeBrand));
         env->ReleaseStringUTFChars(brand, nativeBrand);
     }
@@ -183,7 +183,7 @@ extern "C"
     JNI_METHOD_ARG(void, removeCompatibleBrandNative, jstring brand)
     {
         NATIVE_HEIF(nativeHandle, self);
-        const char *nativeBrand = env->GetStringUTFChars(brand, nullptr);
+        const char* nativeBrand = env->GetStringUTFChars(brand, nullptr);
         nativeHandle->removeCompatibleBrand(HEIF::FourCC(nativeBrand));
         env->ReleaseStringUTFChars(brand, nativeBrand);
     }
@@ -198,7 +198,7 @@ extern "C"
     JNI_METHOD_ARG(void, setMajorBrandNative, jstring brand)
     {
         NATIVE_HEIF(nativeHandle, self);
-        const char *nativeBrand = env->GetStringUTFChars(brand, nullptr);
+        const char* nativeBrand = env->GetStringUTFChars(brand, nullptr);
         nativeHandle->setMajorBrand(HEIF::FourCC(nativeBrand));
         env->ReleaseStringUTFChars(brand, nativeBrand);
     }

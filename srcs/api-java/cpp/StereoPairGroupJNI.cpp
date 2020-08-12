@@ -25,7 +25,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        auto *nativeObject = new HEIFPP::EntityGroup(nativeHeif, HEIF::FourCC("ster"));
+        auto* nativeObject = new HEIFPP::EntityGroup(nativeHeif, HEIF::FourCC("ster"));
         return reinterpret_cast<jlong>(nativeObject);
     }
 }

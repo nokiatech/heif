@@ -174,7 +174,10 @@ namespace HEIF
                 {
                     spsFound = true;
                     decCfg.addNalUnit(nalVector, HevcNalUnitType::SPS, true);
-                    decCfg.makeConfigFromSPS(nalVector);
+                    if (decCfg.makeConfigFromSPS(nalVector) == false)
+                    {
+                        return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    }
                 }
                 else
                 {

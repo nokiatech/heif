@@ -25,7 +25,7 @@ extern "C"
     {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        auto *nativeObject = new HEIFPP::MirrorProperty(nativeHeif);
+        auto* nativeObject = new HEIFPP::MirrorProperty(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
     }
 

@@ -68,7 +68,10 @@ namespace HEIF
                 {
                     spsFound = true;
                     configRecord.addNalUnit(nalVector, AvcNalUnitType::SPS);
-                    configRecord.makeConfigFromSPS(nalVector);
+                    if (configRecord.makeConfigFromSPS(nalVector) == false)
+                    {
+                        return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    }
                 }
                 else
                 {
@@ -109,7 +112,10 @@ namespace HEIF
                 {
                     spsFound = true;
                     configRecord.addNalUnit(nalVector, HevcNalUnitType::SPS, true);
-                    configRecord.makeConfigFromSPS(nalVector);
+                    if (configRecord.makeConfigFromSPS(nalVector) == false)
+                    {
+                        return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    }
                 }
                 else
                 {
@@ -491,8 +497,8 @@ namespace HEIF
             return ErrorCode::UNINITIALIZED;
         }
 
-        if ((iscl.targetWidthD == 0) || (iscl.targetWidthN == 0) ||
-                (iscl.targetHeightD == 0) || (iscl.targetHeightN == 0))
+        if ((iscl.targetWidthD == 0) || (iscl.targetWidthN == 0) || (iscl.targetHeightD == 0) ||
+            (iscl.targetHeightN == 0))
         {
             return ErrorCode::INVALID_FUNCTION_PARAMETER;
         }

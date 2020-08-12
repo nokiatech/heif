@@ -37,7 +37,11 @@ AvcDecoderConfigurationRecord::AvcDecoderConfigurationRecord()
 
 bool AvcDecoderConfigurationRecord::makeConfigFromSPS(const Vector<uint8_t>& sps)
 {
-    const Vector<uint8_t> rbspData = convertByteStreamToRBSP(sps);
+    Vector<uint8_t> rbspData;
+    if (convertByteStreamToRBSP(sps, rbspData) == false)
+    {
+        return false;
+    }
     BitStream bitstr(rbspData);
     SPSConfigValues spsConfig;
     // ignore the first byte indicating type
