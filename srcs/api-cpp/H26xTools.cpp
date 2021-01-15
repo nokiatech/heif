@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -66,7 +66,7 @@ bool NAL_State::parse_byte_stream(const std::uint8_t*& nal_unit, std::uint64_t& 
     */
 
 
-    /*1. When the next four bytes in the bitstream form the four-byte sequence 0x00000001,
+    /* 1. When the next four bytes in the bitstream form the four-byte sequence 0x00000001,
     the next byte in the byte stream (which is a zero_byte syntax element) is extracted
     and discarded and the current position in the byte stream is set equal to the position
     of the byte following this discarded byte.
@@ -77,11 +77,13 @@ bool NAL_State::parse_byte_stream(const std::uint8_t*& nal_unit, std::uint64_t& 
         /*
         When one or more of the following conditions are true, the zero_byte syntax element shall be present:
         H265
-        � The nal_unit_type within the nal_unit( ) syntax structure is equal to VPS_NUT, SPS_NUT or PPS_NUT.
-        � The byte stream NAL unit syntax structure contains the first NAL unit of an access unit in decoding order, as
-        specified in clause 7.4.2.4.4. H264 � The nal_unit_type within the nal_unit( ) is equal to 7 (sequence parameter
-        set) or 8 (picture parameter set), � The byte stream NAL unit syntax structure contains the first NAL unit of an
-        access unit in decoding order, as specified in clause 7.4.1.2.3.
+        - The nal_unit_type within the nal_unit( ) syntax structure is equal to VPS_NUT, SPS_NUT or PPS_NUT.
+        - The byte stream NAL unit syntax structure contains the first NAL unit of an access unit in decoding order, as
+          specified in clause 7.4.2.4.4.
+        H264
+        - The nal_unit_type within the nal_unit( ) is equal to 7 (sequence parameter set) or 8 (picture parameter set),
+        - The byte stream NAL unit syntax structure contains the first NAL unit of an access unit in decoding order, as
+          specified in clause 7.4.1.2.3.
         */
         // Currently not validating that the nal unit is of type that CAN have the zero byte.
         mLength--;
@@ -94,7 +96,7 @@ bool NAL_State::parse_byte_stream(const std::uint8_t*& nal_unit, std::uint64_t& 
         nal_unit_length = 0;
         return false;
     }
-    /*2. The next three-byte sequence in the byte stream (which is a start_code_prefix_one_3bytes)
+    /* 2. The next three-byte sequence in the byte stream (which is a start_code_prefix_one_3bytes)
     is extracted and discarded and the current position in the byte stream is set equal to
     the position of the byte following this three-byte sequence.
     */
@@ -112,12 +114,12 @@ bool NAL_State::parse_byte_stream(const std::uint8_t*& nal_unit, std::uint64_t& 
         return false;
     }
 
-    /*3. NumBytesInNalUnit is set equal to the number of bytes starting with the byte at the current
+    /* 3. NumBytesInNalUnit is set equal to the number of bytes starting with the byte at the current
     position in the byte stream up to and including the last byte that precedes the location of
     one or more of the following conditions:
-    � A subsequent byte-aligned three-byte sequence equal to 0x000000,
-    � A subsequent byte-aligned three-byte sequence equal to 0x000001,
-    � The end of the byte stream, as determined by unspecified means.
+    - A subsequent byte-aligned three-byte sequence equal to 0x000000,
+    - A subsequent byte-aligned three-byte sequence equal to 0x000001,
+    - The end of the byte stream, as determined by unspecified means.
     */
     const std::uint8_t* src  = mData;
     std::uint64_t bytes_left = mLength;
@@ -130,7 +132,7 @@ bool NAL_State::parse_byte_stream(const std::uint8_t*& nal_unit, std::uint64_t& 
         src++;
         bytes_left--;
     }
-    /*4. NumBytesInNalUnit bytes are removed from the bitstream and the current position in the byte
+    /* 4. NumBytesInNalUnit bytes are removed from the bitstream and the current position in the byte
     stream is advanced by NumBytesInNalUnit bytes.
     This sequence of bytes is nal_unit( NumBytesInNalUnit ) and is decoded using the NAL unit decoding process.
     */
@@ -140,13 +142,13 @@ bool NAL_State::parse_byte_stream(const std::uint8_t*& nal_unit, std::uint64_t& 
     mLength -= nal_unit_length;
 
 
-    /*5. When the current position in the byte stream is not at the end of the byte stream (as determined by unspecified
-    means) and the next bytes in the byte stream do not start with a three-byte sequence equal to 0x000001 and the next
-    bytes in the byte stream do not start with a four byte sequence equal to 0x00000001 ,the decoder extracts and
-    discards each trailing_zero_8bits syntax element, moving the current position in the byte stream forward one byte at
-    a time, until the current position in the byte stream is such that the next bytes in the byte stream form the
-    fourbyte sequence 0x00000001 or the end of the byte stream has been encountered (as determined by unspecified
-    means).
+    /* 5. When the current position in the byte stream is not at the end of the byte stream (as determined by
+    unspecified means) and the next bytes in the byte stream do not start with a three-byte sequence equal to 0x000001
+    and the next bytes in the byte stream do not start with a four byte sequence equal to 0x00000001 ,the decoder
+    extracts and discards each trailing_zero_8bits syntax element, moving the current position in the byte stream
+    forward one byte at a time, until the current position in the byte stream is such that the next bytes in the byte
+    stream form the fourbyte sequence 0x00000001 or the end of the byte stream has been encountered (as determined by
+    unspecified means).
     */
     if ((mLength >= 3) && ((mData[0] == 0) && (mData[1] == 0) && (mData[2] == 1)))
     {

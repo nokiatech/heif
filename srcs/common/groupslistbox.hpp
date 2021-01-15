@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -27,7 +27,7 @@ public:
     GroupsListBox();
     ~GroupsListBox() override = default;
 
-    /** @brief Add an EntitytoGroups Box.
+    /** @brief Add an EntityToGroup Box.
      *  @details There may be multiple such boxes for different entity groupings.
      *  @param [in] box An EntityToGroupBox to be added to the GroupsList Box */
     void addEntityToGroupBox(const EntityToGroupBox& box);

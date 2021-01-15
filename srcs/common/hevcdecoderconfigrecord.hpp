@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -95,7 +95,7 @@ public:
     std::uint8_t getChromaFormat() const;
 
     /**
-     * @return Return general contraint flags.
+     * @return Return general constraint flags.
      */
     Vector<std::uint8_t> getGeneralConstraintFlags() const;
 

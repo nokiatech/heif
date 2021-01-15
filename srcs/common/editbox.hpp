@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -72,8 +72,8 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    Vector<EntryVersion0> mEntryVersion0;  ///< vector of edit list entries of type verison 0
-    Vector<EntryVersion1> mEntryVersion1;  ///< vector of edit list entries of type verison 1
+    Vector<EntryVersion0> mEntryVersion0;  ///< Edit list entries of type version 0.
+    Vector<EntryVersion1> mEntryVersion1;  ///< Edit list entries of type version 1.
 };
 
 /** @brief Implementation of getEntry(). Returns the entry in the Edit List at given 0-based index.

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -18,11 +18,23 @@ FreeSpaceBox::FreeSpaceBox()
 {
 }
 
+bool FreeSpaceBox::setSize(const std::uint32_t size)
+{
+    const auto BOX_HEADER_SIZE = 8u;
+    if (size < BOX_HEADER_SIZE)
+    {
+        return false;
+    }
+    Box::setSize(size);
+
+    return true;
+}
+
 void FreeSpaceBox::writeBox(ISOBMFF::BitStream& bitstr) const
 {
-    const auto boxStart = bitstr.getPos();
+    const auto boxStart = bitstr.getSize();
     writeBoxHeader(bitstr);
-    const auto fillSize = boxStart + Box::getSize() - bitstr.getPos();
+    const auto fillSize = boxStart + Box::getSize() - bitstr.getSize();
     for (unsigned int i = 0; i < fillSize; ++i)
     {
         bitstr.write8Bits(0);

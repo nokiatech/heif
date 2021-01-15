@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -30,11 +30,11 @@ public:
     DataEntryBox(FourCCInt boxType, std::uint8_t version, std::uint32_t flags);
     ~DataEntryBox() override = default;
 
-    /** @brief Set the location field as specificed in ISOBMFF specification.
+    /** @brief Set the location field as specified in ISOBMFF specification.
      *  @param [in] location value of the location field as a string*/
     void setLocation(const String& location);
 
-    /** @brief Get the location field as specificed in ISOBMFF.
+    /** @brief Get the location field as specified in ISOBMFF.
      *  @return value of the location field as a string*/
     const String& getLocation() const;
 
@@ -47,7 +47,7 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override = 0;
 
 private:
-    String mLocation;  ///< location field as specificed in ISOBMFF specification.
+    String mLocation;  ///< Location field as specified in ISOBMFF specification.
 };
 
 /** @brief Data Entry URL Box class. Extends from DataEntryBox.
@@ -98,7 +98,7 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    String mName;  ///< name field as specificed in ISOBMFF specification
+    String mName;  ///< name field as specified in ISOBMFF specification
 };
 
 /** @brief Data Reference Box class. Extends from FullBox.
@@ -110,7 +110,7 @@ public:
     ~DataReferenceBox() override = default;
 
     /// @return 1-based entry index
-    unsigned int addEntry(std::shared_ptr<DataEntryBox> dataEntryBox);
+    unsigned int addEntry(const std::shared_ptr<DataEntryBox>& dataEntryBox);
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */

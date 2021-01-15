@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -104,7 +104,7 @@ DataReferenceBox::DataReferenceBox()
 {
 }
 
-unsigned int DataReferenceBox::addEntry(std::shared_ptr<DataEntryBox> dataEntryBox)
+unsigned int DataReferenceBox::addEntry(const std::shared_ptr<DataEntryBox>& dataEntryBox)
 {
     mDataEntries.push_back(dataEntryBox);
     return static_cast<unsigned int>(mDataEntries.size());
