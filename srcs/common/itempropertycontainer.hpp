@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -47,7 +47,7 @@ public:
      * @return Amount of properties after the operation. The new property is added as the last one, so the 0-based
      *         index of it is (return value - 1).
      */
-    std::uint16_t addProperty(std::shared_ptr<Box> box);
+    std::uint16_t addProperty(const std::shared_ptr<Box>& box);
 
     /** Serialize box data to the ISOBMFF::BitStream.
      *  @see Box::writeBox() */

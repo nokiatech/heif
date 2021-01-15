@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -175,12 +175,12 @@ private:
     std::shared_ptr<ItemInfoExtension> mItemInfoExtension;  ///< Item info extension
 
     // Version 2
-    FourCCInt mItemType;  ///< Item type
-    String mItemUriType;  ///< Item UIR type
+    FourCCInt mItemType;  ///< Item type.
+    String mItemUriType;  ///< Item URI type.
 };
 
 /** @brief Item Information Extension abstract class.
- *  @details Item Information Extension class can be used to extend the item information data strcuture. */
+ *  @details Item Information Extension class can be used to extend the item information data structure. */
 class ItemInfoExtension
 {
 public:

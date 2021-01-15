@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -91,9 +91,9 @@ public:
      *  @return Extent List */
     const ExtentList& getExtentList() const;
 
-    /** @brief Get an extent which is present in the etent list
+    /** @brief Get an extent which is present in the extent list.
      *  @param [in] i 0-based extent index
-     *  @return Item Location Extent data strcuture */
+     *  @return Item Location Extent data structure. */
     const ItemLocationExtent& getExtent(unsigned int i) const;
 
     /** @brief Writes the ItemLocation to the bitstream in the standard-defined format
@@ -165,7 +165,7 @@ public:
      *  @param [in] extent ItemLocationExtent data structure */
     void addExtent(std::uint32_t itemId, const ItemLocationExtent& extent);
 
-    /** @brief Check if an itemId alreadyhas an item location entry
+    /** @brief Check if an itemId already has an item location entry.
      *  @param [in] itemId Item ID
      *  @return TRUE if present, FALSE if not present */
     bool hasItemIdEntry(std::uint32_t itemId) const;
@@ -173,7 +173,7 @@ public:
     /** @brief Set the item data reference index
      *  @param [in] itemId Item ID
      *  @param [in] dataReferenceIndex Data Reference Index
-     *  @return TRUE if item with item ID is found and data refrence is set, FALSE if item with item Id not found */
+     *  @return TRUE if item with item ID is found and data reference is set, FALSE if item with item Id not found */
     bool setItemDataReferenceIndex(std::uint32_t itemId, std::uint16_t dataReferenceIndex);
 
     /** @brief Get the item location vector

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2018 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -72,8 +72,6 @@ public final class ErrorHandler
         ERROR_MESSAGES.put(UNDEFINED_ERROR,
                            "UNDEFINED_ERROR");
     }
-
-    ;
 
     /**
      * Converts a native error code integer to a descriptive String

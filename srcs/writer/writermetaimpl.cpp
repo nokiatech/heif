@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -1052,7 +1052,7 @@ namespace HEIF
         return ErrorCode::OK;
     }
 
-    ErrorCode WriterImpl::addMetadata(const MediaDataId& mediaDataId, MetadataItemId& metadataIemId)
+    ErrorCode WriterImpl::addMetadata(const MediaDataId& mediaDataId, MetadataItemId& metadataItemId)
     {
         if (mState != State::WRITING)
         {
@@ -1066,11 +1066,11 @@ namespace HEIF
 
         if (!mMetadataItems.count(mediaDataId))
         {
-            return createMetadataItem(mediaDataId, metadataIemId);
+            return createMetadataItem(mediaDataId, metadataItemId);
         }
         else
         {
-            metadataIemId = mMetadataItems.at(mediaDataId);
+            metadataItemId = mMetadataItems.at(mediaDataId);
             return ErrorCode::OK;
         }
     }

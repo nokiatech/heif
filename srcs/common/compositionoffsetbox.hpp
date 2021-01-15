@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -27,28 +27,28 @@ public:
     CompositionOffsetBox();
     ~CompositionOffsetBox() override = default;
 
-    /// @brief version 1 supported data structure
+    /// @brief Version 0 supported data structure.
     struct EntryVersion0
     {
         std::uint32_t mSampleCount;
         std::uint32_t mSampleOffset;
     };
 
-    /// @brief version 0 supported dta structure. Sample offsets can be negative
+    /// @brief Version 1 supported data structure. Sample offsets can be negative.
     struct EntryVersion1
     {
         std::uint32_t mSampleCount;
         std::int32_t mSampleOffset;
     };
 
-    /** @brief Inserts a new composition time to sample entry of verison 0 type
-     *  @param [in] entry EntryVersion0 data structure
-     *  @throws Runtime Error if the box version conflicts with the Entry Version */
+    /** @brief Inserts a new composition time to sample entry of version 0 type.
+     *  @param [in] entry EntryVersion0 data structure.
+     *  @throws Runtime Error if the box version conflicts with the entry version. */
     void addCompositionOffsetEntryVersion0(const EntryVersion0& entry);
 
-    /** @brief Inserts a new composition time to sample entry of verison 0 type
-     *  @param [in] entry EntryVersion0 data structure
-     *  @throws Runtime Error if the box version conflicts with the Entry Version */
+    /** @brief Inserts a new composition time to sample entry of version 1 type.
+     *  @param [in] entry EntryVersion1 data structure.
+     *  @throws Runtime Error if the box version conflicts with the entry version. */
     void addCompositionOffsetEntryVersion1(const EntryVersion1& entry);
 
     /** @brief Get number of samples (used for box parsing safety checks)

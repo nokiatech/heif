@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -50,7 +50,7 @@ public:
      *  @returns decode delta entry in version 0 format. */
     EntryVersion0& getDecodeDeltaEntry();
 
-    /** @brief Adds a sample delta; or merges it to previous enty
+    /** @brief Adds a sample delta; or merges it to previous entry
      * if it's the same value. */
     void addSampleDelta(std::uint32_t mSampleDelta);
 

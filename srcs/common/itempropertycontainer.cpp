@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -36,7 +36,7 @@ Box* ItemPropertyContainer::getProperty(const size_t index)
     return const_cast<Box*>(static_cast<const ItemPropertyContainer*>(this)->getProperty(index));
 }
 
-std::uint16_t ItemPropertyContainer::addProperty(std::shared_ptr<Box> box)
+std::uint16_t ItemPropertyContainer::addProperty(const std::shared_ptr<Box>& box)
 {
     mProperties.push_back(box);
     return static_cast<std::uint16_t>(mProperties.size());

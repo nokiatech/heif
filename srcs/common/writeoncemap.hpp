@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -60,7 +60,7 @@ public:
     WriteOnceMap<Key, Value>& operator=(const WriteOnceMap<Key, Value>& other);
     WriteOnceMap<Key, Value>& operator=(WriteOnceMap<Key, Value>&& other);
 
-    /** Implements the equal_range operatation familiar from Map */
+    /** Implements the equal_range operation familiar from Map */
     std::pair<iterator, iterator> equal_range(const Key& key);
     std::pair<const_iterator, const_iterator> equal_range(const Key& key) const;
 

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -49,7 +49,7 @@ namespace ISOBMFF
          *  @param position The new position in bytes, counted from beginning of the bitstream. */
         void setPosition(std::uint64_t position);
 
-        /// @return Current storage size of the bitsteam in bytes
+        /// @return Current storage size of the bitstream in bytes.
         std::uint64_t getSize() const;
 
         /** @brief Sets or updates the storage size of the bitstream
@@ -131,19 +131,19 @@ namespace ISOBMFF
          *  @return value of bits read as an unsigned integer */
         std::uint32_t readBits(const std::uint32_t len);
 
-        /// @return read 8 bits as unigned uint8_t
+        /// @return Read 8 bits as unsigned uint8_t.
         std::uint8_t read8Bits();
 
-        /// @return read 16 bits as unigned uint16_t
+        /// @return Read 16 bits as unsigned uint16_t.
         std::uint16_t read16Bits();
 
-        /// @return read 24 bits as unigned integer
+        /// @return Read 24 bits as unsigned integer.
         std::uint32_t read24Bits();
 
-        /// @return read 32 bits as unigned integer
+        /// @return Read 32 bits as unsigned integer.
         std::uint32_t read32Bits();
 
-        /// @return read 64 bits as unigned long long
+        /// @return Read 64 bits as unsigned long long.
         std::uint64_t read64Bits();
 
         /** @brief Reads an array of 8 bit values from the bitstream data storage

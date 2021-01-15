@@ -7,7 +7,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.1'
+        classpath 'com.android.tools.build:gradle:4.0.1'
         
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -27,9 +27,9 @@ task clean(type: Delete) {
 }
 
 ext {
-    compileSdkVersion = 26
-    minSdkVersion = 24
-    targetSdkVersion = 26
+    compileSdkVersion = 30
+    minSdkVersion = 27
+    targetSdkVersion = 30
 
     chosenAbiFilters = ["armeabi-v7a", "arm64-v8a", "x86"]
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -82,8 +82,11 @@ HEIF::ErrorCode VideoTrack::save(HEIF::Writer* aWriter)
             break;
         }
     }
-    HEIF::ErrorCode ret = Track::save(aWriter);
-    return ret;
+    if (HEIF::ErrorCode::OK == err)
+    {
+        err = Track::save(aWriter);
+    }
+    return err;
 }
 void VideoTrack::addSample(VideoSample* aSample)
 {
