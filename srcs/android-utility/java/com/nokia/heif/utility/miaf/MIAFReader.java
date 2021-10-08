@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF applications
  *
- * Copyright (c) 2019 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2019-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -141,7 +141,7 @@ public class MIAFReader extends HEIF
     }
 
     /**
-     * @param input An VideoTrack or a VideoTrack.
+     * @param input An ImageItem or a VideoTrack.
      * @param constraints Constraints for the wanted content: maximum dimensions.
      * @return True if the input fulfils constraints and is decodable.
      * @throws Exception in case input is not a video track or an image item.
