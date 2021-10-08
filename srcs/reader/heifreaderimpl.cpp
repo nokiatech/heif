@@ -123,7 +123,7 @@ namespace HEIF
                 return error;
             }
         }
-        catch (const Exception& exc)
+        catch (const ISOBMFF::Exception& exc)
         {
             logError() << "Error: " << exc.what() << std::endl;
             return ErrorCode::FILE_READ_ERROR;
@@ -229,7 +229,7 @@ namespace HEIF
                 }
             }
         }
-        catch (Exception& exc)
+        catch (ISOBMFF::Exception& exc)
         {
             logError() << "parseSegmentIndex Exception Error: " << exc.what() << std::endl;
             error = ErrorCode::FILE_READ_ERROR;
@@ -351,7 +351,7 @@ namespace HEIF
                 }
             }
         }
-        catch (Exception& exc)
+        catch (ISOBMFF::Exception& exc)
         {
             logError() << "parseSegment Exception Error: " << exc.what() << std::endl;
             error = ErrorCode::FILE_READ_ERROR;
@@ -518,6 +518,15 @@ namespace HEIF
             trackInfoOut[i].maxSampleSize      = initTrackInfo.maxSampleSize;
             trackInfoOut[i].timeScale          = initTrackInfo.timeScale;
             trackInfoOut[i].editList           = initTrackInfo.editList;
+
+            trackInfoOut[i].trackGroupIds = Array<FourCCToIds>(initTrackInfo.trackGroupInfoMap.size());
+            unsigned int k                = 0;
+            for (auto const& group : initTrackInfo.trackGroupInfoMap)
+            {
+                trackInfoOut[i].trackGroupIds[k].type     = FourCC(group.first.getUInt32());
+                trackInfoOut[i].trackGroupIds[k].trackIds = makeArray<SequenceId>(group.second.ids);
+                ++k;
+            }
 
             const SegmentId intializationSegmentId = 0;
             const SamplePropertyVector& samplePropertyVector =
@@ -875,7 +884,7 @@ namespace HEIF
                 }
             }
         }
-        catch (const Exception& exc)
+        catch (const ISOBMFF::Exception& exc)
         {
             logError() << "readStream Exception Error: " << exc.what() << std::endl;
             error = ErrorCode::FILE_READ_ERROR;
@@ -3036,8 +3045,8 @@ namespace HEIF
     {
         const auto& segmentProperties = mFileProperties.segmentPropertiesMap.at(curSegmentId);
         auto iterator                 = segmentProperties.sequences.empty()
-                            ? mFileProperties.sequenceToSegment.end()
-                            : mFileProperties.sequenceToSegment.find(*segmentProperties.sequences.begin());
+                                            ? mFileProperties.sequenceToSegment.end()
+                                            : mFileProperties.sequenceToSegment.find(*segmentProperties.sequences.begin());
 
         // This can only happen when processing init segment
         if (iterator == mFileProperties.sequenceToSegment.end())
@@ -3394,7 +3403,7 @@ namespace HEIF
                 }
             }
         }
-        catch (Exception& exc)
+        catch (ISOBMFF::Exception& exc)
         {
             logError() << "parseInitializationSegment Exception Error: " << exc.what() << std::endl;
             error = ErrorCode::FILE_READ_ERROR;

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -30,7 +30,6 @@ void VideoMediaHeaderBox::writeBox(ISOBMFF::BitStream& bitstr) const
     bitstr.write16Bits(0);
     bitstr.write16Bits(0);
 
-    // Update the size of the movie box
     updateSize(bitstr);
 }
 

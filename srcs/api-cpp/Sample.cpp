@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -445,9 +445,9 @@ HEIF::ErrorCode Sample::save(HEIF::Writer* aWriter)
     case HEIF::MediaFormat::AVC:
     case HEIF::MediaFormat::HEVC:
     {
-        err = NAL_State::convertFromByteStream(mBuffer, mBufferSize, aData, aSize)
-                  ? HEIF::ErrorCode::OK
-                  : HEIF::ErrorCode::MEDIA_PARSING_ERROR;
+        err       = NAL_State::convertFromByteStream(mBuffer, mBufferSize, aData, aSize)
+                        ? HEIF::ErrorCode::OK
+                        : HEIF::ErrorCode::MEDIA_PARSING_ERROR;
         data.data = aData;
         data.size = mBufferSize;
         break;

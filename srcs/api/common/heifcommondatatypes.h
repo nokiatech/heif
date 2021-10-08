@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -118,19 +118,14 @@ namespace HEIF
         }
         inline bool operator<(const FourCC& other) const
         {
-            return (value[0] < other.value[0])
-                       ? true
-                       : (value[0] > other.value[0])
-                             ? false
-                             : (value[1] < other.value[1])
-                                   ? true
-                                   : (value[1] > other.value[1])
-                                         ? false
-                                         : (value[2] < other.value[2])
-                                               ? true
-                                               : (value[2] > other.value[2])
-                                                     ? false
-                                                     : (value[3] < other.value[3]) ? true : false;
+            return (value[0] < other.value[0])   ? true
+                   : (value[0] > other.value[0]) ? false
+                   : (value[1] < other.value[1]) ? true
+                   : (value[1] > other.value[1]) ? false
+                   : (value[2] < other.value[2]) ? true
+                   : (value[2] > other.value[2]) ? false
+                   : (value[3] < other.value[3]) ? true
+                                                 : false;
         }
         inline bool operator<=(const FourCC& other) const
         {
@@ -209,6 +204,7 @@ namespace HEIF
     IdType(std::uint32_t, DecoderConfigId);
     IdType(std::uint32_t, PropertyId);
     IdType(std::uint32_t, MetadataItemId);
+    IdType(std::uint32_t, TrackGroupId);
 
     struct HEIF_DLL_PUBLIC Rational
     {

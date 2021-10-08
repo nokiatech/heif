@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -118,6 +118,9 @@ namespace HEIF
 
         ErrorCode setAlternateGrouping(const SequenceId& sequenceId1, const SequenceId& sequenceId2) override;
 
+        ErrorCode createTrackGroup(const FourCC& type, TrackGroupId& id) override;
+        ErrorCode addToGroup(const TrackGroupId& trackGroupId, const SequenceId& id) override;
+
         ErrorCode addVideoTrack(const Rational& timeBase, SequenceId& id) override;
         ErrorCode addVideo(const SequenceId& sequenceId,
                            const MediaDataId& mediaDataId,
@@ -143,6 +146,7 @@ namespace HEIF
         void writeEquivalenceSampleGroup(ImageSequence& sequence);
         void writeRefSampleList(ImageSequence& sequence);
         void writeMetadataItemGroups(ImageSequence& sequence);
+        void writeTrackGroups(ImageSequence& imageSequence);
 
         // helpers for handling fed mediaData
         ErrorCode validateFedMediaData(const Data& aData);
@@ -257,6 +261,7 @@ namespace HEIF
         Map<SequenceId, ImageSequence> mImageSequences;
         ImageCollection mImageCollection;
         Map<GroupId, EntityGroup> mEntityGroups;
+        Map<TrackGroupId, TrackGroup> mTrackGroups;
         Map<MediaDataId, MetadataItemId> mMetadataItems;
         Map<ImageSize, PropertyIndex>
             mIspeIndexes;  ///< Map of ispe property indexes in the item property container box.

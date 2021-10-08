@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -629,6 +629,22 @@ namespace HEIF
                                                 const SequenceId& sequenceId,
                                                 const SequenceImageId& sequenceImageId,
                                                 const EquivalenceTimeOffset& offset = {0, 1 << 8}) = 0;
+
+        /**
+         * @brief createTrackGroup Create a new grouping done within a Track group box 'trgr'.
+         * @param type [in]  Track group type to add.
+         * @param id   [out] Id of the created track grouping.
+         * @return ErrorCode: OK, UNINITIALIZED
+         */
+        virtual ErrorCode createTrackGroup(const FourCC& type, TrackGroupId& id) = 0;
+
+        /**
+         * @brief addToGroup Add a Image Sequence (track) to a track group.
+         * @param trackGroupId [in] Id of a track grouping.
+         * @param sequenceId   [in] SequenceId of the image sequence which is added to the group.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID or INVALID_GROUP_ID
+         */
+        virtual ErrorCode addToGroup(const TrackGroupId& trackGroupId, const SequenceId& sequenceId) = 0;
 
         /////////////////////////////////////////////////////////////////////
         // Support for optional MP4 video and audio tracks writing methods //
