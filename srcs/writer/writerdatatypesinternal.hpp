@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -62,7 +62,8 @@ namespace HEIF
         bool containsEquivalenceGroupSamples;
         bool containsCleanApertureBox;
         AlternateGroupId alternateGroup;
-        Map<FourCCInt, Set<TrackId>> trackReferences;
+        Map<FourCCInt, Vector<TrackId>> trackReferences;
+
         String auxiliaryType;
 
         struct Sample
@@ -135,6 +136,14 @@ namespace HEIF
         Vector<PropertyAssociation> transformativeProperties;
 
         Vector<Entity> entities;
+    };
+
+    struct TrackGroup
+    {
+        FourCC type;
+        TrackGroupId id;
+
+        Set<SequenceId> trackIds;
     };
 
     typedef uint16_t PropertyIndex;  ///< Propery index in the ipco box.

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -86,6 +86,7 @@ namespace HEIF
         , mImageSequences()
         , mImageCollection()
         , mEntityGroups()
+        , mTrackGroups()
         , mMetadataItems()
         , mIspeIndexes()
         , mDecoderConfigs()
@@ -118,6 +119,7 @@ namespace HEIF
         mImageSequences.clear();
         mImageCollection = {};
         mEntityGroups.clear();
+        mTrackGroups.clear();
         mMetadataItems.clear();
         mIspeIndexes.clear();
         mDecoderConfigs.clear();
@@ -488,6 +490,45 @@ namespace HEIF
         entry.type = EntityGroup::Entity::Type::ITEM;
         entry.id   = id.get();
         mEntityGroups[groupId].entities.push_back(entry);
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::createTrackGroup(const FourCC& type, TrackGroupId& id)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        TrackGroup group;
+        group.type = type;
+        group.id   = Context::getValue();
+
+        mTrackGroups[group.id] = group;
+
+        id = group.id;
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addToGroup(const TrackGroupId& trackGroupId, const SequenceId& id)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        if (mImageSequences.count(id) == 0)
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+
+        if (mTrackGroups.count(trackGroupId) == 0)
+        {
+            return ErrorCode::INVALID_GROUP_ID;
+        }
+
+        mTrackGroups[trackGroupId].trackIds.insert(id);
+
         return ErrorCode::OK;
     }
 

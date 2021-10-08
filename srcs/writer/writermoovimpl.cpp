@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -543,7 +543,7 @@ namespace HEIF
         thumpSequence.alternateGroup = imageSequence.alternateGroup;
 
         // Add track reference from Thumb track to its image track.
-        thumpSequence.trackReferences[THUMB_TREF_TYPE].insert(imageSequence.trackId);
+        thumpSequence.trackReferences[THUMB_TREF_TYPE].push_back(imageSequence.trackId);
         // flag thumb track as preview
         thumpSequence.trackPreview = true;
         return ErrorCode::OK;
@@ -632,7 +632,7 @@ namespace HEIF
         ImageSequence& imageSequence = mImageSequences.at(sequenceId);
 
         // Add track reference from Auxl track to its image track.
-        auxlSequence.trackReferences[AUXL_TREF_TYPE].insert(imageSequence.trackId);
+        auxlSequence.trackReferences[AUXL_TREF_TYPE].push_back(imageSequence.trackId);
         // Auxl track shouldn't be played as such:
         auxlSequence.trackInMovie = false;
         // auxiliary track should have handler type 'auxv'
@@ -793,6 +793,8 @@ namespace HEIF
             {
                 movieDuration = trackDuration;
             }
+
+            writeTrackGroups(sequence);
         }
 
         mMovieBox.getMovieHeaderBox().setTimeScale(movieTimescale);
@@ -804,6 +806,25 @@ namespace HEIF
             mMovieBox.getMovieHeaderBox().setMatrix(mMatrix);
         }
         return ErrorCode::OK;
+    }
+
+    void WriterImpl::writeTrackGroups(ImageSequence& imageSequence)
+    {
+        TrackBox* track = mMovieBox.getTrackBox(imageSequence.trackId.get());
+        for (const auto& it : mTrackGroups)
+        {
+            const TrackGroup& trackGroup = it.second;
+            if (trackGroup.trackIds.count(imageSequence.id))
+            {
+                TrackGroupTypeBox typebox(trackGroup.type.value, trackGroup.id.get());
+                if (trackGroup.type == "alte")
+                {
+                    typebox.setFlags(1);
+                }
+                track->getTrackGroupBox().addTrackGroupTypeBox(typebox);
+                track->setHasTrackGroup(true);
+            }
+        }
     }
 
     ErrorCode WriterImpl::addToGroup(const GroupId& groupId, const SequenceId& id)

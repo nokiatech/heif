@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -203,25 +203,28 @@ UniquePtr<T, ParentWithVirtualDeleteOrSelf> makeCustomUnique(Args&&... args)
     return UniquePtr<T, ParentWithVirtualDeleteOrSelf>(CUSTOM_NEW(T, (std::forward<Args>(args)...)));
 }
 
-class Exception
+namespace ISOBMFF
 {
-public:
-    Exception() = default;
-    Exception(const char* msg)
-        : mMessage(msg)
+    class Exception
     {
-    }
-    virtual const char* what() const
-    {
-        return mMessage;
-    }
-    virtual ~Exception() = default;
+    public:
+        Exception() = default;
+        Exception(const char* msg)
+            : mMessage(msg)
+        {
+        }
+        virtual const char* what() const
+        {
+            return mMessage;
+        }
+        virtual ~Exception() = default;
 
-private:
-    const char* mMessage;
-};
+    private:
+        const char* mMessage;
+    };
+}  // namespace ISOBMFF
 
-class RuntimeError : public Exception
+class RuntimeError : public ISOBMFF::Exception
 {
 public:
     RuntimeError(const char* str)
@@ -235,7 +238,7 @@ public:
     }
 };
 
-class LogicError : public Exception
+class LogicError : public ISOBMFF::Exception
 {
 public:
     LogicError(const char* str)
