@@ -71,10 +71,10 @@ See **[wiki page](https://github.com/nokiatech/heif/wiki/I.-How-to-build-HEIF-So
 ## License:
 Please see **[LICENSE.TXT](https://github.com/nokiatech/heif/blob/master/LICENSE.TXT)** file for the terms of use of the contents of this repository.
 
-All the example media files (*.heic, *.png, *.jpg, *.gif) in this repository are under copyright © Nokia Technologies 2015-2018.
+All the example media files (*.heic, *.png, *.jpg, *.gif) in this repository are under copyright © Nokia Technologies 2015-2021.
 
 For more information/questions/source code/commercial licensing related issues, please contact: <heif@nokia.com>
 
-### **Copyright (c) 2015-2018, Nokia Technologies Ltd.**
+### **Copyright (c) 2015-2021, Nokia Technologies Ltd.**
 ### **All rights reserved.** 
 
