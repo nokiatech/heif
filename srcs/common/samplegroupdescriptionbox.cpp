@@ -18,8 +18,12 @@
 #include "bitstream.hpp"
 #include "directreferencesampleslist.hpp"
 #include "log.hpp"
+#include "rectangularregiongroupentry.hpp"
 #include "sampletometadataitementry.hpp"
 #include "visualequivalenceentry.hpp"
+#include "vvcmixednalunittypepicentry.hpp"
+#include "vvcsubpicidentry.hpp"
+#include "vvcsubpicorderentry.hpp"
 
 SampleGroupDescriptionBox::SampleGroupDescriptionBox()
     : FullBox("sgpd", 0, 0)
@@ -164,6 +168,32 @@ void SampleGroupDescriptionBox::parseBox(ISOBMFF::BitStream& bitstr)
             UniquePtr<SampleGroupDescriptionEntry> sampleToMetadataItemEntry(CUSTOM_NEW(SampleToMetadataItemEntry, ()));
             sampleToMetadataItemEntry->parseEntry(subBitstr);
             mSampleGroupEntry.push_back(std::move(sampleToMetadataItemEntry));
+        }
+        else if (mGroupingType == "spor")
+        {
+            UniquePtr<SampleGroupDescriptionEntry> vvcSubpicOrderEntry(CUSTOM_NEW(VvcSubpicOrderEntry, ()));
+            vvcSubpicOrderEntry->parseEntry(subBitstr);
+            mSampleGroupEntry.push_back(std::move(vvcSubpicOrderEntry));
+        }
+        else if (mGroupingType == "spid")
+        {
+            UniquePtr<SampleGroupDescriptionEntry> vvcSubpicIdEntry(CUSTOM_NEW(VvcSubpicIdEntry, ()));
+            vvcSubpicIdEntry->parseEntry(subBitstr);
+            mSampleGroupEntry.push_back(std::move(vvcSubpicIdEntry));
+        }
+        else if (mGroupingType == "trif")
+        {
+            UniquePtr<SampleGroupDescriptionEntry> rectangularRegionGroupEntry(
+                CUSTOM_NEW(RectangularRegionGroupEntry, ()));
+            rectangularRegionGroupEntry->parseEntry(subBitstr);
+            mSampleGroupEntry.push_back(std::move(rectangularRegionGroupEntry));
+        }
+        else if (mGroupingType == "minp")
+        {
+            UniquePtr<SampleGroupDescriptionEntry> vvcMixedNalUnitTypePicEntry(
+                CUSTOM_NEW(VvcMixedNalUnitTypePicEntry, ()));
+            vvcMixedNalUnitTypePicEntry->parseEntry(subBitstr);
+            mSampleGroupEntry.push_back(std::move(vvcMixedNalUnitTypePicEntry));
         }
         else
         {

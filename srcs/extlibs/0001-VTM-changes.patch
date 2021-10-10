@@ -1,0 +1,144 @@
+From 7abd259ed853c9573da9a08d8be655fa026a82d0 Mon Sep 17 00:00:00 2001
+From: Lasse Heikkila <lasse.heikkila.ext@nokia.com>
+Date: Tue, 15 Jun 2021 11:53:28 +0300
+Subject: [PATCH 1/3] Save subpic_id locations in SPS and PPS.
+
+---
+ source/Lib/CommonLib/Slice.h        | 10 ++++++++++
+ source/Lib/DecoderLib/VLCReader.cpp |  4 ++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/source/Lib/CommonLib/Slice.h b/source/Lib/CommonLib/Slice.h
+index 9842a9e4..9257b3a8 100644
+--- a/source/Lib/CommonLib/Slice.h
++++ b/source/Lib/CommonLib/Slice.h
+@@ -1547,6 +1547,8 @@ private:
+ 
+   bool m_disableScalingMatrixForLfnstBlks; 
+ 
++  uint32_t         m_subpicIdBitPos; //< bitstream read bits counter when starting to read the first bit of the first subpicture ID syntax element
++
+ public:
+ 
+   SPS();
+@@ -1930,6 +1932,9 @@ void                    setCCALFEnabledFlag( bool b )
+   bool      getScalingMatrixForAlternativeColourSpaceDisabledFlag()           const { return m_scalingMatrixAlternativeColourSpaceDisabledFlag; }
+   void      setScalingMatrixDesignatedColourSpaceFlag(bool b)                       { m_scalingMatrixDesignatedColourSpaceFlag = b; }
+   bool      getScalingMatrixDesignatedColourSpaceFlag()                       const { return m_scalingMatrixDesignatedColourSpaceFlag; }
++
++  uint32_t  getSubpicIdBitPos() const                                       { return m_subpicIdBitPos; }
++  void      setSubpicIdBitPos( const uint32_t pos )                         { m_subpicIdBitPos = pos; }
+ };
+ 
+ 
+@@ -2031,6 +2036,8 @@ private:
+   unsigned         m_picWidthMinusWrapAroundOffset;          // <pic_width_in_minCbSizeY - wraparound_offset_in_minCbSizeY
+   unsigned         m_wrapAroundOffset;                    //< reference wrap around offset in luma samples
+ 
++  uint32_t         m_subpicIdBitPos; //< bitstream read bits counter when starting to read the first bit of the first subpicture ID syntax element
++
+ public:
+   PreCalcValues   *pcv;
+ 
+@@ -2273,6 +2280,9 @@ public:
+ 
+   bool                    getMixedNaluTypesInPicFlag() const                              { return m_mixedNaluTypesInPicFlag; }
+   void                    setMixedNaluTypesInPicFlag( const bool flag )                   { m_mixedNaluTypesInPicFlag = flag; }
++
++  uint32_t                getSubpicIdBitPos() const                                       { return m_subpicIdBitPos; }
++  void                    setSubpicIdBitPos( const uint32_t pos )                         { m_subpicIdBitPos = pos; }
+ };
+ 
+ class APS
+diff --git a/source/Lib/DecoderLib/VLCReader.cpp b/source/Lib/DecoderLib/VLCReader.cpp
+index 12275fb6..22891b16 100644
+--- a/source/Lib/DecoderLib/VLCReader.cpp
++++ b/source/Lib/DecoderLib/VLCReader.cpp
+@@ -480,6 +480,8 @@ void HLSyntaxReader::parsePPS( PPS* pcPPS )
+     READ_UVLC( uiCode, "pps_subpic_id_len_minus1" );                       pcPPS->setSubPicIdLen( uiCode + 1 );
+     CHECK( uiCode > 15, "Invalid pps_subpic_id_len_minus1 signalled");
+ 
++    pcPPS->setSubpicIdBitPos(m_pcBitstream->getNumBitsRead());
++
+     CHECK((1 << pcPPS->getSubPicIdLen()) < pcPPS->getNumSubPics(), "pps_subpic_id_len exceeds valid range");
+     for( int picIdx = 0; picIdx < pcPPS->getNumSubPics( ); picIdx++ )
+     {
+@@ -1506,6 +1508,8 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
+       READ_FLAG( uiCode, "sps_subpic_id_mapping_present_flag" );                pcSPS->setSubPicIdMappingPresentFlag( uiCode != 0 );
+       if (pcSPS->getSubPicIdMappingPresentFlag())
+       {
++        pcSPS->setSubpicIdBitPos(m_pcBitstream->getNumBitsRead());
++
+         for (int picIdx = 0; picIdx < pcSPS->getNumSubPics(); picIdx++)
+         {
+           READ_CODE(pcSPS->getSubPicIdLen(), uiCode, "sps_subpic_id[i]");   pcSPS->setSubPicId(picIdx, uiCode);
+-- 
+2.25.1
+
+
+From 61f69383b2c0fff2ca558490e95bc9bcf446acda Mon Sep 17 00:00:00 2001
+From: Lasse Heikkila <lasse.heikkila.ext@nokia.com>
+Date: Tue, 15 Jun 2021 11:21:44 +0300
+Subject: [PATCH 2/3] Remove generator and compiler dependency from library
+ output path.
+
+---
+ cmake/CMakeBuild/cmake/modules/BBuildEnv.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/CMakeBuild/cmake/modules/BBuildEnv.cmake b/cmake/CMakeBuild/cmake/modules/BBuildEnv.cmake
+index 07532ba3..9f3f536a 100644
+--- a/cmake/CMakeBuild/cmake/modules/BBuildEnv.cmake
++++ b/cmake/CMakeBuild/cmake/modules/BBuildEnv.cmake
+@@ -1289,7 +1289,7 @@ macro( bb_build_env_setup )
+   endif()
+   
+   # BBuildEnv_OUTPUT_DIR_SUFFIX could be a cache variable to make it customizable. 
+-  set( BBuildEnv_OUTPUT_DIR_SUFFIX           "${bb_default_output_dir}" )
++  #set( BBuildEnv_OUTPUT_DIR_SUFFIX           "${bb_default_output_dir}" )
+     
+   # the deploy folder may be used to save installer packages.
+   set( bb_deploy_dir "${CMAKE_SOURCE_DIR}/deploy" )
+-- 
+2.25.1
+
+
+From ba7ff207ca39be0b210a721041aa9848a8160a2c Mon Sep 17 00:00:00 2001
+From: Lasse Heikkila <lasse.heikkila.ext@nokia.com>
+Date: Tue, 28 Sep 2021 17:44:44 +0300
+Subject: [PATCH 3/3] Build CommonLib and DecoderLib shared libraries
+
+---
+ source/Lib/CommonLib/CMakeLists.txt  | 2 +-
+ source/Lib/DecoderLib/CMakeLists.txt | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/source/Lib/CommonLib/CMakeLists.txt b/source/Lib/CommonLib/CMakeLists.txt
+index 36854599..3d77820d 100644
+--- a/source/Lib/CommonLib/CMakeLists.txt
++++ b/source/Lib/CommonLib/CMakeLists.txt
+@@ -45,7 +45,7 @@ set( INC_FILES ${BASE_INC_FILES} ${X86_INC_FILES} ${MD5_INC_FILES} )
+ 
+ 
+ # library
+-add_library( ${LIB_NAME} STATIC ${SRC_FILES} ${INC_FILES} ${NATVIS_FILES} )
++add_library( ${LIB_NAME} SHARED ${SRC_FILES} ${INC_FILES} ${NATVIS_FILES} )
+ 
+ if( EXTENSION_360_VIDEO )
+   target_compile_definitions( ${LIB_NAME} PUBLIC EXTENSION_360_VIDEO=1 )
+diff --git a/source/Lib/DecoderLib/CMakeLists.txt b/source/Lib/DecoderLib/CMakeLists.txt
+index 9fdcfb25..9e8005fb 100644
+--- a/source/Lib/DecoderLib/CMakeLists.txt
++++ b/source/Lib/DecoderLib/CMakeLists.txt
+@@ -13,7 +13,7 @@ if( MSVC )
+ endif()
+ 
+ # library
+-add_library( ${LIB_NAME} STATIC ${SRC_FILES} ${INC_FILES} ${NATVIS_FILES} )
++add_library( ${LIB_NAME} SHARED ${SRC_FILES} ${INC_FILES} ${NATVIS_FILES} )
+ target_compile_definitions( ${LIB_NAME} PUBLIC )
+ 
+ if( EXTENSION_360_VIDEO )
+-- 
+2.25.1
+

@@ -13,6 +13,8 @@
 
 #include <cassert>
 #include <limits>
+#include <numeric>
+#include <strstream>
 
 #include "auxiliarytypeinfobox.hpp"
 #include "avcsampleentry.hpp"
@@ -22,13 +24,22 @@
 #include "elementarystreamdescriptorbox.hpp"
 #include "hevcsampleentry.hpp"
 #include "mp4audiosampleentrybox.hpp"
+#include "rectangularregiongroupentry.hpp"
 #include "refsgroup.hpp"
 #include "sampletometadataitementry.hpp"
 #include "soundmediaheaderbox.hpp"
 #include "timeutility.hpp"
 #include "visualequivalenceentry.hpp"
+#include "vvcmixednalunittypepicentry.hpp"
+#include "vvcparser.hpp"
+#include "vvcsampleentry.hpp"
+#include "vvcsubpicidentry.hpp"
+#include "vvcsubpicorderentry.hpp"
+#include "vvcsubpicsampleentry.hpp"
+#include "vvcsubpicturelayoutmapentry.hpp"
 #include "writerconstants.hpp"
 #include "writerimpl.hpp"
+
 
 using namespace std;
 
@@ -207,6 +218,121 @@ namespace HEIF
             return ErrorCode::OK;
         }
 
+        HEIF::ErrorCode makeVVCVideoSampleEntryBox(ImageSequence& sequence,
+                                                   const Array<DecoderSpecificInfo>& nalUnits,
+                                                   UniquePtr<SampleEntryBox>& sampleEntryBox)
+        {
+            auto box = makeCustomUnique<::VvcSampleEntry, ::SampleEntryBox>();
+
+            box->setDataReferenceIndex(1);
+
+            VvcConfigurationBox& cfg = box->getVvcConfigurationBox();
+
+            VvcDecoderConfigurationRecord decCfg;
+
+            bool spsFound = false;
+            bool ppsFound = false;
+
+            for (auto& nalUnit : nalUnits)
+            {
+                const auto nalVector = vectorize(nalUnit.decSpecInfoData);
+
+                if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_PPS)
+                {
+                    ppsFound = true;
+                    decCfg.addNalUnit(nalVector, VvcNalUnitType::PPS_NUT, true);
+                }
+                else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_SPS && !spsFound)
+                {
+                    spsFound = true;
+                    decCfg.addNalUnit(nalVector, VvcNalUnitType::SPS_NUT, true);
+                    if (decCfg.makeConfigFromSPS(nalVector) == false)
+                    {
+                        return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    }
+                }
+                else
+                {
+                    return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                }
+            }
+
+            if (!spsFound || !ppsFound)
+            {
+                return ErrorCode::DECODER_CONFIGURATION_ERROR;
+            }
+
+            box->setWidth(decCfg.getMaxPictureWidth());
+            box->setHeight(decCfg.getMaxPictureHeight());
+            if (uint32_t(sequence.maxDimensions.height * sequence.maxDimensions.width) <
+                uint32_t(decCfg.getMaxPictureWidth() * decCfg.getMaxPictureHeight()))
+            {
+                sequence.maxDimensions.width  = decCfg.getMaxPictureWidth();
+                sequence.maxDimensions.height = decCfg.getMaxPictureHeight();
+            }
+
+            cfg.setConfiguration(decCfg);
+
+            fillVisualSampleEntryCommon(sequence, box.get());
+
+            sampleEntryBox = std::move(box);
+            return ErrorCode::OK;
+        }
+
+
+        HEIF::ErrorCode makeVvcSubpicVideoSampleEntryBox(ImageSequence& sequence,
+                                                         const Array<DecoderSpecificInfo>& nalUnits,
+                                                         UniquePtr<SampleEntryBox>& sampleEntryBox)
+        {
+            auto box = makeCustomUnique<::VvcSubpicSampleEntry, ::SampleEntryBox>();
+
+            box->setDataReferenceIndex(1);
+
+            VvcNaluConfigBox& cfg = box->getVvcNaluConfigBox();
+            cfg.setLengthSizeMinusOne(3);
+            // substitute subpicture track is signaled by 'vvnC' flags=1
+            if (sequence.isSubstituteSubpictureTrack)
+            {
+                cfg.setFlags(1);
+            }
+
+            VvcDecoderConfigurationRecord decCfg;
+
+            bool spsFound = false;
+            for (auto& nalUnit : nalUnits)
+            {
+                const auto nalVector = vectorize(nalUnit.decSpecInfoData);
+
+                if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_SPS && !spsFound)
+                {
+                    spsFound = true;
+                    decCfg.addNalUnit(nalVector, VvcNalUnitType::SPS_NUT, true);
+                    if (decCfg.makeConfigFromSPS(nalVector) == false)
+                    {
+                        return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    }
+                }
+            }
+            if (!spsFound)
+            {
+                return ErrorCode::DECODER_CONFIGURATION_ERROR;
+            }
+
+            box->setWidth(decCfg.getMaxPictureWidth());
+            box->setHeight(decCfg.getMaxPictureHeight());
+            if (uint32_t(sequence.maxDimensions.height * sequence.maxDimensions.width) <
+                uint32_t(decCfg.getMaxPictureWidth() * decCfg.getMaxPictureHeight()))
+            {
+                sequence.maxDimensions.width  = decCfg.getMaxPictureWidth();
+                sequence.maxDimensions.height = decCfg.getMaxPictureHeight();
+            }
+
+            fillVisualSampleEntryCommon(sequence, box.get());
+
+            sampleEntryBox = std::move(box);
+            return ErrorCode::OK;
+        }
+
         HEIF::ErrorCode makeMP4AudioSampleEntryBox(ImageSequence& sequence,
                                                    const Array<DecoderSpecificInfo>& nalUnits,
                                                    UniquePtr<SampleEntryBox>& sampleEntryBox)
@@ -324,6 +450,7 @@ namespace HEIF
         sequence.anyNonSyncSample  = false;
         sequence.codingConstraints = aCodingConstraints;
         sequence.matrix            = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
+        sequence.subpicId          = 0;
 
         mImageSequences[sequence.id] = sequence;
 
@@ -760,6 +887,23 @@ namespace HEIF
                     writeEquivalenceSampleGroup(sequence);
                 }
 
+                if (sequence.mediaFormat ==
+                    MediaFormat::VVC_SUBPIC)  // Add VvcSubpicOrderEntry for VVC subpicture track
+                {
+                    writeVvcSubpicIdEntry(sequence);
+                }
+
+                if (sequence.isBaseTrack)
+                {
+                    writeVvcSubpicOrderEntry(sequence);
+                    writeRectangularRegionGroupEntry(sequence);
+                    writeVvcSubpictureLayoutMapEntry(sequence);
+                    ErrorCode error = writeVvcMixedNalUnitTypePicEntry(sequence);
+                    if (error != ErrorCode::OK)
+                    {
+                        return error;
+                    }
+                }
 
                 // modifies sequence.maxDimensions so needs to be done before trackHeaderBox dimensions setting.
                 ErrorCode stblError = writeMoovSampleTable(sequence);
@@ -1205,6 +1349,26 @@ namespace HEIF
                     }
                     stsd.addSampleEntry(std::move(sampleEntryBox));
                 }
+                else if (sequence.mediaFormat == MediaFormat::VVC)
+                {
+                    ErrorCode error =
+                        makeVVCVideoSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig), sampleEntryBox);
+                    if (error != ErrorCode::OK)
+                    {
+                        return error;
+                    }
+                    stsd.addSampleEntry(std::move(sampleEntryBox));
+                }
+                else if (sequence.mediaFormat == MediaFormat::VVC_SUBPIC)
+                {
+                    ErrorCode error = makeVvcSubpicVideoSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig),
+                                                                       sampleEntryBox);
+                    if (error != ErrorCode::OK)
+                    {
+                        return error;
+                    }
+                    stsd.addSampleEntry(std::move(sampleEntryBox));
+                }
             }
         }
         return ErrorCode::OK;
@@ -1327,6 +1491,299 @@ namespace HEIF
 
             stbl.addSampleGroupDescriptionBox(std::move(sgpd));
         }
+    }
+
+
+    ErrorCode WriterImpl::writeVvcSubpictureLayoutMapEntry(ImageSequence& sequence)
+    {
+        if (sequence.sulmEntries.size() == 0)
+        {
+            return ErrorCode::OK;
+        }
+
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        UniquePtr<SampleGroupDescriptionBox> sgpd(CUSTOM_NEW(SampleGroupDescriptionBox, ()));
+
+        const uint32_t runSampleCount     = sequence.samples.size();
+        uint32_t runGroupDescriptionIndex = 0;
+        for (const auto& sulmInfo : sequence.sulmEntries)
+        {
+            UniquePtr<VvcSubpictureLayoutMapEntry, SampleGroupDescriptionEntry> sulm(
+                CUSTOM_NEW(VvcSubpictureLayoutMapEntry, ()));
+
+            sulm->setGroupIdInfo4CC(sulmInfo.groupIdInfo.value);
+            const vector<uint16_t> ids(sulmInfo.groupIds.begin(), sulmInfo.groupIds.end());
+            sulm->setGroupIds(ids);
+
+            SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+            sbgp.setGroupingType("sulm");
+            sbgp.setVersion(1);
+            sbgp.setGroupingTypeParameter(
+                runGroupDescriptionIndex);  // could be something else too, just need unique parameter here as there can
+                                            // be several sulm entries
+            sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+
+            sgpd->FullBox::setVersion(1);  // version 1 for DefaultLength support
+            sgpd->setDefaultLength(sulm->getSize());
+            sgpd->setGroupingType("sulm");
+            sgpd->addEntry(std::move(sulm));
+
+            runGroupDescriptionIndex++;
+        }
+
+        stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::writeRectangularRegionGroupEntry(ImageSequence& sequence)
+    {
+        if (sequence.trifEntries.size() == 0)
+        {
+            return ErrorCode::OK;
+        }
+
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        UniquePtr<SampleGroupDescriptionBox> sgpd(CUSTOM_NEW(SampleGroupDescriptionBox, ()));
+
+        const uint32_t runSampleCount     = sequence.samples.size();
+        uint32_t runGroupDescriptionIndex = 0;
+        for (const auto& trifInfo : sequence.trifEntries)
+        {
+            UniquePtr<RectangularRegionGroupEntry, SampleGroupDescriptionEntry> trif(
+                CUSTOM_NEW(RectangularRegionGroupEntry, ()));
+
+            trif->setGroupId(trifInfo.groupId);
+            trif->setRectRegionFlag(trifInfo.rectRegionFlag);
+            trif->setIndependentIdc(trifInfo.independentIdc);
+            trif->setFilteringDisabled(trifInfo.filteringDisabled);
+            trif->setHasDependencyList(trifInfo.dependencyRectRegionGroupIds.size > 0);
+            trif->setHorizontalOffset(trifInfo.horizontalOffset);
+            trif->setVerticalOffset(trifInfo.verticalOffset);
+            trif->setRegionWidth(trifInfo.regionWidth);
+            trif->setRegionHeight(trifInfo.regionHeight);
+            const vector<uint16_t> ids(trifInfo.dependencyRectRegionGroupIds.begin(),
+                                       trifInfo.dependencyRectRegionGroupIds.end());
+            trif->setDependencyRectRegionGroupIds(ids);
+
+            SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+            sbgp.setGroupingType("trif");
+            sbgp.setVersion(1);
+            sbgp.setGroupingTypeParameter(
+                runGroupDescriptionIndex);  // could be something else too, just need unique parameter here as there can
+                                            // be several trif entries
+            sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+
+            sgpd->FullBox::setVersion(1);  // version 1 for DefaultLength support
+            sgpd->setDefaultLength(trif->getSize());
+            sgpd->setGroupingType("trif");
+            sgpd->addEntry(std::move(trif));
+
+            runGroupDescriptionIndex++;
+        }
+
+
+        stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::writeVvcSubpicOrderEntry(ImageSequence& sequence)
+    {
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        UniquePtr<SampleGroupDescriptionBox> sgpd(CUSTOM_NEW(SampleGroupDescriptionBox, ()));
+        UniquePtr<VvcSubpicOrderEntry, SampleGroupDescriptionEntry> spor(CUSTOM_NEW(VvcSubpicOrderEntry, ()));
+        spor->setSubpicIdInfoFlag(true);
+
+        // Set subp_track_ref_idx of 'spor'.
+        {
+            const auto& decodingOrder = sequence.subpictureTrackDecodingOrder;
+            const bool allZeros =
+                std::all_of(decodingOrder.cbegin(), decodingOrder.cend(), [](unsigned int i) { return i == 0; });
+            if (!allZeros)
+            {
+                const auto subpTrefCount = sequence.trackReferences.at(SUBP_TREF_TYPE).size();
+                if (subpTrefCount != decodingOrder.size())
+                {
+                    return ErrorCode::NOT_APPLICABLE;
+                }
+                std::vector<std::uint16_t> subpTrackRefIdx;
+                std::set<std::uint16_t> foundIndices;
+                for (const auto subpTrefIndex : decodingOrder)
+                {
+                    if ((foundIndices.count(subpTrefIndex) != 0) || (subpTrefIndex == 0) ||
+                        (subpTrefIndex > subpTrefCount + 1))
+                    {
+                        return ErrorCode::NOT_APPLICABLE;
+                    }
+                    foundIndices.insert(subpTrefIndex);
+                    subpTrackRefIdx.push_back(subpTrefIndex);
+                }
+                spor->setSubpicRefIdx(subpTrackRefIdx);
+            }
+        }
+
+        for (const auto& configId : sequence.decoderConfigs)
+        {
+            for (const auto& decoderInfo : mAllDecoderConfigs.at(configId))
+            {
+                if (decoderInfo.decSpecInfoType == DecoderSpecInfoType::VVC_PPS)
+                {
+                    std::vector<uint8_t> nalData(decoderInfo.decSpecInfoData.begin(),
+                                                 decoderInfo.decSpecInfoData.end());
+                    const auto info = VvcParser::parsePps(nalData);
+                    if (info.isSubpicMappingPresent)
+                    {
+                        spor->setPpsSpsSubpicIdFlag(true);
+                        spor->setPpsId(info.ppsId);
+                        spor->setSubpicIdLenMinus1(info.subpicIdLen - 1);
+                        spor->setSubpicIdBitPos(info.subpicIdBitPos);
+                        spor->setStartCodeEmulFlag(info.startCodeEmulationFlag);
+                    }
+                }
+                else if (decoderInfo.decSpecInfoType == DecoderSpecInfoType::VVC_SPS)
+                {
+                    std::vector<uint8_t> nalData(decoderInfo.decSpecInfoData.begin(),
+                                                 decoderInfo.decSpecInfoData.end());
+                    const auto info = VvcParser::parseSps(nalData);
+                    spor->setSpsId(info.spsId);
+                    spor->setSubpicIdLenMinus1(info.subpicIdLen - 1);
+                    spor->setSubpicIdBitPos(info.subpicIdBitPos);
+                    spor->setStartCodeEmulFlag(info.startCodeEmulationFlag);
+                }
+            }
+        }
+
+        sgpd->FullBox::setVersion(1);  // version 1 for DefaultLength support
+        sgpd->setDefaultLength(spor->getSize());
+        sgpd->setGroupingType("spor");
+        sgpd->addEntry(std::move(spor));
+        stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+
+        SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+        sbgp.setGroupingType("spor");
+
+        uint32_t runSampleCount           = sequence.samples.size();
+        uint32_t runGroupDescriptionIndex = 0;
+        sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::writeVvcMixedNalUnitTypePicEntry(ImageSequence& sequence)
+    {
+        if (sequence.minpGroupings.size() == 0)
+        {
+            return ErrorCode::OK;
+        }
+
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        UniquePtr<SampleGroupDescriptionBox> sgpd(CUSTOM_NEW(SampleGroupDescriptionBox, ()));
+        UniquePtr<VvcMixedNalUnitTypePicEntry, SampleGroupDescriptionEntry> minp(
+            CUSTOM_NEW(VvcMixedNalUnitTypePicEntry, ()));
+
+        for (const auto& mixedNal : sequence.minpGroupings)
+        {
+            const auto ppsId = mixedNal.second.ppsId;
+
+            minp->setPpsId(ppsId);
+
+            Vector<VvcMixedNalUnitTypePicEntry::MixSubpTrackIdxs> minpIds;
+            minpIds.reserve(mixedNal.second.mixedNalUnitInfos.size());
+            for (const auto& i : mixedNal.second.mixedNalUnitInfos)
+            {
+                minpIds.push_back({i.first.get(), i.second.get()});
+            }
+            minp->setMixSubpTrackIds(minpIds);
+            // flag position is fixed, as there is no optional fields before it
+            minp->setPpsMixNaluTypesInPicBitPos(10);
+
+            sgpd->FullBox::setVersion(1);  // version 1 for DefaultLength support
+            sgpd->setDefaultLength(minp->getSize());
+            sgpd->setGroupingType(MINP_GROUP_TYPE);
+            sgpd->addEntry(std::move(minp));
+            stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+        }
+
+        SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+        sbgp.setVersion(0);
+        sbgp.setGroupingType(MINP_GROUP_TYPE);
+
+        uint32_t runSampleCount           = 0;
+        uint32_t runGroupDescriptionIndex = 0;
+        for (const auto& sample : sequence.samples)
+        {
+            uint32_t sampleGroupDescriptionIndex = 0;  // 0 index = not member of group
+            if (sample.mixedNalUnitTypeIds.size())     // is this sample member of any group?
+            {
+                uint32_t i = 1;  // index start at 1 for SampleGroupDescriptionBox Entry
+                // find index of SampleGroupDescriptionBox Entry
+                for (const auto& entry : sequence.minpGroupings)
+                {
+                    if (entry.first == *sample.mixedNalUnitTypeIds.begin())
+                    {
+                        sampleGroupDescriptionIndex = i;
+                        break;
+                    }
+                    i++;
+                }
+            }
+
+            // new run?
+            if (runGroupDescriptionIndex != sampleGroupDescriptionIndex)
+            {
+                // end old run if any
+                if (runSampleCount)
+                {
+                    sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+                }
+                runSampleCount           = 1;
+                runGroupDescriptionIndex = sampleGroupDescriptionIndex;
+            }
+            else
+            {
+                runSampleCount++;
+            }
+        }
+        // close last sample run
+        if (runSampleCount)
+        {
+            sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+        }
+
+        return ErrorCode::OK;
+    }
+
+
+    void WriterImpl::writeVvcSubpicIdEntry(ImageSequence& sequence)
+    {
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        UniquePtr<SampleGroupDescriptionBox> sgpd(CUSTOM_NEW(SampleGroupDescriptionBox, ()));
+        UniquePtr<VvcSubpicIdEntry, SampleGroupDescriptionEntry> spid(CUSTOM_NEW(VvcSubpicIdEntry, ()));
+        spid->setSubPicIds({sequence.subpicId});
+        sgpd->FullBox::setVersion(1);  // version 1 for DefaultLength support
+        sgpd->setDefaultLength(spid->getSize());
+        sgpd->setGroupingType("spid");
+        sgpd->addEntry(std::move(spid));
+        stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+
+        SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+
+        sbgp.setGroupingType("spid");
+
+        uint32_t runSampleCount           = sequence.samples.size();
+        uint32_t runGroupDescriptionIndex = 0;
+        sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
     }
 
     void WriterImpl::writeMetadataItemGroups(ImageSequence& sequence)
@@ -1598,6 +2055,102 @@ namespace HEIF
         return ErrorCode::INVALID_FUNCTION_PARAMETER;
     }
 
+    ErrorCode WriterImpl::addSubpictureTrack(const SequenceId& aBaseTrackSequenceId,
+                                             const unsigned int decodingOrder,
+                                             SequenceId& aId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        if (!mImageSequences.count(aBaseTrackSequenceId))
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+
+        const uint32_t currentTime = TimeUtility::getSecondsSince1904();
+        if (!mImageSequences.size())
+        {
+            mMovieBox.getMovieHeaderBox().setCreationTime(currentTime);
+        }
+
+        ImageSequence sequence{};
+        sequence.id          = Context::getValue();
+        aId                  = sequence.id;
+        sequence.trackId     = Track::createTrackId();
+        sequence.handlerType = VIDE_HANDLER;
+        // sequence.mediaId is filled when first sample is fed to Image Sequence
+        sequence.timeBase = mImageSequences[aBaseTrackSequenceId].timeBase;
+        // sequence.maxDimensions is filled in finalize() when all DecoderSpecificInfo
+        // are gone through
+        sequence.duration          = 0;
+        sequence.creationTime      = currentTime;
+        sequence.modificationTime  = sequence.creationTime;
+        sequence.trackEnabled      = true;
+        sequence.trackInMovie      = false;  // must be false for 'vvs1' sample entry VVC subpicture track
+        sequence.trackPreview      = false;
+        sequence.containsHidden    = false;
+        sequence.alternateGroup    = 0;
+        sequence.auxiliaryType     = "";
+        sequence.anyNonSyncSample  = false;
+        sequence.codingConstraints = {};
+        sequence.matrix            = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
+        sequence.subpicId          = mNextSubpicId;
+        mNextSubpicId++;
+
+        mImageSequences[sequence.id] = sequence;
+
+        UniquePtr<TrackBox> trackBox = makeCustomUnique<TrackBox, TrackBox>();
+        TrackHeaderBox& trackHeader  = trackBox->getTrackHeaderBox();
+        trackHeader.setCreationTime(sequence.creationTime);
+        trackHeader.setModificationTime(sequence.modificationTime);
+        trackHeader.setTrackID(sequence.trackId.get());
+
+        MediaBox& mediaBox = trackBox->getMediaBox();
+
+        MediaHeaderBox& mediaHeaderBox = mediaBox.getMediaHeaderBox();
+        mediaHeaderBox.setCreationTime(sequence.creationTime);
+        mediaHeaderBox.setModificationTime(sequence.modificationTime);
+        mediaHeaderBox.setTimeScale(static_cast<uint32_t>(sequence.timeBase.den));
+
+        HandlerBox& handlerBox = mediaBox.getHandlerBox();
+        handlerBox.setHandlerType(VIDE_HANDLER);
+        handlerBox.setName("VideoTrack/VideoHandler");
+
+        MediaInformationBox& mediaInformationBox = mediaBox.getMediaInformationBox();
+        mediaInformationBox.setMediaType(MediaInformationBox::MediaType::Video);
+        DataInformationBox& dinf = mediaInformationBox.getDataInformationBox();
+        auto urlBox              = makeCustomShared<DataEntryUrlBox>();
+        urlBox->setFlags(1);  // Flag 0x01 tells the data is in this file.
+                              // DataEntryUrlBox will write only its header.
+        dinf.addDataEntryBox(urlBox);
+
+        mMovieBox.addTrackBox(std::move(trackBox));
+
+        mImageSequences.at(aBaseTrackSequenceId).subpictureTrackDecodingOrder.push_back(decodingOrder);
+        mImageSequences.at(aBaseTrackSequenceId).isBaseTrack = true;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::setSubstituteSubpictureTrack(const SequenceId& sequence, bool isSubstituteSubpictureTrack)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        if (!mImageSequences.count(sequence))
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+
+        mImageSequences.at(sequence).isSubstituteSubpictureTrack = isSubstituteSubpictureTrack;
+
+        return ErrorCode::OK;
+    }
+
     ErrorCode WriterImpl::addVideoTrack(const Rational& aTimeBase, SequenceId& aId)
     {
         if (mState != State::WRITING)
@@ -1637,6 +2190,7 @@ namespace HEIF
         sequence.anyNonSyncSample  = false;
         sequence.codingConstraints = {};
         sequence.matrix            = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
+        sequence.subpicId          = 0;
 
         mImageSequences[sequence.id] = sequence;
 
@@ -1655,7 +2209,7 @@ namespace HEIF
 
         HandlerBox& handlerBox = mediaBox.getHandlerBox();
         handlerBox.setHandlerType(VIDE_HANDLER);
-        handlerBox.setName("HEIF/VideoTrack/VideoHandler");
+        handlerBox.setName("VideoTrack/VideoHandler");
 
         MediaInformationBox& mediaInformationBox = mediaBox.getMediaInformationBox();
         mediaInformationBox.setMediaType(MediaInformationBox::MediaType::Video);
@@ -1709,6 +2263,7 @@ namespace HEIF
         sequence.codingConstraints = {};
         sequence.matrix            = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
         sequence.audioParams       = aConfig;
+        sequence.subpicId          = 0;
 
         mImageSequences[sequence.id] = sequence;
 
@@ -1758,6 +2313,165 @@ namespace HEIF
     {
         return addImage(sequenceId, mediaDataId, sampleInfo,
                         sampleid);  // use addImage() as internal functionality for samples is the same.
+    }
+
+    ErrorCode WriterImpl::addMixedNalTypeGrouping(const SequenceId& baseTrackId,
+                                                  const unsigned int ppsId,
+                                                  MixedNalUnitTypeId& minpId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        if (!mImageSequences.count(baseTrackId))
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+
+        minpId = Context::getValue();
+        MinpVisualSampleGrouping minp;
+        minp.ppsId  = ppsId;
+        auto& minps = mImageSequences.at(baseTrackId).minpGroupings;
+
+        minps[minpId] = minp;
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addMixedNalGrouping(const MixedNalUnitTypeId& minpId, const SequenceImageId& sequenceImageId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        auto sequenceIt = std::find_if(
+            mImageSequences.begin(), mImageSequences.end(),
+            [minpId](const pair<SequenceId, ImageSequence>& i) { return i.second.minpGroupings.count(minpId); });
+        if (sequenceIt == mImageSequences.end())
+        {
+            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+        }
+
+        auto& samples = sequenceIt->second.samples;
+        auto sampleIt = std::find_if(samples.begin(), samples.end(), [sequenceImageId](const ImageSequence::Sample& i) {
+            return i.sequenceImageId == sequenceImageId;
+        });
+        if (sampleIt == samples.end())
+        {
+            return ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
+        }
+
+        sampleIt->mixedNalUnitTypeIds.insert(minpId);
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addMixedNalPair(const MixedNalUnitTypeId& minpId,
+                                          const std::uint16_t mixSubpTrackIdx1,
+                                          const std::uint16_t mixSubpTrackIdx2)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+
+        // Values shall not be equal.
+        if (mixSubpTrackIdx1 == mixSubpTrackIdx2)
+        {
+            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+        }
+
+        auto sequenceIt = std::find_if(
+            mImageSequences.begin(), mImageSequences.end(),
+            [minpId](const pair<SequenceId, ImageSequence>& i) { return i.second.minpGroupings.count(minpId); });
+        if (sequenceIt == mImageSequences.end())
+        {
+            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+        }
+
+        sequenceIt->second.minpGroupings[minpId].mixedNalUnitInfos.push_back(
+            pair<SequenceId, SequenceId>(mixSubpTrackIdx1, mixSubpTrackIdx2));
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addRectangularRegionGrouping(const Trif& trif, const SequenceId& sequenceId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        if (!mImageSequences.count(sequenceId))
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+
+        mImageSequences.at(sequenceId).trifEntries.push_back(trif);
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addVvcSubpictureLayoutMapEntry(const Sulm& sulm, const SequenceId& sequenceId)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        if (!mImageSequences.count(sequenceId))
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+
+        mImageSequences.at(sequenceId).sulmEntries.push_back(sulm);
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addTrackReference(const SequenceId& from, const TrackGroupId& to, const FourCC& refType)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        if (!mImageSequences.count(from))
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+        if (!mTrackGroups.count(to))
+        {
+            return ErrorCode::INVALID_GROUP_ID;
+        }
+
+        mImageSequences.at(from).trackReferences[refType.value].push_back(to.get());
+
+        return ErrorCode::OK;
+    }
+
+    ErrorCode WriterImpl::addTrackReference(const SequenceId& from, const SequenceId& to, const FourCC& refType)
+    {
+        if (mState != State::WRITING)
+        {
+            return ErrorCode::UNINITIALIZED;
+        }
+        if (!mImageSequences.count(from))
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+        if (!mImageSequences.count(to))
+        {
+            return ErrorCode::INVALID_SEQUENCE_ID;
+        }
+
+        mImageSequences.at(from).trackReferences[refType.value].push_back(mImageSequences.at(to).trackId);
+
+        return ErrorCode::OK;
+    }
+
+    void WriterImpl::resetSubpictureIds()
+    {
+        mNextSubpicId = 0;
     }
 
 }  // namespace HEIF

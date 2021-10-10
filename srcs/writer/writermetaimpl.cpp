@@ -192,7 +192,8 @@ namespace HEIF
         };
         const map<MediaFormat, FormatNames> formatMapping = {{MediaFormat::AVC, {FourCCInt("avc1"), ""}},
                                                              {MediaFormat::HEVC, {FourCCInt("hvc1"), ""}},
-                                                             {MediaFormat::JPEG, {FourCCInt("jpeg"), ""}}};
+                                                             {MediaFormat::JPEG, {FourCCInt("jpeg"), ""}},
+                                                             {MediaFormat::VVC, {FourCCInt("vvc1"), ""}}};
 
         const FormatNames& format = formatMapping.at(mediaData.mediaFormat);
 

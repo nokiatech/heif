@@ -17,6 +17,8 @@
 #include "hevcsampleentry.hpp"
 #include "log.hpp"
 #include "mp4audiosampleentrybox.hpp"
+#include "vvcsampleentry.hpp"
+#include "vvcsubpicsampleentry.hpp"
 
 SampleDescriptionBox::SampleDescriptionBox()
     : FullBox("stsd", 0, 0)
@@ -69,6 +71,18 @@ void SampleDescriptionBox::parseBox(ISOBMFF::BitStream& bitstr)
             UniquePtr<AvcSampleEntry, SampleEntryBox> avcSampleEntry(CUSTOM_NEW(AvcSampleEntry, ()));
             avcSampleEntry->parseBox(entryBitStream);
             mIndex.push_back(std::move(avcSampleEntry));
+        }
+        else if (boxType == "vvc1")
+        {
+            UniquePtr<VvcSampleEntry, SampleEntryBox> vvcSampleEntry(CUSTOM_NEW(VvcSampleEntry, ()));
+            vvcSampleEntry->parseBox(entryBitStream);
+            mIndex.push_back(std::move(vvcSampleEntry));
+        }
+        else if (boxType == "vvs1")
+        {
+            UniquePtr<VvcSubpicSampleEntry, SampleEntryBox> vvcSubpicSampleEntry(CUSTOM_NEW(VvcSubpicSampleEntry, ()));
+            vvcSubpicSampleEntry->parseBox(entryBitStream);
+            mIndex.push_back(std::move(vvcSubpicSampleEntry));
         }
         else if (boxType == "mp4a")
         {

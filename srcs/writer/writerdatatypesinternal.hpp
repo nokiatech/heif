@@ -34,6 +34,13 @@ namespace HEIF
         size_t size;
     };
 
+    /// VVC Mixed NAL unit type pictures sample group.
+    struct MinpVisualSampleGrouping
+    {
+        unsigned int ppsId;
+        Vector<std::pair<SequenceId, SequenceId>> mixedNalUnitInfos;
+    };
+
     struct Dimensions
     {
         uint32_t width;
@@ -62,7 +69,8 @@ namespace HEIF
         bool containsEquivalenceGroupSamples;
         bool containsCleanApertureBox;
         AlternateGroupId alternateGroup;
-        Map<FourCCInt, Vector<TrackId>> trackReferences;
+
+        Map<FourCCInt, Vector<TrackId>> trackReferences;  ///< Note that references can also be track group ids.
 
         String auxiliaryType;
 
@@ -80,6 +88,8 @@ namespace HEIF
             Vector<std::uint32_t> referenceSamples;
             Map<GroupId, EquivalenceTimeOffset> equivalenceGroups;
             Set<MetadataItemId> metadataItemsIds;
+            Set<MixedNalUnitTypeId>
+                mixedNalUnitTypeIds;  ///< 'minp' VisualSampleGroupEntries. Only for VVC base tracks.
         };
         Vector<Sample> samples;
         Vector<DecoderConfigId> decoderConfigs;
@@ -89,6 +99,15 @@ namespace HEIF
         CleanAperture clap;
         EditList editList;
         Vector<int32_t> matrix;
+
+        // VVC subpicture track related variables
+        uint16_t subpicId;  ///< subpic_id for a subpicture track
+        bool isBaseTrack;   ///< True if this is this a VVC base track
+        bool isSubstituteSubpictureTrack; ///< True if this is a substitute subpicture track
+        Vector<unsigned int> subpictureTrackDecodingOrder; ///< Decoding order of subpicture tracks of the VVC base track
+        Map<MixedNalUnitTypeId, MinpVisualSampleGrouping> minpGroupings;  ///< VVC Mixed NAL unit type pictures sample group entries
+        Vector<Trif> trifEntries;
+        Vector<Sulm> sulmEntries;
     };
 
     struct PropertyInformation

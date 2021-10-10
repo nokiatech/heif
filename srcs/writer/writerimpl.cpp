@@ -23,6 +23,9 @@
 
 using namespace std;
 
+// Define NO_METABOX when writing VVC video files.
+#define NO_METABOX
+
 namespace HEIF
 {
     namespace
@@ -139,6 +142,7 @@ namespace HEIF
         mPrimaryItemSet = false;
 
         mPredRrefPropertyId = 0;
+        mNextSubpicId       = 0;
 
         if (mState == State::WRITING)
         {
@@ -266,10 +270,12 @@ namespace HEIF
         return storeFedMediaData(aData, aMediaDataId);
     }
 
+    /// @todo See if these checks could be improved.
     ErrorCode WriterImpl::validateFedMediaData(const Data& aData)
     {
         if ((((aData.mediaFormat == MediaFormat::AVC) || (aData.mediaFormat == MediaFormat::HEVC) ||
-              (aData.mediaFormat == MediaFormat::AAC)) &&
+              (aData.mediaFormat == MediaFormat::AAC) || (aData.mediaFormat == MediaFormat::VVC) ||
+              (aData.mediaFormat == MediaFormat::VVC_SUBPIC)) &&
              !mAllDecoderConfigs.count(aData.decoderConfigId)) &&
             !(aData.mediaFormat == MediaFormat::JPEG))
         {
@@ -304,6 +310,22 @@ namespace HEIF
                 DecoderSpecInfoType type = decoderSpecInfo.elements[0].decSpecInfoType;
                 if ((type != DecoderSpecInfoType::HEVC_SPS) && (type != DecoderSpecInfoType::HEVC_PPS) &&
                     (type != DecoderSpecInfoType::HEVC_VPS))
+                {
+                    return ErrorCode::INVALID_DECODER_CONFIG_ID;
+                }
+            }
+            else
+            {
+                return ErrorCode::INVALID_DECODER_CONFIG_ID;
+            }
+        }
+        else if ((aData.mediaFormat == MediaFormat::VVC) || (aData.mediaFormat == MediaFormat::VVC_SUBPIC))
+        {
+            Array<DecoderSpecificInfo>& decoderSpecInfo = mAllDecoderConfigs.at(aData.decoderConfigId);
+            if (decoderSpecInfo.size >= 2)
+            {
+                DecoderSpecInfoType type = decoderSpecInfo.elements[0].decSpecInfoType;
+                if ((type != DecoderSpecInfoType::VVC_PPS) && (type != DecoderSpecInfoType::VVC_SPS))
                 {
                     return ErrorCode::INVALID_DECODER_CONFIG_ID;
                 }
@@ -624,8 +646,10 @@ namespace HEIF
                 return error;
             }
 
+#ifndef NO_METABOX
             mMetaBox.writeBox(output);
             writeBitstream(output, mFile);
+#endif
             output.clear();
             if (mMovieBox.getTrackBoxes().size() > 0)
             {
@@ -662,9 +686,11 @@ namespace HEIF
             mdatOffset = output.getSize();
             output.clear();
             // Calculate meta box size.
+#ifndef NO_METABOX
             mMetaBox.writeBox(output);
             mdatOffset += output.getSize();
             output.clear();
+#endif
             // Calculate optional moov box size.
             if (mMovieBox.getTrackBoxes().size() > 0)
             {
@@ -676,8 +702,10 @@ namespace HEIF
             updateMoovBox(mdatOffset);
 
             // Serialize meta box again, now with correct mdat offset, and write it.
+#ifndef NO_METABOX
             mMetaBox.writeBox(output);
             writeBitstream(output, mFile);
+#endif
             output.clear();
             // Write optional moov box.
             if (mMovieBox.getTrackBoxes().size() > 0)

@@ -62,6 +62,7 @@ public:
         RLOC,  ///< Relative location. @see RelativeLocationProperty
         RREF,  ///< Required Reference Types Property. @see RequiredReferenceTypesProperty
         UDES,  ///< User description. @see UserDescriptionProperty
+        VVCC,  ///< VVC configuration item property. @see VvcConfigurationBox
     };
 
     /** Information about a property associated to an item. Information here comes from both contained boxes

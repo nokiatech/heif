@@ -126,11 +126,29 @@ namespace HEIF
                            const MediaDataId& mediaDataId,
                            const SampleInfo& sampleInfo,
                            SequenceImageId& sampleid) override;
+        ErrorCode addSubpictureTrack(const SequenceId& baseSequenceId,
+                                     unsigned int decodingOrder,
+                                     SequenceId& id) override;
         ErrorCode addAudioTrack(const Rational& timeBase, const AudioParams& config, SequenceId& id) override;
         ErrorCode addAudio(const SequenceId& sequenceId,
                            const MediaDataId& mediaDataId,
                            const SampleInfo& sampleInfo,
                            SequenceImageId& sampleid) override;
+
+        ErrorCode addMixedNalTypeGrouping(const SequenceId& baseTrackId,
+                                          unsigned int ppsId,
+                                          MixedNalUnitTypeId& minpId) override;
+        ErrorCode addMixedNalPair(const MixedNalUnitTypeId& minpId,
+                                  std::uint16_t mixSubpTrackIdx1,
+                                  std::uint16_t mixSubpTrackIdx2) override;
+        ErrorCode addMixedNalGrouping(const MixedNalUnitTypeId& minpId,
+                                      const SequenceImageId& sequenceImageId) override;
+        ErrorCode addRectangularRegionGrouping(const Trif& trif, const SequenceId& sequenceId) override;
+        ErrorCode addVvcSubpictureLayoutMapEntry(const Sulm& sulm, const SequenceId& sequenceId) override;
+        ErrorCode addTrackReference(const SequenceId& from, const TrackGroupId& to, const FourCC& refType) override;
+        ErrorCode addTrackReference(const SequenceId& from, const SequenceId& to, const FourCC& refType) override;
+        void resetSubpictureIds() override;
+        ErrorCode setSubstituteSubpictureTrack(const SequenceId& sequence, bool isSubstituteSubpictureTrack) override;
 
     private:
         ErrorCode isValidSequenceImage(const SequenceId& sequenceId, const SequenceImageId& sequenceImageId) const;
@@ -147,6 +165,12 @@ namespace HEIF
         void writeRefSampleList(ImageSequence& sequence);
         void writeMetadataItemGroups(ImageSequence& sequence);
         void writeTrackGroups(ImageSequence& imageSequence);
+
+        void writeVvcSubpicIdEntry(ImageSequence& sequence);
+        ErrorCode writeVvcSubpicOrderEntry(ImageSequence& sequence);
+        ErrorCode writeVvcMixedNalUnitTypePicEntry(ImageSequence& sequence);
+        ErrorCode writeRectangularRegionGroupEntry(ImageSequence& sequence);
+        ErrorCode writeVvcSubpictureLayoutMapEntry(ImageSequence& sequence);
 
         // helpers for handling fed mediaData
         ErrorCode validateFedMediaData(const Data& aData);
@@ -294,6 +318,8 @@ namespace HEIF
         bool mWriteItemCreationTimes = false;  ///< Create and associate CreationTimeProperty to added image items.
 
         PropertyId mPredRrefPropertyId = 0;  ///< ID of 'pred' Required reference types property. 0 if not created.
+
+        std::uint16_t mNextSubpicId = 0;  ///< Next free subpicture ID
     };
 
     namespace

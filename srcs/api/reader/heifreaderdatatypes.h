@@ -280,6 +280,53 @@ namespace HEIF
                                                   ///< belonging to this group may be predicted from.
     };
 
+    /**
+     * Information from RectangularRegionGroupEntry sample group description entry.
+     */
+    struct HEIF_DLL_PUBLIC RectangularRegion
+    {
+        uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
+        Trif trif;
+    };
+
+    /**
+     * Information from VvcSubpicOrderEntry sample group description entry.
+     */
+    struct HEIF_DLL_PUBLIC VvcSubpicOrder
+    {
+        uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
+        bool subpicIdInfoFlag;
+        Array<uint16_t> subpTrackRefIdx;
+        uint8_t subpicdLenMinus1;  ///< valid value only if subpicIdInfoFlag is true
+        uint16_t subpicIdBitPos;   ///< valid value only if subpicIdInfoFlag is true
+        bool startCodeEmulFlag;    ///< valid value only if subpicIdInfoFlag is true
+        bool ppsSpsSubpicIdFlag;   ///< valid value only if subpicIdInfoFlag is true
+        u_int8_t ppsId;  ///< PPS ID, valid value only if subpicIdInfoFlag is true and ppsSpsSubpicIdFlag is true
+        u_int8_t spsId;  ///< SPS ID, valid value only if subpicIdInfoFlag is true and ppsSpsSubpicIdFlag is false
+    };
+
+    /**
+     * Information from VvcSubpicLayoutMapEntry sample group description entry.
+     */
+    struct HEIF_DLL_PUBLIC VvcSubpicLayoutMap
+    {
+        uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
+        FourCC groupIdInfo4cc;
+        Array<uint16_t> groupIds;
+    };
+
+    /**
+     * Information from VvcMixedNALUnitTypePicEntry sample group description entry.
+     */
+    struct HEIF_DLL_PUBLIC VvcMixedNalUnitTypePic
+    {
+        uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
+        Array<uint16_t> mixSubpTrackIdx1;
+        Array<uint16_t> mixSubpTrackIdx2;
+        uint16_t ppsMixNaluTypesInPicBitPos;
+        uint8_t ppsId;
+    };
+
     /** Sample Flags Field as defined in 8.8.3.1 of ISO/IEC 14496-12:2015(E) */
     struct SampleFlagsType
     {
@@ -343,8 +390,19 @@ namespace HEIF
         Array<SampleToMetadataItem> metadatas;  ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries
                                                 ///< of this track. Indexed using sampleGroupDescriptionIndex.
         Array<DirectReferenceSamples>
-            referenceSamples;     ///< Data from  DirectReferenceSamplesList ('refs') sample group entries
-                                  ///< of this track. Indexed using sampleGroupDescriptionIndex
+            referenceSamples;  ///< Data from  DirectReferenceSamplesList ('refs') sample group entries
+                               ///< of this track. Indexed using sampleGroupDescriptionIndex
+        Array<RectangularRegion>
+            rectangularRegions;  ///< Data from RectangularRegionGroupEntry ('trif') sample group entries of this track.
+                                 ///< Indexed using sampleGroupDescriptionIndex.
+        Array<VvcSubpicOrder> vvcSubpicOrders;  ///< Data from VvcSubpicOrderEntry ('spor') sample group entries of this
+                                                ///< track. Indexed using sampleGroupDescriptionIndex.
+        Array<VvcSubpicLayoutMap>
+            vvcSubpicLayoutMaps;  ///< Data from VvcSubpicLayoutMapEntry ('sulm') sample group entries of this track.
+                                  ///< Indexed using sampleGroupDescriptionIndex.
+        Array<VvcMixedNalUnitTypePic>
+            vvcMixedNalUnitTypePics;  ///< Data from VvcMixedNALUnitTypePicEntry ('minp') sample group entries of this
+                                      ///< track. Indexed using sampleGroupDescriptionIndex.
         uint64_t maxSampleSize;   ///< Size of largest sample inside the track (can be used to allocate client side read
                                   ///< buffer).
         uint32_t timeScale;       ///< Time scale of the track; useful for video stream procsesing purposes

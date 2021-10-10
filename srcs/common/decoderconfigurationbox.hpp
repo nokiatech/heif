@@ -14,21 +14,15 @@
 #ifndef CONFIGURATIONBOX_HPP
 #define CONFIGURATIONBOX_HPP
 
-#include "bbox.hpp"
 #include "decoderconfigrecord.hpp"
 
 /// @brief Configuration Box class
-/// @details base class for decoder configuration boxes.
-class DecoderConfigurationBox : public Box
+/// @details Base class for decoder configuration boxes.
+class DecoderConfigurationBox
 {
 public:
-    /* @brief Returns the configuration record for this box */
+    /* @brief Returns the configuration record */
     virtual const DecoderConfigurationRecord& getConfiguration() const = 0;
-
-protected:
-    DecoderConfigurationBox(FourCCInt boxType)
-        : Box(boxType){};
-    ~DecoderConfigurationBox() override = default;
 };
 
 #endif /* end of include guard: CONFIGURATIONBOX_HPP */

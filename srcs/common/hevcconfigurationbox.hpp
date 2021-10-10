@@ -14,6 +14,7 @@
 #ifndef HEVCCONFIGURATIONBOX_HPP
 #define HEVCCONFIGURATIONBOX_HPP
 
+#include "bbox.hpp"
 #include "customallocator.hpp"
 #include "decoderconfigurationbox.hpp"
 #include "hevcdecoderconfigrecord.hpp"
@@ -21,7 +22,7 @@
 /// @brief HEVC Configuration Box class
 /// @details 'hvcC' box implementation. This is used by tracks as a part of HEVC Sample Entry implementation, and by
 ///          items as a decoder configuration property.
-class HevcConfigurationBox : public DecoderConfigurationBox
+class HevcConfigurationBox : public Box, public DecoderConfigurationBox
 {
 public:
     HevcConfigurationBox();

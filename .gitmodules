@@ -1,0 +1,3 @@
+[submodule "srcs/extlibs/VVCSoftware_VTM"]
+	path = srcs/extlibs/VVCSoftware_VTM
+	url = https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git

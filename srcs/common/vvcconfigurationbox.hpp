@@ -11,30 +11,30 @@
  * written consent of Nokia.
  */
 
-#ifndef AVCCONFIGURATIONBOX_HPP
-#define AVCCONFIGURATIONBOX_HPP
+#ifndef VVCCONFIGURATIONBOX_HPP
+#define VVCCONFIGURATIONBOX_HPP
 
-#include "avcdecoderconfigrecord.hpp"
-#include "bbox.hpp"
 #include "customallocator.hpp"
 #include "decoderconfigurationbox.hpp"
+#include "fullbox.hpp"
+#include "vvcdecoderconfigrecord.hpp"
 
-/// @brief AVC Configuration Box class
-/// @details 'avcC' box implementation. This is used by tracks as a part of AVC Sample Entry implementation, and by
+/// @brief VVC Configuration Box class
+/// @details 'vvcC' box implementation. This is used by tracks as a part of VVC Sample Entry implementation, and by
 ///          items as a decoder configuration property.
-class AvcConfigurationBox : public Box, public DecoderConfigurationBox
+class VvcConfigurationBox : public FullBox, public DecoderConfigurationBox
 {
 public:
-    AvcConfigurationBox();
-    AvcConfigurationBox(const AvcConfigurationBox& box);
-    ~AvcConfigurationBox() override = default;
+    VvcConfigurationBox();
+    VvcConfigurationBox(const VvcConfigurationBox& box);
+    ~VvcConfigurationBox() override = default;
 
     /// @return Contained DecoderConfigurationRecord
-    const AvcDecoderConfigurationRecord& getAvcConfiguration() const;
+    const VvcDecoderConfigurationRecord& getVvcConfiguration() const;
     const DecoderConfigurationRecord& getConfiguration() const override;
 
-    /// @param [in] config New AVC decoder configuration.
-    void setConfiguration(const AvcDecoderConfigurationRecord& config);
+    /// @param [in] config New VVC decoder configuration.
+    void setConfiguration(const VvcDecoderConfigurationRecord& config);
 
     /// @see Box::writeBox()
     void writeBox(ISOBMFF::BitStream& bitstr) const override;
@@ -43,7 +43,7 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    AvcDecoderConfigurationRecord mAvcConfig;  ///< AVCConfigurationBox field AVCConfig
+    VvcDecoderConfigurationRecord mVvcConfig;  ///< VvcConfigurationBox field VvcConfig
 };
 
-#endif /* end of include guard: AVCCONFIGURATIONBOX_HPP */
+#endif /* end of include guard: VVCCONFIGURATIONBOX_HPP */

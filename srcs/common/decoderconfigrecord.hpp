@@ -28,6 +28,10 @@ public:
         HEVC_VPS,
         HEVC_SPS,
         HEVC_PPS,
+        VVC_APS,
+        VVC_SPS,
+        VVC_PPS,
+        VVC_VPS,
         AudioSpecificConfig,
         JPEG
     };

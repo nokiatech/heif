@@ -47,10 +47,14 @@
 #include "moviebox.hpp"
 #include "moviefragmentbox.hpp"
 #include "mp4audiosampleentrybox.hpp"
+#include "rectangularregiongroupentry.hpp"
 #include "requiredreferencetypesproperty.hpp"
 #include "sampletometadataitementry.hpp"
 #include "segmentindexbox.hpp"
 #include "visualequivalenceentry.hpp"
+#include "vvcmixednalunittypepicentry.hpp"
+#include "vvcsubpicorderentry.hpp"
+#include "vvcsubpicturelayoutmapentry.hpp"
 
 using namespace std;
 
@@ -505,19 +509,23 @@ namespace HEIF
         unsigned int i = 0;
         for (const auto& trackInfo : initTrackInfoMap)
         {
-            const InitTrackInfo& initTrackInfo = trackInfo.second;
-            trackInfoOut[i].trackId            = trackInfo.first;
-            trackInfoOut[i].alternateGroupId   = initTrackInfo.alternateGroupId;
-            trackInfoOut[i].features           = initTrackInfo.trackFeature.getFeatureMask();
-            trackInfoOut[i].alternateTrackIds  = makeArray<SequenceId>(initTrackInfo.alternateTrackIds);
-            trackInfoOut[i].referenceTrackIds  = mapToArray(initTrackInfo.referenceTrackIds);
-            trackInfoOut[i].sampleGroups       = initTrackInfo.groupedSamples;
-            trackInfoOut[i].equivalences       = initTrackInfo.equivalences;
-            trackInfoOut[i].metadatas          = initTrackInfo.metadatas;
-            trackInfoOut[i].referenceSamples   = initTrackInfo.referenceSamples;
-            trackInfoOut[i].maxSampleSize      = initTrackInfo.maxSampleSize;
-            trackInfoOut[i].timeScale          = initTrackInfo.timeScale;
-            trackInfoOut[i].editList           = initTrackInfo.editList;
+            const InitTrackInfo& initTrackInfo      = trackInfo.second;
+            trackInfoOut[i].trackId                 = trackInfo.first;
+            trackInfoOut[i].alternateGroupId        = initTrackInfo.alternateGroupId;
+            trackInfoOut[i].features                = initTrackInfo.trackFeature.getFeatureMask();
+            trackInfoOut[i].alternateTrackIds       = makeArray<SequenceId>(initTrackInfo.alternateTrackIds);
+            trackInfoOut[i].referenceTrackIds       = mapToArray(initTrackInfo.referenceTrackIds);
+            trackInfoOut[i].sampleGroups            = initTrackInfo.groupedSamples;
+            trackInfoOut[i].equivalences            = initTrackInfo.equivalences;
+            trackInfoOut[i].rectangularRegions      = initTrackInfo.rectangularRegions;
+            trackInfoOut[i].vvcSubpicOrders         = initTrackInfo.vvcSubpicOrders;
+            trackInfoOut[i].vvcSubpicLayoutMaps     = initTrackInfo.vvcSubpicLayoutMaps;
+            trackInfoOut[i].vvcMixedNalUnitTypePics = initTrackInfo.vvcMixedNalUnitTypePics;
+            trackInfoOut[i].metadatas               = initTrackInfo.metadatas;
+            trackInfoOut[i].referenceSamples        = initTrackInfo.referenceSamples;
+            trackInfoOut[i].maxSampleSize           = initTrackInfo.maxSampleSize;
+            trackInfoOut[i].timeScale               = initTrackInfo.timeScale;
+            trackInfoOut[i].editList                = initTrackInfo.editList;
 
             trackInfoOut[i].trackGroupIds = Array<FourCCToIds>(initTrackInfo.trackGroupInfoMap.size());
             unsigned int k                = 0;
@@ -569,9 +577,13 @@ namespace HEIF
 
         mFileProperties.rootLevelMetaBoxProperties = extractMetaBoxProperties(metaBox);
         mMetaBoxInfo                               = extractItems(metaBox);
-        processDecoderConfigProperties(metaBox.getItemPropertiesBox(),
-                                       mFileProperties.rootLevelMetaBoxProperties.itemFeaturesMap,
-                                       mImageItemParameterSetMap, mImageToParameterSetMap, mImageItemCodeTypeMap);
+        error                                      = processDecoderConfigProperties(
+            metaBox.getItemPropertiesBox(), mFileProperties.rootLevelMetaBoxProperties.itemFeaturesMap,
+            mImageItemParameterSetMap, mImageToParameterSetMap, mImageItemCodeTypeMap);
+        if (error != ErrorCode::OK)
+        {
+            return error;
+        }
 
         Array<ImageId> masterImages;
         getMasterImages(masterImages);
@@ -1134,6 +1146,27 @@ namespace HEIF
                 type = DecoderSpecInfoType::HEVC_PPS;
                 break;
             }
+            case DecoderConfigurationRecord::VVC_VPS:
+            {
+                type = DecoderSpecInfoType::VVC_VPS;
+                break;
+            }
+            case DecoderConfigurationRecord::VVC_SPS:
+            {
+                type = DecoderSpecInfoType::VVC_SPS;
+                break;
+            }
+            case DecoderConfigurationRecord::VVC_PPS:
+            {
+                type = DecoderSpecInfoType::VVC_PPS;
+                break;
+            }
+            case DecoderConfigurationRecord::VVC_APS:
+            {
+                type = DecoderSpecInfoType::VVC_APS_PREFIX;
+                break;
+            }
+            /// @todo VVC_APS_SUFFIX = 18 ?
             case DecoderConfigurationRecord::AudioSpecificConfig:
             {
                 type = DecoderSpecInfoType::AudioSpecificConfig;
@@ -1261,6 +1294,30 @@ namespace HEIF
             // byteOffset++;
             // HevcNalUnitType naluType = HevcNalUnitType(((uint8_t)memoryBuffer[outputOffset + byteOffset] >> 1) &
             // 0x3f);
+            outputOffset += nalLength + 4;  // 4 bytes of nal length information
+            byteOffset = 0;
+        }
+        return ErrorCode::OK;
+    }
+
+    ErrorCode HeifReaderImpl::processVvcItemData(uint8_t* memoryBuffer, const uint64_t& memoryBufferSize)
+    {
+        uint32_t outputOffset = 0;
+        uint32_t byteOffset   = 0;
+
+        while (outputOffset < memoryBufferSize)
+        {
+            uint32_t nalLength                      = memoryBuffer[outputOffset + byteOffset];
+            memoryBuffer[outputOffset + byteOffset] = 0;
+            byteOffset++;
+            nalLength                               = (nalLength << 8) | memoryBuffer[outputOffset + byteOffset];
+            memoryBuffer[outputOffset + byteOffset] = 0;
+            byteOffset++;
+            nalLength                               = (nalLength << 8) | memoryBuffer[outputOffset + byteOffset];
+            memoryBuffer[outputOffset + byteOffset] = 0;
+            byteOffset++;
+            nalLength                               = (nalLength << 8) | memoryBuffer[outputOffset + byteOffset];
+            memoryBuffer[outputOffset + byteOffset] = 1;
             outputOffset += nalLength + 4;  // 4 bytes of nal length information
             byteOffset = 0;
         }
@@ -1618,11 +1675,12 @@ namespace HEIF
         return propertyMap;
     }
 
-    void HeifReaderImpl::processDecoderConfigProperties(const ItemPropertiesBox& iprp,
-                                                        const ItemFeaturesMap& itemFeaturesMap,
-                                                        Map<DecoderConfigId, ParameterSetMap>& imageItemParameterSetMap,
-                                                        Map<ImageId, DecoderConfigId>& imageToParameterSetMap,
-                                                        Map<ImageId, FourCCInt>& imageItemCodeTypeMap)
+    ErrorCode
+    HeifReaderImpl::processDecoderConfigProperties(const ItemPropertiesBox& iprp,
+                                                   const ItemFeaturesMap& itemFeaturesMap,
+                                                   Map<DecoderConfigId, ParameterSetMap>& imageItemParameterSetMap,
+                                                   Map<ImageId, DecoderConfigId>& imageToParameterSetMap,
+                                                   Map<ImageId, FourCCInt>& imageItemCodeTypeMap)
     {
         for (const auto& imageProperties : itemFeaturesMap)
         {
@@ -1633,6 +1691,8 @@ namespace HEIF
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::AVCC, imageId.get());
             const std::uint32_t jpegIndex =
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::JPGC, imageId.get());
+            const std::uint32_t vvccIndex =
+                iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::VVCC, imageId.get());
 
             FourCCInt type;
             DecoderConfigId configIndex           = 0;
@@ -1647,6 +1707,11 @@ namespace HEIF
                 configIndex = avccIndex;
                 type        = "avc1";
             }
+            else if (vvccIndex != 0u)
+            {
+                configIndex = vvccIndex;
+                type        = "vvc1";
+            }
             else if (jpegIndex != 0u)
             {
                 configIndex = jpegIndex;
@@ -1656,7 +1721,11 @@ namespace HEIF
             {
                 continue;
             }
-            record = static_cast<const DecoderConfigurationBox*>(iprp.getPropertyByIndex(configIndex.get() - 1));
+            record = dynamic_cast<const DecoderConfigurationBox*>(iprp.getPropertyByIndex(configIndex.get() - 1));
+            if (record == nullptr)
+            {
+                return ErrorCode::FILE_HEADER_ERROR;
+            }
             if (imageItemParameterSetMap.count(configIndex) == 0u)
             {
                 imageItemParameterSetMap[configIndex] = makeDecoderParameterSetMap(record->getConfiguration());
@@ -1664,6 +1733,8 @@ namespace HEIF
             imageToParameterSetMap[imageId] = configIndex;
             imageItemCodeTypeMap[imageId]   = type;
         }
+
+        return ErrorCode::OK;
     }
 
     HeifReaderImpl::MetaBoxInfo HeifReaderImpl::extractItems(const MetaBox& metaBox) const
@@ -2083,20 +2154,24 @@ namespace HEIF
 
             fillSampleEntryMap(stsdBox, initTrackInfo);
 
-            initTrackInfo.trackId           = sequenceId.get();
-            initTrackInfo.trackFeature      = getTrackFeatures(trackBox);
-            initTrackInfo.referenceTrackIds = getReferenceTrackIds(trackBox);
-            initTrackInfo.trackGroupInfoMap = getTrackGroupInfoMap(trackBox);
-            initTrackInfo.groupedSamples    = getSampleGroupings(trackBox);
-            initTrackInfo.equivalences      = getEquivalenceGroups(trackBox);
-            initTrackInfo.metadatas         = getSampleToMetadataItemGroups(trackBox);
-            initTrackInfo.referenceSamples  = getDirectReferenceSamplesGroups(trackBox);
-            initTrackInfo.alternateTrackIds = getAlternateTrackIds(trackBox, moovBox);
-            initTrackInfo.alternateGroupId  = trackBox->getTrackHeaderBox().getAlternateGroup();
-            initTrackInfo.maxSampleSize     = maxSampleSize;
-            initTrackInfo.timeScale         = trackBox->getMediaBox().getMediaHeaderBox().getTimeScale();
-            initTrackInfo.editList          = getEditList(trackBox, trackInfo.repetitions);
-            initTrackInfo.editBox           = trackBox->getEditBox();
+            initTrackInfo.trackId                 = sequenceId.get();
+            initTrackInfo.trackFeature            = getTrackFeatures(trackBox);
+            initTrackInfo.referenceTrackIds       = getReferenceTrackIds(trackBox);
+            initTrackInfo.trackGroupInfoMap       = getTrackGroupInfoMap(trackBox);
+            initTrackInfo.groupedSamples          = getSampleGroupings(trackBox);
+            initTrackInfo.equivalences            = getEquivalenceGroups(trackBox);
+            initTrackInfo.metadatas               = getSampleToMetadataItemGroups(trackBox);
+            initTrackInfo.referenceSamples        = getDirectReferenceSamplesGroups(trackBox);
+            initTrackInfo.rectangularRegions      = getRectangularRegionGroups(trackBox);
+            initTrackInfo.vvcSubpicOrders         = getVvcSubpicOrderEntryGroups(trackBox);
+            initTrackInfo.vvcSubpicLayoutMaps     = getVvcSubpicLayoutEntryGroups(trackBox);
+            initTrackInfo.vvcMixedNalUnitTypePics = getVvcMixedNalUnitTypePicEntryGroups(trackBox);
+            initTrackInfo.alternateTrackIds       = getAlternateTrackIds(trackBox, moovBox);
+            initTrackInfo.alternateGroupId        = trackBox->getTrackHeaderBox().getAlternateGroup();
+            initTrackInfo.maxSampleSize           = maxSampleSize;
+            initTrackInfo.timeScale               = trackBox->getMediaBox().getMediaHeaderBox().getTimeScale();
+            initTrackInfo.editList                = getEditList(trackBox, trackInfo.repetitions);
+            initTrackInfo.editBox                 = trackBox->getEditBox();
 
             if (initTrackInfo.trackFeature.hasFeature(TrackFeatureEnum::HasEditList) && (trackInfo.pMap.size() <= 1))
             {
@@ -2508,6 +2583,115 @@ namespace HEIF
                 makeArray<SequenceImageId>(refs->getDirectReferenceSampleIds());
         }
         return refsInfos;
+    }
+
+    Array<RectangularRegion> HeifReaderImpl::getRectangularRegionGroups(const TrackBox* trackBox)
+    {
+        const SampleTableBox& stblBox         = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        const SampleGroupDescriptionBox* sgpd = stblBox.getSampleGroupDescriptionBox("trif");
+        if (sgpd == nullptr)
+        {
+            return Array<RectangularRegion>();
+        }
+        const auto entries = sgpd->getEntryCount();
+        Array<RectangularRegion> trifInfos(entries);
+        for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
+        {
+            auto trif = static_cast<const RectangularRegionGroupEntry*>(sgpd->getEntry(groupIndex));
+
+            trifInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
+            trifInfos[groupIndex - 1].trif.groupId                = trif->getGroupId();
+            trifInfos[groupIndex - 1].trif.rectRegionFlag         = trif->getRectRegionFlag();
+            trifInfos[groupIndex - 1].trif.independentIdc         = trif->getIndependentIdc();
+            trifInfos[groupIndex - 1].trif.fullPicture            = trif->getFullPicture();
+            trifInfos[groupIndex - 1].trif.filteringDisabled      = trif->getFilteringDisabled();
+            trifInfos[groupIndex - 1].trif.horizontalOffset       = trif->getHorizontalOffset();
+            trifInfos[groupIndex - 1].trif.verticalOffset         = trif->getVerticalOffset();
+            trifInfos[groupIndex - 1].trif.regionWidth            = trif->getRegionWidth();
+            trifInfos[groupIndex - 1].trif.regionHeight           = trif->getRegionHeight();
+
+            trifInfos[groupIndex - 1].trif.dependencyRectRegionGroupIds =
+                makeArray<std::uint16_t>(trif->getDependencyRectRegionGroupIds());
+        }
+        return trifInfos;
+    }
+
+    Array<VvcSubpicOrder> HeifReaderImpl::getVvcSubpicOrderEntryGroups(const TrackBox* trackBox)
+    {
+        const SampleTableBox& stblBox         = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        const SampleGroupDescriptionBox* sgpd = stblBox.getSampleGroupDescriptionBox("spor");
+        if (sgpd == nullptr)
+        {
+            return Array<VvcSubpicOrder>();
+        }
+        const auto entries = sgpd->getEntryCount();
+        Array<VvcSubpicOrder> sporInfos(entries);
+        for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
+        {
+            auto spor = static_cast<const VvcSubpicOrderEntry*>(sgpd->getEntry(groupIndex));
+
+            sporInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
+            sporInfos[groupIndex - 1].subpicIdInfoFlag            = spor->getSubpicIdInfoFlag();
+            sporInfos[groupIndex - 1].subpTrackRefIdx             = makeArray<std::uint16_t>(spor->getSubpicRefIdx());
+            sporInfos[groupIndex - 1].subpicdLenMinus1            = spor->getSubpicIdLenMinus1();
+            sporInfos[groupIndex - 1].subpicIdBitPos              = spor->getSubpicIdBitPos();
+            sporInfos[groupIndex - 1].startCodeEmulFlag           = spor->getStartCodeEmulFlag();
+            sporInfos[groupIndex - 1].ppsSpsSubpicIdFlag          = spor->getPpsSpsSubpicIdFlag();
+            sporInfos[groupIndex - 1].ppsId                       = spor->getPpsId();
+            sporInfos[groupIndex - 1].spsId                       = spor->getSpsId();
+        }
+        return sporInfos;
+    }
+
+    Array<VvcSubpicLayoutMap> HeifReaderImpl::getVvcSubpicLayoutEntryGroups(const TrackBox* trackBox)
+    {
+        const SampleTableBox& stblBox         = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        const SampleGroupDescriptionBox* sgpd = stblBox.getSampleGroupDescriptionBox("sulm");
+        if (sgpd == nullptr)
+        {
+            return Array<VvcSubpicLayoutMap>();
+        }
+        const auto entries = sgpd->getEntryCount();
+        Array<VvcSubpicLayoutMap> sulmInfos(entries);
+        for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
+        {
+            auto sulm = static_cast<const VvcSubpictureLayoutMapEntry*>(sgpd->getEntry(groupIndex));
+
+            sulmInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
+            sulmInfos[groupIndex - 1].groupIdInfo4cc              = sulm->getGroupIdInfo4CC().getUInt32();
+            sulmInfos[groupIndex - 1].groupIds                    = makeArray<std::uint16_t>(sulm->getGroupIds());
+        }
+        return sulmInfos;
+    }
+
+    Array<VvcMixedNalUnitTypePic> HeifReaderImpl::getVvcMixedNalUnitTypePicEntryGroups(const TrackBox* trackBox)
+    {
+        const SampleTableBox& stblBox         = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        const SampleGroupDescriptionBox* sgpd = stblBox.getSampleGroupDescriptionBox("minp");
+        if (sgpd == nullptr)
+        {
+            return Array<VvcMixedNalUnitTypePic>();
+        }
+        const auto entries = sgpd->getEntryCount();
+        Array<VvcMixedNalUnitTypePic> minpInfos(entries);
+        for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
+        {
+            auto minp = static_cast<const VvcMixedNalUnitTypePicEntry*>(sgpd->getEntry(groupIndex));
+
+            minpInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
+            const auto indexPairs                                 = minp->getMixSubpTrackIds();
+            minpInfos[groupIndex - 1].mixSubpTrackIdx1            = Array<std::uint16_t>(indexPairs.size());
+            minpInfos[groupIndex - 1].mixSubpTrackIdx2            = Array<std::uint16_t>(indexPairs.size());
+            for (const auto& indexes : indexPairs)
+            {
+                minpInfos[groupIndex - 1].mixSubpTrackIdx1 = indexes.first;
+                minpInfos[groupIndex - 1].mixSubpTrackIdx2 = indexes.second;
+            }
+
+            minpInfos[groupIndex - 1].ppsMixNaluTypesInPicBitPos = minp->getPpsMixNaluTypesInPicBitPos();
+            minpInfos[groupIndex - 1].ppsId                      = minp->getPpsId();
+        }
+        return minpInfos;
     }
 
     InitTrackInfo HeifReaderImpl::extractInitTrackInfo(const TrackBox* trackBox)
@@ -2948,7 +3132,13 @@ namespace HEIF
             // FourCCInt type = entry->getType();
             if (entry != nullptr)
             {
-                parameterSetMaps[index] = makeDecoderParameterSetMap(*entry->getConfigurationRecord());
+                const DecoderConfigurationRecord* configPtr = entry->getConfigurationRecord();
+                if (configPtr == nullptr)
+                {
+                    continue;
+                }
+
+                parameterSetMaps[index] = makeDecoderParameterSetMap(*configPtr);
 
                 if (entry->isVisual())
                 {
@@ -3627,7 +3817,7 @@ namespace HEIF
 
     bool HeifReaderImpl::isImageItem(const ItemInfo& info)
     {
-        static const std::set<FourCCInt> IMAGE_TYPES = {"avc1", "hvc1", "grid", "iovl", "iden", "jpeg"};
+        static const std::set<FourCCInt> IMAGE_TYPES = {"avc1", "hvc1", "vvc1", "grid", "iovl", "iden", "jpeg"};
 
         auto type = info.type;
 

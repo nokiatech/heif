@@ -28,7 +28,7 @@ void JpegConfigurationBox::JpegDecoderConfigurationRecord::getConfigurationMap(C
 }
 
 JpegConfigurationBox::JpegConfigurationBox()
-    : DecoderConfigurationBox("jpgC")
+    : Box("jpgC")
     , mJpegPrefix()
     , mRecord(mJpegPrefix)
 {

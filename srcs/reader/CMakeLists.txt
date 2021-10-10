@@ -86,6 +86,7 @@ target_compile_definitions(${HEIF_LIB_NAME} INTERFACE "HEIF_USE_STATIC_LIB"
 target_include_directories(${HEIF_LIB_NAME} PRIVATE ../common
                                             PUBLIC ../api/common
                                             PUBLIC ../api/reader)
+target_link_libraries(${HEIF_LIB_NAME}      PUBLIC vvcparser)
 
 if((NOT IOS) AND (NOT BUILD_ONLY_STATIC_LIB))
     add_library(${HEIF_SHARED_LIB_NAME} SHARED ${READER_SRCS} ${API_HDRS} ${READER_HDRS} $<TARGET_OBJECTS:common> )
@@ -99,4 +100,5 @@ if((NOT IOS) AND (NOT BUILD_ONLY_STATIC_LIB))
     target_include_directories(${HEIF_SHARED_LIB_NAME} PRIVATE ../common
                                                        PUBLIC ../api/common
                                                        PUBLIC ../api/reader)
+    target_link_libraries(${HEIF_SHARED_LIB_NAME}      PUBLIC vvcparser)
 endif()

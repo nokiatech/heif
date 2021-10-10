@@ -17,13 +17,13 @@
 #include "bitstream.hpp"
 
 AvcConfigurationBox::AvcConfigurationBox()
-    : DecoderConfigurationBox("avcC")
+    : Box("avcC")
     , mAvcConfig()
 {
 }
 
 AvcConfigurationBox::AvcConfigurationBox(const AvcConfigurationBox& box)
-    : DecoderConfigurationBox(box.getType())
+    : Box(box.getType())
     , mAvcConfig(box.mAvcConfig)
 {
 }

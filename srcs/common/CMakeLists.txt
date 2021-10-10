@@ -94,6 +94,7 @@ set(COMMON_SRCS
     primaryitembox.cpp
     protectionschemeinfobox.cpp
     rawpropertybox.cpp
+    rectangularregiongroupentry.cpp
     requiredreferencetypesproperty.cpp
     sampledescriptionbox.cpp
     sampleentrybox.cpp
@@ -127,6 +128,15 @@ set(COMMON_SRCS
     videomediaheaderbox.cpp
     visualequivalenceentry.cpp
     visualsampleentrybox.cpp
+    vvcconfigurationbox.cpp
+    vvcdecoderconfigrecord.cpp
+    vvcnaluconfigbox.cpp
+    vvcsampleentry.cpp
+    vvcsubpicidentry.cpp
+    vvcsubpicorderentry.cpp
+    vvcsubpicsampleentry.cpp
+    vvcsubpicturelayoutmapentry.cpp
+    vvcmixednalunittypepicentry.cpp
     )
 
 set(COMMON_HDRS
@@ -211,6 +221,7 @@ set(COMMON_HDRS
     primaryitembox.hpp
     protectionschemeinfobox.hpp
     rawpropertybox.hpp
+    rectangularregiongroupentry.hpp
     requiredreferencetypesproperty.hpp
     sampledescriptionbox.hpp
     sampleentrybox.hpp
@@ -245,6 +256,16 @@ set(COMMON_HDRS
     videomediaheaderbox.hpp
     visualequivalenceentry.hpp
     visualsampleentrybox.hpp
+    vvccommondefs.hpp
+    vvcconfigurationbox.hpp
+    vvcdecoderconfigrecord.hpp
+    vvcnaluconfigbox.hpp
+    vvcsampleentry.hpp
+    vvcsubpicidentry.hpp
+    vvcsubpicorderentry.hpp
+    vvcsubpicsampleentry.hpp
+    vvcsubpicturelayoutmapentry.hpp
+    vvcmixednalunittypepicentry.hpp
     writeoncemap.hpp
     )
 
@@ -252,3 +273,6 @@ add_library(common OBJECT ${COMMON_SRCS} ${COMMON_HDRS})
 set_property(TARGET common PROPERTY CXX_STANDARD 11)
 
 set_property(TARGET common PROPERTY POSITION_INDEPENDENT_CODE 1)
+
+target_link_libraries(common PUBLIC vvcparser)
+target_include_directories(common PRIVATE ../vvc-parser)

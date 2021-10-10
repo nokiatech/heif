@@ -205,6 +205,7 @@ namespace HEIF
     IdType(std::uint32_t, PropertyId);
     IdType(std::uint32_t, MetadataItemId);
     IdType(std::uint32_t, TrackGroupId);
+    IdType(std::uint32_t, MixedNalUnitTypeId);
 
     struct HEIF_DLL_PUBLIC Rational
     {
@@ -218,6 +219,11 @@ namespace HEIF
                       ///< internally.
         AVC_PPS = 8,  ///< H.264/AVC Picture Parameter Set (PPS) nal unit, bytestream header (0001) if any is stripped
                       ///< internally.
+        VVC_VPS = 14,
+        VVC_SPS = 15,
+        VVC_PPS = 16,
+        VVC_APS_PREFIX = 17,
+        VVC_APS_SUFFIX = 18,
 
         HEVC_VPS = 32,  ///< H.265/HEVC Video Parameter Set (VPS) nal unit, bytestream header (0001) if any is stripped
                         ///< internally.
@@ -238,6 +244,7 @@ namespace HEIF
     {
         DecoderSpecInfoType decSpecInfoType;  // can be "SPS" and "PPS" for AVC, additional "VPS" for HEVC
         Array<uint8_t> decSpecInfoData;
+        int id;
     };
 
     struct HEIF_DLL_PUBLIC ItemDescription
@@ -459,6 +466,31 @@ namespace HEIF
                                      ///< true. Zero means infinite looping.
         Array<EditUnit> editUnits;   ///< Edit units in the order they should be applied.
     };
+
+    /**
+     * @brief VVC RectangularRegionGroupEntry 'trif' */
+    struct HEIF_DLL_PUBLIC Trif
+    {
+       uint16_t groupId;
+       bool rectRegionFlag;
+       uint16_t independentIdc;
+       bool fullPicture;
+       bool filteringDisabled;
+       uint16_t horizontalOffset;
+       uint16_t verticalOffset;
+       uint16_t regionWidth;
+       uint16_t regionHeight;
+       Array<std::uint16_t> dependencyRectRegionGroupIds;
+    };
+
+    /**
+     * @brief VVC VvcSubpictureLayoutMapEntry 'sulm' */
+    struct HEIF_DLL_PUBLIC Sulm
+    {
+       FourCC groupIdInfo;
+       Array<std::uint16_t> groupIds;
+    };
+
 }  // namespace HEIF
 
 #endif /* HEIFCOMMONDATATYPES_H */

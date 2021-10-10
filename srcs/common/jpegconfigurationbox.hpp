@@ -24,7 +24,7 @@
  *           Data can include e.g. quantization and other tables
  *           common to several JPEG image items.
  */
-class JpegConfigurationBox : public DecoderConfigurationBox
+class JpegConfigurationBox : public Box, public DecoderConfigurationBox
 {
 public:
     JpegConfigurationBox();

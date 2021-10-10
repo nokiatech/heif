@@ -272,7 +272,14 @@ namespace HEIF
             equivalences;                       ///< Information from VisualEquivalenceEntry() 'eqiv' sample groups.
         Array<SampleToMetadataItem> metadatas;  ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries
         Array<DirectReferenceSamples>
-            referenceSamples;    ///< Data of DirectReferenceSamplesList ('refs') sample group entries
+            referenceSamples;  ///< Data of DirectReferenceSamplesList ('refs') sample group entries
+        Array<RectangularRegion>
+            rectangularRegions;                 ///< Data of RectangularRegionGroupEntry ('trif') sample group entries
+        Array<VvcSubpicOrder> vvcSubpicOrders;  ///< Data of VvcSubpicOrderEntry ('spor') sample group entries
+        Array<VvcSubpicLayoutMap>
+            vvcSubpicLayoutMaps;  ///< Data of VvcSubpicLayoutMapEntry ('sulm') sample group entries
+        Array<VvcMixedNalUnitTypePic>
+            vvcMixedNalUnitTypePics;  ///< Data of VvcMixedNALUnitTypePicEntry ('minp') sample group entries
         uint64_t maxSampleSize;  ///< Size of largest sample inside the track (can be used to allocate client side read
                                  ///< buffer).
         uint32_t timeScale;

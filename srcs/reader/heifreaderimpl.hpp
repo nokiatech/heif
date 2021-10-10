@@ -386,18 +386,25 @@ namespace HEIF
         ErrorCode getProtection(ImageId itemId, bool& isProtected) const;
 
         /** Process item data from AVC bitstream
-         *  @param [in] data  char pointer to Raw AVC bitstream data.
+         *  @param [in] data  char pointer to raw AVC bitstream data.
          *  @param [in] size  size of data to be modified.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, FILE_READ_ERROR */
         static ErrorCode processAvcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize);
 
         /** Process item data from HEVC bitstream
-         *  @param [in] data  char pointer to Raw HEVC bitstream data.
+         *  @param [in] data  char pointer to raw HEVC bitstream data.
          *  @param [in] size  size of data to be modified.
          *  @pre initialize() has been called successfully.
          *  @return ErrorCode: OK, FILE_READ_ERROR */
         static ErrorCode processHevcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize);
+
+        /** Process item data from VVC bitstream
+         *  @param [in] data  char pointer to raw VVC bitstream data.
+         *  @param [in] size  size of data to be modified.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, FILE_READ_ERROR */
+        static ErrorCode processVvcItemData(uint8_t* memoryBuffer, const uint64_t& memoryBufferSize);
 
         /* ********************************************************************** */
         /* *********************** Meta-specific section  *********************** */
@@ -428,7 +435,7 @@ namespace HEIF
         typedef Map<ImageId, ItemInfo> ItemInfoMap;
 
         /**
-         * @brief Recognize image item types ( "avc1", "hvc1", "grid", "iovl", "iden", "jpeg")
+         * @brief Recognize image item types ( "avc1", "hvc1", "vvc1", "grid", "iovl", "iden", "jpeg")
          *        as well as mime content type "image/jpeg"
          * @param ItemInfo for the item
          * @return True if the 4CC is an image type or if it's a mime type and content type "image/jpeg" */
@@ -511,12 +518,13 @@ namespace HEIF
         Properties processItemProperties() const;
 
         /**
-         * @brief Fill imageItemParameterSetMap, imageToParameterSetMap and imageItemCodeTypeMap from metabox */
-        static void processDecoderConfigProperties(const ItemPropertiesBox& iprp,
-                                                   const ItemFeaturesMap& itemFeaturesMap,
-                                                   Map<DecoderConfigId, ParameterSetMap>& imageItemParameterSetMap,
-                                                   Map<ImageId, DecoderConfigId>& imageToParameterSetMap,
-                                                   Map<ImageId, FourCCInt>& imageItemCodeTypeMap);
+         * @brief Fill imageItemParameterSetMap, imageToParameterSetMap and imageItemCodeTypeMap from metabox
+         * @return ErrorCode: OK, FILE_HEADER_ERROR */
+        static ErrorCode processDecoderConfigProperties(const ItemPropertiesBox& iprp,
+                                                        const ItemFeaturesMap& itemFeaturesMap,
+                                                        Map<DecoderConfigId, ParameterSetMap>& imageItemParameterSetMap,
+                                                        Map<ImageId, DecoderConfigId>& imageToParameterSetMap,
+                                                        Map<ImageId, FourCCInt>& imageItemCodeTypeMap);
 
         /**
          * @brief Extract MetaBoxInfo struct for reader internal use
@@ -762,6 +770,33 @@ namespace HEIF
          * @param [in] trackBox TrackBox to extract data from.
          * @return Sample to Metadata information. */
         static Array<DirectReferenceSamples> getDirectReferenceSamplesGroups(const TrackBox* trackBox);
+
+        /**
+         * @brief Extract information about sample RectangularRegionGroupEntry() groups ('trif') for the reader
+         * interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return Rectangular region group entry information. */
+        static Array<RectangularRegion> getRectangularRegionGroups(const TrackBox* trackBox);
+
+        /**
+         * @brief Extract information about sample VvcSubpicOrderEntry() groups ('spor') for the reader
+         * interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return VVC subpic order entry sample group information. */
+        static Array<VvcSubpicOrder> getVvcSubpicOrderEntryGroups(const TrackBox* trackBox);
+
+        /**
+         * @brief Extract information about sample VvcSubpicLayoutMapEntry() groups ('sulm') for the reader interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return VVC subpicture layout map entry sample group information. */
+        static Array<VvcSubpicLayoutMap> getVvcSubpicLayoutEntryGroups(const TrackBox* trackBox);
+
+        /**
+         * @brief Extract information about sample VvcMixedNALUnitTypePicEntry() groups ('minp') for the reader
+         * interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return VVC mixed NAL unit type pictures sample group information. */
+        static Array<VvcMixedNalUnitTypePic> getVvcMixedNalUnitTypePicEntryGroups(const TrackBox* trackBox);
 
         /**
          * @brief Extract information about alternate track IDs for a track for the reader interface

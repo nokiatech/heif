@@ -16,13 +16,13 @@
 #include "bitstream.hpp"
 
 HevcConfigurationBox::HevcConfigurationBox()
-    : DecoderConfigurationBox("hvcC")
+    : Box("hvcC")
     , mHevcConfig()
 {
 }
 
 HevcConfigurationBox::HevcConfigurationBox(const HevcConfigurationBox& box)
-    : DecoderConfigurationBox(box.getType())
+    : Box(box.getType())
     , mHevcConfig(box.mHevcConfig)
 {
 }

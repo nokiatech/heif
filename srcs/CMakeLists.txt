@@ -139,6 +139,9 @@ string(TIMESTAMP BUILD_TIMESTAMP UTC)
 configure_file("${PROJECT_SOURCE_DIR}/buildinfo/buildinfo.hpp.in" "${PROJECT_BINARY_DIR}/buildinfo.hpp")
 include_directories("${PROJECT_BINARY_DIR}")
 
+include(extlibs/vtm.cmake)
+add_subdirectory(vvc-parser)
+
 add_subdirectory(common)
 add_subdirectory(reader)
 

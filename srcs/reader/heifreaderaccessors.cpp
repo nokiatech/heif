@@ -304,7 +304,7 @@ namespace HEIF
         for (auto itemId : allItems)
         {
             const auto rawType = mMetaBox.getItemInfoBox().getItemById(itemId.get()).getItemType().getString();
-            if ((rawType == "avc1") || (rawType == "hvc1"))
+            if ((rawType == "avc1") || (rawType == "hvc1") || (rawType == "vvc1"))
             {
                 // A master image is an image that is not an auxiliary image or a thumbnail image.
                 if (!doReferencesFromItemIdExist(mMetaBox, itemId.get(), "auxl") &&
@@ -672,7 +672,7 @@ namespace HEIF
         {
             return error;
         }
-        if (!isProtected && ((rawType == "hvc1") || (rawType == "avc1")))
+        if (!isProtected && ((rawType == "hvc1") || (rawType == "avc1") || (rawType == "vvc1")))
         {
             processData = true;
         }
@@ -704,6 +704,11 @@ namespace HEIF
                 {
                     return error;
                 }
+            }
+            else if (codeType == FourCC("vvc1"))
+            {
+                /// @todo Implement VVC item support.
+                return ErrorCode::NOT_APPLICABLE;
             }
             else
             {
@@ -757,6 +762,15 @@ namespace HEIF
             {
                 // Get item data from HEVC bitstream
                 error = processHevcItemData(memoryBuffer, memoryBufferSize);
+                if (error != ErrorCode::OK)
+                {
+                    return error;
+                }
+            }
+            else if (codeType == FourCC("vvc1") || codeType == FourCC("vvs1"))
+            {
+                // Get item data from VVC bitstream
+                error = processVvcItemData(memoryBuffer, memoryBufferSize);
                 if (error != ErrorCode::OK)
                 {
                     return error;
@@ -1324,7 +1338,7 @@ namespace HEIF
             return error;
         }
 
-        if ((codeType != FourCC("hvc1")) && (codeType != FourCC("avc1")))
+        if ((codeType != FourCC("hvc1")) && (codeType != FourCC("avc1")) && (codeType != FourCC("vvc1")))
         {
             // No other code types supported
             return ErrorCode::UNSUPPORTED_CODE_TYPE;

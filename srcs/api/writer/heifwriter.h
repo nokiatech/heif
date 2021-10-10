@@ -662,6 +662,76 @@ namespace HEIF
         virtual ErrorCode addVideoTrack(const Rational& timeBase, SequenceId& id) = 0;
 
         /**
+         * Add a new subpicture track for a (VVC) base track. This creates relevant VvcSubpicOrderEntry and
+         * VvcSubpicIDEntry VisualSampleGroupEntries. Note that 'subp' track references are not created automatically.
+         * @param baseTrackId   [in]  ID of the base track.
+         * @param decodingOrder [in]  Decoding order of this subpicture track.
+         * @param id            [out] Identifier of the added track. This is not necessary same the corresponding track
+         * ID in the file.
+         * @return ErrorCode: OK, UNINITIALIZED
+         */
+        virtual ErrorCode addSubpictureTrack(const SequenceId& baseTrackId,
+                                             unsigned int decodingOrder,
+                                             SequenceId& id) = 0;
+
+        /**
+         * Set or unset a track as a substitute subpicture track. This is used only for VVC subpicture tracks. Enabling
+         * this will cause VvcSubpicSampleEntry 'vvnC' flags to be set to 1.
+         * @param sequence                    [in] Sequence id of a substitute subpicture track.
+         * @param isSubstituteSubpictureTrack [in] True to enable, false to disable.
+         * @return ErrorCode: OK, UNINITIALIZED or INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode setSubstituteSubpictureTrack(const SequenceId& sequence, bool isSubstituteSubpictureTrack) = 0;
+
+        /**
+         * Add a new Mixed NAL unit type pictures sample group to a VVC track
+         * @param baseTrackId [in]  VVC merge base track SequenceId.
+         * @param ppsId       [in]  PPS ID of the PPS applying to this sample group description entry
+         * @param minpId      [out] Newly created MixedNalUnitTypeId to be used with addMixedNalPair.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode addMixedNalTypeGrouping(const SequenceId& baseTrackId,
+                                                  unsigned int ppsId,
+                                                  MixedNalUnitTypeId& minpId) = 0;
+
+        /**
+         * Add a new mix_subp_track_idx1[i] and mix_subp_track_idx2[i] pair to a
+         * VvcMixedNALUnitTypePicEntry.
+         * @param minpId           [in] MixedNalUnitTypeId received from addMixedNalTypeGrouping.
+         * @param mixSubpTrackIdx1 [in] mix_subp_track_idx1[i] value to be added
+         * @param mixSubpTrackIdx2 [in] mix_subp_track_idx2[i] value to be added
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_FUNCTION_PARAMETER
+         */
+        virtual ErrorCode addMixedNalPair(const MixedNalUnitTypeId& minpId,
+                                          std::uint16_t mixSubpTrackIdx1,
+                                          std::uint16_t mixSubpTrackIdx2) = 0;
+
+        /**
+         * Map a sample to this sample group description entry.
+         * @param minpId          [in] MixedNalUnitTypeId received from addMixedNalTypeGrouping.
+         * @param sequenceImageId [in] Id of the sample added to the 'minp' grouping.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_FUNCTION_PARAMETER
+         */
+        virtual ErrorCode addMixedNalGrouping(const MixedNalUnitTypeId& minpId,
+                                              const SequenceImageId& sequenceImageId) = 0;
+
+        /**
+         * Add a new Rectangular region grouping entry ('trif') to a VVC track.
+         * @param trif        [in] RectangularRegionGroupEntry data
+         * @param sequenceId  [in]
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode addRectangularRegionGrouping(const Trif& trif, const SequenceId& sequenceId) = 0;
+
+        /**
+         *
+         * @param sulm       [in] VvcSubpictureLayoutMapEntry data
+         * @param sequenceId [in]
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode addVvcSubpictureLayoutMapEntry(const Sulm& sulm, const SequenceId& sequenceId) = 0;
+
+        /**
          * Add an video sample to a video track. Video bitstream must have been already fed by using feedMediaData().
          * Note: Video must be fed in media data / decoding order!
          * For HEIF Image Sequences use addImage() instead.
@@ -702,6 +772,29 @@ namespace HEIF
                                    const MediaDataId& mediaDataId,
                                    const SampleInfo& sampleInfo,
                                    SequenceImageId& sampleid) = 0;
+
+        /**
+         * Add a new track reference to the TrackReferenceBox of a track.
+         * @param from    [in] SequenceId of the track referencing a track group in the presentation.
+         * @param to      [in] Track group id that the reference is pointing to.
+         * @param refType [in] FourCC type of the created track reference.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_GROUP_ID
+         */
+        virtual ErrorCode addTrackReference(const SequenceId& from, const TrackGroupId& to, const FourCC& refType) = 0;
+
+        /**
+         * Add a new track reference to the TrackReferenceBox of a track.
+         * @param from    [in] SequenceId of the track referencing another track in the presentation.
+         * @param to      [in] SequenceId of the track that the reference is pointing to.
+         * @param refType [in] FourCC type of the created track reference.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode addTrackReference(const SequenceId& from, const SequenceId& to, const FourCC& refType) = 0;
+
+        /**
+         * Reset subpicture IDs when starting to add new subtrack alte group.
+         */
+        virtual void resetSubpictureIds() = 0;
 
     protected:
         virtual ~Writer() = default;

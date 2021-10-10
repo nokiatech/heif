@@ -72,6 +72,8 @@ namespace HEIF
         AVC,   ///< Image(s) encoded with AVC/H.264 encoder (Annex E in HEIF ISO/IEC 23008-12:2017(E) spec for details).
         HEVC,  ///< Image(s) encoded with HEVC/H.265 encoder (Annex B in HEIF ISO/IEC 23008-12:2017(E) spec for
                ///< details).
+        VVC,
+        VVC_SUBPIC,
         JPEG,  ///< Image(s) encoded with JPEG encoder (Annex H in HEIF ISO/IEC 23008-12:2017(E) spec for details).
         EXIF,  ///< EXIF Metadata binary data (ExifDataBlock() as defined in Annex A.2.1 in HEIF ISO/IEC
                ///< 23008-12:2017(E)).

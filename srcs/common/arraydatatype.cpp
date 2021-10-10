@@ -104,6 +104,10 @@ namespace HEIF
     instance(SampleVisualEquivalence);
     instance(SampleToMetadataItem);
     instance(DirectReferenceSamples);
+    instance(RectangularRegion);
+    instance(VvcSubpicOrder);
+    instance(VvcSubpicLayoutMap);
+    instance(VvcMixedNalUnitTypePic);
     instance(SequenceId);
     instance(TimestampIDPair);
     instance(TrackInformation);
