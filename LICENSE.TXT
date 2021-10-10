@@ -1,15 +1,16 @@
-
                      Nokia High-Efficiency Image File Format (HEIF) License
-                                             Version 2.0
+                                             Version 2.1
 
-Copyright (c) 2018-2020, Nokia Technologies Ltd.
+Copyright (c) 2018-2021, Nokia Technologies Ltd.
 All rights reserved.
 
 Definitions.
 Specification means a draft or final version of the ISO/IEC (the International Organization
 for Standardization / the International Electrotechnical Commission) International Standard
-23008-12 "Information technology – MPEG systems technologies – Part 12: Image File Format"
-and ISO/IEC International Standard 23000-22 “MPEG Multi-Image application Format (MIAF)”.
+23008-12 "Information technology – MPEG systems technologies – Part 12: Image File Format",
+ISO/IEC International Standard 23000-22 “MPEG Multi-Image application Format (MIAF)”, and
+ISO/IEC International standard 14496-15 “Carriage of network abstraction layer (NAL) unit
+structured video in the ISO base media file format”.
 
 Software means any source code, object code or binary files provided by Nokia excluding THIRD
 PARTY MATERIALS that, when used, fully or partly, generates files complying with the
@@ -32,7 +33,7 @@ of doubt, Licensed Patents are limited solely to patents implemented in the Soft
 
 Codec Patent means a patent on image or video compression or decompression. Including, for the
 avoidance of doubt, any standard essential patent on any coding standard, such as ITU-T Rec.
-H.264, ISO/IEC 14496-10, ITU-T Rec. H.265, and ISO/IEC 23008-2.
+H.264, ISO/IEC 14496-10, ITU-T Rec. H.265, ISO/IEC 23008-2, ITU-T Rec. H.266, and ISO/IEC 23090-3.
 
 License Grant.
 Nokia Technologies Ltd (“Nokia”) hereby grants to you a non-sublicensable, perpetual, worldwide,

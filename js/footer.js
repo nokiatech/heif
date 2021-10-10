@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2020 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -48,7 +48,7 @@ function Footer () {
             </div> \
             \
             <div class="heif-footer-container"> \
-                <small><span>Copyright &#169; 2015-2020 Nokia Corporation and/or its subsidiary(-ies)</span></small> \
+                <small><span>Copyright &#169; 2015-2021 Nokia Corporation and/or its subsidiary(-ies)</span></small> \
                 <small><span>Contact: <a href="mailto:heif@nokia.com">heif@nokia.com</a></span></small>\
             </div> \
             \
