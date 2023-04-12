@@ -36,7 +36,7 @@ void RequiredReferenceTypesProperty::writeBox(BitStream& output) const
 {
     writeFullBoxHeader(output);
 
-    output.write32Bits(static_cast<unsigned int>(mReferenceTypes.size()));
+    output.write8Bits(static_cast<unsigned int>(mReferenceTypes.size()));
     for (auto referenceType : mReferenceTypes)
     {
         output.write32Bits(referenceType.getUInt32());
@@ -49,8 +49,8 @@ void RequiredReferenceTypesProperty::parseBox(BitStream& input)
 {
     parseFullBoxHeader(input);
 
-    const std::uint32_t entryCount = input.read32Bits();
-    for (std::uint32_t i = 0; i < entryCount; ++i)
+    const std::uint8_t entryCount = input.read8Bits();
+    for (std::uint8_t i = 0; i < entryCount; ++i)
     {
         mReferenceTypes.push_back(input.read32Bits());
     }
