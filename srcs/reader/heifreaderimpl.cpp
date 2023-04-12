@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <limits>
 
 #include "audiosampleentrybox.hpp"
 #include "auxiliarytypeinfobox.hpp"
