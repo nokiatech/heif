@@ -7,6 +7,10 @@ You can also check the **[Wiki](https://github.com/nokiatech/heif/wiki)** pages 
 For MIAF specific code, please switch to the [MIAF branch](https://github.com/nokiatech/heif/tree/miaf).
 
 ## News:
+[11.03.2025] v3.7.1 Release: Bug Fixes. Fixed missing limits include.
+
+[08.10.2021] v3.7.0 Release: Added support for writing track groups. Moved exception to ISOBMFF namespace. Minor style and comment cleanups.
+
 [25.06.2020] v3.6.0 Release: Added support for several new properties, image items with decoding dependencies, Extended type box and Type combination box, associating properties for entity groups, and reader support for segmented tracks. Minor improvements and code cleanup.
 
 [10.07.2019] v3.5.0 Release: Improved support for JPEGs and edit lists. Bug fixes, minor improvements and code cleanup.
@@ -81,10 +85,10 @@ See **[wiki page](https://github.com/nokiatech/heif/wiki/I.-How-to-build-HEIF-So
 ## License:
 Please see **[LICENSE.TXT](https://github.com/nokiatech/heif/blob/master/LICENSE.TXT)** file for the terms of use of the contents of this repository.
 
-All the example media files (*.heic, *.png, *.jpg, *.gif) in this repository are under copyright © Nokia Technologies 2015-2021.
+All the example media files (*.heic, *.png, *.jpg, *.gif) in this repository are under copyright © Nokia Technologies 2015-2025.
 
 For more information/questions/source code/commercial licensing related issues, please contact: <heif@nokia.com>
 
-### **Copyright (c) 2015-2021, Nokia Technologies Ltd.**
+### **Copyright (c) 2015-2025, Nokia Technologies Ltd.**
 ### **All rights reserved.**
 

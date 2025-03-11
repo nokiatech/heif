@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -69,16 +69,16 @@ uint32_t CompositionOffsetBox::getSampleCount()
     return static_cast<uint32_t>(sampleCount);
 }
 
-Vector<int> CompositionOffsetBox::getSampleCompositionOffsets() const
+Vector<std::int64_t> CompositionOffsetBox::getSampleCompositionOffsets() const
 {
-    Vector<int> offsets;
+    Vector<std::int64_t> offsets;
     if (getVersion() == 0)
     {
         for (const auto& entry : mEntryVersion0)
         {
             for (unsigned int i = 0; i < entry.mSampleCount; ++i)
             {
-                offsets.push_back(static_cast<int>(entry.mSampleOffset));
+                offsets.push_back(entry.mSampleOffset);
             }
         }
     }

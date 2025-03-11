@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <limits>
 
 #include "audiosampleentrybox.hpp"
 #include "auxiliarytypeinfobox.hpp"
@@ -2853,7 +2854,7 @@ namespace HEIF
         const CompositionOffsetBox* ctts = stblBox.getCompositionOffsetBox().get();
         if (ctts != nullptr)
         {
-            const Vector<int32_t>& offsets = ctts->getSampleCompositionOffsets();
+            const Vector<int64_t>& offsets = ctts->getSampleCompositionOffsets();
             const int32_t min              = std::numeric_limits<int32_t>::min();
             for (size_t i = 0; i < offsets.size(); i++)
             {
