@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -100,6 +100,10 @@ void example2()
     // Find the item ID of the first master image
     Array<ImageId> itemIds;
     reader->getMasterImages(itemIds);
+    if (itemIds.size == 0)
+    {
+        return;  // this should not happen with the example file
+    }
     const ImageId masterId = itemIds[0];
     uint64_t itemSize      = 1024 * 1024;
     auto* itemData         = new uint8_t[itemSize];
@@ -109,8 +113,11 @@ void example2()
     {
         // Thumbnail references ('thmb') are from the thumbnail image to the master image
         reader->getReferencedToItemListByType(masterId, "thmb", itemIds);
+        if (itemIds.size == 0)
+        {
+            return;  // this should not happen with the example file
+        }
         const auto thumbnailId = itemIds[0];
-
 
         if (reader->getItemDataWithDecoderParameters(thumbnailId.get(), itemData, itemSize) == ErrorCode::OK)
         {
@@ -162,12 +169,14 @@ void example3()
         Array<ImageId> thumbIds;
         reader->getReferencedToItemListByType(masterId, "thmb", thumbIds);
 
-        const auto thumbId = std::min_element(thumbIds.begin(), thumbIds.end(), [&](ImageId a, ImageId b) {
-            uint32_t widthA, widthB;
-            reader->getWidth(a, widthA);
-            reader->getWidth(b, widthB);
-            return (widthA < widthB);
-        });
+        const auto thumbId = std::min_element(thumbIds.begin(), thumbIds.end(),
+                                              [&](ImageId a, ImageId b)
+                                              {
+                                                  uint32_t widthA, widthB;
+                                                  reader->getWidth(a, widthA);
+                                                  reader->getWidth(b, widthB);
+                                                  return (widthA < widthB);
+                                              });
         if (thumbId != thumbIds.end())  // For images without thumbnail thumbId equals to end()
         {
             imageMap[masterId] = thumbId->get();
@@ -200,10 +209,18 @@ void example4()
     reader->getItemListByType("iden", itemIds);
 
     const auto itemId = itemIds[0];  // For demo purposes, assume there was one 'iden' item
+    if (itemIds.size == 0)
+    {
+        return;  // this should not happen with the example file
+    }
 
     // 'dimg' item reference points from the 'iden' derived item to the input(s) of the derivation
     Array<ImageId> referencedImages;
     reader->getReferencedFromItemListByType(itemId, "dimg", referencedImages);
+    if (referencedImages.size == 0)
+    {
+        return;  // this should not happen with the example file
+    }
     const ImageId sourceItemId = referencedImages[0];  // For demo purposes, assume there was one
 
     // Get 'iden' item properties to find out what kind of derivation it is
@@ -263,6 +280,10 @@ void example5()
         {
             // Assume there is only one type track reference, so check reference type and master track ID(s) from
             // the first one.
+            if (trackProperties.referenceTrackIds.size == 0)
+            {
+                return;  // this should not happen with the example file
+            }
             const auto tref = trackProperties.referenceTrackIds[0];
             cout << "Track reference type is '" << tref.type.value << "'" << endl;
             cout << "This is a thumbnail track for track ID ";
@@ -505,6 +526,10 @@ void example8()
     // Find item(s) referencing to the primary item with "cdsc" (content describes) item reference.
     Array<ImageId> metadataIds;
     reader->getReferencedToItemListByType(primaryItemId, "cdsc", metadataIds);
+    if (metadataIds.size == 0)
+    {
+        return;  // this should not happen with the example file
+    }
     ImageId exifItemId = metadataIds[0];
 
     // Optional: verify the item ID we got is really of "Exif" type.

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -371,15 +371,14 @@ bool DecodePts::unravel()
     mediaPtsTS.reserve(mediaDtsTS.size());
     if (mCompositionOffsetBox != nullptr)
     {
-        Vector<std::int32_t> ptsDelta;
+        Vector<std::int64_t> ptsDelta;
         ptsDelta = mCompositionOffsetBox->getSampleCompositionOffsets();
 
         if (ptsDelta.size() == mediaDtsTS.size())
         {
-            std::transform(mediaDtsTS.begin(), mediaDtsTS.end(), ptsDelta.begin(), std::back_inserter(mediaPtsTS),
-                           [](std::uint64_t theMediaDts, std::int32_t thePtsDelta) {
-                               return std::uint64_t(std::int32_t(theMediaDts) + thePtsDelta);
-                           });
+            std::transform(
+                mediaDtsTS.begin(), mediaDtsTS.end(), ptsDelta.begin(), std::back_inserter(mediaPtsTS),
+                [](std::int64_t theMediaDts, std::int64_t thePtsDelta) { return theMediaDts + thePtsDelta; });
         }
         else
         {

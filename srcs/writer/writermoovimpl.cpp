@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -1058,6 +1058,7 @@ namespace HEIF
             sampleSizes.reserve(sequence.samples.size());
             Vector<std::pair<uint32_t, int64_t>> compositionOffsets;
             Vector<std::uint32_t> syncSampleIndices;  // list of all sync samples
+            bool isNegativeCompositionOffsetPresent = false;
 
             const MediaDataId mediaDataId    = sequence.samples.front().mediaDataId;
             const MediaData& firstSampleData = mMediaData.at(mediaDataId);
@@ -1110,6 +1111,10 @@ namespace HEIF
                 if (!compositionOffsets.size() || compositionOffsets.back().second != sample.compositionOffset)
                 {
                     compositionOffsets.push_back({1, sample.compositionOffset});
+                    if (sample.compositionOffset < 0)
+                    {
+                        isNegativeCompositionOffsetPresent = true;
+                    }
                 }
                 else
                 {
@@ -1134,21 +1139,29 @@ namespace HEIF
             if (compositionOffsets.size() != 1 || compositionOffsets.front().second != 0)
             {
                 CompositionOffsetBox ctts;
-                if (sequence.containsHidden)
+                if (sequence.containsHidden || isNegativeCompositionOffsetPresent)
                 {
                     ctts.setVersion(1);
-                    CompositionToDecodeBox cslg;
                     for (auto ct : compositionOffsets)
                     {
-                        ctts.addCompositionOffsetEntryVersion1({ct.first, int32_t(ct.second)});
+                        if ((ct.second < std::numeric_limits<std::int32_t>::min()) ||
+                            (ct.second > std::numeric_limits<std::int32_t>::max()))
+                        {
+                            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+                        }
+                        ctts.addCompositionOffsetEntryVersion1({ct.first, static_cast<int32_t>(ct.second)});
                     }
-                    stbl.setCompositionToDecodeBox(cslg);
                 }
                 else
                 {
                     for (auto ct : compositionOffsets)
                     {
-                        ctts.addCompositionOffsetEntryVersion0({ct.first, uint32_t(ct.second)});
+                        if ((ct.second < std::numeric_limits<std::uint32_t>::min()) ||
+                            (ct.second > std::numeric_limits<std::uint32_t>::max()))
+                        {
+                            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+                        }
+                        ctts.addCompositionOffsetEntryVersion0({ct.first, static_cast<uint32_t>(ct.second)});
                     }
                 }
                 stbl.setCompositionOffsetBox(ctts);
