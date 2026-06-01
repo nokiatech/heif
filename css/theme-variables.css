@@ -1,0 +1,696 @@
+/* This file is part of Nokia HEIF library
+ *
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ *
+ * Contact: heif@nokia.com
+ *
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ *
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ */
+
+/* ============================================
+ * HEIF Website Theme Variables - Simplified Palette
+ * ============================================
+ * Based on Nokia design guidelines with a clean,
+ * abstract palette approach for easy theming.
+ * 
+ * CORE PALETTE (12 colors):
+ * - white, black, gray-dark, gray-light
+ * - blue-digital, blue-bright
+ * - Opacity variants for overlays/transparency
+ * ============================================ */
+
+/* ============================================
+ * LIGHT THEME (Default)
+ * ============================================ */
+:root {
+    /* ========================================
+     * CORE PALETTE - Base Colors
+     * Only these raw colors are defined once
+     * ======================================== */
+    --color-white: #FFFFFF;
+    --color-black: #000000;
+    --color-gray-dark: #343A40;          /* Nokia Web dark gray */
+    --color-gray-light: #DCDCDC;         /* Nokia Web light gray */
+    --color-blue-digital: #1b6f9f;       /* Brand primary (Nokia Digital blue adapted) */
+    --color-blue-bright: #005AFF;        /* Nokia Bright blue */
+    --color-blue-light: #74b7dd;         /* Light accent blue */
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Background
+     * ======================================== */
+    --bg-page: var(--color-white);
+    --bg-surface: #faf9f9;               /* Slightly off-white for sections */
+    --bg-elevated: var(--color-white);
+    --bg-muted: #f5f5f5;
+    --bg-input: #f0f0f0;
+    --bg-hover: rgba(27, 111, 159, 0.08);
+    --bg-active: rgba(27, 111, 159, 0.15);
+    --bg-accent: var(--color-blue-digital);
+    --bg-accent-light: var(--color-blue-light);
+    --bg-footer: #10425f;
+    --bg-dark: var(--color-black);
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Foreground (Text)
+     * ======================================== */
+    --fg-default: var(--color-gray-dark);      /* Regular text per Nokia guidelines */
+    --fg-strong: var(--color-black);           /* Large/emphasized text */
+    --fg-secondary: #333333;                   /* Secondary text */
+    --fg-muted: #555555;
+    --fg-subtle: #888888;
+    --fg-disabled: #aaaaaa;
+    --fg-on-accent: var(--color-white);
+    --fg-on-dark: var(--color-white);
+    --fg-link: var(--color-blue-digital);
+    --fg-link-hover: #0d4a6f;
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Border
+     * ======================================== */
+    --border-default: var(--color-gray-light);
+    --border-subtle: #e0e0e0;
+    --border-light: #e0e0e0;
+    --border-divider: #eeeeee;
+    --border-strong: var(--color-gray-dark);
+    --border-accent: var(--color-blue-digital);
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Overlay & Shadow
+     * ======================================== */
+    --overlay-light: rgba(255, 255, 255, 0.85);
+    --overlay-dark: rgba(0, 0, 0, 0.75);
+    --overlay-darker: rgba(0, 0, 0, 0.9);
+    --overlay-subtle: rgba(0, 0, 0, 0.5);
+    
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.2);
+    --shadow-modal-image: 0 4px 30px rgba(0, 0, 0, 0.5);
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Interactive States
+     * ======================================== */
+    --interactive-hover: rgba(27, 111, 159, 0.1);
+    --interactive-active: rgba(27, 111, 159, 0.2);
+    --interactive-focus: rgba(27, 111, 159, 0.4);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Navigation
+     * ======================================== */
+    --nav-bg: rgba(250, 249, 249, 0.95);
+    --nav-text: var(--color-gray-dark);
+    --nav-hover: var(--bg-hover);
+    --nav-accent: var(--color-blue-digital);
+    --nav-dropdown-bg: rgba(255, 255, 255, 0.98);
+    --nav-dropdown-hover: rgba(27, 111, 159, 0.15);
+    --nav-dropdown-shadow: var(--shadow-lg);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Cards & Panels
+     * ======================================== */
+    --card-bg: var(--color-white);
+    --card-border: var(--border-subtle);
+    --card-shadow: var(--shadow-sm);
+    --card-hover-shadow: var(--shadow-md);
+    
+    /* Dark panels (info overlays on images) */
+    --panel-dark-bg: rgba(0, 0, 0, 0.75);
+    --panel-dark-text: var(--color-white);
+    --panel-dark-text-muted: rgba(255, 255, 255, 0.8);
+    --panel-dark-text-subtle: rgba(255, 255, 255, 0.5);
+    --panel-dark-border: rgba(255, 255, 255, 0.1);
+    --panel-dark-btn-bg: rgba(255, 255, 255, 0.2);
+    --panel-dark-btn-hover: rgba(255, 255, 255, 0.35);
+    --panel-dark-accent: rgba(27, 111, 159, 0.4);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Buttons
+     * ======================================== */
+    --btn-primary-bg: var(--color-blue-digital);
+    --btn-primary-text: var(--color-white);
+    --btn-primary-hover: #0d4a6f;
+    
+    --btn-secondary-bg: transparent;
+    --btn-secondary-text: var(--color-blue-digital);
+    --btn-secondary-border: var(--color-blue-digital);
+    --btn-secondary-hover: var(--bg-hover);
+    
+    /* Light buttons (on dark backgrounds) */
+    --btn-light-bg: rgba(255, 255, 255, 0.15);
+    --btn-light-text: var(--color-white);
+    --btn-light-border: rgba(255, 255, 255, 0.3);
+    --btn-light-hover: rgba(255, 255, 255, 0.25);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Links
+     * ======================================== */
+    --link-default: var(--color-blue-digital);
+    --link-hover: #0d4a6f;
+    --link-visited: #5a4a8f;
+    --link-border: rgba(27, 111, 159, 0.3);
+    --link-hover-border: rgba(27, 111, 159, 0.7);
+    
+    /* Links on dark backgrounds */
+    --link-light: #a8d4f0;
+    --link-light-hover: var(--color-white);
+    --link-light-border: rgba(168, 212, 240, 0.4);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Forms & Inputs
+     * ======================================== */
+    --input-bg: var(--bg-input);
+    --input-border: var(--border-default);
+    --input-focus-border: var(--color-blue-digital);
+    --input-placeholder: var(--fg-subtle);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Context Menu
+     * ======================================== */
+    --menu-bg: var(--color-white);
+    --menu-text: var(--fg-default);
+    --menu-hover: var(--bg-muted);
+    --menu-border: var(--border-default);
+    --menu-divider: var(--border-subtle);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Modal & Gallery
+     * ======================================== */
+    --modal-backdrop: rgba(0, 0, 0, 0.9);
+    --modal-content-bg: var(--panel-dark-bg);
+    --modal-text: var(--color-white);
+    --modal-shadow: var(--shadow-xl);
+    
+    /* Gallery overlays & backgrounds */
+    --gallery-overlay-transparent: transparent;
+    --gallery-overlay-hover: rgba(0, 0, 0, 0.2);
+    --gallery-modal-bg: rgba(20, 20, 20, 0.95);
+    --gallery-item-overlay: rgba(0, 0, 0, 0.3);
+    --gallery-info-gradient: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    --gallery-info-panel-bg: rgba(0, 0, 0, 0.7);
+    --gallery-full-info-bg: rgba(0, 0, 0, 0.85);
+    --gallery-full-info-border: rgba(255, 255, 255, 0.1);
+    
+    /* Gallery text */
+    --gallery-info-text: var(--color-white);
+    --gallery-info-text-muted: rgba(255, 255, 255, 0.7);
+    --gallery-info-key-color: rgba(255, 255, 255, 0.5);
+    
+    /* Gallery badges */
+    --gallery-badge-bg: rgba(0, 0, 0, 0.7);
+    --gallery-item-badge-bg: rgba(0, 0, 0, 0.6);
+    --gallery-format-badge-bg: rgba(255, 255, 255, 0.15);
+    
+    /* Gallery buttons */
+    --gallery-btn-bg: rgba(255, 255, 255, 0.1);
+    --gallery-btn-border: rgba(255, 255, 255, 0.2);
+    --gallery-btn-hover-bg: rgba(255, 255, 255, 0.2);
+    --gallery-btn-active-bg: var(--color-blue-digital);
+    --gallery-btn-active-border: var(--color-blue-bright);
+    
+    /* Gallery burst/thumbnails */
+    --gallery-burst-strip-bg: rgba(0, 0, 0, 0.5);
+    --gallery-thumb-border-hover: rgba(255, 255, 255, 0.5);
+    --gallery-thumb-border-active: var(--color-blue-bright);
+    
+    /* Gallery errors */
+    --gallery-error-bg: var(--bg-muted);
+    --gallery-error-text: var(--fg-subtle);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Footer
+     * ======================================== */
+    --footer-bg: #10425f;
+    --footer-text: var(--color-white);
+    --footer-text-muted: rgba(255, 255, 255, 0.7);
+    --footer-link: rgba(255, 255, 255, 0.8);
+    --footer-link-hover: var(--color-white);
+    --footer-border: rgba(255, 255, 255, 0.2);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Mobile Navigation
+     * ======================================== */
+    --mobile-overlay-bg: rgba(0, 0, 0, 0.6);
+    --mobile-separator-gradient: linear-gradient(180deg, transparent 0%, rgba(16, 66, 95, 0.08) 30%, rgba(16, 66, 95, 0.12) 50%, rgba(16, 66, 95, 0.08) 70%, transparent 100%);
+    --mobile-separator-line: linear-gradient(90deg, transparent, rgba(27, 111, 159, 0.4) 15%, rgba(27, 111, 159, 0.5) 50%, rgba(27, 111, 159, 0.4) 85%, transparent);
+    --mobile-nav-highlight-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --mobile-nav-highlight-shadow-hover: 0 2px 6px rgba(27, 111, 159, 0.15);
+    --mobile-dropdown-chevron: var(--color-blue-digital);
+    --mobile-dropdown-content-bg: rgba(245, 245, 245, 0.98);
+    --mobile-dropdown-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Misc
+     * ======================================== */
+    --copyright-bg: var(--overlay-light);
+    --copyright-text: var(--color-blue-digital);
+    
+    --separator-line: var(--border-subtle);
+    --separator-accent: rgba(27, 111, 159, 0.3);
+    
+    --loading-bg: #b5b5b5;
+    --loading-text: var(--color-gray-dark);
+    
+    --error-text: #d93025;
+    --success-text: #1e8e3e;
+    --warning-text: #f9ab00;
+}
+
+/* ============================================
+ * DARK THEME
+ * ============================================ */
+[data-theme="dark"] {
+    /* ========================================
+     * CORE PALETTE - Dark Mode Adjustments
+     * ======================================== */
+    --color-blue-digital: #4dabf7;       /* Lighter blue for dark mode */
+    --color-blue-bright: #79c0ff;
+    --color-blue-light: #a5d8ff;
+    --color-gray-dark: #e6edf3;          /* Inverted for dark mode */
+    --color-gray-light: #30363d;
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Background
+     * ======================================== */
+    --bg-page: #0d1117;
+    --bg-surface: #161b22;
+    --bg-elevated: #21262d;
+    --bg-muted: #21262d;
+    --bg-input: #21262d;
+    --bg-hover: rgba(77, 171, 247, 0.1);
+    --bg-active: rgba(77, 171, 247, 0.2);
+    --bg-accent: #4dabf7;
+    --bg-accent-light: #a5d8ff;
+    --bg-footer: #010409;
+    --bg-dark: #010409;
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Foreground (Text)
+     * ======================================== */
+    --fg-default: #c9d1d9;
+    --fg-strong: #e6edf3;
+    --fg-secondary: #adbac7;
+    --fg-muted: #8b949e;
+    --fg-subtle: #6e7681;
+    --fg-disabled: #484f58;
+    --fg-on-accent: #ffffff;
+    --fg-on-dark: #e6edf3;
+    --fg-link: #58a6ff;
+    --fg-link-hover: #79c0ff;
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Border
+     * ======================================== */
+    --border-default: #30363d;
+    --border-subtle: #21262d;
+    --border-light: #3d444d;
+    --border-divider: #21262d;
+    --border-strong: #8b949e;
+    --border-accent: #4dabf7;
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Overlay & Shadow
+     * ======================================== */
+    --overlay-light: rgba(255, 255, 255, 0.1);
+    --overlay-dark: rgba(0, 0, 0, 0.85);
+    --overlay-darker: rgba(0, 0, 0, 0.95);
+    --overlay-subtle: rgba(0, 0, 0, 0.6);
+    
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.6);
+    --shadow-modal-image: 0 4px 30px rgba(0, 0, 0, 0.7);
+    
+    /* ========================================
+     * SEMANTIC TOKENS - Interactive States
+     * ======================================== */
+    --interactive-hover: rgba(77, 171, 247, 0.15);
+    --interactive-active: rgba(77, 171, 247, 0.25);
+    --interactive-focus: rgba(77, 171, 247, 0.4);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Navigation
+     * ======================================== */
+    --nav-bg: rgba(22, 27, 34, 0.95);
+    --nav-text: #c9d1d9;
+    --nav-hover: var(--bg-hover);
+    --nav-accent: #4dabf7;
+    --nav-dropdown-bg: rgba(22, 27, 34, 0.98);
+    --nav-dropdown-hover: rgba(77, 171, 247, 0.15);
+    --nav-dropdown-shadow: var(--shadow-lg);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Cards & Panels
+     * ======================================== */
+    --card-bg: #161b22;
+    --card-border: var(--border-default);
+    --card-shadow: var(--shadow-sm);
+    --card-hover-shadow: var(--shadow-md);
+    
+    /* Dark panels */
+    --panel-dark-bg: rgba(13, 17, 23, 0.95);
+    --panel-dark-text: #e6edf3;
+    --panel-dark-text-muted: rgba(230, 237, 243, 0.8);
+    --panel-dark-text-subtle: rgba(230, 237, 243, 0.5);
+    --panel-dark-border: rgba(48, 54, 61, 0.8);
+    --panel-dark-btn-bg: rgba(255, 255, 255, 0.1);
+    --panel-dark-btn-hover: rgba(255, 255, 255, 0.2);
+    --panel-dark-accent: rgba(77, 171, 247, 0.3);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Buttons
+     * ======================================== */
+    --btn-primary-bg: #4dabf7;
+    --btn-primary-text: #0d1117;
+    --btn-primary-hover: #74c0fc;
+    
+    --btn-secondary-bg: transparent;
+    --btn-secondary-text: #4dabf7;
+    --btn-secondary-border: #4dabf7;
+    --btn-secondary-hover: var(--bg-hover);
+    
+    --btn-light-bg: rgba(255, 255, 255, 0.1);
+    --btn-light-text: #e6edf3;
+    --btn-light-border: rgba(255, 255, 255, 0.2);
+    --btn-light-hover: rgba(255, 255, 255, 0.15);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Links
+     * ======================================== */
+    --link-default: #58a6ff;
+    --link-hover: #79c0ff;
+    --link-visited: #a371f7;
+    --link-border: rgba(88, 166, 255, 0.3);
+    --link-hover-border: rgba(88, 166, 255, 0.7);
+    
+    --link-light: #79c0ff;
+    --link-light-hover: #a5d6ff;
+    --link-light-border: rgba(121, 192, 255, 0.4);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Forms & Inputs
+     * ======================================== */
+    --input-bg: #21262d;
+    --input-border: #30363d;
+    --input-focus-border: #4dabf7;
+    --input-placeholder: #6e7681;
+    
+    /* ========================================
+     * COMPONENT TOKENS - Context Menu
+     * ======================================== */
+    --menu-bg: #161b22;
+    --menu-text: #c9d1d9;
+    --menu-hover: #21262d;
+    --menu-border: #30363d;
+    --menu-divider: #30363d;
+    
+    /* ========================================
+     * COMPONENT TOKENS - Modal & Gallery
+     * ======================================== */
+    --modal-backdrop: rgba(1, 4, 9, 0.95);
+    --modal-content-bg: rgba(13, 17, 23, 0.95);
+    --modal-text: #e6edf3;
+    --modal-shadow: var(--shadow-xl);
+    
+    /* Gallery overlays & backgrounds */
+    --gallery-overlay-transparent: transparent;
+    --gallery-overlay-hover: rgba(0, 0, 0, 0.3);
+    --gallery-modal-bg: rgba(1, 4, 9, 0.97);
+    --gallery-item-overlay: rgba(0, 0, 0, 0.4);
+    --gallery-info-gradient: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+    --gallery-info-panel-bg: rgba(22, 27, 34, 0.85);
+    --gallery-full-info-bg: rgba(22, 27, 34, 0.95);
+    --gallery-full-info-border: rgba(255, 255, 255, 0.05);
+    
+    /* Gallery text */
+    --gallery-info-text: #e6edf3;
+    --gallery-info-text-muted: rgba(201, 209, 217, 0.7);
+    --gallery-info-key-color: rgba(201, 209, 217, 0.5);
+    
+    /* Gallery badges */
+    --gallery-badge-bg: rgba(22, 27, 34, 0.85);
+    --gallery-item-badge-bg: rgba(22, 27, 34, 0.8);
+    --gallery-format-badge-bg: rgba(201, 209, 217, 0.15);
+    
+    /* Gallery buttons */
+    --gallery-btn-bg: rgba(201, 209, 217, 0.1);
+    --gallery-btn-border: rgba(201, 209, 217, 0.2);
+    --gallery-btn-hover-bg: rgba(201, 209, 217, 0.2);
+    --gallery-btn-active-bg: #58a6ff;
+    --gallery-btn-active-border: #79c0ff;
+    
+    /* Gallery burst/thumbnails */
+    --gallery-burst-strip-bg: rgba(22, 27, 34, 0.8);
+    --gallery-thumb-border-hover: rgba(201, 209, 217, 0.5);
+    --gallery-thumb-border-active: #58a6ff;
+    
+    /* Gallery errors */
+    --gallery-error-bg: #21262d;
+    --gallery-error-text: #6e7681;
+    
+    /* ========================================
+     * COMPONENT TOKENS - Footer
+     * ======================================== */
+    --footer-bg: #010409;
+    --footer-text: #e6edf3;
+    --footer-text-muted: rgba(201, 209, 217, 0.7);
+    --footer-link: rgba(201, 209, 217, 0.8);
+    --footer-link-hover: #e6edf3;
+    --footer-border: rgba(48, 54, 61, 0.6);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Mobile Navigation
+     * ======================================== */
+    --mobile-overlay-bg: rgba(0, 0, 0, 0.75);
+    --mobile-separator-gradient: linear-gradient(180deg, transparent 0%, rgba(77, 171, 247, 0.05) 30%, rgba(77, 171, 247, 0.08) 50%, rgba(77, 171, 247, 0.05) 70%, transparent 100%);
+    --mobile-separator-line: linear-gradient(90deg, transparent, rgba(77, 171, 247, 0.3) 15%, rgba(77, 171, 247, 0.4) 50%, rgba(77, 171, 247, 0.3) 85%, transparent);
+    --mobile-nav-highlight-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --mobile-nav-highlight-shadow-hover: 0 2px 6px rgba(77, 171, 247, 0.2);
+    --mobile-dropdown-chevron: #4dabf7;
+    --mobile-dropdown-content-bg: rgba(22, 27, 34, 0.98);
+    --mobile-dropdown-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    
+    /* ========================================
+     * COMPONENT TOKENS - Misc
+     * ======================================== */
+    --copyright-bg: rgba(22, 27, 34, 0.85);
+    --copyright-text: #4dabf7;
+    
+    --separator-line: #30363d;
+    --separator-accent: rgba(77, 171, 247, 0.3);
+    
+    --loading-bg: #21262d;
+    --loading-text: #8b949e;
+    
+    --error-text: #f85149;
+    --success-text: #3fb950;
+    --warning-text: #d29922;
+}
+
+/* ============================================
+ * SYSTEM PREFERENCE AUTO-DETECTION
+ * Applied when no explicit theme is set
+ * ============================================ */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        /* Core palette */
+        --color-blue-digital: #4dabf7;
+        --color-blue-bright: #79c0ff;
+        --color-blue-light: #a5d8ff;
+        --color-gray-dark: #e6edf3;
+        --color-gray-light: #30363d;
+        
+        /* Backgrounds */
+        --bg-page: #0d1117;
+        --bg-surface: #161b22;
+        --bg-elevated: #21262d;
+        --bg-muted: #21262d;
+        --bg-input: #21262d;
+        --bg-hover: rgba(77, 171, 247, 0.1);
+        --bg-active: rgba(77, 171, 247, 0.2);
+        --bg-accent: #4dabf7;
+        --bg-accent-light: #a5d8ff;
+        --bg-footer: #010409;
+        --bg-dark: #010409;
+        
+        /* Foreground */
+        --fg-default: #c9d1d9;
+        --fg-strong: #e6edf3;
+        --fg-secondary: #adbac7;
+        --fg-muted: #8b949e;
+        --fg-subtle: #6e7681;
+        --fg-disabled: #484f58;
+        --fg-on-accent: #ffffff;
+        --fg-on-dark: #e6edf3;
+        --fg-link: #58a6ff;
+        --fg-link-hover: #79c0ff;
+        
+        /* Borders */
+        --border-default: #30363d;
+        --border-subtle: #21262d;
+        --border-light: #3d444d;
+        --border-divider: #21262d;
+        --border-strong: #8b949e;
+        --border-accent: #4dabf7;
+        
+        /* Overlays & Shadows */
+        --overlay-light: rgba(255, 255, 255, 0.1);
+        --overlay-dark: rgba(0, 0, 0, 0.85);
+        --overlay-darker: rgba(0, 0, 0, 0.95);
+        --overlay-subtle: rgba(0, 0, 0, 0.6);
+        
+        --shadow-color: rgba(0, 0, 0, 0.4);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+        --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.6);
+        --shadow-modal-image: 0 4px 30px rgba(0, 0, 0, 0.7);
+        
+        /* Interactive */
+        --interactive-hover: rgba(77, 171, 247, 0.15);
+        --interactive-active: rgba(77, 171, 247, 0.25);
+        --interactive-focus: rgba(77, 171, 247, 0.4);
+        
+        /* Navigation */
+        --nav-bg: rgba(22, 27, 34, 0.95);
+        --nav-text: #c9d1d9;
+        --nav-hover: var(--bg-hover);
+        --nav-accent: #4dabf7;
+        --nav-dropdown-bg: rgba(22, 27, 34, 0.98);
+        --nav-dropdown-hover: rgba(77, 171, 247, 0.15);
+        --nav-dropdown-shadow: var(--shadow-lg);
+        
+        /* Cards & Panels */
+        --card-bg: #161b22;
+        --card-border: #30363d;
+        --card-shadow: var(--shadow-sm);
+        --card-hover-shadow: var(--shadow-md);
+        
+        --panel-dark-bg: rgba(13, 17, 23, 0.95);
+        --panel-dark-text: #e6edf3;
+        --panel-dark-text-muted: rgba(230, 237, 243, 0.8);
+        --panel-dark-text-subtle: rgba(230, 237, 243, 0.5);
+        --panel-dark-border: rgba(48, 54, 61, 0.8);
+        --panel-dark-btn-bg: rgba(255, 255, 255, 0.1);
+        --panel-dark-btn-hover: rgba(255, 255, 255, 0.2);
+        --panel-dark-accent: rgba(77, 171, 247, 0.3);
+        
+        /* Buttons */
+        --btn-primary-bg: #4dabf7;
+        --btn-primary-text: #0d1117;
+        --btn-primary-hover: #74c0fc;
+        
+        --btn-secondary-bg: transparent;
+        --btn-secondary-text: #4dabf7;
+        --btn-secondary-border: #4dabf7;
+        --btn-secondary-hover: var(--bg-hover);
+        
+        --btn-light-bg: rgba(255, 255, 255, 0.1);
+        --btn-light-text: #e6edf3;
+        --btn-light-border: rgba(255, 255, 255, 0.2);
+        --btn-light-hover: rgba(255, 255, 255, 0.15);
+        
+        /* Links */
+        --link-default: #58a6ff;
+        --link-hover: #79c0ff;
+        --link-visited: #a371f7;
+        --link-border: rgba(88, 166, 255, 0.3);
+        --link-hover-border: rgba(88, 166, 255, 0.7);
+        
+        --link-light: #79c0ff;
+        --link-light-hover: #a5d6ff;
+        --link-light-border: rgba(121, 192, 255, 0.4);
+        
+        /* Forms */
+        --input-bg: #21262d;
+        --input-border: #30363d;
+        --input-focus-border: #4dabf7;
+        --input-placeholder: #6e7681;
+        
+        /* Context Menu */
+        --menu-bg: #161b22;
+        --menu-text: #c9d1d9;
+        --menu-hover: #21262d;
+        --menu-border: #30363d;
+        --menu-divider: #30363d;
+        
+        /* Modal & Gallery */
+        --modal-backdrop: rgba(1, 4, 9, 0.95);
+        --modal-content-bg: rgba(13, 17, 23, 0.95);
+        --modal-text: #e6edf3;
+        --modal-shadow: var(--shadow-xl);
+        
+        /* Gallery overlays & backgrounds */
+        --gallery-overlay-transparent: transparent;
+        --gallery-overlay-hover: rgba(0, 0, 0, 0.3);
+        --gallery-modal-bg: rgba(1, 4, 9, 0.97);
+        --gallery-item-overlay: rgba(0, 0, 0, 0.4);
+        --gallery-info-gradient: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+        --gallery-info-panel-bg: rgba(22, 27, 34, 0.85);
+        --gallery-full-info-bg: rgba(22, 27, 34, 0.95);
+        --gallery-full-info-border: rgba(255, 255, 255, 0.05);
+        
+        /* Gallery text */
+        --gallery-info-text: #e6edf3;
+        --gallery-info-text-muted: rgba(201, 209, 217, 0.7);
+        --gallery-info-key-color: rgba(201, 209, 217, 0.5);
+        
+        /* Gallery badges */
+        --gallery-badge-bg: rgba(22, 27, 34, 0.85);
+        --gallery-item-badge-bg: rgba(22, 27, 34, 0.8);
+        --gallery-format-badge-bg: rgba(201, 209, 217, 0.15);
+        
+        /* Gallery buttons */
+        --gallery-btn-bg: rgba(201, 209, 217, 0.1);
+        --gallery-btn-border: rgba(201, 209, 217, 0.2);
+        --gallery-btn-hover-bg: rgba(201, 209, 217, 0.2);
+        --gallery-btn-active-bg: #58a6ff;
+        --gallery-btn-active-border: #79c0ff;
+        
+        /* Gallery burst/thumbnails */
+        --gallery-burst-strip-bg: rgba(22, 27, 34, 0.8);
+        --gallery-thumb-border-hover: rgba(201, 209, 217, 0.5);
+        --gallery-thumb-border-active: #58a6ff;
+        
+        /* Gallery errors */
+        --gallery-error-bg: #21262d;
+        --gallery-error-text: #6e7681;
+        
+        /* Footer */
+        --footer-bg: #010409;
+        --footer-text: #e6edf3;
+        --footer-text-muted: rgba(201, 209, 217, 0.7);
+        --footer-link: rgba(201, 209, 217, 0.8);
+        --footer-link-hover: #e6edf3;
+        --footer-border: rgba(48, 54, 61, 0.6);
+        
+        /* Mobile Navigation */
+        --mobile-overlay-bg: rgba(0, 0, 0, 0.75);
+        --mobile-separator-gradient: linear-gradient(180deg, transparent 0%, rgba(77, 171, 247, 0.05) 30%, rgba(77, 171, 247, 0.08) 50%, rgba(77, 171, 247, 0.05) 70%, transparent 100%);
+        --mobile-separator-line: linear-gradient(90deg, transparent, rgba(77, 171, 247, 0.3) 15%, rgba(77, 171, 247, 0.4) 50%, rgba(77, 171, 247, 0.3) 85%, transparent);
+        --mobile-nav-highlight-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --mobile-nav-highlight-shadow-hover: 0 2px 6px rgba(77, 171, 247, 0.2);
+        --mobile-dropdown-chevron: #4dabf7;
+        --mobile-dropdown-content-bg: rgba(22, 27, 34, 0.98);
+        --mobile-dropdown-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        
+        /* Misc */
+        --copyright-bg: rgba(22, 27, 34, 0.85);
+        --copyright-text: #4dabf7;
+        
+        --separator-line: #30363d;
+        --separator-accent: rgba(77, 171, 247, 0.3);
+        
+        --loading-bg: #21262d;
+        --loading-text: #8b949e;
+        
+        --error-text: #f85149;
+        --success-text: #3fb950;
+        --warning-text: #d29922;
+    }
+}

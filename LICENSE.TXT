@@ -1,16 +1,16 @@
                      Nokia High-Efficiency Image File Format (HEIF) License
                                              Version 2.1
 
-Copyright (c) 2018-2021, Nokia Technologies Ltd.
+Copyright (c) 2018-2025, Nokia Technologies Ltd.
 All rights reserved.
 
 Definitions.
 Specification means a draft or final version of the ISO/IEC (the International Organization
 for Standardization / the International Electrotechnical Commission) International Standard
 23008-12 "Information technology – MPEG systems technologies – Part 12: Image File Format",
-ISO/IEC International Standard 23000-22 “MPEG Multi-Image application Format (MIAF)”, and
-ISO/IEC International standard 14496-15 “Carriage of network abstraction layer (NAL) unit
-structured video in the ISO base media file format”.
+ISO/IEC International Standard 23000-22 "MPEG Multi-Image application Format (MIAF)", and
+ISO/IEC International standard 14496-15 "Carriage of network abstraction layer (NAL) unit
+structured video in the ISO base media file format".
 
 Software means any source code, object code or binary files provided by Nokia excluding THIRD
 PARTY MATERIALS that, when used, fully or partly, generates files complying with the
@@ -36,7 +36,7 @@ avoidance of doubt, any standard essential patent on any coding standard, such a
 H.264, ISO/IEC 14496-10, ITU-T Rec. H.265, ISO/IEC 23008-2, ITU-T Rec. H.266, and ISO/IEC 23090-3.
 
 License Grant.
-Nokia Technologies Ltd (“Nokia”) hereby grants to you a non-sublicensable, perpetual, worldwide,
+Nokia Technologies Ltd ("Nokia") hereby grants to you a non-sublicensable, perpetual, worldwide,
 non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this license) license,
 under its copyrights and Licensed Patents only to, use, run, modify (in a way that still complies
 with the Specification), and copy the Software within the Licensed Field. For the avoidance of
@@ -47,7 +47,7 @@ Termination.
 If you, directly, or indirectly via a controlled affiliate or subsidiary, agent, or exclusive
 licensee, file a Claim (as defined below) of patent infringement against any entity alleging
 that the Software in whole or in part constitutes direct or contributory patent infringement,
-or inducement of patent infringement (a “Claim”), provided that the Software also allegedly
+or inducement of patent infringement (a "Claim"), provided that the Software also allegedly
 infringes the patents asserted in the Claim, then this license, including any patent and other
 rights granted to you under this license, shall automatically terminate retroactively as of the
 date you first received the license grant.
@@ -65,11 +65,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 THIRD PARTY MATERIALS
 
 build/ios/ios.toolchain.cmake
-Copyright (c) 2011-2014, Andrew Fischer <andrew@ltengsoft.com>
-Copyright (c) 2017, Alexander Widerberg <widerbergaren@gmail.com>
+Copyright (c) 2016, Bogdan Cristea <cristeab@gmail.com>
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+libde265.js — HEVC (H.265) decoder (JavaScript/WebAssembly)
+Copyright (c) 2014 struktur AG
+Source: https://github.com/strukturag/libde265.js
+License: GNU Lesser General Public License v3.0 (LGPL-3.0)
+libde265 is free software: you can redistribute it and/or modify it under the terms of the
+GNU Lesser General Public License as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version.
+libde265 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+You should have received a copy of the GNU Lesser General Public License along with libde265.
+If not, see <https://www.gnu.org/licenses/>.
+Full license text: https://www.gnu.org/licenses/lgpl-3.0.html
+
+vvdec — VVC (H.266) decoder
+Copyright (c) 2018-2026, Fraunhofer-Gesellschaft zur Förderung der angewandten Forschung e.V.
+& The VVdeC Authors. All rights reserved.
+Source: https://github.com/fraunhoferhhi/vvdec
+License: The Clear BSD License
+Redistribution and use in source and binary forms, with or without modification, are permitted
+(subject to the limitations in the disclaimer below) provided that the following conditions
+are met:
+* Redistributions of source code must retain the above copyright notice, this list of
+  conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, this list of
+  conditions and the following disclaimer in the documentation and/or other materials
+  provided with the distribution.
+* Neither the name of the copyright holder nor the names of its contributors may be used to
+  endorse or promote products derived from this software without specific prior written
+  permission.
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE.
+Full license text: https://spdx.org/licenses/BSD-3-Clause-Clear.html

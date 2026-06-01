@@ -3,7 +3,7 @@
 <!--
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,122 +15,416 @@
 
 <html lang="en">
     <head>
+
+        <!-- Cross-origin isolation for SharedArrayBuffer (needed by VVC decoder threads) -->
+        <script src="js/coi-register.js"></script>
+
+
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="description" content="High Efficiency Image File Format (HEIF) is a standard for storage and sharing of images and image sequences, developed by the MPEG. Nokia Technologies writer and reader implementation source code is available for download.">
         <meta name="keywords" content="High Efficiency Image File, High Efficiency Video Coding, HEVC, H.265, HEIF, HEIC, MP4, ISOBMFF, MPEG, ISO Base Media File Format, Image Format, image burst, animation format, derived images, non-destructive image processing, Nokia Technologies, HEIF source code">
 
         <title>HEIF - High Efficiency Image File Format</title>
-
-        <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+        <link rel="icon" href="img/heif_logo.png" type="image/png">
+        <!-- Testing new typefaces and fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" crossorigin>
+        <link href="css/theme-variables.css" rel="stylesheet" type='text/css'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type='text/css'>
         <link href="css/styles.css" rel="stylesheet" type='text/css'>
+        <link href="css/mobile.css" rel="stylesheet" type='text/css'>
 
-        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-        <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-        <![endif]-->
-        <script src="js/libde265-selector.js"></script>
-        <script src="js/heif-api.js"></script>
-        <script src="js/heif-extension.js"></script>
-        <script src="js/hevc-decoder.js"></script>
-        <script src="js/image-provider.js"></script>
-        <script src="js/footer.js"></script>
+        <!-- Theme manager - loaded early to prevent flash of wrong theme -->
+        <script src="js/theme-manager.js"></script>
+
+        <!-- VVC! promo nav link — index.html only -->
+        <style>
+            /* Highlighted VVC! pill — desktop nav */
+            .heif-nav-vvc-ad {
+                display: inline-flex !important;
+                align-items: center;
+                padding: 0 clamp(8px, 1vw, 14px) !important;
+                line-height: normal !important;
+                height: 32px;
+                border-radius: 6px !important;
+                background-color: var(--color-blue-digital) !important;
+                color: var(--fg-on-dark) !important;
+                font-weight: 800 !important;
+                font-size: clamp(11px, 1.1vw, 14px) !important;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+                white-space: nowrap;
+                box-shadow: 0 0 0 2px var(--color-blue-digital), 0 2px 8px rgba(27, 111, 159, 0.45);
+                transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease !important;
+                animation: vvc-pulse 2.8s ease-in-out infinite;
+                text-decoration: none;
+                align-self: center;
+            }
+            .heif-nav-vvc-ad:hover {
+                background-color: var(--color-blue-bright) !important;
+                box-shadow: 0 0 0 3px var(--color-blue-bright), 0 4px 14px rgba(0, 90, 255, 0.5) !important;
+                transform: scale(1.06);
+            }
+            .heif-nav-vvc-ad:active {
+                transform: scale(0.97);
+            }
+            /* Subtle attention pulse */
+            @keyframes vvc-pulse {
+                0%   { box-shadow: 0 0 0 2px var(--color-blue-digital), 0 2px 8px rgba(27,111,159,0.45); }
+                50%  { box-shadow: 0 0 0 4px rgba(27,111,159,0.25), 0 4px 16px rgba(27,111,159,0.6); }
+                100% { box-shadow: 0 0 0 2px var(--color-blue-digital), 0 2px 8px rgba(27,111,159,0.45); }
+            }
+            /* Mobile VVC! badge — sits next to download icon */
+            .mobile-vvc-ad {
+                display: inline-flex !important;
+                align-items: center;
+                height: 28px;
+                padding: 0 10px !important;
+                border-radius: 5px !important;
+                background-color: var(--color-blue-digital) !important;
+                color: var(--fg-on-dark) !important;
+                font-weight: 800 !important;
+                font-size: 12px !important;
+                letter-spacing: 0.05em;
+                text-decoration: none;
+                flex-shrink: 0;
+                animation: vvc-pulse 2.8s ease-in-out infinite;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .heif-nav-vvc-ad,
+                .mobile-vvc-ad {
+                    animation: none;
+                }
+            }
+        </style>
+
+        <!-- Preload wasm binaries so fetch starts during HTML parse -->
+        <link rel="preload" href="js/heif-raw.wasm" as="fetch" crossorigin="anonymous">
+
+        <!-- libde265 is loaded inside decode-worker.js via importScripts;
+             no main-thread copy is needed. -->
+        <script defer src="js/heif-utils.js"></script>
+        <script defer src="js/heif-raw.js"></script>
+        <script defer src="js/heif.js"></script>
+        <script defer src="js/decoder-manager.js"></script>
+        <script defer src="js/image-provider.js"></script>
+        <script defer src="js/heif-extension.js"></script>
+        <script defer src="js/footer.js"></script>
+        <script defer src="js/mobile-nav.js"></script>
     </head>
     <body>
-        <div class="heif-nav-container">
+        <div role="navigation" class="heif-nav-container">
             <nav class="heif-nav">
-                <div class="row center-block">
-                    <div class="col-sm-12 col-md-4">
-                        <a href="index.html">
-                            <div class="heif-nav-title">
-                                <div class="heif-nav-title-big">HEIF</div>
-                                <div class="heif-nav-title-small">Image Format</div>
+                <div class="heif-nav-row">
+                    <a href="index.html" class="heif-nav-title">
+                        <div class="heif-nav-title-big">H E I F</div>
+                        <div class="heif-nav-title-small">Image File Format</div>
+                    </a>
+
+                    <div class="heif-nav-items">
+                        <!-- Desktop dropdown navigation -->
+                        <div class="nav-dropdown desktop-only">
+                            <a class="heif-nav-item nav-dropdown-trigger">EXAMPLES</a>
+                            <div class="nav-dropdown-content">
+                                <a href="gallery.html" class="heif-nav-item">Gallery</a>
+                                <a href="comparison.html" class="heif-nav-item">Compare</a>
                             </div>
-                        </a>
+                        </div>
+                        <div class="nav-dropdown desktop-only">
+                            <a class="heif-nav-item nav-dropdown-trigger">INFO</a>
+                            <div class="nav-dropdown-content">
+                                <a href="technical.html" class="heif-nav-item">HEIF Technical Info</a>
+                                <a href="news.html" class="heif-nav-item">News</a>
+                            </div>
+                        </div>
+                        <a href="#download" class="heif-nav-item desktop-only">DOWNLOAD</a>
+                        <a href="comparison.html" class="heif-nav-item heif-nav-vvc-ad desktop-only" title="See VVC images in the gallery">VVC!</a>
+
+                        <!-- Mobile dropdown structure -->
+                        <div class="mobile-dropdown mobile-only">
+                            <div class="mobile-dropdown-header">EXAMPLES</div>
+                            <div class="mobile-dropdown-content">
+                                <a href="gallery.html" class="heif-nav-item">Gallery</a>
+                                <a href="comparison.html" class="heif-nav-item">Compare</a>
+                            </div>
+                        </div>
+                        <div class="mobile-dropdown mobile-only">
+                            <div class="mobile-dropdown-header">INFO</div>
+                            <div class="mobile-dropdown-content">
+                                <a href="technical.html" class="heif-nav-item">HEIF Technical Info</a>
+                                <a href="news.html" class="heif-nav-item">News</a>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="col-sm-12 col-md-8">
-                        <a href="examples.html">
-                            <div class="heif-nav-item">
-                                EXAMPLES
-                            </div>
-                        </a>
-                        <a href="comparison.html">
-                            <div class="heif-nav-item">
-                                COMPARE
-                            </div>
-                        </a>
-                        <a href="technical.html">
-                            <div class="heif-nav-item">
-                                TECHNICAL INFO
-                            </div>
-                        </a>
-                        <a href="news.html">
-                            <div class="heif-nav-item">
-                                NEWS
-                            </div>
-                        </a>
-                        <a href="#download">
-                            <div class="heif-nav-item">
-                                DOWNLOAD
-                            </div>
-                        </a>
+                    <div class="mobile-nav-controls mobile-only">
+                        <a href="comparison.html" class="heif-nav-vvc-ad mobile-vvc-ad" title="VVC Comparison">VVC!</a>
+                        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </button>
                     </div>
                 </div>
             </nav>
         </div>
 
-        <div class="heif-welcome-container">
+        <div class="heif-fullpage-wrapper">
+            <div role="main" class="heif-welcome-container heif-fullpage-section heif-section-active">
             <div class="heif-welcome-message-container">
-                <div class="heif-welcome-message-big">High Efficiency Image File Format (HEIF)</div>
+                <div class="heif-welcome-message-big">High Efficiency Image File Format</div>
+                <div class="heif-welcome-message-medium">(HEIF)</div>
                 <div class="heif-welcome-message-small">Future Container Format for Images and Image Sequences.</div>
             </div>
             <div class="heif-welcome-hero-technical-info">Image dimensions: 1440x960, file size: 166 KiB</div>
-            <img src="content/images/surfer_1440x960.heic"/>
+            <img src="content/nokia/surfer_1440x960.heic" alt="Surfer"/>
         </div>
 
-        <div class="heif-about-container row">
-            <div class="heif-about-content col-xs-12 col-sm-12">
-                <div class="heif-about-content-title">
-                    About HEIF and MIAF
+            <div class="heif-showcase-container heif-fullpage-section">
+                <div class="heif-showcase-message-container">
+                    <div class="heif-welcome-message-big">About this website</div>
+                <div class="heif-welcome-message-small">This website has been developed to demonstrate capabilities and features of HEIF. <br> The entire website uses only the NOKIA HEIF library to handle all HEIF files. <br> No native "&lt;img&gt;", but processing and extracting data from files with the JS/WASM build of the library. </div>
+            </div>
+            <div class="heif-welcome-hero-technical-info">Image dimensions: 1440x960, file size: 287 KiB</div>
+            <img src="content/nokia/autumn_1440x960.heic" alt="Autumn landscape"/>
+        </div>
+
+            <div class="heif-showcase-container heif-fullpage-section">
+                <div class="heif-showcase-message-container">
+                    <div class="heif-welcome-message-big">About HEIF</div>
+                <div class="heif-welcome-message-small">HEIF is an ISOBMFF based container format for storage of encoded media. <br> Supports codecs like AVC and HEVC - along with VVC, the latest codec in the family, to provide high quality media with good compression ratio.</div>
+            </div>
+            <div class="heif-welcome-hero-technical-info">Image dimensions: 1440x960, file size: 127 KiB</div>
+            <img src="content/nokia/crowd_1440x960.heic" alt="Crowd"/>
+        </div>
+
+            <div class="heif-showcase-container heif-fullpage-section">
+                <div class="heif-showcase-message-container">
+                    <div class="heif-welcome-message-big">Multiple Images, One File</div>
+                <div class="heif-welcome-message-small">HEIF can store bursts, collections, and animations in a single container &mdash; no zips, no sidecar files. Every frame shares the same metadata and codec efficiency.</div>
+            </div>
+            <div class="heif-welcome-hero-technical-info">Image dimensions: 1440x960, file size: 40 KiB</div>
+            <img src="content/nokia/cheers_1440x960.heic" alt="Cheers"/>
+        </div>
+
+            <div class="heif-showcase-container heif-fullpage-section">
+                <div class="heif-showcase-message-container">
+                    <div class="heif-welcome-message-big">Non-Destructive Editing Built In</div>
+                    <div class="heif-welcome-message-small">Grids, overlays, rotations, and crops are expressed as lightweight references &mdash; the original pixels are never touched. Alpha planes and depth maps ride alongside the primary image.</div>
                 </div>
-                <div class="heif-about-content-info">
-                    <p>
-                        HEIF (High Efficiency Image File Format) is a standard developed by the Moving Picture Experts
-                        Group (MPEG) for storage and sharing of images and image sequences.
-                    </p>
-                    <p>
-                        MIAF (Multi-Image Application Format) standard defines a set of additional constraints on HEIF specification, which further enables interoperability.
-                    </p>
-                    <p>
-                        This site is dedicated to provide technical information, usage examples and files, source code
-                        and external links to various information sources related to HEIF and MIAF.
-                    </p>
-                </div>
+                <div class="heif-welcome-hero-technical-info">Image dimensions: 1440x960, file size: 132 KiB</div>
+                <img src="content/nokia/old_bridge_1440x960.heic" alt="Old bridge"/>
             </div>
 
-            <div class="heif-features-content col-xs-12 col-sm-12">
-                <div class="heif-features-content-title">
-                    Some key features
+            <div class="heif-showcase-container heif-fullpage-section">
+                <div class="heif-showcase-message-container">
+                    <div class="heif-welcome-message-big">Explore</div>
+                    <div class="heif-welcome-message-small" style="display:flex; flex-direction:column; gap:0.6em; align-items:center;">
+                        <span><a href="comparison.html" style="text-decoration:underline;">Comparison</a> - side-by-side codec quality</span>
+                        <span><a href="gallery.html" style="text-decoration:underline;">Gallery</a> - HEIF images decoded live</span>
+                        <span><a href="technical.html" style="text-decoration:underline;">Technical Information</a> - format details</span>
+                        <span><a href="news.html" style="text-decoration:underline;">News</a> - latest updates</span>
+                    </div>
                 </div>
-                <ul>
-                    <li>Media data is encoded according to the High Efficiency Video Coding (HEVC) standard</li>
-                    <li>Storage based on widely adopted ISO Base Media File Format (ISOBMFF)</li>
-                    <li>Supports efficient storage of image bursts and cinemagraphs</li>
-                    <li>Supports computational photography use cases</li>
-                    <li>Supports both lossy and lossless image data storage</li>
-                    <li>A better and easy way to distribute still images, image collections and related metadata</li>
-                    <li>See <a href="technical.html">Technical Info</a> for more details...</li>
-                </ul>
+                <div class="heif-welcome-hero-technical-info">Image dimensions: 1440x960, file size: 60 KiB</div>
+                <img src="content/nokia/lights_1440x960.heic" alt="City lights"/>
             </div>
-        </div>
+
+            <div id="download" class="heif-fullpage-section heif-fullpage-footer">
+                <div class="heif-download-container row">
+                    <div class="heif-download-content col-xs-12 col-sm-6">
+                        <div class="heif-download-content-title">
+                        Download
+                        </div>
+                        <div class="heif-download-content-link">
+                            <a href="https://github.com/nokiatech/heif">
+                                ↓ HEIF Reader/Writer Source Code at GitHub
+                            </a>
+                        </div>
+                        <div class="heif-download-content-link">
+                            <a href="https://github.com/nokiatech/heif/tree/miaf">
+                                ↓ MIAF Source Code GitHub
+                            </a>
+                        </div>
+                    </div>
+                    <div class="heif-download-content col-xs-12 col-sm-6">
+                        <div class="heif-download-content-title">
+                        External Links
+                        </div>
+                        <ul>
+                            <li><a href="https://standards.iso.org/ittf/PubliclyAvailableStandards/c066067_ISO_IEC_23008-12_2017.zip">HEIF standard ISO/IEC 23008-12:2017</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="heif-footer-container">
+                    <small><span>Copyright &copy; Nokia Technologies 2015-2026</span></small>
+                    <small><span>Contact: <a href="mailto:heif@nokia.com">heif@nokia.com</a> | <a href="https://github.com/nokiatech/heif/issues">GitHub</a></span></small>
+                </div>
+            </div>
+        </div><!-- end heif-fullpage-wrapper -->
 
         <script>
-            var footer = new Footer();
+        document.addEventListener('DOMContentLoaded', function() {
+            // Footer is inlined in the last fullpage section — no dynamic injection needed
+
+            // ========================================
+            // NAVBAR: Hidden on hero, visible on other sections
+            // ========================================
+            // (Controlled by fullpage scroll logic below)
+
+            // ========================================
+            // FULLPAGE SCROLL — section-at-a-time crossfade
+            // ========================================
+            (function() {
+                var sections = document.querySelectorAll('.heif-fullpage-section');
+                var currentIndex = 0;
+                var isAnimating = false;
+                var wheelAccumulator = 0;
+                var wheelThreshold = 120;
+                var resetTimer = null;
+                var autoTimer = null;
+                var autoDelay = 8000; // ms between auto-advances
+                // Auto-scroll loops sections 1..(last-2), skipping hero (0) and footer (last)
+                var autoFirst = 1;
+                var autoLast = sections.length - 2; // last content section before footer
+
+                function startAuto() {
+                    stopAuto();
+                    autoTimer = setInterval(function() {
+                        if (isAnimating) return;
+                        if (currentIndex < autoFirst || currentIndex >= autoLast) {
+                            // Jump into the loop range
+                            goToSection(autoFirst);
+                        } else {
+                            goToSection(currentIndex + 1);
+                        }
+                    }, autoDelay);
+                }
+
+                function stopAuto() {
+                    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+                }
+
+                function restartAuto() {
+                    stopAuto();
+                    // Restart after a longer idle pause
+                    setTimeout(startAuto, autoDelay);
+                }
+
+                function goToSection(index) {
+                    if (index < 0 || index >= sections.length || isAnimating) return;
+                    isAnimating = true;
+
+                    var oldSection = sections[currentIndex];
+                    // Keep old section visible underneath while new one fades in
+                    oldSection.classList.remove('heif-section-active');
+                    oldSection.classList.add('heif-section-outgoing');
+                    sections[index].classList.add('heif-section-active');
+                    currentIndex = index;
+
+                    // Show/hide navbar: hidden on first section (hero)
+                    var navContainer = document.querySelector('.heif-nav-container');
+                    if (index === 0) {
+                        navContainer.classList.remove('nav-visible');
+                    } else {
+                        navContainer.classList.add('nav-visible');
+                    }
+
+                    // After incoming section is fully opaque, hide old one
+                    setTimeout(function() {
+                        oldSection.classList.remove('heif-section-outgoing');
+                        isAnimating = false;
+                        wheelAccumulator = 0;
+                    }, 1300);
+                }
+
+                window.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    stopAuto();
+                    if (isAnimating) return;
+
+                    wheelAccumulator += e.deltaY;
+
+                    clearTimeout(resetTimer);
+                    resetTimer = setTimeout(function() {
+                        wheelAccumulator = 0;
+                    }, 300);
+
+                    if (wheelAccumulator > wheelThreshold) {
+                        wheelAccumulator = 0;
+                        goToSection(currentIndex + 1);
+                    } else if (wheelAccumulator < -wheelThreshold) {
+                        wheelAccumulator = 0;
+                        goToSection(currentIndex - 1);
+                    }
+                    restartAuto();
+                }, { passive: false });
+
+                // Touch support
+                var touchStartY = 0;
+                window.addEventListener('touchstart', function(e) {
+                    touchStartY = e.touches[0].clientY;
+                }, { passive: true });
+
+                window.addEventListener('touchend', function(e) {
+                    stopAuto();
+                    if (isAnimating) return;
+                    var delta = touchStartY - e.changedTouches[0].clientY;
+                    if (delta > 80) goToSection(currentIndex + 1);
+                    else if (delta < -80) goToSection(currentIndex - 1);
+                    restartAuto();
+                }, { passive: true });
+
+                // Keyboard support
+                window.addEventListener('keydown', function(e) {
+                    stopAuto();
+                    if (isAnimating) return;
+                    if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+                        e.preventDefault();
+                        goToSection(currentIndex + 1);
+                    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+                        e.preventDefault();
+                        goToSection(currentIndex - 1);
+                    }
+                    restartAuto();
+                });
+                // Kick off auto-scroll
+                startAuto();
+            })();
+
+            // ========================================
+            // HERO + SHOWCASE IMAGE READY STATE
+            // ========================================
+            // Same pattern for all full-bleed image containers:
+            // watch for canvas insertion, then add ready class to fade in.
+            (function() {
+                var containers = document.querySelectorAll('.heif-welcome-container, .heif-showcase-container');
+                containers.forEach(function(container) {
+                    var readyClass = container.classList.contains('heif-welcome-container')
+                        ? 'hero-ready' : 'showcase-ready';
+
+                    if (container.querySelector('canvas')) {
+                        container.classList.add(readyClass);
+                        return;
+                    }
+
+                    var observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            mutation.addedNodes.forEach(function(node) {
+                                if (node.nodeName === 'CANVAS') {
+                                    container.classList.add(readyClass);
+                                    observer.disconnect();
+                                }
+                            });
+                        });
+                    });
+                    observer.observe(container, { childList: true });
+                });
+            })();
+        }); // DOMContentLoaded
         </script>
     </body>
 </html>

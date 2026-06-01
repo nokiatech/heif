@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<!--
+/* This file is part of Nokia HEIF library
+ *
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ *
+ * Contact: heif@nokia.com
+ *
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ *
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ */
+-->
+
+<html lang="en">
+    <head>
+
+        <!-- Cross-origin isolation for SharedArrayBuffer (needed by VVC decoder threads) -->
+        <script src="js/coi-register.js"></script>
+
+
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="description" content="HEIF Gallery - Browse thumbnails extracted directly from HEIF files">
+        <meta name="keywords" content="High Efficiency Image File, HEIF, HEIC, Gallery, Thumbnails">
+
+        <title>HEIF Gallery - High Efficiency Image File Format</title>
+        <link rel="icon" href="img/heif_logo.png" type="image/png">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" crossorigin>
+        
+        <link href="css/theme-variables.css" rel="stylesheet" type='text/css'>
+        <link href="css/bootstrap.min.css" rel="stylesheet" type='text/css'>
+        <link href="css/styles.css" rel="stylesheet" type='text/css'>
+        <link href="css/gallery.css" rel="stylesheet" type='text/css'>
+        <link href="css/mobile.css" rel="stylesheet" type='text/css'>
+        
+        <!-- Theme manager - loaded early to prevent flash of wrong theme -->
+        <script src="js/theme-manager.js"></script>
+
+        <link rel="preload" href="js/heif-raw.wasm" as="fetch" crossorigin="anonymous">
+
+        <script defer src="js/heif-utils.js"></script>
+        <script defer src="js/heif-raw.js"></script>
+        <script defer src="js/heif.js"></script>
+        <script defer src="js/heif-extension.js"></script>
+        <script defer src="js/vvdec/vvdecapp.js"></script>
+        <script defer src="js/decoder-manager.js"></script>
+        <script defer src="js/image-provider.js"></script>
+        <script defer src="js/footer.js"></script>
+        <script defer src="js/mobile-nav.js"></script>
+        <script defer src="js/gallery.js"></script>
+        <script defer src="js/context-menu.js"></script>
+    </head>
+    <!--
+        Power-user debug logging:
+            In the DevTools console, run
+                HEIFFileLogger.verbose = true
+            to expand the per-file decode summary into a full group
+            (heifInfo dump, decoded items, colour info, gainmaps).
+            The flag is persisted in localStorage; set it back to
+            false when you're done — verbose mode serialises the
+            full heifInfo per decoded image and noticeably slows
+            large galleries. There is no UI control or URL switch
+            on purpose; this is for development only.
+    -->
+    <body id="body">
+        <div role="navigation" class="heif-nav-container">
+            <nav class="heif-nav">
+                <div class="heif-nav-row">
+                    <a href="index.html" class="heif-nav-title">
+                        <div class="heif-nav-title-big">H E I F</div>
+                        <div class="heif-nav-title-small">Image File Format</div>
+                    </a>
+
+                    <div class="heif-nav-items">
+                        <!-- Desktop dropdown navigation -->
+                        <div class="nav-dropdown desktop-only">
+                            <a class="heif-nav-item nav-dropdown-trigger">EXAMPLES</a>
+                            <div class="nav-dropdown-content">
+                                <a href="gallery.html" class="heif-nav-item">Gallery</a>
+                                <a href="comparison.html" class="heif-nav-item">Compare</a>
+                            </div>
+                        </div>
+                        <div class="nav-dropdown desktop-only">
+                            <a class="heif-nav-item nav-dropdown-trigger">INFO</a>
+                            <div class="nav-dropdown-content">
+                                <a href="technical.html" class="heif-nav-item">HEIF Technical Info</a>
+                                <a href="news.html" class="heif-nav-item">News</a>
+                            </div>
+                        </div>
+                        <a href="#download" class="heif-nav-item desktop-only">DOWNLOAD</a>
+
+                        <!-- Mobile dropdown structure -->
+                        <div class="mobile-dropdown mobile-only">
+                            <div class="mobile-dropdown-header">EXAMPLES</div>
+                            <div class="mobile-dropdown-content">
+                                <a href="gallery.html" class="heif-nav-item">Gallery</a>
+                                <a href="comparison.html" class="heif-nav-item">Compare</a>
+                            </div>
+                        </div>
+                        <div class="mobile-dropdown mobile-only">
+                            <div class="mobile-dropdown-header">INFO</div>
+                            <div class="mobile-dropdown-content">
+                                <a href="technical.html" class="heif-nav-item">HEIF Technical Info</a>
+                                <a href="news.html" class="heif-nav-item">News</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mobile-nav-controls mobile-only">
+                        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="gallery-container">
+            <div class="gallery-header">
+                <h1>HEIF Gallery</h1>
+                <p class="gallery-subtitle">
+                    HEIF files parsed and processed entirely in your browser &mdash; no server, no conversion,
+                    no upload. The Nokia HEIF library, compiled to WebAssembly, handles all container parsing:
+                    thumbnails, full-resolution images, grids, overlays, animations, sequences, alternates,
+                    metadata, and item properties are all extracted client-side.
+                </p>
+                <br>
+            </div>
+
+            <!--
+                Single combined loading indicator. The previous design had a
+                spinner block above the grid AND skeleton shimmers on every
+                tile, which was redundant and pushed the grid below the fold.
+                The new design is a thin progress strip at the top of the
+                grid that reports actual progress (X of Y decoded). Tiles
+                still fade in individually, which is the more useful signal.
+            -->
+            <div class="gallery-status-bar" id="gallery-status-bar" aria-live="polite" aria-atomic="true">
+                <div class="gallery-status-text" id="gallery-status-text">Preparing gallery&hellip;</div>
+                <div class="gallery-status-track">
+                    <div class="gallery-status-fill" id="gallery-status-fill"></div>
+                </div>
+            </div>
+
+            <div class="gallery-grid" id="gallery-grid" role="list" aria-label="HEIF thumbnails">
+                <!-- Thumbnails will be dynamically inserted here -->
+            </div>
+            
+
+        </div>
+
+        <!-- Modal for full image view -->
+        <div class="gallery-modal-backdrop" id="gallery-modal-backdrop"></div>
+        <div class="gallery-modal-window" id="gallery-modal-window"
+             role="dialog" aria-modal="true" aria-labelledby="gallery-modal-title"
+             tabindex="-1">
+            <div class="gallery-modal-header">
+                <div class="gallery-modal-title" id="gallery-modal-title"></div>
+                <button type="button" class="gallery-modal-quit" id="gallery-modal-quit"
+                        aria-label="Close image viewer"></button>
+            </div>
+            <div class="gallery-modal-content" id="gallery-modal-content">
+                <div class="gallery-modal-loading" id="gallery-modal-loading">
+                    <div class="gallery-spinner"></div>
+                    <span>Decoding full image...</span>
+                </div>
+            </div>
+            <div class="gallery-modal-info" id="gallery-modal-info"></div>
+        </div>
+
+
+        <div class="copyright-notice">
+            <p>Image content is sourced under various free and proprietary licences. See the project repository for provenance details.</p>
+        </div>
+        <script>
+            // Global error handler.
+            //
+            // The previous implementation called e.preventDefault() on EVERY
+            // error in the page and used a counter to "stop the gallery" if
+            // too many fired. That had two problems:
+            //   1. Real bugs (typos, undefined references in unrelated code)
+            //      were being silently suppressed - everything looked fine in
+            //      production while breaking in subtle ways.
+            //   2. The counter reset purely by elapsed time, never by recovery,
+            //      so a long-running page that had two unrelated errors 5
+            //      seconds apart would never trigger the safety net anyway.
+            //
+            // This version is scoped to errors that genuinely originate in
+            // the HEIF/decoder pipeline (heif*.js, libde265*, vvdec*, the
+            // gallery's animated-thumbnail loop). Anything else surfaces
+            // normally so devs see it and Sentry/equivalent sees it.
+            (function() {
+                var errorCount = 0;
+                var maxErrors = 10;
+                var lastErrorTime = 0;
+
+                function isDecoderRelated(filename, message) {
+                    if (filename) {
+                        if (/heif|libde265|vvdec|decoder-manager|image-provider/i.test(filename)) return true;
+                        if (/gallery\.js/i.test(filename)) return true;
+                    }
+                    if (message) {
+                        if (/wasm|decode|HEIF|libde265|vvdec|out of memory/i.test(message)) return true;
+                    }
+                    return false;
+                }
+
+                window.addEventListener('error', function(e) {
+                    if (!isDecoderRelated(e.filename, e.message)) {
+                        // Not ours - let it propagate normally.
+                        console.error('Gallery: passing through non-decoder error:', e.message);
+                        return;
+                    }
+
+                    var now = Date.now();
+                    if (now - lastErrorTime > 5000) errorCount = 0;
+                    lastErrorTime = now;
+                    errorCount++;
+
+                    console.error('Decoder error caught:', e.message, e.filename, e.lineno);
+
+                    // If too many decoder errors in a row, stop animations
+                    // (likely a memory cascade about to crash mobile Safari).
+                    if (errorCount >= maxErrors) {
+                        console.error('Too many decoder errors - stopping animated thumbnails to recover.');
+                        if (window.gallery && window.gallery._animatedThumbnails) {
+                            for (var id in window.gallery._animatedThumbnails) {
+                                window.gallery._animatedThumbnails[id].running = false;
+                            }
+                        }
+                    }
+
+                    // Suppress page reload on memory crashes ONLY for our errors.
+                    e.preventDefault();
+                    return true;
+                });
+
+                // Same scoping for unhandled promise rejections.
+                window.addEventListener('unhandledrejection', function(e) {
+                    var reason = e.reason;
+                    var message = (reason && reason.message) ? reason.message : String(reason);
+                    var stack = (reason && reason.stack) ? reason.stack : '';
+                    if (!isDecoderRelated(stack, message)) {
+                        console.error('Gallery: passing through non-decoder rejection:', message);
+                        return;
+                    }
+                    console.error('Decoder rejection caught:', message);
+                    e.preventDefault();
+                });
+            })();
+            
+            // Deferred scripts execute before DOMContentLoaded, so wait
+            // for that event before using constructors they define.
+            document.addEventListener('DOMContentLoaded', function() {
+                var footer = new Footer();
+                var gallery = new Gallery();
+                
+                // Initialize context menu
+                var contextMenu = new ContextMenu({
+                    containerSelector: '.gallery-container, .gallery-modal-content',
+                    actions: ['download', 'downloadPng', 'divider', 'fullscreen', 'copyClipboard']
+                }).init();
+            });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,1731 @@
+/* This file is part of Nokia HEIF library
+ *
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ *
+ * Contact: heif@nokia.com
+ *
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ *
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ */
+
+/* Mobile Responsive Styles for HEIF Website
+ * Breakpoints:
+ * - 768px: Tablet and below - hamburger menu activates
+ * - 576px: Mobile phones
+ * - 400px: Small phones
+ */
+
+/* ===================================
+   SAFE AREA INSETS (notch / Dynamic Island / home bar)
+   =================================== */
+
+:root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ===================================
+   REDUCED MOTION
+   =================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .mobile-menu-toggle span,
+    .heif-nav-items,
+    .mobile-dropdown-content,
+    .mobile-dropdown-header::after,
+    .gallery-modal-content,
+    .gallery-modal-info-panel,
+    .gallery-modal-full-info,
+    .hdr-tooltip-bubble,
+    .heif-nav-container,
+    .mobile-menu-overlay {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+
+/* ===================================
+   SCROLLBAR HIDING FOR TOUCH STRIPS
+   =================================== */
+
+@media (max-width: 768px) {
+    .gallery-burst-strip,
+    .gallery-collection-strip {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
+    .gallery-burst-strip::-webkit-scrollbar,
+    .gallery-collection-strip::-webkit-scrollbar {
+        display: none; /* Chrome / Safari */
+    }
+}
+
+/* ===================================
+   PREVENT UNWANTED TOUCH BEHAVIORS
+   =================================== */
+
+@media (max-width: 768px) {
+    /* Prevent text selection on interactive elements - but allow touch scrolling */
+    button, 
+    a, 
+    .gallery-item,
+    .gallery-modal-quit,
+    .mobile-menu-toggle,
+    .mobile-dropdown-header,
+    .heif-nav-title,
+    .heif-example-content {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none; /* Disable iOS callout menu */
+        /* Allow vertical scrolling through these elements */
+        touch-action: pan-y;
+    }
+    
+    /* Images/canvases need special handling for context menu long-press */
+    canvas,
+    .gallery-item canvas,
+    .gallery-item img {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        /* manipulation allows pan and pinch-zoom but disables double-tap zoom */
+        touch-action: manipulation;
+    }
+
+    /* Modal images/canvases — no panning allowed */
+    .gallery-modal-content img,
+    .gallery-modal-content canvas {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        touch-action: none;
+    }
+
+    /* Burst/collection strip thumbnails need horizontal scroll */
+    .gallery-burst-strip canvas,
+    .gallery-collection-strip canvas {
+        touch-action: pan-x;
+    }
+}
+
+/* Landscape: burst/collection strips are vertical, need pan-y */
+@media (max-width: 900px) and (orientation: landscape) {
+    .gallery-burst-strip,
+    .gallery-burst-strip canvas,
+    .gallery-collection-strip,
+    .gallery-collection-strip canvas {
+        touch-action: pan-y !important;
+    }
+}
+
+@media (max-width: 768px) {
+    
+    /* Lock modal layers on mobile — prevent all touch-scroll / drag */
+    .gallery-modal-window.visible,
+    .gallery-modal-backdrop.visible {
+        overflow: hidden;
+        touch-action: none;
+        overscroll-behavior: none;
+    }
+
+    .gallery-modal-window.visible .gallery-modal-content {
+        touch-action: none;
+    }
+
+    .gallery-modal-window.visible .gallery-modal-header {
+        touch-action: none;
+    }
+
+    /* Re-enable horizontal scroll on strips inside the modal */
+    .gallery-modal-window.visible .gallery-burst-strip,
+    .gallery-modal-window.visible .gallery-collection-strip {
+        touch-action: pan-x;
+    }
+
+    /* Re-enable vertical scroll on grid and full-info panel */
+    .gallery-modal-window.visible .gallery-modal-grid,
+    .gallery-modal-window.visible .gallery-modal-full-info {
+        touch-action: pan-y;
+    }
+
+    /* Prevent pull-to-refresh and overscroll effects on main containers */
+    body.modal-open,
+    .heif-examples-modal-window.display {
+        overscroll-behavior: contain;
+    }
+    
+    /* Remove tap highlight on iOS/Android */
+    .gallery-item,
+    .gallery-modal-content,
+    button,
+    a {
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Allow text selection in actual content areas */
+    p, li, span, h1, h2, h3, h4, h5, h6,
+    .heif-about-content-info,
+    .heif-technical-content,
+    .heif-news-content,
+    .heif-comparison-content-text {
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+    }
+}
+
+/* ===================================
+   PAGE OVERLAY (darkens page content when menu open)
+   =================================== */
+
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gallery-overlay-transparent);
+    z-index: 50; /* Below nav (100) but above page content */
+    pointer-events: none;
+    transition: background 0.3s ease;
+}
+
+.mobile-menu-overlay.active {
+    background: var(--overlay-dark);
+    pointer-events: auto;
+}
+
+/* ===================================
+   HAMBURGER MENU TOGGLE
+   =================================== */
+
+.mobile-menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 110;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.mobile-menu-toggle span {
+    position: absolute;
+    width: 20px;
+    height: 2px;
+    background-color: var(--color-blue-digital);
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform-origin: center center;
+    left: 50%;
+    margin-left: -10px;
+}
+
+.mobile-menu-toggle span:nth-child(1) {
+    top: 50%;
+    margin-top: -7px;
+}
+
+.mobile-menu-toggle span:nth-child(2) {
+    top: 50%;
+    margin-top: 0;
+}
+
+.mobile-menu-toggle span:nth-child(3) {
+    top: 50%;
+    margin-top: 7px;
+}
+
+/* Hamburger animation when menu is open - proper X cross */
+.mobile-menu-toggle.active span:nth-child(1) {
+    top: 50%;
+    margin-top: 0;
+    transform: rotate(45deg);
+}
+
+.mobile-menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.mobile-menu-toggle.active span:nth-child(3) {
+    top: 50%;
+    margin-top: 0;
+    transform: rotate(-45deg);
+}
+
+
+
+/* ===================================
+   MOBILE NAVIGATION (< 768px)
+   =================================== */
+
+/* Nav hide on scroll */
+.heif-nav-container {
+    transition: transform 1.2s ease-in-out, background-color 0.3s ease;
+}
+
+.heif-nav-container.nav-hidden {
+    transform: translateY(-100%);
+}
+
+@media (max-width: 768px) {
+    /* Show hamburger menu */
+    .mobile-menu-toggle {
+        display: flex;
+    }
+
+    /* Ensure nav title stays above mobile menu */
+    .heif-nav .heif-nav-title {
+        z-index: 105;
+        position: relative;
+    }
+
+    .heif-nav .heif-nav-row{
+        padding-top: 2%;
+    }
+
+    /* Mobile menu slides down from below nav bar */
+    .heif-nav-items {
+        position: fixed;
+        top: clamp(50px, 8vh, 64px);
+        left: 0;
+        right: 0;
+        background: var(--bg-muted);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 0px;
+        transform: translateY(-120%);
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+                    opacity 0.3s ease, 
+                    visibility 0.3s ease;
+        box-shadow: var(--shadow-lg);
+        z-index: 99;
+        max-height: calc(100vh - clamp(50px, 8vh, 64px));
+        max-height: calc(100dvh - clamp(50px, 8vh, 64px));
+        overflow-y: auto;
+        border-radius: 0; /* No rounded corners - seamless with nav */
+    }
+
+    .heif-nav-items.mobile-open {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Hide regular nav items on mobile - only show dropdowns */
+    .heif-nav .heif-nav-item {
+        display: none;
+    }
+
+    /* Dropdown sections - card style */
+    .mobile-dropdown {
+        background: var(--card-bg);
+        border-radius: 0px;
+        margin-bottom: 0px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    
+    .mobile-dropdown:last-child {
+        margin-bottom: 0;
+    }
+    
+    .mobile-dropdown:hover {
+        box-shadow: var(--shadow-md);
+    }
+    
+    .mobile-dropdown.open {
+        box-shadow: var(--shadow-lg);
+    }
+
+    .mobile-dropdown-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 18px;
+        margin: 0;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+        color: var(--color-blue-digital);
+        cursor: pointer;
+        background: transparent;
+        transition: background-color 0.2s ease;
+        text-transform: uppercase;
+    }
+
+    .mobile-dropdown-header:hover {
+        background-color: var(--color-blue-light);
+    }
+    
+    .mobile-dropdown.open .mobile-dropdown-header {
+        background-color: var(--nav-dropdown-hover);
+    }
+
+    /* Dropdown arrow indicator */
+    .mobile-dropdown-header::after {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid var(--color-blue-digital);
+        border-bottom: 2px solid var(--color-blue-digital);
+        transform: rotate(45deg);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 0.6;
+    }
+
+    .mobile-dropdown.open .mobile-dropdown-header::after {
+        transform: rotate(-135deg);
+    }
+
+    .mobile-dropdown-header:hover::after {
+        opacity: 1;
+    }
+
+    .mobile-dropdown-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        background: var(--bg-page);
+    }
+
+    .mobile-dropdown.open .mobile-dropdown-content {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    /* Dropdown items - clean style without index numbers */
+    .mobile-dropdown-content .heif-nav-item {
+        display: flex !important;
+        align-items: center;
+        padding: 14px 18px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: var(--fg-secondary) !important;
+        background: transparent !important;
+        border-bottom: 1px solid var(--border-divider) !important;
+        transition: background-color 0.2s ease, padding-left 0.2s ease !important;
+    }
+    
+    .mobile-dropdown-content .heif-nav-item:last-child {
+        border-bottom: none !important;
+    }
+
+    .mobile-dropdown-content .heif-nav-item:hover {
+        background: var(--color-blue-light) !important;
+        padding-left: 22px !important;
+    }
+
+    /* Nav row layout adjustments */
+    .heif-nav-row {
+        min-height: 50px;
+        padding: 5px 0;
+    }
+    
+    /* Remove nav margins on mobile to eliminate gap */
+    .heif-nav {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+    
+    /* Ensure nav container has consistent height + safe area */
+    .heif-nav-container {
+        height: clamp(50px, 8vh, 64px);
+        padding-top: var(--safe-top);
+    }
+
+    /* Nav title size adjustments */
+    .heif-nav .heif-nav-title {
+        font-size: 20px;
+    }
+
+    .heif-nav .heif-nav-title-big {
+        font-size: 20px;
+        letter-spacing: 2px;
+    }
+
+    .heif-nav .heif-nav-title-small {
+        font-size: 8px;
+    }
+
+    /* Right side controls container */
+    .mobile-nav-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        margin-right: 0;
+    }
+    
+    /* Ensure nav doesn't overflow viewport */
+    .heif-nav {
+        padding: 0 3%;
+        overflow-x: hidden;
+    }
+    
+    .heif-nav-row {
+        max-width: 100%;
+    }
+}
+
+/* ===================================
+   CONTENT PADDING ADJUSTMENTS
+   =================================== */
+
+@media (max-width: 768px) {
+    /* Add padding-top to content pages to account for fixed nav */
+    .heif-comparison-content,
+    .heif-technical-content,
+    .heif-news-content {
+        padding-top: max(70px, 12vh);
+    }
+    
+    /* Reduce main content padding - ensure equal left/right */
+    .heif-comparison-content,
+    .heif-technical-content,
+    .heif-news-content {
+        padding-left: 4%;
+        padding-right: 4%;
+        padding-bottom: 3%;
+        /* Fix Bootstrap row negative margins causing overflow */
+        overflow-x: hidden;
+    }
+
+    .heif-news-content .heif-news-item {
+        margin-bottom: 1.5em;
+    }
+
+    .heif-news-timeline {
+        padding-left: 24px;
+    }
+
+    .heif-news-timeline::before {
+        left: 2px;
+    }
+
+    .heif-news-dot {
+        left: -24px;
+        width: 6px;
+        height: 6px;
+    }
+
+    .heif-news-title {
+        font-size: 16px;
+    }
+
+    .heif-news-body {
+        font-size: 13px;
+    }
+    
+    /* Fix Bootstrap row margins on comparison page */
+    .heif-comparison-content .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    .heif-comparison-content [class*="col-"] {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .heif-comparison-content-text {
+        width: 100%;
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .heif-comparison-content-text h3 {
+        margin-top: 10px;
+    }
+
+    /* Examples container padding */
+    .heif-examples-container {
+        padding: max(70px, 12vh) 4%;
+    }
+
+    /* About section padding */
+    .heif-about-content,
+    .heif-features-content,
+    .heif-download-content {
+        padding-left: 4%;
+        padding-right: 4%;
+    }
+
+    /* Welcome message positioning - keep centered like desktop */
+    .heif-welcome-message-container {
+        top: 50%;
+    }
+
+    .heif-welcome-message-big,
+    .heif-examples-message-big {
+        font-size: 6vw;
+        padding: 0 10px;
+    }
+
+    .heif-welcome-message-small,
+    .heif-examples-message-small {
+        font-size: 3.6vw;
+        padding: 0 10px;
+    }
+    
+    /* Hero technical info - more readable badge style on mobile */
+    .heif-welcome-hero-technical-info {
+        font-size: 11px;
+        background: var(--mobile-overlay-bg);
+        backdrop-filter: blur(4px);
+        padding: 6px 10px;
+        border-radius: 6px;
+        right: 8px;
+        bottom: 8px;
+        max-width: calc(100% - 16px);
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Even smaller padding on small phones */
+    .heif-comparison-content {
+        padding-top: 70px;
+    }
+    
+    .heif-comparison-content,
+    .heif-technical-content,
+    .heif-news-content {
+        padding-left: 3%;
+        padding-right: 3%;
+        padding-bottom: 2%;
+    }
+
+    .heif-examples-container {
+        padding: max(60px, 10vh) 3%;
+    }
+
+    .heif-about-content,
+    .heif-features-content,
+    .heif-download-content {
+        padding-left: 3%;
+        padding-right: 3%;
+    }
+    
+    /* Hero technical info - even more compact on small phones */
+    .heif-welcome-hero-technical-info {
+        font-size: 10px;
+        padding: 5px 8px;
+        border-radius: 4px;
+    }
+}
+
+/* ===================================
+   LANDSCAPE MOBILE - REDUCED PADDINGS
+   =================================== */
+
+@media (max-width: 900px) and (orientation: landscape) {
+    /* Reduce side paddings in landscape mode */
+    .heif-comparison-content,
+    .heif-technical-content,
+    .heif-news-content {
+        padding-left: 2%;
+        padding-right: 2%;
+    }
+    
+    .heif-examples-container {
+        padding-left: 2%;
+        padding-right: 2%;
+    }
+    
+    .heif-about-content,
+    .heif-features-content,
+    .heif-download-content {
+        padding-left: 2%;
+        padding-right: 2%;
+    }
+    
+    /* Gallery grid adjustments for landscape */
+    .gallery-grid {
+        padding: 0 2%;
+    }
+    
+    /* Welcome container in landscape - keep centered */
+    .heif-welcome-message-container {
+        top: 50%;
+    }
+}
+
+/* ===================================
+   GALLERY SET SWITCHER MOBILE
+   =================================== */
+
+@media (max-width: 768px) {
+    .gallery-container {
+        padding-top: clamp(60px, 10vh, 90px);
+    }
+
+    .gallery-header {
+        padding: 15px 12px;
+    }
+
+    .gallery-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .gallery-subtitle {
+        font-size: 0.85rem;
+    }
+
+    /* Tab buttons — scrollable single row */
+    .gallery-set-switcher {
+        gap: 0;
+        margin-top: 10px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        justify-content: flex-start;
+        padding: 0 4%;
+        -webkit-overflow-scrolling: touch;
+    }
+    .gallery-set-switcher::-webkit-scrollbar {
+        display: none;
+    }
+
+    .gallery-set-btn {
+        padding: 8px 14px;
+        font-size: 0.82rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* View control — compact, centered */
+    .gallery-view-control {
+        width: calc(100% - 24px);
+        font-size: 0.72rem;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .gallery-set-btn {
+        padding: 7px 10px;
+        font-size: 0.78rem;
+    }
+
+    .gallery-header h1 {
+        font-size: 1.3rem;
+    }
+}
+
+/* ===================================
+   GALLERY MODAL MOBILE IMPROVEMENTS
+   =================================== */
+
+/*
+ * TABLET (768px and below)
+ * - Reduced padding
+ * - Smaller controls
+ * - Info panel adjustments
+ * - Proper spacing between elements and info box
+ */
+@media (max-width: 768px) {
+    /* Base modal content - IMAGE CENTERED */
+    .gallery-modal-content {
+        padding: max(44px, 8vh) 1% max(70px, 12vh) 1%;
+        gap: clamp(6px, 1.5vh, 12px);
+    }
+
+    /* Still images - CENTERED */
+    .gallery-modal-content > canvas,
+    .gallery-modal-content > img {
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    /* Close button — push below status bar / rounded corners + safe area */
+    .gallery-modal-header {
+        top: 0;
+        padding: max(14px, calc(2vh + var(--safe-top))) max(12px, calc(2vw + var(--safe-right))) 8px;
+    }
+
+    .gallery-modal-quit {
+        width: 44px;
+        height: 44px;
+        /* Visual size stays small; tap target enlarged via padding */
+        padding: 9px;
+        box-sizing: border-box;
+    }
+
+    /* Info panel - fixed at bottom, clear safe area */
+    .gallery-modal-info-panel {
+        padding: 8px 12px;
+        padding-bottom: max(8px, calc(8px + var(--safe-bottom)));
+        font-size: 13px;
+        bottom: max(8px, calc(1.5vh + var(--safe-bottom)));
+        max-width: 95%;
+        max-height: 30vh;
+        max-height: 30dvh;
+        overflow-y: auto;
+    }
+
+    .gallery-modal-info-title {
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    /* Info button: keep 18px visible circle, invisible 44px tap area */
+    .gallery-modal-info-btn {
+        width: 18px;
+        height: 18px;
+        font-size: 13px;
+        font-weight: 400;
+        position: relative;
+    }
+    .gallery-modal-info-btn::before {
+        content: '';
+        position: absolute;
+        inset: -13px;  /* expands tap area to ~44px without visual change */
+    }
+
+    .gallery-modal-info-details {
+        font-size: 11px;
+        gap: 6px;
+    }
+
+    .gallery-modal-full-info {
+        max-width: 92%;
+        width: 92%;
+        bottom: max(60px, calc(10vh + var(--safe-bottom)));
+        max-height: 50vh;
+        max-height: 50dvh;
+    }
+    
+    /* Back button — reposition inside viewport on mobile */
+    .gallery-modal-back-btn {
+        position: static;
+        right: auto;
+        top: auto;
+        transform: none;
+        margin-top: 6px;
+        align-self: center;
+    }
+
+    /* HDR tooltip — prevent viewport clipping */
+    .hdr-tooltip-bubble {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) translateY(10px);
+        white-space: normal;
+        min-width: 200px;
+        max-width: calc(100vw - 32px);
+    }
+    .hdr-tooltip-bubble.visible {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    /* Burst/Audio controls - scaled down */
+    .gallery-burst-controls {
+        gap: 6px;
+        padding: 3px;
+    }
+    
+    .gallery-burst-btn {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+    
+    /* Burst thumbnail strip - with margin to info panel */
+    .gallery-burst-strip {
+        height: clamp(50px, 10vh, 70px);
+        min-height: 50px;
+        padding: 5px;
+        gap: 4px;
+        margin-bottom: clamp(6px, 1.5vh, 12px);
+    }
+    
+    .gallery-burst-strip canvas {
+        height: clamp(36px, 7vh, 50px);
+        width: auto;
+    }
+    
+    /* Burst indicator */
+    .gallery-burst-indicator {
+        font-size: 11px;
+        margin-top: 4px;
+    }
+    
+    /* Burst main image container */
+    .gallery-burst-main {
+        margin-bottom: 6px;
+    }
+    
+    .gallery-burst-main canvas {
+        box-shadow: none;
+    }
+    
+    /* Collection container - ensure proper order */
+    .gallery-collection-container {
+        gap: 8px;
+    }
+    
+    /* Collection indicator */
+    .gallery-collection-indicator {
+        text-align: center;
+        font-size: 11px;
+    }
+    
+    /* Collection strip - with margin to info panel */
+    .gallery-collection-strip {
+        height: clamp(50px, 10vh, 70px);
+        min-height: 50px;
+        padding: 5px 8px;
+        margin-bottom: clamp(6px, 1.5vh, 12px);
+    }
+    
+    .gallery-collection-thumb {
+        height: clamp(36px, 7vh, 50px);
+        width: auto;
+        border-width: 2px;
+    }
+    
+    /* Album controls - scaled for mobile */
+    .gallery-album-controls {
+        gap: 5px;
+        margin-bottom: 5px;
+    }
+    
+    .gallery-album-label {
+        font-size: 11px;
+        padding: 0 8px;
+    }
+    
+    .gallery-album-items-bar {
+        gap: 4px;
+        margin-bottom: 6px;
+    }
+    
+    .gallery-album-id-btn {
+        padding: 4px 7px;
+        font-size: 11px;
+        min-width: 45px;
+    }
+    
+    /* Modal grid */
+    .gallery-modal-grid {
+        gap: 6px;
+        padding: 6px;
+    }
+    
+    .gallery-modal-grid canvas {
+        max-width: 130px;
+        max-height: 130px;
+    }
+    
+    /* Examples modal */
+    .heif-examples-modal-window {
+        padding-top: 45px;
+    }
+    
+    .heif-examples-modal-content {
+        padding: 0 12px;
+    }
+    
+    .heif-examples-modal-content canvas {
+        max-width: 100%;
+        max-height: calc(100vh - 90px);
+        max-height: calc(100dvh - 90px);
+    }
+}
+
+/*
+ * PHONE (480px and below)
+ * - Even smaller padding
+ * - More compact controls
+ */
+@media (max-width: 480px) {
+    .gallery-modal-content {
+        gap: 6px;
+    }
+
+    .gallery-modal-info-panel {
+        padding: 6px 10px;
+        padding-bottom: max(6px, calc(6px + var(--safe-bottom)));
+        bottom: max(4px, calc(1vh + var(--safe-bottom)));
+    }
+
+    .gallery-modal-info-title {
+        font-size: 12px;
+    }
+
+    .gallery-modal-info-details {
+        font-size: 9px;
+        gap: 4px;
+    }
+    
+    .gallery-burst-controls {
+        gap: 4px;
+    }
+    
+    .gallery-burst-btn {
+        padding: 4px 7px;
+        font-size: 10px;
+    }
+    
+    /* Audio controls - hide volume on small screens */
+    .gallery-burst-controls .audio-volume-label,
+    .gallery-burst-controls input[type="range"] {
+        display: none;
+    }
+    
+    .gallery-burst-strip {
+        height: 50px;
+        min-height: 50px;
+        margin-bottom: max(50px, calc(8vh + var(--safe-bottom)));
+    }
+    
+    .gallery-burst-strip canvas {
+        height: 38px;
+    }
+    
+    .gallery-burst-indicator {
+        font-size: 10px;
+    }
+    
+    .gallery-collection-strip {
+        height: 50px;
+        min-height: 50px;
+        margin-bottom: max(50px, calc(8vh + var(--safe-bottom)));
+    }
+    
+    .gallery-collection-thumb {
+        height: 38px;
+    }
+    
+    .gallery-collection-indicator {
+        font-size: 10px;
+    }
+    
+    /* Album controls - very compact */
+    .gallery-album-controls {
+        gap: 3px;
+        margin-bottom: 3px;
+    }
+    
+    .gallery-album-label {
+        font-size: 10px;
+        padding: 0 5px;
+    }
+    
+    .gallery-album-items-bar {
+        gap: 3px;
+        margin-bottom: 4px;
+    }
+    
+    .gallery-album-id-btn {
+        padding: 3px 5px;
+        font-size: 10px;
+        min-width: 38px;
+    }
+    
+    .gallery-modal-grid canvas {
+        max-width: 100px;
+        max-height: 100px;
+    }
+}
+
+/* ===================================
+   LANDSCAPE MOBILE - MAXIMIZE IMAGE
+   =================================== */
+
+/*
+ * Landscape orientation on mobile devices
+ * - Maximize image area with proper centering
+ * - Transparent overlay info panel
+ * - Minimize UI chrome
+ * - Controls on right side for stereo/bothie
+ */
+@media (max-width: 900px) and (orientation: landscape) {
+    /* Base modal - gap adjustment for landscape */
+    .gallery-modal-content {
+        padding-top: max(36px, 6vh);
+        gap: 6px;
+    }
+    
+    /* Still images fill the viewport - CENTERED */
+    .gallery-modal-content > canvas,
+    .gallery-modal-content > img {
+        max-width: 100%;
+        max-height: calc(100vh - max(50px, 8vh));
+        max-height: calc(100dvh - max(50px, 8vh));
+    }
+    
+    /* Smaller close button — keep top padding for safe area */
+    .gallery-modal-header {
+        padding: max(10px, calc(2vh + var(--safe-top))) max(8px, calc(1.5vw + var(--safe-right))) 4px;
+    }
+    
+    .gallery-modal-quit {
+        width: 44px;
+        height: 44px;
+        padding: 11px;
+        box-sizing: border-box;
+        opacity: 0.6;
+    }
+    
+    /* Info panel - transparent overlay at bottom */
+    .gallery-modal-info-panel {
+        padding: 5px 10px;
+        padding-bottom: max(5px, calc(5px + var(--safe-bottom)));
+        font-size: 10px;
+        bottom: max(2px, var(--safe-bottom));
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(8px);
+    }
+    
+    .gallery-modal-info-title {
+        font-size: 10px;
+    }
+    
+    .gallery-modal-info-details {
+        font-size: 9px;
+        gap: 4px;
+    }
+    
+    .gallery-modal-full-info {
+        bottom: calc(35px + var(--safe-bottom));
+        max-height: 45vh;
+        max-height: 45dvh;
+        background: rgba(0, 0, 0, 0.8);
+    }
+    
+    /* 
+     * STEREO/BOTHIE CONTROLS - position on right side 
+     * These modals use gallery-burst-controls with only 2-3 buttons
+     * Exclude burst-view, collection-view, and album-view
+     */
+    .gallery-modal-content:not(.burst-view):not(.collection-view):not(.album-view) .gallery-burst-controls {
+        position: fixed;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        flex-direction: column;
+        gap: 5px;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 6px;
+        border-radius: 6px;
+        z-index: 1001;
+        animation: none;
+    }
+    
+    .gallery-modal-content:not(.burst-view):not(.collection-view):not(.album-view) .gallery-burst-btn {
+        padding: 5px 8px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    
+    .gallery-modal-content:not(.burst-view):not(.collection-view):not(.album-view) .gallery-burst-main canvas {
+        max-height: calc(100vh - 50px);
+        max-height: calc(100dvh - 50px);
+        max-width: calc(100vw - 100px);
+    }
+    
+    /* Audio controls labels - hide in landscape for space */
+    .gallery-modal-content .audio-time,
+    .gallery-modal-content .audio-status-label {
+        font-size: 9px;
+    }
+    
+    /* Burst strip in non-burst-view (audio-image) */
+    .gallery-modal-content:not(.burst-view) .gallery-burst-strip {
+        height: 45px;
+        min-height: 45px;
+    }
+    
+    .gallery-modal-content:not(.burst-view) .gallery-burst-strip canvas {
+        height: 35px;
+    }
+    
+    /* 
+     * ALBUM/FAVORITES CONTROLS - scale down for mobile landscape
+     * Keep controls at top but very compact
+     */
+    .gallery-album-controls {
+        gap: 3px;
+        margin-bottom: 3px;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 3px 6px;
+        border-radius: 4px;
+    }
+    
+    .gallery-album-controls .gallery-burst-btn {
+        padding: 3px 6px;
+        font-size: 9px;
+    }
+    
+    .gallery-album-label {
+        font-size: 9px;
+        padding: 0 4px;
+        min-width: auto;
+        white-space: normal;
+        text-align: center;
+    }
+    
+    .gallery-album-items-bar {
+        gap: 2px;
+        margin-bottom: 3px;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 2px 4px;
+        border-radius: 4px;
+        max-height: 30px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-wrap: nowrap;
+    }
+    
+    .gallery-album-id-btn {
+        padding: 2px 4px;
+        font-size: 9px;
+        min-width: 32px;
+    }
+    
+    /* Album view main image centering */
+    .gallery-modal-content.album-view .gallery-burst-main canvas {
+        max-height: calc(100vh - 90px);
+        max-height: calc(100dvh - 90px);
+        max-width: 100%;
+    }
+    
+    /* 
+     * COLLECTION VIEW - indicator text inside main area
+     * Strip on right side, centered and auto-sized
+     */
+    .gallery-collection-container {
+        flex-direction: row;
+        gap: 8px;
+    }
+    
+    /* Collection indicator - compact and inside main */
+    .gallery-collection-indicator {
+        position: absolute;
+        top: 1%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.6);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 9px;
+        white-space: nowrap;
+    }
+    
+    .gallery-collection-main {
+        flex: 1;
+        position: relative;
+    }
+    
+    .gallery-collection-canvas {
+        max-height: calc(100vh - 50px);
+        max-height: calc(100dvh - 50px);
+        max-width: calc(100vw - 100px);
+    }
+    
+    /* Collection strip - vertical on right, auto-height centered */
+    .gallery-collection-strip {
+        position: fixed; /* stays put */
+        right: 1%; /* Small gap to the right*/
+        top: 50%; /* in the middle vertically */
+        transform: translateY(-50%);
+        flex-direction: column; /* is a column*/
+        height: auto;
+        max-height: calc(100vh - 60px);
+        max-height: calc(100dvh - 60px);
+        min-height: auto;
+        width: 10%;
+        padding: 7px;
+        margin-bottom: 0;
+        border-radius: 6px;
+        overflow-y: auto;
+    }
+    
+    .gallery-collection-thumb {
+        width: 95%;
+        height: auto;
+        border-width: 2px;
+    }
+    
+    /* Modal grid */
+    .gallery-modal-grid {
+        gap: 5px;
+        padding: 4px;
+    }
+    
+    .gallery-modal-grid canvas {
+        max-height: 90px;
+        max-width: 90px;
+    }
+    
+    /* Examples modal */
+    .heif-examples-modal-window {
+        padding-top: 8px;
+    }
+    
+    .heif-examples-modal-content {
+        padding: 5px 15px;
+        min-height: 0;
+        height: auto;
+    }
+    
+    .heif-examples-modal-content canvas {
+        max-height: calc(100vh - 20px);
+        max-height: calc(100dvh - 20px);
+        max-width: calc(100vw - 30px);
+    }
+    
+    /* Burst indicator text - for NON-burst-view modals (audio-image, etc.) */
+    .gallery-modal-content:not(.burst-view) .gallery-burst-indicator {
+        font-size: 10px;
+        margin-top: 4px;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+    
+    /* Ensure burst-main has position relative for indicator positioning */
+    .gallery-modal-content:not(.burst-view) .gallery-burst-main {
+        position: relative;
+    }
+}
+
+/* ===================================
+   COMPARISON PAGE MOBILE LAYOUT
+   =================================== */
+
+@media (max-width: 768px) {
+    /* Better spacing for stacked comparison images */
+    .heif-image-comparison-content.row,
+    .sequences-comparison-content.row {
+        margin-top: 20px;
+        margin-bottom: 10px;
+    }
+
+    .heif-image-comparison-item {
+        margin-bottom: 15px;
+    }
+    
+    /* Add visual separator between HEIC vs JPEG comparison pairs */
+    .heif-image-comparison-content.row {
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+    
+    /* 
+     * WITHIN-SECTION separators: subtle spacing between comparison pairs
+     * Uses whitespace + subtle gradient rather than hard lines
+     */
+    .heif-image-comparison-content.row + .heif-image-comparison-content.row {
+        margin-top: 40px;
+        padding-top: 25px;
+        border-top: none;
+        position: relative;
+    }
+    
+    /* Subtle dot separator between comparisons within same section */
+    .heif-image-comparison-content.row + .heif-image-comparison-content.row::before {
+        content: '•  •  •';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 16px;
+        letter-spacing: 6px;
+        color: var(--color-blue-bright);
+    }
+    
+    /* Last comparison shouldn't have separator before footer */
+    .heif-image-comparison-content.row:last-of-type {
+        margin-bottom: 20px;
+    }
+    
+    /* Section separators - span full viewport width */
+    .heif-image-comparison-separator {
+        height: 60px;
+        background: var(--mobile-separator-gradient);
+        margin: 30px 0;
+        margin-left: calc(-4% - 10px);
+        margin-right: calc(-4% - 10px);
+        padding-left: calc(4% + 10px);
+        padding-right: calc(4% + 10px);
+        position: relative;
+        width: calc(100% + 8% + 20px);
+    }
+    
+    /* Center line accent for section separator */
+    .heif-image-comparison-separator::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 5%;
+        right: 5%;
+        height: 1px;
+        background: var(--mobile-separator-line);
+    }
+    
+    /* Reduce gap between sequences comparison items and info */
+    .sequences-comparison-content .sequences-comparison-image-container {
+        margin-bottom: 10px;
+    }
+    
+    /* Fix spacing for sequences comparison - ensure info panel doesn't touch next image */
+    .sequences-comparison-content.row,
+    .heif-image-comparison-content.row:has(#heif-container),
+    .heif-image-comparison-content.row:has(#gif-container) {
+        margin-bottom: 25px;
+        padding-bottom: 10px;
+    }
+    
+    /* Info panel spacing fix */
+    .sequences-comparison-info-panel {
+        margin-top: 8px;
+        margin-bottom: 15px;
+    }
+    
+    /* Fix info panel not overlapping images */
+    .heif-comparison-info-panel {
+        position: relative;
+        margin-top: 8px;
+    }
+
+    /* Comparison info panel adjustments */
+    .heif-comparison-info-panel {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .heif-comparison-info-title {
+        font-size: 12px;
+    }
+
+    .heif-comparison-info-details {
+        font-size: 10px;
+    }
+
+    /* Zoom preview size adjustments */
+    .heif-zoom-preview {
+        width: 100px;
+        height: 100px;
+    }
+
+    /* Sequences toolbar */
+    .sequences-toolbar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin: 15px 0;
+    }
+    
+    /* Fix gap before footer in comparison page */
+    .heif-comparison-content > .row:last-child,
+    .heif-comparison-content > div:last-child {
+        margin-bottom: 20px;
+    }
+    .sequences-toolbar-element {
+        flex: 0 0 auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .heif-image-comparison-content.row,
+    .sequences-comparison-content.row {
+        margin-top: 25px;
+    }
+
+    .heif-comparison-content-text h3 {
+        font-size: 1.2em;
+    }
+
+    .heif-comparison-content-text p {
+        font-size: 14px;
+        text-align: left;
+    }
+}
+
+/* ===================================
+   FOOTER MOBILE ADJUSTMENTS
+   =================================== */
+
+@media (max-width: 768px) {
+    .heif-footer-container {
+        padding: 15px 10px;
+        font-size: 12px;
+    }
+
+    .heif-footer-container span {
+        margin-bottom: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .heif-footer-container {
+        padding: 12px 8px;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+}
+
+/* ===================================
+   EXAMPLES PAGE MOBILE
+   =================================== */
+
+@media (max-width: 768px) {
+    .heif-example-container .heif-example-content {
+        height: 35vh;
+    }
+
+    .heif-example-content .heif-example-title {
+        font-size: 2.5vh;
+        height: auto;
+        min-height: 25%;
+        padding: 8px 15px 8px 8px;
+    }
+
+    .heif-examples-info-container {
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .heif-example-container .heif-example-content {
+        height: 30vh;
+    }
+
+    .heif-example-content .heif-example-title {
+        font-size: 14px;
+    }
+}
+
+/* ===================================
+   TECHNICAL PAGE MOBILE
+   =================================== */
+
+@media (max-width: 768px) {
+    .heif-technical-content h3 {
+        font-size: 1.3em;
+    }
+
+    .heif-technical-content p,
+    .heif-technical-content li {
+        font-size: 14px;
+    }
+
+    .heif-technical-content table {
+        font-size: 12px;
+    }
+
+    .heif-technical-content pre {
+        font-size: 11px;
+        overflow-x: auto;
+    }
+}
+
+/* ===================================
+   DOWNLOAD SECTION MOBILE
+   =================================== */
+
+@media (max-width: 768px) {
+    .heif-download-content {
+        padding-top: 20px;
+    }
+
+    .heif-download-content-title {
+        font-size: 24px;
+    }
+
+    .heif-download-content-info {
+        font-size: 14px;
+    }
+
+    .heif-download-content li {
+        font-size: 14px;
+    }
+}
+
+/* ===================================
+   GENERAL MOBILE UTILITIES
+   =================================== */
+
+@media (max-width: 768px) {
+    /* Add top margin to account for fixed nav */
+    .heif-examples-container:first-of-type {
+        margin-top: clamp(50px, 8vh, 64px);
+    }
+
+    /* Inside the fullpage wrapper (index page) the nav starts hidden and
+       sections are position:absolute, so no compensating margin is needed.
+       Stand-alone welcome containers on other pages still get the offset. */
+    .heif-welcome-container {
+        margin-top: clamp(50px, 8vh, 64px);
+    }
+    .heif-fullpage-wrapper .heif-welcome-container {
+        margin-top: 0;
+    }
+
+    /* Better touch targets */
+    a, button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Exception for inline links in text */
+    p a, li a, span a {
+        min-height: auto;
+        min-width: auto;
+    }
+}
+
+/* Hide desktop-only elements on mobile - ensure no space taken */
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+    }
+    
+    /* Ensure nav-dropdown (desktop) takes no space */
+    .heif-nav-items .nav-dropdown {
+        display: none !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
+
+/* Hide mobile-only elements on desktop */
+@media (min-width: 769px) {
+    .mobile-only {
+        display: none !important;
+    }
+
+    .mobile-menu-toggle {
+        display: none !important;
+    }
+
+}
+
+/* ===================================
+   GALLERY BURST GRID FIX (MOBILE)
+   =================================== */
+
+/* Portrait mode uses default styles from gallery.css:
+   - Single view: horizontal scrollable strip at bottom
+   - Grid view: flex-wrap grid of images
+   No overrides needed for portrait. */
+
+/* ===================================
+   DESKTOP DROPDOWN NAVIGATION
+   =================================== */
+
+/* Desktop dropdown wrapper */
+.nav-dropdown {
+    position: relative;
+    display: inline-block;
+    color: var(--transparent);
+}
+
+.nav-dropdown-trigger {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+
+/* Dropdown chevron indicator */
+.nav-dropdown-trigger::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid var(--color-gray-dark);
+    border-bottom: 2px solid var(--color-gray-dark);
+    transform: rotate(45deg);
+    transition: transform 0.2s ease, margin-top 0.2s ease;
+    margin-top: -3px;
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+
+.nav-dropdown:hover .nav-dropdown-trigger::after {
+    transform: rotate(-135deg);
+    margin-top: 3px;
+}
+
+.nav-dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background: var(--mobile-dropdown-content-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 0px;
+    padding: 0;
+    min-width: 140px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.nav-dropdown:hover .nav-dropdown-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.nav-dropdown-content .heif-nav-item {
+    display: block;
+    padding: 10px 16px !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    white-space: nowrap;
+    transition: background-color 0.15s ease;
+    line-height: 1.4 !important;
+}
+
+.nav-dropdown-content .heif-nav-item:hover {
+    background-color: var(--transparent) !important;
+}
+
+/* Hide desktop dropdowns on mobile */
+@media (max-width: 768px) {
+    .nav-dropdown {
+        display: none !important;
+    }
+}
+

@@ -3,7 +3,7 @@
 <!--
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,179 +15,458 @@
 
 <html lang="en">
     <head>
+
+        <!-- Cross-origin isolation for SharedArrayBuffer (needed by VVC decoder threads) -->
+        <script src="js/coi-register.js"></script>
+
+
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="description" content="Comparison of High Efficiency Image Coding (HEVC or H.265) encoded HEIF files with JPEG images and GIF animations.">
         <meta name="keywords" content="High Efficiency Image File, High Efficiency Video Coding, HEVC, HEIF, HEIC, MP4, ISOBMFF, MPEG, ISO Base Media File Format, Image Format, Image burst, animation format, derived images, non-destructive image processing, Nokia Technologies, HEIF source code">
 
         <title>HEIF Comparison - High Efficiency Image File Format</title>
+        <link rel="icon" href="img/heif_logo.png" type="image/png">
 
-        <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+        <!-- Testing new typefaces and fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" crossorigin>
+
+        <link href="css/theme-variables.css" rel="stylesheet" type='text/css'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type='text/css'>
         <link href="css/styles.css" rel="stylesheet" type='text/css'>
+        <link href="css/mobile.css" rel="stylesheet" type='text/css'>
+        
+        <!-- Theme manager - loaded early to prevent flash of wrong theme -->
+        <script src="js/theme-manager.js"></script>
 
-        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-        <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-        <![endif]-->
-        <script src="lib/jquery.min.js"></script>
-        <script src="js/libde265-selector.js"></script>
-        <script src="js/heif-api.js"></script>
-        <script src="js/heif-extension.js"></script>
-        <script src="js/hevc-decoder.js"></script>
-        <script src="js/image-provider.js"></script>
-        <script src="js/footer.js"></script>
-        <script src="js/comparison.js"></script>
+        <link rel="preload" href="js/heif-raw.wasm" as="fetch" crossorigin="anonymous">
+
+        <script defer src="js/heif-utils.js"></script>
+        <script defer src="js/heif-raw.js"></script>
+        <script defer src="js/heif.js"></script>
+        <script defer src="js/heif-extension.js"></script>
+        <script defer src="js/vvdec/vvdecapp.js"></script>
+        <script defer src="js/decoder-manager.js"></script>
+        <script defer src="js/image-provider.js"></script>
+        <script defer src="js/footer.js"></script>
+        <script defer src="js/mobile-nav.js"></script>
+        <script defer src="js/comparison.js"></script>
+        <script defer src="js/zoom.js"></script>
+        <script defer src="js/context-menu.js"></script>
+
+        <style>
+            .comparison-loading-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 99; /* below .heif-nav-container (z-index: 100) */
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background: var(--bg-primary, #fff);
+                transition: opacity 0.4s ease, visibility 0.4s ease;
+            }
+            .comparison-loading-overlay.hidden {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .comparison-loading-spinner {
+                width: 48px;
+                height: 48px;
+                border: 4px solid var(--border-color, #ddd);
+                border-top-color: var(--accent-color, #0066cc);
+                border-radius: 50%;
+                animation: comp-spin 0.8s linear infinite;
+            }
+            .comparison-loading-text {
+                margin-top: 1rem;
+                font-family: 'Public Sans', sans-serif;
+                font-size: 0.95rem;
+                color: var(--text-secondary, #555);
+                opacity: 0;
+                transition: opacity 0.4s ease;
+            }
+            .comparison-loading-text.visible {
+                opacity: 1;
+            }
+            @keyframes comp-spin {
+                to { transform: rotate(360deg); }
+            }
+            .comparison-section-placeholder {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 260px;
+                width: 100%;
+            }
+            .comparison-section-placeholder.hidden {
+                display: none;
+            }
+            #comparison-6.not-ready {
+                display: none;
+            }
+        </style>
     </head>
+    <!--
+        Power-user debug logging:
+            HEIFFileLogger.verbose = true   (from DevTools console)
+        expands the compact per-file decode summary into a full
+        group. Persisted in localStorage — remember to set it back
+        to false, verbose mode is slow on large galleries. No UI
+        control or URL switch by design.
+    -->
     <body>
-        <div class="heif-nav-container">
-            <nav class="heif-nav">
-                <div class="row center-block">
-                    <div class="col-sm-12 col-md-4">
-                        <a href="index.html">
-                            <div class="heif-nav-title">
-                                <div class="heif-nav-title-big">HEIF</div>
-                                <div class="heif-nav-title-small">Image Format</div>
-                            </div>
+        <div role="navigation" class="heif-nav-container">
+                <nav class="heif-nav">
+                    <div class="heif-nav-row">
+                        <a href="index.html" class="heif-nav-title">
+                            <div class="heif-nav-title-big">H E I F</div>
+                            <div class="heif-nav-title-small">Image File Format</div>
                         </a>
-                    </div>
 
-                    <div class="col-sm-12 col-md-8">
-                        <a href="examples.html">
-                            <div class="heif-nav-item">
-                                EXAMPLES
+                        <div class="heif-nav-items">
+                            <!-- Desktop dropdown navigation -->
+                            <div class="nav-dropdown desktop-only">
+                                <a class="heif-nav-item nav-dropdown-trigger">EXAMPLES</a>
+                                <div class="nav-dropdown-content">
+                                    <a href="gallery.html" class="heif-nav-item">Gallery</a>
+                                    <a href="comparison.html" class="heif-nav-item">Compare</a>
+                                </div>
                             </div>
-                        </a>
-                        <a href="comparison.html">
-                            <div class="heif-nav-item heif-nav-item-selected">
-                                COMPARE
+                            <div class="nav-dropdown desktop-only">
+                                <a class="heif-nav-item nav-dropdown-trigger">INFO</a>
+                                <div class="nav-dropdown-content">
+                                    <a href="technical.html" class="heif-nav-item">Technical Info</a>
+                                    <a href="news.html" class="heif-nav-item">News</a>
+                                </div>
                             </div>
-                        </a>
-                        <a href="technical.html">
-                            <div class="heif-nav-item">
-                                TECHNICAL INFO
+                            <a href="#download" class="heif-nav-item desktop-only">DOWNLOAD</a>
+                            
+                            <!-- Mobile dropdown structure -->
+                            <div class="mobile-dropdown mobile-only">
+                                <div class="mobile-dropdown-header">EXAMPLES</div>
+                                <div class="mobile-dropdown-content">
+                                    <a href="gallery.html" class="heif-nav-item">Gallery</a>
+                                    <a href="comparison.html" class="heif-nav-item">Compare</a>
+                                </div>
                             </div>
-                        </a>
-                        <a href="news.html">
-                            <div class="heif-nav-item">
-                                NEWS
+                            <div class="mobile-dropdown mobile-only">
+                                <div class="mobile-dropdown-header">INFO</div>
+                                <div class="mobile-dropdown-content">
+                                    <a href="technical.html" class="heif-nav-item">Technical Info</a>
+                                    <a href="news.html" class="heif-nav-item">News</a>
+                                </div>
                             </div>
-                        </a>
-                        <a href="#download">
-                            <div class="heif-nav-item">
-                                DOWNLOAD
-                            </div>
-                        </a>
+                        </div>
+
+                        <div class="mobile-nav-controls mobile-only">
+                            <button class="mobile-menu-toggle" aria-label="Toggle navigation menu">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </nav>
+                </nav>
+        </div>
+
+        <!-- Loading screen — dismissed once VVC sections decode -->
+        <div id="comparison-loading-overlay" class="comparison-loading-overlay">
+            <div class="comparison-loading-spinner"></div>
+            <p id="comparison-loading-slow" class="comparison-loading-text"></p>
         </div>
 
         <div class="heif-comparison-content">
-            <p><center><b><font color="darkblue"> All the example files in this page are under copyright &#169; 2017-2021 Nokia Corporation and/or its subsidiary(-ies)</font></center></b></p>
-			<h2>Comparison with other formats</h2>
-            <p>
-                HEIF standard compliant files can utilize
-                High Efficiency Image Coding (HEVC or H.265) encoded media. HEVC doubles the data compression ratio when
-                compared to H.264/MPEG-4 AVC while keeping the same image quality. This gives HEIF files a significant
-                advantage in still images, image sequences, cinemagraphs and computational photography use cases.
-                A more detailed comparison table can be found <a href="technical.html#table-2">here</a>.
-            </p>
 
-            <h3>HEIF vs Animated GIF</h3>
+            <!-- Section 1: VVC in HEIF -->
+            <section class="heif-comparison-section">
+                <div class="heif-comparison-section-inner">
+                    <div class="heif-comparison-content-text">
+                        <h3>VVC in HEIF</h3>
+                        <p>
+                            For storage of high resolution, high definition images, the HEIF standard allows the use of Versatile Video Coding (VVC or H.266) encoded media.
+                            The VVC standard aims to provide further improvements in compression, outperforming other codecs especially with highest definition content.
+                            Below examples demonstrate the use of VVC in HEIF, to store 8K and 4K images, compressing them with a high ratio, retaining the quality of the
+                            original lossless image to a very high degree.
+                            <a href="gallery.html?set=vvc">See more VVC images in the gallery &rarr;</a>
+                        </p>
+                    </div>
+                    <div class="heif-image-comparison-content row" id="comparison-0">
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="HEIF"/>
+                                <div class="heif-zoom-preview"></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="JPEG"/>
+                                <div class="heif-zoom-preview"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-            <div class="sequences-comparison-content row">
-                <div id="heif-container" class="col-sm-6 sequences-comparison-image-container heif-fixed-512px">
-                    <img id="heif-image" alt="heif"/>
+            <!-- Section 2: VVC vs HEVC -->
+            <section class="heif-comparison-section">
+                <div class="heif-comparison-section-inner">
+                    <div class="heif-comparison-content-text">
+                        <h3>VVC vs HEVC</h3>
+                        <p>
+                            VVC (H.266) provides further compression gains over HEVC (H.265) for still images stored in HEIF.
+                            The following example compares the two codecs on the same scene.
+                        </p>
+                    </div>
+                    <div id="comparison-6-placeholder" class="comparison-section-placeholder">
+                        <div class="comparison-loading-spinner"></div>
+                    </div>
+                    <div class="heif-image-comparison-content row not-ready" id="comparison-6">
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="VVC"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="HEVC"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div id="gif-container" class=" col-sm-6 sequences-comparison-image-container heif-fixed-512px">
-                    <img id="gif-image"/>
-                </div>
-                <p class="sequences-comparison-loading" id="sequences-comparison-loading">LOADING...</p>
-            </div>
+            </section>
 
-            <div class="sequences-comparison-content row">
-                <div id="heif-container-2" class="col-sm-6 sequences-comparison-image-container heif-fixed-512px">
-                    <img id="heif-image-2" alt="heif"/>
+            <!-- Section 3: SlimHEIF -->
+            <section class="heif-comparison-section">
+                <div class="heif-comparison-section-inner">
+                    <div class="heif-comparison-content-text">
+                        <h3>Low overhead Image File Format (SlimHEIF)</h3>
+                        <p>
+                            SlimHEIF is the latest advancement in file size compression in the HEIF domain. The low overhead amendment to the HEIF standard [ISO/IEC 23008-12]
+                            defines a new file level structure that enables removal of redundant metadata from the file. This results in files storing small and simple images,
+                            such as icons, thumbnails or emojis, to be significantly smaller in size than their original HEIF counterparts. Experimental results on the topic
+                            show that a reduction of 30% to 80% in file size is achievable with SlimHEIF, presenting it to be a de facto standard for its applications.
+                        </p>
+                    </div>
+                    <div class="heif-image-comparison-content row" id="comparison-5">
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="SlimHEIF"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="HEIC"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div id="gif-container-2" class=" col-sm-6 sequences-comparison-image-container heif-fixed-512px">
-                    <img id="gif-image-2"/>
-                </div>
-                <p class="sequences-comparison-loading" id="sequences-comparison-loading-2">LOADING...</p>
-            </div>
+            </section>
 
-            <div class="sequences-toolbar" id="sequences-toolbar">
-                <div class="sequences-toolbar-grid sequences-toolbar-element toolbar-icon-container" onclick="location.href='sequences-grid.html#' + getFileIndex();">
+            <!-- Section 4: HEIF vs Animated GIF -->
+            <section class="heif-comparison-section">
+                <div class="heif-comparison-section-inner">
+                    <div class="heif-comparison-content-text">
+                        <h3>HEIF vs Animated GIF</h3>
+                        <p>
+                            HEIF is also a suitable solution for storing of GIF-like image sequences, providing great compression and quality over the legacy format.
+                        </p>
+                    </div>
+                    <div class="heif-image-comparison-content row">
+                        <div id="heif-container" class="col-sm-6 sequences-comparison-image-container">
+                            <img id="heif-image" alt="heif"/>
+                        </div>
+                        <div id="gif-container" class="col-sm-6 sequences-comparison-image-container">
+                            <img id="gif-image"/>
+                        </div>
+                        <p class="sequences-comparison-loading" id="sequences-comparison-loading">LOADING...</p>
+                    </div>
+                    <div class="sequences-comparison-content row">
+                        <div id="heif-container-2" class="col-sm-6 sequences-comparison-image-container">
+                            <img id="heif-image-2" alt="heif"/>
+                        </div>
+                        <div id="gif-container-2" class="col-sm-6 sequences-comparison-image-container">
+                            <img id="gif-image-2"/>
+                        </div>
+                        <p class="sequences-comparison-loading" id="sequences-comparison-loading-2">LOADING...</p>
+                    </div>
+                    <div class="sequences-toolbar" id="sequences-toolbar">
+                        <div class="sequences-toolbar-comparison sequences-toolbar-element toolbar-icon-container selected" id="comparison"></div>
+                        <div class="sequences-toolbar-home sequences-toolbar-element toolbar-icon-container" onclick="location.href=getHome();"></div>
+                    </div>
                 </div>
-                <div class="sequences-toolbar-cover sequences-toolbar-element toolbar-icon-container" onclick="location.href='sequences-cover.html#' + getFileIndex();">
-                </div>
-                <div class="sequences-toolbar-playback sequences-toolbar-element toolbar-icon-container" onclick="location.href='sequences-playback.html#' + getFileIndex();">
-                </div>
-                <div class="sequences-toolbar-comparison sequences-toolbar-element toolbar-icon-container selected" id="comparison">
-                </div>
-                <div class="sequences-toolbar-home sequences-toolbar-element toolbar-icon-container" onclick="location.href=getHome();">
-                </div>
-            </div>
+            </section>
 
-            <h3>HEIF vs JPEG</h3>
-            <div class="heif-image-comparison-content row" id="comparison-1">
-                <div class="col-sm-6 heif-image-comparison-heif">
-                    <div class="col-sm-6 heif-image-comparison-crop-window"></div>
+            <!-- Section 5: HEIF vs JPEG -->
+            <section class="heif-comparison-section">
+                <div class="heif-comparison-section-inner">
+                    <div class="heif-comparison-content-text">
+                        <h3>HEIF vs JPEG</h3>
+                        <p>
+                            In general HEIF with image payload encoded with HEVC codec, provides great advancements over legacy formats like JPEG. The
+                            following examples demonstrate the gains of HEVC encoding in HEIF, compared to JPEG. The quality and compression benefit is apparent and significant.
+                        </p>
+                    </div>
+                    <div class="heif-image-comparison-content row" id="comparison-1">
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="HEIF"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="JPEG"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="heif-image-comparison-content row" id="comparison-2">
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="HEIF"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="JPEG"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="heif-image-comparison-content row" id="comparison-3">
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="HEIF"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 heif-image-comparison-item">
+                            <div class="heif-image-comparison-wrapper">
+                                <img class="heif-comparison-image" alt="JPEG"/>
+                                <div class="heif-zoom-lens"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-sm-6 heif-image-comparison-jpg">
-                    <div class="col-sm-6 heif-image-comparison-crop-window"></div>
-                </div>
-            </div>
-            <p class="heif-comparison-crop-title"></p>
-            <div class="heif-image-comparison-content-crop row" id="comparison-1-crop">
-                <div class="col-sm-6 heif-image-comparison-heif">
-                </div>
-                <div class="col-sm-6 heif-image-comparison-jpg">
-                </div>
-            </div>
+            </section>
 
-            <div class="heif-image-comparison-separator"></div>
-
-            <div class="heif-image-comparison-content row" id="comparison-2">
-                <div class="col-sm-6 heif-image-comparison-heif">
-                    <div class="col-sm-6 heif-image-comparison-crop-window"></div>
-                </div>
-                <div class="col-sm-6 heif-image-comparison-jpg">
-                    <div class="col-sm-6 heif-image-comparison-crop-window"></div>
-                </div>
-            </div>
-            <p class="heif-comparison-crop-title"></p>
-            <div class="heif-image-comparison-content-crop row" id="comparison-2-crop">
-                <div class="col-sm-6 heif-image-comparison-heif">
-                </div>
-                <div class="col-sm-6 heif-image-comparison-jpg">
-                </div>
-            </div>
-
-            <div class="heif-image-comparison-separator"></div>
-
-            <div class="heif-image-comparison-content row" id="comparison-3">
-                <div class="col-sm-6 heif-image-comparison-heif">
-                    <div class="col-sm-6 heif-image-comparison-crop-window"></div>
-                </div>
-                <div class="col-sm-6 heif-image-comparison-jpg">
-                    <div class="col-sm-6 heif-image-comparison-crop-window"></div>
-                </div>
-            </div>
-            <p class="heif-comparison-crop-title"></p>
-            <div class="heif-image-comparison-content-crop row" id="comparison-3-crop">
-                <div class="col-sm-6 heif-image-comparison-heif">
-                </div>
-                <div class="col-sm-6 heif-image-comparison-jpg">
-                </div>
-            </div>
+        </div>
+        <div class="copyright-notice">
+            <p>Image content is sourced under various free and proprietary licences. See the project repository for provenance details.</p>
+        </div>
 
             <script>
+            document.addEventListener('DOMContentLoaded', function() {
                 var footer = new Footer();
                 var comparison = new Comparison();
+                comparison.initialize();
+                
+                // Initialize zoom after a delay to let HEIF decode
+                setTimeout(function() {
+                    var comparisonZoom = new ComparisonZoom({
+                        containerSelector: '.heif-image-comparison-content',
+                        previewSize: 200,
+                        zoomLevel: 3
+                    }).init();
+                }, 1500);
+                
+                var contextMenu = new ContextMenu({
+                    containerSelector: '.heif-comparison-content',
+                    actions: ['download', 'downloadPng', 'divider', 'fullscreen']
+                }).init();
+
+                // Dismiss global loading overlay once comparison-0 is ready.
+                // Comparison-6 has its own local inline overlay.
+                (function() {
+                    var mapping = comparison._imageComparisonMapping;
+
+                    function trackSection(sectionId, overlay) {
+                        var el = document.getElementById(sectionId);
+                        var m = mapping[sectionId];
+                        if (!el || !m) { overlay.classList.add('hidden'); return; }
+                        var items = el.querySelectorAll('.heif-image-comparison-item');
+                        var urls = [m.heicUrl, m.jpgUrl];
+                        var pending = 0;
+
+                        function dismiss() {
+                            pending--;
+                            if (pending <= 0) {
+                                document.removeEventListener('heif-decoded', onDecoded);
+                                overlay.classList.add('hidden');
+                            }
+                        }
+
+                        for (var i = 0; i < items.length && i < urls.length; i++) {
+                            if (!urls[i]) continue;
+                            pending++;
+                            if (!HEIFUtils.isHeifFile(urls[i])) {
+                                var img = items[i].querySelector('img');
+                                if (img) {
+                                    if (img.complete && img.naturalWidth > 0) { dismiss(); }
+                                    else { img.addEventListener('load', dismiss); }
+                                } else { dismiss(); }
+                            }
+                        }
+
+                        if (pending <= 0) { overlay.classList.add('hidden'); return; }
+
+                        function onDecoded(e) {
+                            var section = e.target.closest('.heif-image-comparison-content');
+                            if (section && section.id === sectionId) { dismiss(); }
+                        }
+                        document.addEventListener('heif-decoded', onDecoded);
+
+                        // Safety timeout
+                        setTimeout(function() {
+                            document.removeEventListener('heif-decoded', onDecoded);
+                            overlay.classList.add('hidden');
+                        }, 30000);
+                    }
+
+                    // Global overlay — only comparison-0
+                    var globalOverlay = document.getElementById('comparison-loading-overlay');
+                    trackSection('comparison-0', globalOverlay);
+
+                    // Show slow message after 5 s (global only)
+                    var slowTimer = setTimeout(function() {
+                        if (!globalOverlay.classList.contains('hidden')) {
+                            var msg = document.getElementById('comparison-loading-slow');
+                            if (msg) {
+                                msg.textContent = 'This is taking longer than usual';
+                                msg.classList.add('visible');
+                            }
+                        }
+                    }, 5000);
+
+                    // Local placeholder — comparison-6
+                    var placeholder6 = document.getElementById('comparison-6-placeholder');
+                    var section6 = document.getElementById('comparison-6');
+                    trackSection('comparison-6', {
+                        classList: {
+                            contains: function() { return false; },
+                            add: function(cls) {
+                                if (cls === 'hidden') {
+                                    placeholder6.classList.add('hidden');
+                                    section6.classList.remove('not-ready');
+                                }
+                            }
+                        }
+                    });
+                })();
+            }); // DOMContentLoaded
             </script>
         </div>
     </body>

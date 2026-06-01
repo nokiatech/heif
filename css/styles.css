@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -9,213 +9,490 @@
  * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
  */
 
-body {
-    font-family: 'Open Sans', sans-serif !important;
+/* ============================================
+ * HEIF IMAGE REPLACEMENT
+ * Hide original img elements after they're replaced with canvas by heif-extension.js
+ * ============================================ */
+.__HEIF_replaced {
+    display: none !important;
+}
+
+/* ============================================
+ * THEME TOGGLE BUTTON (deprecated)
+ * ============================================ */
+.theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: var(--nav-dropdown-bg);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--nav-hover);
+    transform: scale(1.05);
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.theme-toggle-btn .theme-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* ============================================
+ * BASE STYLES
+ * ============================================ */
+html {
     height: 100%;
 }
+
+body {
+    height: 100%;
+    background-color: var(--bg-page);
+    color: var(--fg-default);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Index page: body overflow hidden when fullpage wrapper is present */
+body:has(.heif-fullpage-wrapper) {
+    overflow: hidden;
+}
+
+/*
+.public-sans-<uniquifier> {
+  font-family: "Public Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: <weight>;
+  font-style: normal;
+}
+*/
 
 a:hover {
     text-decoration: none;
 }
 
 .heif-nav {
-    width: 95%;
-    margin-left: 5%;
-    margin-top: 1vw;
-    margin-bottom: 1vw;
-    color: #4b5f82;
+    width: 100%;
+    padding: 0 2%;
+    margin-top: 0.5vw;
+    margin-bottom: 0.5vw;
+    color: var(--fg-muted);
+}
+
+.heif-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    min-height: 60px;
+}
+
+.heif-nav .heif-nav-title {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+    letter-spacing: 4px;
+    font-size: clamp(24px, 3vw, 40px);
+    text-align: left;
+    line-height: 1;
+    color: var(--fg-on-dark);
+    flex-shrink: 0;
+    z-index: 10;
+    padding: 5px clamp(5px, 0.8vw, 10px);
+    background-color: var(--color-blue-digital);
+    border-radius: 10px;
+    transition: background-color 0.2s ease; /* Animates the hover bg color change*/
 }
 
 .heif-nav .heif-nav-title-big {
-    margin-right: 10%;
     font-weight: 600;
     letter-spacing: 4px;
-    font-size: 40px;
-    text-align: center;
-    line-height: 40px;
-    color: #1b6f9f;
+    word-spacing: -0.25em;
+    font-size: clamp(24px, 3vw, 40px);
+    text-align: left;
+    line-height: 1;
+    color: var(--fg-on-dark);
+    transition: color 0.2s ease, letter-spacing 0.3s ease, word-spacing 0.3s ease;
 }
 
 .heif-nav .heif-nav-title-small {
-    margin-right: 10%;
     font-weight: 400;
-    font-size: 12px;
-    text-align: center;
-    line-height: 12px;
-    color: #1b6f9f;
+    font-size: clamp(8px, 1vw, 12px);
+    text-align: left;
+    line-height: 1.2;
+    color: var(--fg-on-dark);
+    transition: color 0.2s ease; /* Animates the hover text color change*/
+}
+
+.heif-nav-items {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    gap: clamp(10px, 4vw, 50px);
 }
 
 .heif-nav .heif-nav-item {
-    float: left;
-    display: inline-block;
-    margin-right: 5%;
+    display: block;
     font-weight: 600;
-    font-size: 15px;
-    line-height: 52px;
-    color: #1b6f9f;
+    font-size: clamp(11px, 1.2vw, 15px);
+    line-height: 2.5;
+    color: var(--transparent);
+    padding: 50% clamp(5px, 0.8vw, 10px);
+    border-radius: 0px;
+    background-color: var(--transparent);
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
 }
 
-.heif-nav .heif-nav-item-selected {
-    color: #9ca8bb;
+.heif-nav .heif-nav-item:hover {
+    background-color: var(--transparent);
+}
+
+
+/** Title (HEIF) hover settings. Changes colour. */
+.heif-nav .heif-nav-title:hover {
+    background-color: var(--nav-hover);
+}
+.heif-nav .heif-nav-title:hover .heif-nav-title-big{
+    color: var(--color-blue-digital);
+    letter-spacing: 0.35em;
+    word-spacing: 0em;
+}
+
+.heif-nav .heif-nav-title:hover .heif-nav-title-small{
+    color: var(--color-blue-digital);
 }
 
 .heif-nav-container {
+    position: fixed;
+    top: 0;
     width: 100%;
-    border-bottom-style: solid;
-    border-bottom-color: #9ca8bb;
-    border-bottom-width: 1px;
+    z-index: 100;
+    background: var(--bg-muted);
+    /* Navbar starts hidden above viewport */
+    transform: translateY(-100%);
+    transition: transform 1.2s ease-in-out, background-color 0.3s ease;
+}
+
+/* Navbar slides down in sync with the section crossfade */
+.heif-nav-container.nav-visible {
+    transform: translateY(0);
+}
+
+/* Fullpage wrapper — stacks all sections for crossfade */
+.heif-fullpage-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+}
+
+.heif-fullpage-section {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+    /* No fade-out transition — outgoing section stays solid
+       until JS removes .heif-section-active after the incoming
+       section has fully faded in. */
+}
+
+.heif-fullpage-section.heif-section-active {
+    opacity: 1;
+    z-index: 1;
+    transition: opacity 1.2s ease-in-out;
+    pointer-events: auto;
+}
+
+/* Outgoing section kept visible underneath while incoming fades in */
+.heif-fullpage-section.heif-section-outgoing {
+    opacity: 1;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .heif-welcome-container {
     width: 100%;
+    height: 100vh;
+    height: 100dvh;
     position: relative;
-    color: #4b5f82;
+    color: var(--fg-muted);
     text-align: center;
-    background-color: #74b7dd;
+    background-color: #1a1a1a;
+    overflow: hidden;
 }
 
-.heif-welcome-container canvas {
+/* Showcase sections — same pattern as hero, full viewport height */
+.heif-showcase-container {
+    display: block;
     width: 100%;
-    height: 100%;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    position: relative;
+    color: var(--fg-muted);
+    text-align: center;
+    background-color: #1a1a1a;
+    overflow: hidden;
+}
+
+/* Canvas starts hidden, fades in when ready */
+.heif-welcome-container canvas,
+.heif-showcase-container canvas {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.6s ease-out;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    object-fit: cover;
+    object-position: center;
+}
+
+.heif-welcome-container.hero-ready canvas,
+.heif-showcase-container.showcase-ready canvas {
+    opacity: 1;
+}
+
+/* Showcase message container — mirrors hero layout */
+.heif-showcase-message-container {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    position: absolute;
+    z-index: 2;
+    width: 140%;
+    padding: 8em 4em;
+    font-weight: 100;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 35%, rgba(0, 0, 0, 0) 65%);
+    opacity: 0;
+    transition: opacity 0.5s ease-out 0.1s, transform 0.5s ease-out 0.1s;
+}
+
+.heif-showcase-container.showcase-ready .heif-showcase-message-container {
+    opacity: 1;
+}
+
+.heif-showcase-container .heif-welcome-hero-technical-info {
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.4s ease-out 0.5s;
+}
+
+.heif-showcase-container.showcase-ready .heif-welcome-hero-technical-info {
+    opacity: 1;
+}
+
+/* Text starts hidden, animates in after hero is ready */
+.heif-welcome-message-big,
+.heif-welcome-message-medium,
+.heif-welcome-message-small {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.heif-welcome-container.hero-ready .heif-welcome-message-big,
+.heif-showcase-container.showcase-ready .heif-welcome-message-big {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
+}
+
+.heif-welcome-container.hero-ready .heif-welcome-message-medium,
+.heif-showcase-container.showcase-ready .heif-welcome-message-medium {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.2s;
+}
+
+.heif-welcome-container.hero-ready .heif-welcome-message-small,
+.heif-showcase-container.showcase-ready .heif-welcome-message-small {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.3s;
+}
+
+.heif-welcome-hero-technical-info {
+    position: absolute;
+    z-index: 2;
+    right: 10px;
+    bottom: 10px;
+    color: var(--fg-on-dark);
+    font-size: 0.9vw;
+    font-weight: 300;
+    opacity: 0;
+    transition: opacity 0.4s ease-out 0.5s;
+}
+
+.heif-welcome-container.hero-ready .heif-welcome-hero-technical-info {
+    opacity: 1;
 }
 
 .heif-welcome-message-container {
-    top: 30%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     position: absolute;
-    width: 100%;
+    z-index: 2;
+    width: 140%;
+    padding: 8em 4em;
     font-weight: 100;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 35%, rgba(0, 0, 0, 0) 65%);
 }
 
 .heif-examples-message-big,
 .heif-welcome-message-big {
     font-size: 4vw;
-    color: white;
+    color: var(--fg-on-dark);
+}
+
+.heif-welcome-message-medium{
+    font-size: 3vw;
+    color: var(--fg-on-dark);
 }
 
 .heif-examples-message-small,
 .heif-welcome-message-small {
     font-size: 2vw;
-    color: white;
-}
-
-.heif-welcome-hero-technical-info {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    color: white;
-    font-size: 1.25vw;
+    color: var(--fg-on-dark);
+    max-width: 60%;
+    margin: 0 auto;
 }
 
 .heif-about-container.row {
     margin: 0;
     width: 100%;
-    background-color: #74b7dd;
+    background-color: var(--bg-accent-light);
 }
 
 .heif-about-content,
 .heif-features-content,
-.heif-download-content
-{
-    margin-bottom: 26px;
-    padding-top: 5%;
-    padding-left: 10%;
-    color: white;
+.heif-download-content {
+    margin-bottom: clamp(16px, 3vw, 26px);
+    padding-top: clamp(3%, 4vw, 5%);
+    padding-left: clamp(5%, 8vw, 10%);
+    padding-right: clamp(5%, 8vw, 10%);
+    color: var(--fg-on-dark);
 }
 
 .heif-about-content,
-.heif-features-content
-{
+.heif-features-content {
     margin-bottom: 0px;
-    padding-top: 2%;
+    padding-top: clamp(1%, 2vw, 2%);
 }
 
 .heif-about-content-title,
 .heif-features-content-title,
 .heif-download-content-title {
-    margin-bottom: 26px;
-    line-height: 38px;
-    font-size: 40px;
+    margin-bottom: clamp(12px, 2vw, 26px);
+    line-height: 1.2;
+    font-size: clamp(24px, 4vw, 40px);
 }
 
 .heif-about-content-info,
 .heif-download-content-info,
 .heif-download-content-link {
-    margin-bottom: 26px;
-    line-height: 28px;
-    font-size: 20px;
+    margin-bottom: clamp(12px, 2vw, 26px);
+    line-height: 1.4;
+    font-size: clamp(14px, 2vw, 20px);
+}
+
+.heif-features-content li,
+.heif-download-content li {
+    margin-bottom: clamp(10px, 2vw, 26px);
+    color: var(--fg-on-dark);
+    text-decoration: none;
+    font-size: clamp(14px, 2vw, 20px);
+}
+
+.heif-features-content ul,
+.heif-download-content ul {
+    padding-left: clamp(16px, 2vw, 28px);
 }
 
 .heif-download-container.row {
     margin-left: 0;
     width: 100%;
-    height: 498px;
-    background-color: #10425f;
-}
-
-.heif-features-content li,
-.heif-download-content li {
-    margin-bottom: 26px;
-    color: white;
-    font-size: 20px;
-}
-
-.heif-features-content ul,
-.heif-download-content ul {
-    padding-left: 28px;
-}
-
-.heif-features-content {
-    padding-right: 10%;
-}
-
-.heif-download-content a {
-    color: white;
-}
-
-.heif-download-content a:hover {
-    color: #74b7dd;
+    background-color: var(--footer-bg);
+    /* Remove fixed height, let content determine it */
 }
 
 .heif-footer-container {
     text-align: center;
-    color: white;
-    background-color: #10425f;
-    padding-bottom: 10px;
+    color: var(--fg-on-dark);
+    background-color: var(--footer-bg);
+    padding: clamp(8px, 2vw, 20px) clamp(10px, 3vw, 20px);
+    font-size: clamp(11px, 1.5vw, 14px);
 }
 
 .heif-footer-container span {
     display: block;
+    margin-bottom: clamp(2px, 0.5vw, 5px);
 }
 
 .heif-examples-container {
-    background-color: #faf9f9;
-    padding: 20px;
+    background-color: var(--bg-surface);
+    padding: 100px 12% ;
 }
 
 .heif-examples-container .row {
     margin: 0;
 }
 
+.heif-examples-info-container{
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 0;
+    text-align: left;
+}
+
 .heif-examples-message-container {
+    margin-top: 100px;
     margin-left: 20px;
     padding: 0;
+    text-align: center;
 }
 
 .heif-examples-container .heif-example-container {
     height: 50vh;
-    background-color: #faf9f9;
+    background-color: var(--bg-surface);
     padding: 20px;
 }
 
 .heif-example-container .heif-example-content {
-    background-color: grey;
+    background-color: var(--bg-muted);
     width: 100%;
     height: 100%;
     padding: 10px;
     position: relative;
     transition: opacity .1s ease-in-out;
-    box-shadow: 2px 2px 2px #888888;
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
+    background-size: cover;
+    background-position: center; /* center-crop like object-fit: cover */
+    overflow: hidden;
 }
 
 .heif-example-container .heif-example-content:hover {
@@ -227,12 +504,43 @@ a:hover {
     font-weight: 100;
     height: 30%;
     width: calc(100% - 20px);
-    color: black;
+    color: var(--fg-strong);
     padding: 5px 20px 5px 5px;
-    background-color: rgba(242, 250, 253, 0.4);
+    background-color: rgba(255, 255, 255, 0.88);
     position: absolute;
     bottom: 10px;
     overflow: hidden;
+    z-index: 10;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.heif-example-content:hover .heif-example-title {
+    background-color: rgba(255, 255, 255, 0.95);
+    transform: translateX(5px);
+}
+
+/* Edge-to-edge <img> thumbnail without losing the 10px visual gutter for the title */
+/* Modern approach: target containers that include a direct <img class="heif-thumbnail"> */
+.heif-example-container .heif-example-content:has(> img.heif-thumbnail) {
+    padding: 0; /* let the image cover fully to the edges */
+}
+
+.heif-example-container .heif-example-content:has(> img.heif-thumbnail) .heif-example-title {
+    /* reintroduce the 10px horizontal gutter that padding provided */
+    left: 10px;
+    right: 10px;
+    width: auto; /* overrides calc(100% - 20px) so left/right take effect */
+}
+
+/* Fallback for browsers without :has() support: opt-in modifier class */
+.heif-example-container .heif-example-content.heif-example-content--image {
+    padding: 0;
+}
+
+.heif-example-container .heif-example-content.heif-example-content--image .heif-example-title {
+    left: 10px;
+    right: 10px;
+    width: auto;
 }
 
 .heif-example-content .heif-example-title:after {
@@ -241,61 +549,157 @@ a:hover {
     right: 10px;
 }
 
-.heif-example-content {
-    background-size: cover;
+/* HEIF thumbnail styling - works for both img and canvas */
+.heif-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
+/* Canvas-specific styling for thumbnails */
+canvas.heif-thumbnail,
+.heif-example-content canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover; /* This may not work on canvas in all browsers */
+}
+
+/* For canvas elements in example containers specifically */
+.heif-example-container .heif-example-content canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* HEIF Image Rotation Support - Simplified */
+/* Per HEIF spec: irot rotates the reconstructed image in ANTI-CLOCKWISE direction */
+/* CSS rotate() is clockwise, so we use negative values for CCW rotation */
+.heif-rotated-90,
+.heif-rotated-270 {
+    /* Keep object-fit: fill and just add rotation transform */
+    object-fit: fill; /* Changed from 'cover' to 'fill' */
+    transform-origin: center center;
+}
+
+.heif-rotated-90 {
+    transform: rotate(-90deg); /* 90° anti-clockwise */
+}
+
+.heif-rotated-180 {
+    transform: rotate(180deg); /* 180° same either direction */
+    transform-origin: center center;
+}
+
+.heif-rotated-270 {
+    transform: rotate(-270deg); /* 270° anti-clockwise = 90° clockwise */
+}
+
+/* HEIF Image Mirror Support */
+/* Per HEIF spec: imir specifies mirroring about horizontal or vertical axis */
+.heif-mirrored-horizontal {
+    transform: scaleY(-1); /* Mirror about horizontal axis = flip vertically */
+}
+
+.heif-mirrored-vertical {
+    transform: scaleX(-1); /* Mirror about vertical axis = flip horizontally */
+}
+
+/* Combined rotation and mirror transformations */
+.heif-rotated-90.heif-mirrored-horizontal {
+    transform: rotate(-90deg) scaleY(-1);
+}
+
+.heif-rotated-90.heif-mirrored-vertical {
+    transform: rotate(-90deg) scaleX(-1);
+}
+
+.heif-rotated-180.heif-mirrored-horizontal {
+    transform: rotate(180deg) scaleY(-1);
+}
+
+.heif-rotated-180.heif-mirrored-vertical {
+    transform: rotate(180deg) scaleX(-1);
+}
+
+.heif-rotated-270.heif-mirrored-horizontal {
+    transform: rotate(-270deg) scaleY(-1);
+}
+
+.heif-rotated-270.heif-mirrored-vertical {
+    transform: rotate(-270deg) scaleX(-1);
+}
+
+/* Container adjustment for 90/270 degree rotations */
+.heif-rotation-container {
+    display: inline-block;
+    overflow: hidden; /* Changed from visible to hidden */
+    margin: 0 auto;
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Better approach: Use aspect-ratio aware scaling for rotated images */
+.heif-example-content:has(> img.heif-thumbnail.heif-rotated-90),
+.heif-example-content:has(> img.heif-thumbnail.heif-rotated-270) {
+    /* Container stays the same, but we'll scale the image to fill */
+    overflow: hidden;
+}
+
+.heif-thumbnail.heif-rotated-90,
+.heif-thumbnail.heif-rotated-270 {
+    /* Calculate the scale needed to fill after rotation */
+    /* If container aspect ratio != image aspect ratio, this ensures coverage */
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+}
+
+.heif-thumbnail.heif-rotated-90 {
+    transform: translate(-50%, -50%) rotate(-90deg) scale(1.4); /* 90° anti-clockwise per HEIF spec */
+}
+
+.heif-thumbnail.heif-rotated-270 {
+    transform: translate(-50%, -50%) rotate(-270deg) scale(1.4); /* 270° anti-clockwise per HEIF spec */
+}
+
+/* Modal overlay backdrop */
 .heif-examples-modal-backdrop {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
-    background-color: black;
+    background-color: var(--modal-backdrop);
     opacity: 0;
     width: 100%;
     height: 100%;
     z-index: 999;
+    overflow: hidden;
+    transition: opacity 0.3s ease-out;
 }
 
 .heif-examples-modal-backdrop.display {
     display: block;
+    opacity: 0.9;
 }
 
-.heif-examples-modal-quit {
-    position: absolute;
-    top: 40px;
-    right: 40px;
-    width: 40px;
-    height: 40px;
-    background-image: url("../img/close-icon.png");
-    background-size: contain;
-}
-
-.heif-examples-modal-title {
-    position: absolute;
-    top: calc(80px - 2vw);
-    left: 40px;
-    font-size: 2vw;
-    color: white;
-}
-
-.heif-examples-modal-hint {
-    position: absolute;
-    top: 120px;
-    left: 0;
-    right: 0;
-    margin: 0 auto;
-    font-size: 2vw;
-    color: white;
-    width: 75%;
-    text-align: center;
-    background-color: rgba(0, 0, 0, 0.75);
-    border-radius: 1vw;
-}
-
+/* Modal window container */
 .heif-examples-modal-window {
     display: none;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -303,21 +707,61 @@ a:hover {
     z-index: 1000;
     padding-top: 100px;
     margin: 0;
-}
-
-.heif-examples-modal-content {
-    position: relative;
-    width: 100%;
-    padding-top: 0;
-    padding-left: 40px;
-    padding-right: 40px;
-    margin: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .heif-examples-modal-window.display {
     display: block;
 }
 
+/* Modal content area */
+.heif-examples-modal-content {
+    position: relative;
+    width: 100%;
+    min-height: calc(100vh - 100px);
+    padding: 0 40px;
+    margin: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    
+    /* Animation */
+    opacity: 0;
+    transform: translateY(20px);
+    animation: modalContentEnter 0.4s ease-out 0.1s forwards;
+}
+
+@keyframes modalContentEnter {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.heif-examples-modal-content canvas {
+    width: auto !important;
+    height: auto !important;
+    max-width: calc(100% - 80px);
+    max-height: calc(100vh - 200px);
+    display: block;
+}
+
+.heif-examples-modal-title {
+    color: #ffffff;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 300;
+    margin-bottom: 1rem;
+}
+
+.heif-examples-modal-window.display {
+    display: block;
+}
+
+/* Technical content sections */
 .heif-technical-content h3 {
     margin-top: 1.5em;
 }
@@ -325,9 +769,52 @@ a:hover {
 .heif-comparison-content,
 .heif-technical-content,
 .heif-news-content {
-    padding: 10px 20px 40px 40px;
-    color: black;
-    background-color: #faf9f9;
+    padding: 0;
+    color: var(--fg-default);
+    background-color: var(--bg-surface);
+}
+
+.heif-technical-content,
+.heif-news-content {
+    padding: 10% 15%;
+}
+
+/* Each comparison topic fills one viewport; bottom padding ensures the
+   last pair can sit mid-screen without the next section peeking in. */
+.heif-comparison-section {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(40px, 6vh, 80px) clamp(24px, 8vw, 15%);
+    padding-bottom: 50vh;
+    box-sizing: border-box;
+}
+
+.heif-comparison-section:first-child {
+    padding-top: calc(80px + clamp(40px, 6vh, 80px));
+}
+
+.heif-comparison-section-inner {
+    width: 100%;
+    max-width: 1400px;
+}
+
+.heif-comparison-content-text {
+    margin-top: 0;
+    margin-bottom: clamp(20px, 3vh, 40px);
+    width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: justify;
+}
+
+.heif-comparison-content-header {
+    margin-top: 0;
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 1.5vw;
+    text-decoration: underline;
 }
 
 .heif-comparison-content canvas,
@@ -341,7 +828,7 @@ a:hover {
 }
 
 .heif-comparison-content .row {
-    margin-bottom: 10px;
+    margin-top: 0;
 }
 
 .heif-comparison-content .sequences-comparison-content {
@@ -351,6 +838,7 @@ a:hover {
 .heif-comparison-content .sequences-comparison-content .sequences-comparison-image-container {
     opacity: 0;
     transition: opacity 0.5s ease-in-out;
+    position: relative;
 }
 
 .heif-comparison-content .sequences-comparison-content .sequences-comparison-loading {
@@ -360,7 +848,7 @@ a:hover {
     width: 100%;
     padding: 0;
     font-size: 20px;
-    color: black;
+    color: var(--loading-text);
     transition: visibility 0s linear 0.5s, opacity 0.5s linear;
 }
 
@@ -374,7 +862,7 @@ a:hover {
     left: 20px;
     margin: 0;
     padding: 0;
-    color: white;
+    color: var(--fg-on-dark);
     font-size: 1.5vw;
 }
 
@@ -382,8 +870,8 @@ a:hover {
 .heif-image-comparison-content .heif-image-comparison-jpg p,
 .heif-image-comparison-content-crop .heif-image-comparison-heif p,
 .heif-image-comparison-content-crop .heif-image-comparison-jpg p {
-    top: 5px;
-    bottom: 0;
+    top: 1%;
+    bottom: 92%;
 }
 
 .heif-image-comparison-content-crop {
@@ -401,9 +889,30 @@ a:hover {
     width: 100%;
 }
 
+/* Preserve original pixel dimensions for thumbnail comparisons */
+.heif-native-size {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.heif-native-size img,
+.heif-native-size canvas {
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    box-shadow: none !important;
+}
+
+/* Change text color to black for native-size comparisons */
+.heif-native-size p {
+    color: var(--fg-default) !important;
+}
+
 .heif-image-comparison-separator {
-    width: 100%;
-    margin-bottom: 64px;
+    display: none;
 }
 
 .heif-image-comparison-jpg {
@@ -415,6 +924,117 @@ a:hover {
     border-style: solid;
     border-width: 1px;
     position: absolute;
+}
+
+/* Interactive Comparison */
+.heif-image-comparison-item {
+    position: relative;
+    padding: 10px;
+}
+
+.heif-image-comparison-wrapper {
+    position: relative;
+    cursor: crosshair;
+}
+
+.heif-image-comparison-wrapper img,
+.heif-image-comparison-wrapper canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    box-shadow: var(--shadow-md);
+}
+
+/* Zoom lens overlay */
+.heif-zoom-lens {
+    position: absolute;
+    pointer-events: none;
+    border: 2px solid var(--border-strong);
+    box-shadow: var(--shadow-lg);
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.15s ease-out;
+    z-index: 10;
+    border-radius: 4px;
+    /* Add containment for better isolation */
+    contain: strict;
+    /* Force GPU layer */
+    will-change: transform, opacity;
+    /* Prevent subpixel rendering issues */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.heif-zoom-clone {
+    contain: strict;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    /* Optimize image rendering */
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.heif-image-comparison-wrapper:hover .heif-zoom-lens,
+.heif-image-comparison-wrapper.active .heif-zoom-lens {
+    opacity: 1;
+}
+
+/* Comparison zoom styles */
+.heif-image-comparison-wrapper {
+    position: relative;
+    cursor: crosshair;
+}
+
+.heif-image-comparison-wrapper img,
+.heif-image-comparison-wrapper canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.heif-zoom-preview {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 200px;
+    height: 200px;
+    border: 2px solid var(--border-strong);
+    box-shadow: var(--shadow-lg);
+    border-radius: 4px;
+    background: var(--bg-dark);
+    z-index: 100;
+    display: none;
+    overflow: hidden;
+}
+
+.heif-zoom-preview canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Label below image */
+.heif-comparison-label {
+    margin: 10px 0 0 0;
+    padding: 8px 12px;
+    background: var(--loading-bg);
+    border-radius: 4px;
+    font-size: 14px;
+    color: var(--loading-text);
+    text-align: center;
+}
+
+/* Remove old styles */
+.heif-image-comparison-crop-window {
+    display: none;
+}
+
+.heif-image-comparison-content-crop {
+    display: none;
+}
+
+.heif-comparison-crop-title {
+    display: none;
 }
 
 table, th, td {
@@ -431,7 +1051,7 @@ th, td {
 }
 
 .heif-tr-subtitle {
-    background-color: #dddddd;
+    background-color: var(--bg-muted);
 }
 
 .heif-technical-image {
@@ -439,6 +1059,7 @@ th, td {
     display: block;
     margin: 40px auto 10px auto;
     text-align: center;
+    background-color: whitesmoke;
 }
 
 .heif-image-caption {
@@ -448,22 +1069,149 @@ th, td {
     text-align: center;
 }
 
+/* ============================================
+ * NEWS TIMELINE
+ * ============================================ */
+
+.heif-news-timeline {
+    position: relative;
+    padding-left: 32px;
+    margin-top: 2em;
+}
+
+/* Vertical timeline line */
+.heif-news-timeline::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-default);
+}
+
+/* Each news entry */
 .heif-news-content .heif-news-item {
-    margin-top: 1.5em;
+    position: relative;
+    margin-bottom: 2.5em;
+}
+
+.heif-news-content .heif-news-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Timeline dot — centered on the line, vertically mid-entry */
+.heif-news-dot {
+    position: absolute;
+    left: -32px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--fg-muted);
+    z-index: 1;
+}
+
+/* Category-coloured dots */
+.heif-news-item[data-category="website"] .heif-news-dot {
+    background: var(--color-blue-digital);
+}
+.heif-news-item[data-category="source"] .heif-news-dot {
+    background: #2ea043;
+}
+.heif-news-item[data-category="spec"] .heif-news-dot {
+    background: #a371f7;
+}
+
+/* No card — just content with a separator between entries */
+.heif-news-card {
+    padding: 0;
+}
+
+.heif-news-content .heif-news-item + .heif-news-item {
+    padding-top: 2.5em;
+    border-top: 1px solid var(--border-divider);
+}
+
+/* Meta row: date · category inline */
+.heif-news-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    margin-bottom: 0.5em;
 }
 
 .heif-news-date {
-    display: block;
-    font-size: 10px;
+    display: inline;
+    font-size: 12px;
+    color: var(--fg-muted);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* Category label — just coloured text with a dot separator */
+.heif-news-category {
+    display: inline;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.heif-news-category::before {
+    content: '·';
+    margin: 0 0.5em;
+    color: var(--fg-subtle);
+    font-weight: 400;
+}
+
+.heif-news-item[data-category="website"] .heif-news-category {
+    color: var(--color-blue-digital);
+}
+.heif-news-item[data-category="source"] .heif-news-category {
+    color: #2ea043;
+}
+.heif-news-item[data-category="spec"] .heif-news-category {
+    color: #a371f7;
 }
 
 .heif-news-title {
     display: block;
-    font-size: 20px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--fg-strong);
+    margin-bottom: 0.4em;
+    line-height: 1.35;
 }
 
 .heif-news-body {
     display: block;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--fg-default);
+}
+
+.heif-news-body code {
+    font-size: 0.9em;
+    background: var(--bg-muted);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border-subtle);
+}
+
+/* Dark-mode adjustments for category colours */
+[data-theme="dark"] .heif-news-item[data-category="source"] .heif-news-dot {
+    background: #3fb950;
+}
+[data-theme="dark"] .heif-news-item[data-category="source"] .heif-news-category {
+    color: #3fb950;
+}
+[data-theme="dark"] .heif-news-item[data-category="spec"] .heif-news-dot {
+    background: #bc8cff;
+}
+[data-theme="dark"] .heif-news-item[data-category="spec"] .heif-news-category {
+    color: #bc8cff;
 }
 
 #heic-image {
@@ -520,3 +1268,712 @@ div.heif-fixed-512px {
     height: auto;
 }
 
+/* Custom Context Menu */
+.context-menu {
+    position: absolute;
+    z-index: 10000;
+    background: var(--menu-bg);
+    border: 1px solid var(--menu-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px var(--shadow-xl);
+    min-width: 150px;
+}
+
+.context-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 5px 0;
+}
+
+.context-menu li {
+    padding: 0;
+}
+
+.context-menu li a {
+    display: block;
+    padding: 8px 15px;
+    color: var(--menu-text);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.context-menu li a:hover {
+    background: var(--menu-hover);
+    color: var(--fg-strong);
+}
+
+.context-menu li.divider {
+    border-top: 1px solid var(--menu-divider);
+    margin: 5px 0;
+}
+
+/* Comparison Info Panel Styles */
+.heif-comparison-info-panel {
+    background: var(--panel-dark-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 10px 16px;
+    color: var(--panel-dark-text);
+    text-align: center;
+    margin-top: 10px;
+    position: relative;
+}
+
+.heif-comparison-info-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.heif-comparison-info-details {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--panel-dark-text-muted);
+    flex-wrap: wrap;
+}
+
+.heif-comparison-info-details .info-sep {
+    opacity: 0.4;
+}
+
+.heif-comparison-info-details .info-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.heif-comparison-info-details .info-item.info-none {
+    font-style: italic;
+    opacity: 0.6;
+}
+
+/* Info button for full details */
+.heif-comparison-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: var(--panel-dark-btn-bg);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 6px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.heif-comparison-info-btn:hover {
+    background: var(--panel-dark-btn-hover);
+    transform: scale(1.1);
+}
+
+.heif-comparison-info-btn:active {
+    transform: scale(0.95);
+}
+
+/* Full info popup for comparison */
+.heif-comparison-full-info {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px) scale(0.95);
+    transform-origin: bottom center;
+    background: var(--overlay-darker);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--panel-dark-text);
+    max-width: 350px;
+    width: max-content;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 100;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 20px var(--shadow-lg);
+    
+    /* Animation properties */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease-out, 
+                transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                visibility 0.25s ease-out;
+}
+
+.heif-comparison-full-info.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+
+/* Full info popup for sequence panels */
+.sequences-comparison-info-panel .heif-comparison-full-info {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px) scale(0.95);
+    transform-origin: bottom center;
+    margin-bottom: 8px;
+    
+    /* Animation properties */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease-out, 
+                transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                visibility 0.25s ease-out;
+}
+
+.sequences-comparison-info-panel .heif-comparison-full-info.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+
+/* ============================================
+   SITE-WIDE ANIMATIONS
+   ============================================ */
+
+/* Smooth page load fade-in */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Staggered content appearance */
+.heif-about-content,
+.heif-features-content,
+.heif-download-content {
+    animation: fadeInUp 0.6s ease-out backwards;
+}
+
+.heif-about-content {
+    animation-delay: 0.1s;
+}
+
+.heif-features-content {
+    animation-delay: 0.2s;
+}
+
+.heif-download-content {
+    animation-delay: 0.3s;
+}
+
+/* Navigation hover effects */
+.heif-nav .heif-nav-item {
+    display: block;
+    font-weight: 600;
+    font-size: clamp(11px, 1.2vw, 15px);
+    line-height: 2.5;
+    padding: 0 clamp(5px, 0.8vw, 10px);
+    border-radius: 0px;
+    white-space: nowrap;
+}
+
+.heif-nav .heif-nav-item:hover {
+    text-decoration: underline;
+}
+
+.heif-nav .heif-nav-item:active {
+    transform: translateY(0);
+}
+
+/* Hero animations moved to .heif-welcome-container.hero-ready section above */
+/* This ensures animations only trigger after HEIF decoding completes */
+
+/* Comparison image hover effect */
+.heif-image-comparison-wrapper img,
+.heif-image-comparison-wrapper canvas {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.heif-image-comparison-wrapper:hover img,
+.heif-image-comparison-wrapper:hover canvas {
+    box-shadow: var(--shadow-lg);
+}
+
+/* Comparison info panel appear animation */
+.heif-comparison-info-panel {
+    animation: slideUpFade 0.4s ease-out backwards;
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Sequence animation containers */
+.sequences-comparison-image-container {
+    transition: opacity 0.5s ease-in-out, transform 0.3s ease;
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Button press effect for interactive elements */
+.gallery-burst-btn,
+.heif-download-link-button {
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.gallery-burst-btn:active,
+.heif-download-link-button:active {
+    transform: scale(0.97);
+}
+
+/* Add these styles for examples page animations: */
+
+/* Example container entrance animation */
+.heif-example-container {
+    opacity: 0;
+    animation: exampleEnter 0.5s ease-out forwards;
+}
+
+/* Staggered entrance for example items */
+.heif-example-container:nth-child(odd) { animation-delay: 0.1s; }
+.heif-example-container:nth-child(even) { animation-delay: 0.2s; }
+
+@keyframes exampleEnter {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Example content hover with lift effect */
+.heif-example-container .heif-example-content {
+    background-color: var(--bg-muted);
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    position: relative;
+    transition: opacity 0.2s ease-in-out, transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+}
+
+.heif-example-container .heif-example-content:hover {
+    opacity: 0.9;
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Example title slide animation */
+.heif-example-content .heif-example-title {
+    font-size: 3vh;
+    font-weight: 100;
+    height: 30%;
+    width: calc(100% - 20px);
+    color: var(--fg-strong);
+    padding: 5px 20px 5px 5px;
+    background-color: rgba(255, 255, 255, 0.88);
+    position: absolute;
+    bottom: 10px;
+    overflow: hidden;
+    z-index: 10;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.heif-example-content:hover .heif-example-title {
+    background-color: rgba(255, 255, 255, 0.95);
+    transform: translateX(5px);
+}
+
+/* Examples modal animations */
+.heif-examples-modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: var(--modal-backdrop);
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+    overflow: hidden;
+    transition: opacity 0.3s ease-out;
+}
+
+.heif-examples-modal-backdrop.display {
+    display: block;
+    opacity: 0.9;
+}
+
+.heif-examples-modal-window {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    padding-top: 100px;
+    margin: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.heif-examples-modal-window.display {
+    display: block;
+}
+
+/* Modal content entrance */
+.heif-examples-modal-content {
+    position: relative;
+    width: 100%;
+    min-height: calc(100vh - 100px);
+    padding: 0 40px;
+    margin: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    
+    /* Animation */
+    opacity: 0;
+    transform: translateY(20px);
+    animation: modalContentEnter 0.4s ease-out 0.1s forwards;
+}
+
+@keyframes modalContentEnter {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal close button */
+.heif-examples-modal-quit {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    width: 40px;
+    height: 40px;
+    background-image: url("../img/close-icon.png");
+    background-size: contain;
+    cursor: pointer;
+    z-index: 1002;
+    transition: transform 0.3s ease, opacity 0.2s ease;
+    opacity: 0.8;
+}
+
+.heif-examples-modal-quit:hover {
+    transform: rotate(90deg);
+    opacity: 1;
+}
+
+/* Modal hint animation */
+.heif-examples-modal-hint {
+    position: absolute;
+    top: 120px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    font-size: 2vw;
+    color: var(--modal-text);
+    width: 75%;
+    text-align: center;
+    background-color: var(--panel-dark-bg);
+    border-radius: 1vw;
+    z-index: 1002;
+    
+    /* Slide down animation */
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: hintSlideDown 0.4s ease-out 0.3s forwards;
+}
+
+@keyframes hintSlideDown {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Find and update .heif-comparison-full-info styles: */
+
+.heif-comparison-full-info h4 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--modal-text);
+    border-bottom: 1px solid var(--panel-dark-border);
+    padding-bottom: 6px;
+}
+
+.heif-comparison-full-info-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 12px;
+    font-size: 11px;
+}
+
+.heif-comparison-full-info-grid .info-key {
+    color: var(--panel-dark-text-subtle);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.heif-comparison-full-info-grid .info-value {
+    color: var(--panel-dark-text-muted);
+    word-break: break-word;
+}
+
+/* Add/update format badge styling in comparison info: */
+
+/* Format badge styling */
+.heif-comparison-info-details .info-format {
+    background: var(--panel-dark-accent);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Find and update sequences-comparison-info-panel styles: */
+
+/* Sequence comparison info panel */
+.sequences-comparison-info-panel {
+    background: var(--panel-dark-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--panel-dark-text);
+    text-align: center;
+    margin-top: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+    position: relative;
+}
+
+/* Ensure sequence containers align their info panels */
+.sequences-comparison-image-container {
+    display: flex;
+    flex-direction: column;
+    padding: 0 5px;
+    gap: 6px; /* Add gap between canvas and info panel */
+}
+
+.sequences-comparison-image-container .sequences-comparison-info-panel {
+    margin-top: auto;
+    margin-left: 0;
+    margin-right: 0;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Ensure canvas/images in sequence containers don't overflow */
+.sequences-comparison-image-container > canvas,
+.sequences-comparison-image-container > img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Row-level alignment for sequence comparisons */
+.heif-image-comparison-content.row:has(.sequences-comparison-image-container),
+.sequences-comparison-content.row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.heif-image-comparison-content.row:has(.sequences-comparison-image-container) > [class*="col-"],
+.sequences-comparison-content.row > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+}
+
+.sequences-comparison-info-panel .info-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    background: var(--panel-dark-accent);
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+}
+
+.sequences-comparison-info-panel .info-details {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--panel-dark-text-muted);
+    flex-wrap: wrap;
+}
+
+.sequences-comparison-info-panel .info-details .info-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sequences-comparison-info-panel .info-details .info-sep {
+    opacity: 0.4;
+}
+
+/* Info button in sequence comparison panels */
+.sequences-comparison-info-panel .heif-comparison-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: var(--panel-dark-btn-bg);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.sequences-comparison-info-panel .heif-comparison-info-btn:hover {
+    background: var(--panel-dark-btn-hover);
+    transform: scale(1.1);
+}
+
+/* Link styling for download and about sections */
+.heif-download-content a,
+.heif-about-content a,
+.heif-features-content a {
+    color: var(--link-light);
+    text-decoration: none;
+    border-bottom: 1px solid var(--link-light-border);
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.heif-download-content a:hover,
+.heif-about-content a:hover,
+.heif-features-content a:hover {
+    color: var(--link-light-hover);
+    border-bottom-color: var(--link-light-border);
+}
+
+/* Visited links - slightly muted but still visible */
+.heif-download-content a:visited,
+.heif-about-content a:visited,
+.heif-features-content a:visited {
+    color: var(--link-light);
+}
+
+/* External link indicator (optional) */
+.heif-download-content a[href^="http"]:not([href*="nokia.com"])::after,
+.heif-about-content a[href^="http"]:not([href*="nokia.com"])::after {
+    content: " ↗";
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+/* Button-style links for primary actions */
+.heif-download-link-button {
+    display: inline-block;
+    background: var(--btn-light-bg);
+    color: var(--btn-light-text) !important;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: 1px solid var(--btn-light-border) !important;
+    border-bottom: 1px solid var(--btn-light-border) !important;
+    text-decoration: none !important;
+    transition: background 0.2s ease, transform 0.2s ease;
+    margin: 5px 0;
+}
+
+.heif-download-link-button:hover {
+    background: var(--btn-light-hover);
+    transform: translateY(-1px);
+    color: var(--btn-light-text) !important;
+    border-color: var(--btn-light-border) !important;
+}
+
+/* Footer links */
+.heif-footer-container a {
+    color: var(--footer-link);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--footer-border);
+    transition: color 0.2s ease;
+}
+
+.heif-footer-container a:hover {
+    color: var(--footer-link-hover);
+    border-bottom-color: var(--footer-border);
+}
+
+/* Technical/comparison/news content links (dark background sections may differ) */
+.heif-technical-content a,
+.heif-comparison-content a,
+.heif-news-content a {
+    color: var(--link-default);
+    text-decoration: none;
+    border-bottom: 1px solid var(--link-border);
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.heif-technical-content a:hover,
+.heif-comparison-content a:hover,
+.heif-news-content a:hover {
+    color: var(--link-hover);
+    border-bottom-color: var(--link-hover-border);
+}
+
+.copyright-notice {
+    background-color: var(--copyright-bg);
+    text-align: center;
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.copyright-notice-images {
+    margin-top: 2em;
+    color: var(--copyright-text);
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+/* Fullpage footer section — matches normal page footer styling */
+.heif-fullpage-footer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: var(--footer-bg);
+}
+
+.copyright-notice p {
+    margin: 0;
+    color: var(--copyright-text);
+    font-size: 14px;
+}

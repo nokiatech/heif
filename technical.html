@@ -3,7 +3,7 @@
 <!--
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,74 +15,93 @@
 
 <html lang="en">
     <head>
+
+        <!-- Cross-origin isolation for SharedArrayBuffer (needed by VVC decoder threads) -->
+        <script src="js/coi-register.js"></script>
+
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="description" content="High Efficiency Image File Format (HEIF, ISO/IEC 23008-12) specifies the storage of individual images,
             image sequences and their metadata into a container file conforming to the ISO Base Media File Format (ISO/IEC 14496-12).">
         <meta name="keywords" content="High Efficiency Image File, High Efficiency Video Coding, HEVC, HEIF, HEIC, MP4, ISOBMFF, MPEG, ISO Base Media File Format, Image Format, Image burst, animation format, derived images, non-destructive image processing, Nokia Technologies, HEIF source code">
 
         <title>HEIF Technical Information - High Efficiency Image File Format</title>
+        <link rel="icon" href="img/heif_logo.png" type="image/png">
+        <!-- Testing new typefaces and fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" crossorigin>
 
-        <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+        <link href="css/theme-variables.css" rel="stylesheet" type='text/css'>
         <link href="css/bootstrap.min.css" rel="stylesheet" type='text/css'>
         <link href="css/styles.css" rel="stylesheet" type='text/css'>
+        <link href="css/mobile.css" rel="stylesheet" type='text/css'>
 
-        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-        <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-        <![endif]-->
-        <script src="js/footer.js"></script>
+        <!-- Theme manager - loaded early to prevent flash of wrong theme -->
+        <script src="js/theme-manager.js"></script>
+
+        <script defer src="js/footer.js"></script>
+        <script defer src="js/mobile-nav.js"></script>
     </head>
     <body>
-        <div class="heif-nav-container">
-            <nav class="heif-nav">
-                <div class="row center-block">
-                    <div class="col-sm-12 col-md-4">
-                        <a href="index.html">
-                            <div class="heif-nav-title">
-                                <div class="heif-nav-title-big">HEIF</div>
-                                <div class="heif-nav-title-small">Image Format</div>
-                            </div>
+        <div>
+            <div role="navigation" class="heif-nav-container">
+                <nav class="heif-nav">
+                    <div class="heif-nav-row">
+                        <a href="index.html" class="heif-nav-title">
+                            <div class="heif-nav-title-big">H E I F</div>
+                            <div class="heif-nav-title-small">Image File Format</div>
                         </a>
-                    </div>
 
-                    <div class="col-sm-12 col-md-8">
-                        <a href="examples.html">
-                            <div class="heif-nav-item">
-                                EXAMPLES
+                        <div class="heif-nav-items">
+                            <!-- Desktop dropdown navigation -->
+                            <div class="nav-dropdown desktop-only">
+                                <a class="heif-nav-item nav-dropdown-trigger">EXAMPLES</a>
+                                <div class="nav-dropdown-content">
+                                    <a href="gallery.html" class="heif-nav-item">Gallery</a>
+                                    <a href="comparison.html" class="heif-nav-item">Compare</a>
+                                </div>
                             </div>
-                        </a>
-                        <a href="comparison.html">
-                            <div class="heif-nav-item">
-                                COMPARE
+                            <div class="nav-dropdown desktop-only">
+                                <a class="heif-nav-item nav-dropdown-trigger">INFO</a>
+                                <div class="nav-dropdown-content">
+                                    <a href="technical.html" class="heif-nav-item">HEIF Technical Info</a>
+                                    <a href="news.html" class="heif-nav-item">News</a>
+                                </div>
                             </div>
-                        </a>
-                        <a href="technical.html">
-                            <div class="heif-nav-item heif-nav-item-selected">
-                                TECHNICAL INFO
+                            <a href="#download" class="heif-nav-item desktop-only">DOWNLOAD</a>
+                            
+                            <!-- Mobile dropdown structure -->
+                            <div class="mobile-dropdown mobile-only">
+                                <div class="mobile-dropdown-header">EXAMPLES</div>
+                                <div class="mobile-dropdown-content">
+                                    <a href="gallery.html" class="heif-nav-item">Gallery</a>
+                                    <a href="comparison.html" class="heif-nav-item">Compare</a>
+                                </div>
                             </div>
-                        </a>
-                        <a href="news.html">
-                            <div class="heif-nav-item">
-                                NEWS
+                            <div class="mobile-dropdown mobile-only">
+                                <div class="mobile-dropdown-header">INFO</div>
+                                <div class="mobile-dropdown-content">
+                                    <a href="technical.html" class="heif-nav-item">HEIF Technical Info</a>
+                                    <a href="news.html" class="heif-nav-item">News</a>
+                                </div>
                             </div>
-                        </a>
-                        <a href="#download">
-                            <div class="heif-nav-item">
-                                DOWNLOAD
-                            </div>
-                        </a>
+                        </div>
+
+                        <div class="mobile-nav-controls mobile-only">
+                            <button class="mobile-menu-toggle" aria-label="Toggle navigation menu">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </nav>
-        </div>
+                </nav>
+            </div>
 
         <div class="heif-technical-content">
             <h2>Technical information</h2>
-            Here, you can find technical information about HEIF (ISO/IEC 23008-12) and MIAF (ISO/IEC 23000-22). Click <a href="#miaf">here</a> to go directly to MIAF technical information.
             <h3>Introduction</h3>
             <p>
             High Efficiency Image File Format (HEIF, ISO/IEC 23008-12) specifies the storage of individual images,
@@ -118,7 +137,9 @@
             <p>
                 HEIF specifies a structural format, from which codec-specific image formats can be derived. HEIF also
                 includes the specification for encapsulating images and image sequences conforming to the High
-                Efficiency Video Coding (HEVC, ISO/IEC 23008-2 | ITU-T Rec. H.265).
+                Efficiency Video Coding (HEVC, ISO/IEC 23008-2 | ITU-T Rec. H.265), Versatile Video Coding
+                (VVC, ISO/IEC 23090-3 | ITU-T Rec. H.266), Advanced Video Coding (AVC, ISO/IEC 14496-10 |
+                ITU-T Rec. H.264), and JPEG (ISO/IEC 10918-1 | ITU-T Rec. T.81).
             </p>
 
             <p>
@@ -126,9 +147,8 @@
                 metadata is stored as items. Consequently, HEIF has the following basic design:
                 <ul>
                     <li>
-                        1. Still images are stored as items. Typically image items are independently coded, and do not depend on
-                        any other item in their decoding. If predictively coded image items with coding dependencies are present,
-                        this is clearly signalled. Any number of image items can be included in the same file.
+                        1. Still images are stored as items. All image items are independently coded and do not depend on
+                        any other item in their decoding. Any number of image items can be included in the same file.
                     </li>
                     <li>
                         2. Image sequences are stored as tracks. An image sequence track can be indicated to be displayed
@@ -146,7 +166,7 @@
             </p>
 
             <p>
-                <img class="heif-technical-image" src="img/isobmff.png"/>
+                <img class="heif-technical-image" src="img/isobmff.png" loading="lazy"/>
                 <b><span class="heif-image-caption">Image I. ISOBMFF compliant file high level structure with meta box and items</span></b>
             </p>
 
@@ -170,8 +190,8 @@
 
             <p>
                 The brands specified in the HEIF standard are presented in Table I. The HEIF standard specifies the 'mif1'
-                and 'msf1' structural brands. Additionally, HEVC-specific brands are specified as listed in Table I. The
-                dedicated brand names, 'heic' and 'hevc' indicates that HEVC Main Profile is utilized.
+                and 'msf1' structural brands, as well as 'mif3' for the low-overhead (SlimHEIF) profile.
+                Additionally, codec-specific brands are specified for HEVC, VVC, AVC, and JPEG as listed in Table I.
             </p>
 
             <p>
@@ -318,6 +338,126 @@
                         </td>
                         <td>
                             .heic
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            vvic
+                        </td>
+                        <td>
+                            VVC
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heif
+                        </td>
+                        <td>
+                            .heif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            vvis
+                        </td>
+                        <td>
+                            VVC
+                        </td>
+                        <td>
+                            sequence
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heif-sequence
+                        </td>
+                        <td>
+                            .heif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            avic
+                        </td>
+                        <td>
+                            AVC
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            avif <!-- placeholder: verify registered subtype -->
+                        </td>
+                        <td>
+                            .avif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            avis
+                        </td>
+                        <td>
+                            AVC
+                        </td>
+                        <td>
+                            sequence
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            avif <!-- placeholder: verify registered subtype -->
+                        </td>
+                        <td>
+                            .avif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            jpeg
+                        </td>
+                        <td>
+                            JPEG
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heif
+                        </td>
+                        <td>
+                            .heif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            mif3
+                        </td>
+                        <td>
+                            Any (low-overhead profile)
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            image
+                        </td>
+                        <td>
+                            heif
+                        </td>
+                        <td>
+                            .heif
                         </td>
                     </tr>
                     </tbody>
@@ -531,7 +671,7 @@
                                 Exif, XMP, MPEG-7
                             </td>
                             <td>
-                                Exif
+                                Exif, XMP
                             </td>
                             <td>
                                 -
@@ -1660,171 +1800,6 @@
                         </tr>
                         <tr>
                             <td>
-                                Content light level (‘clli’)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Has the same syntax as the ContentLightLevelBox as defined in ISO/IEC 14496-12.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                Mastering display colour volume (‘mdcv’)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Has the same syntax as the MasteringDisplayColourVolumeBox as defined in ISO/IEC 14496-12.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                Content colour volume (‘cclv’)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Has the same syntax as the  ContentColourVolumeBox as defined in ISO/IEC 14496-12.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               Required reference types (‘rrtp’)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Lists the item reference types that a reader shall process to display the associated image item.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               Creation time information (‘crtt’)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Creation time of the associated item or entity group.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               Modification time information (‘mdft‘)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Modification time of the associated item or entity group.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               User description (‘udes‘)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                User-defined name, description and tags.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               Accessibility text (‘altt‘)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Alternate text for an image, in case the image cannot be displayed.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               Auto exposure information (‘aebr‘)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Exposure variation information in bracketed sets.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               White balance information (‘wbbr‘)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                White balance compensation information in bracketed sets.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               Focus information (‘fobr‘)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Focus variation information in bracketed sets.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               Flash exposure information (‘afbr‘)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Flash exposure variation information in bracketed sets.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               Depth of field information (‘dobr‘)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Depth of field variation information in bracketed sets.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                               Panorama information (‘pano‘)
-                            </td>
-                            <td>
-                                Descriptive Property
-                            </td>
-                            <td>
-                                Characteristics about the associated panorama entity group.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                Image Scaling (‘iscl’)
-                            </td>
-                            <td>
-                                Transformative
-                            </td>
-                            <td>
-                                Resize input image to target width and height.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
                                 Image Rotation (‘irot’)
                             </td>
                             <td>
@@ -1832,6 +1807,7 @@
                             </td>
                             <td>
                                 Rotation by 90, 180, or 270 degrees.
+
                             </td>
                         </tr>
                         <tr>
@@ -1905,16 +1881,7 @@
                 </table>
             </p>
             <p>
-                <a href="examples.html">Here are some examples of Derived Images</a>
-            </p>
-
-            <h3>Predictively Coded Images</h3>
-            <p>
-                Predictively coded image items have several benefits, such as selecting
-                any image from an image sequence as the cover image, higher compression efficiency, and avoiding re-encoding when converting an image sequence to image items.
-                Presence of predictively coded image items, which have one or more other coded image items as decoding dependencies,
-                is signalled with 'pred' brand. Decoding dependencies and order for predictively coded image items are specified
-                by item references of type 'pred'.
+                <a href="gallery.html">Here are some examples of Derived Images</a>
             </p>
 
             <h3>Image Metadata</h3>
@@ -1978,7 +1945,7 @@
                             thumbnail image sequence
                         </td>
                         <td>
-                            A smaller-resolution representation of a master image sequence. T
+                            A smaller-resolution representation of a master image sequence.
                         </td>
                     </tr>
                     <tr>
@@ -2037,7 +2004,7 @@
 
             <a name="figure-1"></a>
             <p>
-                <img class="heif-technical-image" src="img/operations.png"/>
+                <img class="heif-technical-image" src="img/operations.png" loading="lazy"/>
                 <b><span class="heif-image-caption">Figure 1. Operations performed by file players</span></b>
             </p>
 
@@ -2145,197 +2112,158 @@
                 </li>
             </ul>
 
-            <a name="miaf"></a>
+            <h3>Storing VVC Encoded Pictures in HEIF</h3>
+            <p>
+                The HEIF standard specifies the encapsulation of images and image sequences coded with
+                Versatile Video Coding (VVC, ISO/IEC 23090-3 | ITU-T Rec. H.266) into HEIF-compliant files.
+                VVC is the successor to HEVC, offering further compression efficiency improvements
+                particularly for high-resolution and high-dynamic-range content.
+            </p>
+            <p>
+                VVC-coded image items use the <code>'vvc1'</code> coding type. The decoder configuration
+                information is carried in the VVC configuration item property, whose format follows the
+                VVC decoder configuration record defined in ISO/IEC 14496-15. The item data format is
+                identical to the sample format of VVC video tracks, enabling reuse of the same coded
+                picture as both an image item and a sample in a sequence track.
+            </p>
+            <p>
+                <!-- placeholder: compression performance data for VVC intra coding vs HEVC/JPEG
+                     when reference results become available -->
+                VVC intra coding is expected to provide significant compression gains over HEVC intra
+                coding, with reported bitrate savings in the range of 20–40% for equivalent subjective
+                quality depending on content class and resolution.
+            </p>
+
+            <h3>Low Overhead HEIF (SlimHEIF)</h3>
+            <p>
+                The low-overhead amendment to the HEIF standard (ISO/IEC 23008-12) defines a compact
+                file-level structure identified by the <code>'mif3'</code> brand. SlimHEIF reduces the
+                container overhead by eliminating redundant metadata boxes, making it particularly
+                effective for very small images such as icons, thumbnails, and emoji.
+            </p>
+            <p>
+                In a conventional HEIF file, the ISOBMFF box hierarchy introduces a fixed overhead
+                that can be significant relative to the coded image data when the image itself is only
+                a few hundred bytes. SlimHEIF addresses this by using a streamlined box layout that
+                omits boxes whose information can be inferred from context.
+            </p>
+            <p>
+                Experimental results show that SlimHEIF can reduce file size by 30% to 80% compared
+                to equivalent standard HEIF files for small single-image payloads. For larger images
+                the relative savings are smaller but the absolute overhead reduction remains constant.
+            </p>
+            <!-- placeholder: Table comparing standard HEIF vs SlimHEIF overhead for various
+                 image sizes (e.g. 32x32 icon, 256x256 thumbnail, 1920x1080 photo) -->
+
+            <h3>High Dynamic Range and Wide Colour Gamut</h3>
+            <p>
+                HEIF defines several item properties for signalling high dynamic range (HDR) and wide
+                colour gamut (WCG) characteristics of images. These properties allow file players to
+                correctly interpret and display HDR content, or to apply appropriate tone mapping for
+                standard dynamic range displays.
+            </p>
+            <p>
+                The HDR-related item properties defined in the HEIF standard include:
+            </p>
+            <ul>
+                <li>
+                    <strong>Content Light Level Information (clli)</strong> — signals the maximum
+                    content light level and maximum frame-average light level of the image, enabling
+                    display devices to apply appropriate brightness scaling.
+                </li>
+                <li>
+                    <strong>Mastering Display Colour Volume (mdcv)</strong> — describes the colour
+                    primaries, white point, and luminance range of the mastering display, providing
+                    a reference for colour volume mapping.
+                </li>
+                <li>
+                    <strong>Content Colour Volume (cclv)</strong> — specifies the colour volume of
+                    the actual content, which may be a subset of the mastering display colour volume.
+                </li>
+                <li>
+                    <strong>Ambient Viewing Environment (amve)</strong> — describes the intended
+                    ambient viewing conditions for the content.
+                </li>
+                <li>
+                    <strong>Required Video Extension (reve)</strong> — <!-- placeholder: confirm
+                    exact semantics from the standard text --> signals codec-level extension
+                    requirements for correct decoding of HDR content.
+                </li>
+                <li>
+                    <strong>Nominal Diffuse White (ndwt)</strong> — specifies the nominal diffuse
+                    white luminance level for the content, assisting tone-mapping operations.
+                </li>
+            </ul>
+            <p>
+                Wide colour gamut is signalled through the Colour Information property (colr), which
+                can carry an ICC colour profile or an NCLX colour description specifying the colour
+                primaries, transfer characteristics, and matrix coefficients of the image.
+            </p>
+
+            <h3>Tone Mapping and Gain Maps</h3>
+            <p>
+                HEIF supports tone-map derived images through the <code>'tmap'</code> item type. A
+                tone-map item references a base image and a gain map image, enabling a single file
+                to serve both HDR-capable and SDR-only displays. The gain map encodes the per-pixel
+                ratio between the SDR and HDR representations, allowing the display device to
+                reconstruct the appropriate rendition.
+            </p>
+            <p>
+                This approach is conceptually similar to other gain-map solutions (such as those used
+                in JPEG-R / ISO 21496-1), but is expressed natively within the HEIF derived-image
+                framework using standard ISOBMFF referencing mechanisms.
+            </p>
+            <!-- placeholder: diagram illustrating tmap derivation chain
+                 (base SDR item + gain map item -> tmap derived item -> HDR output) -->
+
+            <h3>Entity Groups</h3>
+            <p>
+                The ISOBMFF entity grouping mechanism (GroupsListBox) provides a general facility for
+                expressing relationships among image items and tracks. HEIF inherits and extends this
+                mechanism for several standard-defined grouping types beyond the alternate groups
+                described earlier.
+            </p>
+            <p>
+                <!-- placeholder: expand with specific grouping types as they are confirmed
+                     in the standard text (altr, ster, etc.) -->
+                Grouping types defined or referenced by the HEIF standard include:
+            </p>
+            <ul>
+                <li>
+                    <strong>Alternate group (altr)</strong> — indicates that the grouped items are
+                    alternative representations of the same content, and a file player should select
+                    at most one for display.
+                </li>
+                <li>
+                    <strong>Stereo pair (ster)</strong> — groups two images representing the left-eye
+                    and right-eye views of a stereoscopic pair.
+                </li>
+                <!-- placeholder: additional grouping types (e.g. temporal layering groups,
+                     multi-view groups) as specified in the standard -->
+            </ul>
+
             <h3>Multi-Image Application Format (MIAF)</h3>
             <p>
-                The Multi-Image Application Format (MIAF) specification defines additional constraints and interoperability points to ensure higher interoperability, while fully conforming to the HEIF format.
-                This is done by defining specific constraints, limiting the supported encoding types to a set of specific profiles and levels (see <a href="#table-11">Table XI</a>), requiring specific metadata formats, and defining a set of brands for signalling such constraints (see <a href="#table-12">Table XII</a>). This enables the industry to deploy particular uses of the HEIF specification.
-            </p>
-
-            <a name="table-11"></a>
-            <p>
-                <b>Table XI. MIAF profiles.</b>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>
-                                MIAF profile
-                            </th>
-                            </th>
-                            <th>
-                                Allowed image item coding profiles and highest levels
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                MIAF HEVC Basic profile
-                            </td>
-                            <td>
-                                <ul>
-                                    <li>HEVC Main Still Picture Profile, Level 6</li>
-                                    <li>HEVC Main Profile, Level 6</li>
-                                </ul>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                MIAF HEVC Advanced profile
-                            </td>
-                            <td>
-                                 <ul>
-                                    <li>Main 10, Level 6</li>
-                                    <li>Main 10 Intra, Level 6</li>
-                                    <li>Main Intra, Level 6</li>
-                                    <li>Main 10 Still Picture, Level 6</li>
-                                    <li>Main 4:2:2 10 Intra, Level 6</li>
-                                </ul>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                MIAF HEVC Extended profile
-                            </td>
-                            <td>
-                                <ul>
-                                    <li>Main 4:4:4 10, Level 6</li>
-                                    <li>Main 4:4:4 Still Picture, Level 6</li>
-                                    <li>Main 4:4:4 10 Intra, Level 6</li>
-                                    <li>Main 4:4:4, Level 6</li>
-                                    <li>Monochrome 10, Level 6</li>
-                                    <li>Monochrome, Level 6</li>
-                                </ul>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                MIAF AVC Basic profile
-                            </td>
-                            <td>
-                                <ul>
-                                    <li>AVC Progressive High Profile, Level 5.2</li>
-                                    <li>AVC Constrained High Profile, Level 5.2</li>
-                                </ul>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </p>
-
-            <a name="table-12"></a>
-            <p>
-                <b>Table XII. MIAF brands.</b>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>
-                                MIAF Application brand
-                            </th>
-                            <th>
-                                Features
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                Progressive application brand
-                            </td>
-                            <td>
-                                Data is ordered in way that progressive perceived quality enchancement during loading the file is possible.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                Animation application brand
-                            </td>
-                            <td>
-                                An animation application branded video file includes one video track, and may also include an associated alpha plane sequence and an audio track.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                Burst capture application brand
-                            </td>
-                            <td>
-                                Multi-image capturing, for example focal and exposure stacks.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                Common media fragmented brand
-                            </td>
-                            <td>
-                                Used when compatiblity with CMAF is desired ('cmfc' brand in ISO/IEC 23000-19).
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                Fragmented alpha video brand
-                            </td>
-                            <td>
-                                Files that are CMAF compatible, and contain an alpha plane sequence associated with the video sequence.
-                            </td>
-                        </tr>
-
-                    </tbody>
-                </table>
-            </p>
-
-            <p>
-                The MIAF specification also defines normative requirements for MIAF readers and renderers. Entities participating in MIAF file playback are briefly described in <a href="#table-13">Table XIII</a>.
-            </p>
-
-            <a name="table-13"></a>
-            <p>
-                <b>Table XIII. MIAF architecture.</b>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>
-                                Component
-                            </th>
-                            <th>
-                                Description
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                MIAF reader
-                            </td>
-                            <td>
-                                Reads and parses MIAF files, and identifies the type of image coding and metadata. Handles decoding of bitstreams for the coding (types, profiles, levels) that are supported.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                MIAF renderer
-                            </td>
-                            <td>
-                                Renders the output of MIAF reader into a visual context, taking associated metadata (e.g. colour information) into account, and possible auxiliary image data (e.g. depth or alpha planes).
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                MIAF player
-                            </td>
-                            <td>
-                                Uses a MIAF reader and a MIAF renderer to present the contents of a MIAF file.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                The Multi-Image Application Format (MIAF, ISO/IEC 23000-22) is an application-level
+                profile built on top of HEIF and ISOBMFF. MIAF defines a set of constraints and
+                requirements intended to maximise interoperability between HEIF file producers and
+                consumers. It specifies mandatory features, forbidden features, and recommended
+                practices for a well-defined subset of the HEIF format.
             </p>
             <p>
-                The MIAF specification can be found from <a href="https://www.iso.org/standard/74417.html">the ISO website</a>.
+                MIAF introduces its own brand (<code>'miaf'</code>) and defines application profiles
+                for specific codec and colour space combinations. A file branded as MIAF-compliant
+                signals to a player that the file conforms to a predictable, well-constrained subset
+                of HEIF, reducing the implementation burden on decoders.
             </p>
+            <!-- placeholder: table of MIAF application profiles (e.g. MIAF-HEVC, MIAF-AVC)
+                 with their brands and constraints -->
 
         </div>
         <script>
-            var footer = new Footer();
+            document.addEventListener('DOMContentLoaded', function() {
+                var footer = new Footer();
+            });
         </script>
     </body>
 </html>

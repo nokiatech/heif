@@ -1,0 +1,2146 @@
+/* This file is part of Nokia HEIF library
+ *
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ *
+ * Contact: heif@nokia.com
+ *
+ * This software, including documentation, is protected by copyright controlled by Nokia Corporation and/ or its subsidiaries. All rights are reserved.
+ *
+ * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
+ */
+
+/* Gallery Page Styles - Compact masonry layout with native thumbnail sizes */
+
+.gallery-container {
+    background-color: var(--bg-page);
+    min-height: 100vh;
+    padding-top: 100px;
+    padding-bottom: 60px;
+}
+
+.gallery-header {
+    text-align: center;
+    padding: 30px 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.gallery-header h1 {
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: var(--fg-default);
+    margin-bottom: 10px;
+}
+
+.gallery-subtitle {
+    font-size: 1rem;
+    color: var(--fg-muted);
+    font-weight: 400;
+}
+
+/* Gallery Set Switcher */
+.gallery-set-switcher {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.gallery-set-btn {
+    flex: 1;
+    max-width: 200px;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border: none;
+    border-bottom: 2px solid var(--border-subtle);
+    border-radius: 0 0 6px 6px;
+    background: transparent;
+    color: var(--fg-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gallery-set-btn:hover {
+    border-bottom-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.gallery-set-btn.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+    border-top: 2px solid var(--color-blue-digital);
+    border-radius: 6px;
+    color: var(--color-blue-digital);
+}
+
+/* Layout-mode toggle (Adaptive grid / Native pixels).
+ *
+ * Honours the subtitle's promise: Adaptive is the default polished masonry,
+ * Native shows each thumbnail at its real embedded bitmap dimensions.
+ * Sits to the right of the set switcher on the same row.
+ */
+.gallery-view-control {
+    width: calc(100% - 80px);
+    max-width: 1400px;
+    margin: 0 auto 8px auto;
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--fg-muted);
+    letter-spacing: 0.02em;
+}
+.gallery-view-control-label {
+    color: var(--fg-muted);
+    opacity: 0.75;
+}
+.gallery-view-toggle {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+}
+.gallery-view-toggle-sep {
+    color: var(--fg-muted);
+    opacity: 0.5;
+    user-select: none;
+}
+.gallery-view-btn {
+    background: none;
+    border: 0;
+    padding: 2px 0;
+    margin: 0;
+    font: inherit;
+    color: var(--fg-muted);
+    cursor: pointer;
+    transition: color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.gallery-view-btn:hover { color: var(--fg-default); }
+.gallery-view-btn:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+.gallery-view-btn.active {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+/* Combined loading status bar.
+ *
+ * Single source of truth for "is the gallery still working?" - replaces the
+ * spinner-on-its-own-row that pushed everything below the fold.
+ *
+ * Layout-shift strategy: the bar reserves a fixed height in normal flow at
+ * ALL times (even when .complete). Going from loading -> done is purely an
+ * opacity fade; the slot stays put, so the grid below never moves.
+ * Visual is the standard NProgress / YouTube top-of-page pattern: tiny
+ * uppercase status text + thin accent fill bar.
+ */
+.gallery-status-bar {
+    width: calc(100% - 80px);
+    max-width: 1400px;
+    height: 24px; /* permanently reserved → no layout shift on completion */
+    margin: 0 auto 8px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+.gallery-status-bar.complete {
+    opacity: 0;
+}
+.gallery-status-text {
+    font-size: 0.7rem;
+    color: var(--fg-muted);
+    text-align: center;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    line-height: 1;
+}
+.gallery-status-track {
+    width: 100%;
+    max-width: 480px;
+    height: 2px;
+    background: var(--border-light);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.gallery-status-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent-primary);
+    transition: width 0.25s ease;
+}
+
+/* Masonry-style packed grid using CSS columns */
+.gallery-grid {
+    --gi-row-px: 4px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-auto-rows: var(--gi-row-px);
+    gap: 4px;
+    width: calc(100% - 80px);
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+/* Individual gallery item - native size, no forced dimensions */
+.gallery-item {
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    background: var(--bg-muted);
+    box-shadow: var(--shadow-sm);
+    grid-row-end: span var(--gi-span, 46);
+    content-visibility: auto;
+    /* Match the default span: 46 implicit rows = (46-1)*8 + 4 = 364px,
+     * close to 360 here. Keeps off-screen and pre-measured tiles from
+     * jumping when they scroll into view. */
+    contain-intrinsic-size: auto 240px auto 364px;
+}
+
+/* Tiles whose decoded thumbnail carries an alpha channel (auxiliary
+ * `alpha` items, plus any other type with hasAlpha set during
+ * extractMetadata). The default tile background is `--bg-muted`, which
+ * is a noticeably darker shade than `--bg-page` in both themes; with a
+ * transparent thumbnail on top, the tile reads as a darker rectangle
+ * floating in the page. Swapping the backdrop to `--bg-page` makes the
+ * transparent regions blend into the surrounding page so the alpha
+ * thumbnail looks like it's cut out of the page itself, not pasted on.
+ * The shadow has to go too - a shadow around a transparent rectangle
+ * still draws a dark halo on every side, which would re-introduce the
+ * "floating swatch" appearance we just got rid of. Doesn't affect tiles
+ * without alpha. */
+.gallery-item.gallery-item-has-alpha {
+    background: var(--bg-page);
+    box-shadow: none;
+}
+
+/* Adaptive-mode rotation wrapper.
+ *
+ * `_wrapRotatedCanvas` builds a wrapper sized via `width: 100%;
+ * padding-bottom: visualAspect%`. That gives the wrapper exactly the
+ * natural visual height of the rotated content (W * visualAspect) and
+ * NOTHING MORE. The masonry, however, rounds the tile's height to a
+ * whole number of grid rows (rowPx + gapPx == 8px), so the tile is
+ * almost always 1-7px taller than the wrapper. The result for portrait
+ * Apple HEICs (rotated landscape) is a thin empty strip below the
+ * thumbnail.
+ *
+ * Pinning the wrapper with `position: absolute; inset: 0` makes it
+ * cover the entire masonry-rounded tile. The transform/scale math
+ * inside still resolves the canvas to the wrapper's size, so the
+ * rotated thumbnail expands by the same 1-7px and the bottom strip
+ * disappears. The `padding-bottom` value set inline by JS is harmless
+ * on an absolutely-positioned element with explicit `inset`.
+ *
+ * Native mode has its own (explicit pixel-sized) wrapper rule below
+ * and intentionally does NOT use absolute positioning. */
+.gallery-grid:not(.gallery-mode-native) .gallery-rotation-wrapper {
+    position: absolute !important;
+    inset: 0;
+    width: auto !important;
+    padding-bottom: 0 !important;
+    overflow: hidden;
+}
+
+.gallery-item canvas,
+.gallery-item img {
+    display: block;
+    width: 100%;
+    /* Fill the cell exactly. The masonry span-row rounding can leave the
+     * cell up to ~4px taller than the image's natural height; without
+     * height: 100% the image sits at the top of the cell and the hover
+     * overlay (which covers the cell) extends below the image, AND the
+     * empty strip looks like an inflated grid gap. object-fit: cover lets
+     * the rounding crop be invisible. Native mode overrides this below. */
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+    will-change: transform;
+}
+
+/* Pixel-honest sampling for conformance content (C83.hmg). Nearest-neighbour
+ * preserves exact sample values when the tiny thumbnail is CSS-stretched to
+ * tile size — appropriate for pixel-peeping, but too harsh for photographic
+ * thumbnails where smooth interpolation looks better. */
+.gallery-pixel-honest canvas,
+.gallery-pixel-honest img {
+    image-rendering: pixelated;
+}
+
+/* Compositor-only crossfade for newly-decoded thumbnails (driven by JS) */
+.gallery-item canvas.gallery-thumb-fade,
+.gallery-item img.gallery-thumb-fade {
+    opacity: 0;
+}
+
+/* Hover effect with subtle zoom */
+.gallery-item:hover canvas,
+.gallery-item:hover img {
+    transform: scale(1.02);
+}
+
+/* Hover zoom for rotated thumbnails.
+ *
+ * The rule above sets `transform: scale(1.02)` on the canvas itself.
+ * That breaks for rotated tiles, because `_fitAdaptiveRotationWrapper`
+ * writes the rotation+cover-scale into an INLINE `transform` on the
+ * canvas, and inline styles outrank stylesheet rules - so the hover
+ * scale silently no-ops on rotated thumbnails.
+ *
+ * Solution: when the canvas sits inside a rotation wrapper, scale the
+ * WRAPPER instead. The rotation transform on the inner canvas is
+ * untouched, the wrapper's scale composes on top, and the visual
+ * "subtle zoom on hover" reads identically to non-rotated tiles. */
+.gallery-item:hover .gallery-rotation-wrapper {
+    transform: scale(1.02);
+}
+.gallery-rotation-wrapper {
+    transition: transform 0.25s ease-out;
+    will-change: transform;
+}
+
+/* Dark overlay on hover instead of grayscale */
+.gallery-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gallery-overlay-hover);
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+    pointer-events: none;
+    z-index: 1;
+    will-change: opacity;
+}
+
+.gallery-item:hover::after {
+    opacity: 1;
+}
+
+/* Ensure info overlay is above the dark overlay */
+.gallery-item-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px;
+    background: var(--gallery-info-gradient);
+    color: var(--gallery-info-text);
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.gallery-item:hover .gallery-item-info,
+.gallery-item:focus-visible .gallery-item-info,
+.gallery-item.focus-within-poly .gallery-item-info {
+    opacity: 1;
+}
+
+/* On touch devices :hover never fires (or fires sticky after a tap), so
+ * always show the info overlay there - the title and dimensions are far
+ * more useful than the visual cleanliness of an empty card. */
+@media (hover: none) {
+    .gallery-item-info {
+        opacity: 1;
+        /* Slightly less aggressive gradient so it doesn't dominate the tile. */
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+    }
+}
+
+/* Keyboard focus on the tile itself: visible outline that doesn't
+ * compete with the existing hover overlay. */
+.gallery-item {
+    outline: none;
+}
+.gallery-item:focus-visible {
+    outline: 3px solid var(--accent-primary);
+    outline-offset: -3px;
+}
+
+.gallery-item-title {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gallery-item-meta {
+    font-size: 10px;
+    color: var(--gallery-info-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Dimension indicators */
+.gallery-item-dims {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gallery-item-dims .dim-original {
+    font-weight: 500;
+}
+
+.gallery-item-dims .dim-arrow {
+    opacity: 0.6;
+    font-size: 8px;
+}
+
+.gallery-item-dims .dim-thumb {
+    opacity: 0.7;
+    font-size: 9px;
+}
+
+.gallery-item-dims .dim-display {
+    opacity: 0.5;
+    font-size: 8px;
+    font-style: italic;
+}
+
+.gallery-item-bitdepth {
+    background: var(--gallery-badge-bg);
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 9px;
+}
+
+/* (The legacy .gallery-loading block has been removed. The single
+ * combined loading indicator now lives in #gallery-status-bar above the
+ * grid; see .gallery-status-* rules near the top. The .gallery-spinner
+ * class below is still used by .gallery-modal-loading.) */
+
+.gallery-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--color-blue-digital);
+    border-radius: 50%;
+    animation: gallery-spin 0.7s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+}
+
+@keyframes gallery-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Placeholder while thumbnail loads */
+.gallery-item-placeholder {
+    width: 100%;
+    padding-bottom: 66.67%;
+    background: var(--bg-muted);
+    position: relative;
+    overflow: hidden;
+}
+
+.gallery-item-placeholder::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--border-light) 50%,
+        transparent 100%
+    );
+    opacity: 0.45;
+    transform: translateX(-100%);
+    animation: gallery-skeleton-sweep 1.6s linear infinite;
+    will-change: transform;
+    pointer-events: none;
+}
+
+@keyframes gallery-skeleton-sweep {
+    to { transform: translateX(100%); }
+}
+
+/* Honour reduced-motion: drop the sweep entirely, keep the static tint. */
+@media (prefers-reduced-motion: reduce) {
+    .gallery-item-placeholder::after { animation: none; opacity: 0; }
+    .gallery-item canvas.gallery-thumb-fade,
+    .gallery-item img.gallery-thumb-fade { opacity: 1; }
+}
+
+/* Modal Styles */
+
+/*
+ * Defer expensive backdrop-filter blurs in the modal until its open
+ * transition (transform + opacity scale-in) has settled.
+ *
+ * Animating a transformed element that contains blurred descendants forces
+ * the compositor to re-blur on every tick of the transition - on a 4K
+ * external display this can drop the open animation from 60fps to ~30fps.
+ *
+ * gallery.js adds .blur-ready to .gallery-modal-window after the content's
+ * transitionend(transform). Until then we strip every backdrop-filter
+ * inside the modal subtree. The blurred surfaces still work normally once
+ * the modal has finished opening, and we strip the class again on close so
+ * the close animation is also blur-free.
+ */
+.gallery-modal-window:not(.blur-ready) *,
+.gallery-modal-window:not(.blur-ready) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+.gallery-modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--gallery-overlay-transparent);
+    z-index: 1000;
+    transition: background-color 0.3s ease-out;
+    cursor: pointer; /* Indicate clickable to close */
+}
+
+.gallery-modal-backdrop.visible {
+    display: block;
+    background-color: var(--gallery-modal-bg);
+}
+
+.gallery-modal-window {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1001;
+    flex-direction: column;
+    pointer-events: none; /* Allow clicks to pass through to backdrop */
+}
+
+.gallery-modal-window.visible {
+    display: flex;
+}
+
+/* Modal content container - centers the image/canvas */
+.gallery-modal-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    /* 
+     * Desktop padding:
+     * - Top: 50px for close button
+     * - Sides: 40px for breathing room
+     * - Bottom: 100px for info panel
+     */
+    padding: 50px 40px 100px 40px;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 15px;
+    pointer-events: none;
+    
+    /* Animation */
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.35s ease-out, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gallery-modal-window.visible .gallery-modal-content {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Modal image/canvas styling - for STILL images only */
+.gallery-modal-content > canvas,
+.gallery-modal-content > img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    box-shadow: var(--shadow-modal-image);
+    pointer-events: auto;
+    flex-shrink: 1;
+    /* 8K (and other large) canvases are CSS-downscaled to fit the viewport.
+     * Without an explicit hint some browsers (Chrome especially) use a
+     * single-pass bilinear filter on <canvas>, which produces visible
+     * staircase aliasing on diagonal/curved edges.  `high-quality` asks
+     * for multi-pass / mipmap-quality resampling; the `auto` fallback
+     * covers engines that don't recognise it yet. */
+    image-rendering: high-quality;
+    image-rendering: auto;
+}
+
+/* Wrapper for rotated modal images (90/270 deg) */
+/* Ensures the rotated image respects viewport constraints */
+.gallery-modal-rotated-wrapper {
+    box-shadow: var(--shadow-modal-image);
+    pointer-events: auto;
+    /* Entrance animation removed - the parent .gallery-modal-content's
+     * scale-in already provides the entrance feel, and stacking the
+     * rotated-wrapper transform with another keyframe transform is both
+     * visually redundant and expensive. */
+}
+
+.gallery-modal-rotated-wrapper canvas {
+    /* Override default constraints - wrapper handles them */
+    max-width: none !important;
+    max-height: none !important;
+    box-shadow: none;
+    animation: none;
+}
+
+/* Modal header for close button positioning */
+.gallery-modal-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: 15px 20px;
+    z-index: 1002;
+    pointer-events: none;
+}
+
+/* Close button.
+ *
+ * Now a real <button> for keyboard a11y (Enter/Space, focus ring). The
+ * resets below strip the UA chrome so the existing icon-only design is
+ * preserved.
+ */
+.gallery-modal-quit {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    background-image: url("../img/close-icon.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.gallery-modal-quit:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+}
+
+.gallery-modal-quit:active {
+    transform: rotate(90deg) scale(0.9);
+}
+
+.gallery-modal-quit:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+.gallery-modal-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--gallery-info-text-muted);
+    pointer-events: auto;
+}
+
+.gallery-modal-loading.hidden {
+    display: none;
+}
+
+/* Modal info panel - centered at bottom */
+.gallery-modal-info-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--gallery-info-panel-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 12px 20px;
+    color: var(--gallery-info-text);
+    text-align: center;
+    pointer-events: auto;
+    max-width: 90%;
+    z-index: 1002;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    /* Animation */
+    opacity: 0;
+    animation: infoPanelEnter 0.4s ease-out 0.3s forwards;
+}
+
+/* Back button positioned to the right of info panel */
+.gallery-modal-back-btn {
+    background: rgba(255, 42, 0, 0.856);
+    position: absolute;
+    right: -70px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gallery-info-text-muted);
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: color 0.2s ease, background 0.2s ease;
+    white-space: nowrap;
+}
+
+.gallery-modal-back-btn:hover {
+    color: var(--gallery-info-text);
+    background: var(--gallery-btn-bg);
+}
+
+@keyframes infoPanelEnter {
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.gallery-modal-info-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.gallery-modal-info-title {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.gallery-modal-info-details {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--gallery-info-text-muted);
+    flex-wrap: wrap;
+}
+
+.gallery-modal-info-details .info-sep {
+    opacity: 0.4;
+}
+
+.gallery-modal-info-details .info-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gallery-modal-info-details .info-item.info-none {
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.gallery-modal-info-details .info-label {
+    opacity: 0.6;
+    font-size: 11px;
+}
+
+/* Add format badge styling */
+
+.gallery-modal-info-details .info-format {
+    background: var(--gallery-format-badge-bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Info button for full details */
+.gallery-modal-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: var(--gallery-btn-bg);
+    box-shadow: 0px 0px 2px var(--bs-info-bg-subtle);
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 300;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.gallery-modal-info-btn:hover {
+    background: var(--gallery-btn-hover-bg);
+}
+
+.gallery-modal-info-btn:active {
+    background: var(--gallery-btn-active-bg);
+}
+
+/* HDR badge styling - clickable button */
+.gallery-modal-info-details .info-hdr-badge {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7c548 50%, #ff6b35 100%);
+    background-size: 200% 200%;
+    animation: hdr-shimmer 3s ease infinite;
+    color: #000;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative; /* Parent for tooltip positioning */
+}
+
+.gallery-modal-info-details .info-hdr-badge:hover {
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+}
+
+.gallery-modal-info-details .info-hdr-badge .hdr-icon {
+    display: none;
+}
+
+/* HDR badge active state (when native view is enabled) */
+.gallery-modal-info-details .info-hdr-badge.active {
+    background: linear-gradient(135deg, #4caf50 0%, #81c784 50%, #4caf50 100%);
+    animation: none;
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.5);
+}
+
+.gallery-modal-info-details .info-hdr-badge.active .hdr-icon {
+    opacity: 1;
+}
+
+@keyframes hdr-shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* HDR Tooltip Bubble - positioned relative to badge */
+.hdr-tooltip-bubble {
+    position: absolute;
+    bottom: calc(100% + 10px); /* Position above the badge with 10px gap */
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.95) 0%, rgba(247, 197, 72, 0.95) 100%);
+    color: #000;
+    padding: 10px 32px 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 100010;
+    box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: auto;
+}
+
+.hdr-tooltip-bubble.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Arrow pointing down to badge */
+.hdr-tooltip-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid rgba(247, 197, 72, 0.95);
+}
+
+/* Close button */
+.hdr-tooltip-close {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 6px;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    color: #000;
+    transition: background 0.2s ease;
+    line-height: 1;
+    padding: 0;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.hdr-tooltip-close:hover {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+/* Native HDR view container */
+.gallery-native-hdr-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allow clicks to pass through to backdrop */
+}
+
+.gallery-native-hdr-container img {
+    max-width: calc(100% - 80px);
+    max-height: calc(100vh - 180px);
+    object-fit: contain;
+    pointer-events: auto; /* But image itself is clickable */
+}
+
+/* Native view status text */
+.gallery-native-view-status {
+    color: var(--gallery-info-text-muted);
+    font-size: 13px;
+    text-align: center;
+    margin: 16px 0 40px 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+/* Side-by-side compare view */
+.gallery-compare-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+    height: 100%;
+    padding: 20px 40px;
+    box-sizing: border-box;
+}
+.gallery-compare-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    position: relative;
+}
+.gallery-compare-pane canvas,
+.gallery-compare-pane .heif-transformed-wrapper,
+.gallery-compare-pane img {
+    max-width: 100%;
+    max-height: calc(100vh - 220px);
+    object-fit: contain;
+    display: block;
+}
+.gallery-compare-divider {
+    width: 2px;
+    align-self: stretch;
+    background: var(--gallery-btn-border, rgba(255,255,255,0.2));
+    margin: 40px 12px;
+    border-radius: 1px;
+}
+.gallery-compare-label {
+    color: var(--gallery-info-text-muted, #aaa);
+    font-size: 12px;
+    margin-top: 8px;
+    text-align: center;
+}
+
+/* Native HDR success message - legacy, kept for compatibility */
+.gallery-native-hdr-success {
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: var(--gallery-btn-bg);
+    border: 1px solid var(--gallery-btn-border);
+    border-radius: 6px;
+    color: var(--gallery-info-text);
+    font-size: 13px;
+    text-align: center;
+}
+
+/* Native HDR fallback panel */
+.gallery-native-hdr-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+    background: var(--gallery-full-info-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    max-width: 400px;
+    pointer-events: auto;
+}
+
+.gallery-native-hdr-fallback-title {
+    color: var(--gallery-info-text);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.gallery-native-hdr-fallback-desc {
+    color: var(--gallery-info-text-muted);
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.gallery-native-hdr-fallback-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.gallery-native-hdr-fallback-buttons .gallery-burst-btn {
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
+}
+
+.gallery-native-hdr-btn-primary {
+    background: var(--gallery-btn-bg);
+    box-shadow: 1px 1px 14px var(--bs-gray-900);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-native-hdr-btn-primary:hover {
+    background: var(--gallery-btn-active-bg);
+    box-shadow: 1px 1px 14px rgba(100, 180, 255, 0.4);
+}
+
+.gallery-native-hdr-fallback-hint {
+    margin-top: 20px;
+    color: var(--panel-dark-text-subtle);
+    font-size: 12px;
+    text-align: center;
+}
+
+/* No decoder placeholder */
+.gallery-no-decoder-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 30px;
+    background: var(--bs-border-color-translucent);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    border: 2px solid var(--bs-danger-text-emphasis);
+    box-shadow: 1px 1px 14px var(--bs-danger-text-emphasis);
+    min-width: 300px;
+    min-height: 200px;
+    pointer-events: auto;
+}
+
+.gallery-no-decoder-title {
+    color: var(--gallery-info-text);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.gallery-no-decoder-desc {
+    color: var(--gallery-info-text-muted);
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.gallery-no-decoder-codec {
+    color: var(--panel-dark-text-subtle);
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+
+.gallery-no-decoder-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 10px;
+    pointer-events: auto;
+}
+
+.gallery-no-decoder-buttons .gallery-burst-btn {
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
+    background: var(--gallery-btn-bg);
+}
+
+.gallery-no-decoder-meta-notice {
+    margin-top: 20px;
+    color: var(--panel-dark-text-subtle);
+    font-size: 12px;
+    text-align: center;
+}
+
+/* No decoder title row with info button */
+.gallery-no-decoder-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.gallery-no-decoder-title-row .gallery-no-decoder-title {
+    margin-bottom: 0;
+}
+
+.gallery-no-decoder-info-btn {
+    background: transparent;
+    border: none;
+    color: var(--gallery-info-text-muted);
+    font-size: 17px;
+    font-weight: 300;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    margin-left: 4px;
+    transition: color 0.2s ease;
+    pointer-events: auto;
+    opacity: 0.7;
+    text-shadow: 0 0 10px var(--panel-dark-btn-hover);
+}
+
+.gallery-no-decoder-info-btn:hover {
+    color: var(--gallery-info-text);
+    text-decoration: underline;
+    opacity: 1;
+}
+
+/* Unified native fallback panel */
+.gallery-native-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 30px;
+    background: var(--bs-border-color-translucent);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    border: 2px solid var(--bs-danger-text-emphasis);
+    min-width: 300px;
+    min-height: 200px;
+    pointer-events: auto;
+}
+
+.gallery-native-fallback-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.gallery-native-fallback-title {
+    color: var(--gallery-info-text);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.gallery-native-fallback-info-btn {
+    background: transparent;
+    border: none;
+    color: var(--gallery-info-text-muted);
+    font-size: 13px;
+    font-weight: 400;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    margin-left: 4px;
+    transition: color 0.2s ease;
+    pointer-events: auto;
+    opacity: 0.7;
+}
+
+.gallery-native-fallback-info-btn:hover {
+    color: var(--gallery-info-text);
+    text-decoration: underline;
+    opacity: 1;
+}
+
+.gallery-native-fallback-desc {
+    color: var(--gallery-info-text-muted);
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.gallery-native-fallback-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 10px;
+    pointer-events: auto;
+}
+
+.gallery-native-fallback-buttons .gallery-burst-btn {
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
+    background: var(--gallery-btn-bg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+/* Red back button for native fallback (same style as native view) */
+.gallery-native-fallback-back-btn {
+    background: rgba(255, 42, 0, 0.856);
+    color: var(--gallery-info-text-muted);
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-top: 15px;
+    transition: color 0.2s ease, background 0.2s ease;
+    white-space: nowrap;
+    pointer-events: auto;
+}
+
+.gallery-native-fallback-back-btn:hover {
+    color: var(--gallery-info-text);
+    background: var(--gallery-btn-bg);
+}
+
+/* Info modal overlay */
+.gallery-info-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    backdrop-filter: blur(2px);
+    animation: infoModalOverlayFadeIn 0.2s ease-out;
+}
+
+@keyframes infoModalOverlayFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.gallery-info-modal {
+    position: relative;
+    background: var(--gallery-full-info-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 28px 32px;
+    max-width: 500px;
+    width: 90%;
+    height: 550px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    color: var(--gallery-info-text);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--gallery-btn-border);
+    animation: infoModalSlideIn 0.25s ease-out;
+    /* Hide scrollbar */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.gallery-info-modal::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
+}
+
+/* Close button - sticky at top right */
+.gallery-info-modal-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    margin-top: -12px;
+    margin-right: -20px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--gallery-full-info-bg);
+    border: none;
+    color: var(--gallery-info-text-muted);
+    font-size: 22px;
+    font-weight: 300;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, background 0.2s ease;
+    line-height: 1;
+    z-index: 10;
+}
+
+.gallery-info-modal-close:hover {
+    color: var(--gallery-info-text);
+    background: var(--gallery-btn-bg);
+}
+
+/* Scroll indicators */
+.gallery-info-modal-scroll-indicator {
+    position: sticky;
+    left: 0;
+    right: 0;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 2;
+    margin-left: -32px;
+    margin-right: -32px;
+    width: calc(100% + 64px);
+}
+
+.gallery-info-modal-scroll-indicator.visible {
+    opacity: 1;
+}
+
+.gallery-info-modal-scroll-indicator.top {
+    top: -28px;
+    margin-top: -28px;
+    background: linear-gradient(to bottom, var(--gallery-full-info-bg) 50%, transparent 100%);
+}
+
+.gallery-info-modal-scroll-indicator.bottom {
+    bottom: -28px;
+    margin-bottom: -28px;
+    background: linear-gradient(to top, var(--gallery-full-info-bg) 50%, transparent 100%);
+}
+
+.gallery-info-modal-scroll-indicator svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--gallery-info-text);
+    opacity: 0.85;
+}
+
+@keyframes infoModalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.gallery-info-modal-title {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--gallery-info-text);
+}
+
+.gallery-info-modal-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--gallery-info-text-muted);
+}
+
+.gallery-info-modal-content p {
+    margin: 0 0 12px 0;
+}
+
+.gallery-info-modal-content strong {
+    color: var(--gallery-info-text);
+}
+
+.gallery-info-modal-content ul {
+    margin: 8px 0 12px 0;
+    padding-left: 20px;
+}
+
+.gallery-info-modal-content li {
+    margin-bottom: 6px;
+}
+
+/* Full info panel (shown when clicking i) */
+.gallery-modal-full-info {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px) scale(0.95);
+    transform-origin: bottom center;
+    background: var(--gallery-full-info-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 16px 20px;
+    color: var(--gallery-info-text);
+    max-width: 400px;
+    width: max-content;
+    max-height: 60vh;
+    overflow-y: auto;
+    z-index: 1003;
+    pointer-events: auto;
+    
+    /* Animation properties */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease-out, 
+                transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                visibility 0.25s ease-out;
+}
+
+.gallery-modal-full-info.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.gallery-modal-full-info h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gallery-info-text-muted);
+    border-bottom: 1px solid var(--gallery-full-info-border);
+    padding-bottom: 8px;
+}
+
+.gallery-modal-full-info-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 16px;
+    font-size: 12px;
+}
+
+.gallery-modal-full-info-grid .info-key {
+    color: var(--gallery-info-key-color);
+    text-align: right;
+}
+
+.gallery-modal-full-info-grid .info-value {
+    color: var(--gallery-info-text-muted);
+}
+
+/* Error state */
+.gallery-item-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding-bottom: 66.67%;
+    background: var(--gallery-error-bg);
+    color: var(--gallery-error-text);
+    font-size: 11px;
+}
+
+/* Type badges */
+.gallery-item-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--gallery-item-badge-bg);
+    color: var(--gallery-info-text);
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    z-index: 3;
+    pointer-events: none;
+    transition: transform 0.2s ease;
+}
+
+.gallery-item:hover .gallery-item-badge {
+    transform: scale(1.05);
+}
+
+/* Codec badge (VVC) - positioned left of the type badge */
+.gallery-item-badge-codec {
+    right: auto;
+    left: 4px;
+    background: rgba(0, 140, 60, 0.8);
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* SlimHEIF (mif3) badge - teal, stacks next to codec badge on the left */
+.gallery-item-badge-slim {
+    right: auto;
+    left: 4px;
+    background: rgba(0, 140, 140, 0.8);
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* When both codec and slim badges are present, offset slim below codec */
+.gallery-item-badge-codec + .gallery-item-badge-slim {
+    top: 28px;
+}
+
+/* Modal grid for multi-image display */
+.gallery-modal-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    gap: 10px;
+    max-width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    padding: 10px;
+    pointer-events: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.gallery-modal-grid canvas {
+    box-shadow: var(--shadow-modal-image);
+    animation: gridItemEnter 0.4s ease-out backwards;
+}
+
+.gallery-modal-grid canvas:nth-child(1) { animation-delay: 0.1s; }
+.gallery-modal-grid canvas:nth-child(2) { animation-delay: 0.15s; }
+.gallery-modal-grid canvas:nth-child(3) { animation-delay: 0.2s; }
+.gallery-modal-grid canvas:nth-child(4) { animation-delay: 0.25s; }
+.gallery-modal-grid canvas:nth-child(n+5) { animation-delay: 0.3s; }
+
+@keyframes gridItemEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Burst view mode controls */
+.gallery-burst-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    pointer-events: auto;
+    flex-shrink: 0;
+    
+    /* Entrance animation */
+    animation: fadeInUp 0.3s ease-out backwards;
+    animation-delay: 0.2s;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.gallery-burst-btn {
+    background: var(--gallery-btn-bg);
+    border: none;
+    color: var(--gallery-info-text);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.gallery-burst-btn:hover {
+    background: var(--gallery-btn-hover-bg);
+}
+
+.gallery-burst-btn:active {
+    background: var(--gallery-btn-active-bg);
+}
+
+/* Audio controls styling */
+.gallery-burst-controls .audio-time {
+    padding: 0 15px;
+    color: var(--gallery-info-text);
+    font-family: monospace;
+    min-width: 80px;
+    font-size: 13px;
+}
+
+.gallery-burst-controls .audio-volume-label {
+    padding-left: 15px;
+    color: var(--fg-muted, #aaa);
+}
+
+.gallery-burst-controls .audio-status-label {
+    color: var(--fg-muted, #888);
+    padding: 0 10px;
+}
+
+.gallery-burst-controls input[type="range"] {
+    width: 80px;
+    vertical-align: middle;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.gallery-burst-btn.active {
+    background: var(--gallery-btn-active-bg);
+    border-color: var(--gallery-btn-active-border);
+}
+
+/* Album/Favorites controls - multiple control rows */
+.gallery-album-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    pointer-events: auto;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+
+.gallery-album-label {
+    padding: 0 12px;
+    color: var(--gallery-info-text);
+    font-weight: 500;
+    min-width: 100px;
+    text-align: center;
+    font-size: 13px;
+}
+
+/* Item ID buttons bar - wrappable */
+.gallery-album-items-bar {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    pointer-events: auto;
+    margin-bottom: 8px;
+    max-width: 100%;
+}
+
+.gallery-album-id-btn {
+    background: var(--gallery-btn-bg);
+    border: none;
+    color: var(--gallery-info-text);
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: monospace;
+    min-width: 50px;
+    transition: background 0.2s ease;
+}
+
+.gallery-album-id-btn:hover {
+    background: var(--gallery-btn-hover-bg);
+}
+
+.gallery-album-id-btn.active {
+    background: var(--gallery-btn-active-bg);
+}
+
+/* Burst thumbnail strip */
+.gallery-burst-strip {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px;
+    background: var(--gallery-burst-strip-bg);
+    max-width: 100%;
+    height: 80px;
+    min-height: 80px;
+    pointer-events: auto;
+    border-radius: 6px;
+    flex-shrink: 0;
+    align-items: center;
+    scrollbar-width: thin;
+}
+
+.gallery-burst-strip::-webkit-scrollbar {
+    height: 4px;
+}
+
+.gallery-burst-strip::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+.gallery-burst-strip::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.gallery-burst-strip canvas {
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.gallery-burst-strip canvas:hover {
+    border-color: var(--gallery-thumb-border-hover);
+    transform: translateY(-3px);
+}
+
+.gallery-burst-strip canvas.active {
+    border-color: var(--gallery-thumb-border-active);
+    transform: translateY(-3px);
+}
+
+/* Burst main container - holds the primary image */
+.gallery-burst-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.gallery-burst-main canvas {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    box-shadow: var(--shadow-modal-image);
+}
+
+.gallery-burst-indicator {
+    margin-top: 8px;
+    color: var(--fg-muted, #888);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+/* Collection view styles */
+.gallery-collection-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    flex: 1;
+    min-height: 0;
+    gap: 15px;
+}
+
+.gallery-collection-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+}
+
+.gallery-collection-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    box-shadow: var(--shadow-modal-image);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.gallery-collection-indicator {
+    color: var(--bg-input);
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.gallery-collection-strip {
+    display: flex;
+    /* padding: 2px 54px; */
+    gap: 7px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 12px;
+    background: var(--gallery-burst-strip-bg);
+    max-width: 100%;
+    /* height: auto; */
+    min-height: 70px;
+    max-height: 90px;
+    pointer-events: auto;
+    border-radius: 8px;
+    scroll-behavior: smooth;
+    flex-shrink: 0;
+    align-items: center;
+    /* margin-bottom: 15px; */
+    scrollbar-width: thin;
+    /* Horizontal scrollbar styling */
+    scrollbar-width: thin;
+}
+
+.gallery-collection-strip::-webkit-scrollbar {
+    height: 6px;
+}
+
+.gallery-collection-strip::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.gallery-collection-strip::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.gallery-collection-thumb {
+    cursor: pointer;
+    border: 3px solid transparent;
+    border-radius: 4px;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0;
+}
+
+.gallery-collection-thumb:hover {
+    border-color: var(--gallery-thumb-border-hover);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.gallery-collection-thumb.active {
+    border-color: var(--gallery-thumb-border-active);
+    box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+}
+
+/* Responsive column counts */
+@media (max-width: 1200px) {
+    .gallery-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .gallery-grid {
+        grid-template-columns: repeat(3, 1fr);
+        width: calc(100% - 40px);
+    }
+}
+
+@media (max-width: 576px) {
+    .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        width: calc(100% - 20px);
+    }
+    
+    .gallery-burst-controls {
+        flex-wrap: wrap;
+    }
+    
+    .gallery-modal-info-panel {
+        padding: 10px 16px;
+    }
+    
+    .gallery-modal-info-details {
+        font-size: 11px;
+    }
+}
+
+/* Mobile landscape burst controls - vertical layout on right side */
+@media (max-width: 900px) and (orientation: landscape) {
+    .gallery-modal-content{
+        padding: max(36px, 6vh) 1% 1% 1%;
+    }
+    /* Burst view ONLY: special layout with strip on left, controls on right */
+    .gallery-modal-content.burst-view {
+        flex-direction: row !important;
+        padding: max(36px, 6vh) 8px 8px 8px !important;
+        gap: 8px !important;
+    }
+    
+    .gallery-modal-content.burst-view .gallery-burst-controls {
+        position: fixed;
+        right: 1%;
+        top: 50%;
+        transform: translateY(-50%);
+        flex-direction: column;
+        gap: 5px;
+        z-index: 1001;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 6px;
+        border-radius: 6px;
+        animation: none;
+    }
+    
+    .gallery-modal-content.burst-view .gallery-burst-btn {
+        font-size: 13px;
+        white-space: nowrap;
+    }
+    
+    /* Burst strip - vertical, auto-height, centered */
+    .gallery-modal-content.burst-view .gallery-burst-strip {
+        flex-direction: column !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        height: auto !important;
+        max-height: calc(100vh - 50px) !important;
+        min-height: auto !important;
+        width: 55px !important;
+        min-width: 55px !important;
+        order: -1;
+        align-self: center;
+        padding: 6px !important;
+        border-radius: 6px !important;
+    }
+    
+    .gallery-modal-content.burst-view .gallery-burst-strip canvas {
+        width: 40px !important;
+        height: auto !important;
+    }
+    
+    .gallery-modal-content.burst-view .gallery-burst-main {
+        flex: 1;
+        position: relative;
+        min-width: 0;
+    }
+    
+    .gallery-modal-content.burst-view .gallery-burst-main canvas {
+        max-width: calc(100vw - 150px) !important;
+        max-height: calc(100vh - 16px) !important;
+    }
+    
+    /* Burst indicator - visible overlay inside main */
+    .gallery-modal-content.burst-view .gallery-burst-indicator {
+        position: absolute;
+        top: 1%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.6);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 9px;
+        white-space: nowrap;
+        color: var(--gallery-info-text);
+    }
+    
+    /* Grid view in landscape */
+    .gallery-modal-grid {
+        max-height: calc(100vh - 20px) !important;
+    }
+    
+    .gallery-modal-grid canvas {
+        max-height: 100px;
+        max-width: 100px;
+    }
+}
+
+@media (max-width: 400px) {
+    .gallery-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .gallery-item-info {
+        padding: 6px;
+    }
+    
+    .gallery-item-title {
+        font-size: 11px;
+    }
+    
+    .gallery-item-meta {
+        font-size: 9px;
+    }
+    
+    .gallery-item-badge {
+        font-size: 10px;
+        padding: 2px 4px;
+    }
+}
+/* =====================================================================
+ * Layout-mode: Native pixels.
+ *
+ * `.gallery-grid.gallery-mode-native` switches the masonry off and shows
+ * each thumbnail at its real embedded bitmap size. Tiles flow in a
+ * justified flexbox so they pack densely without scaling.
+ *
+ * This actually fulfils the page subtitle's promise. Rules apply only
+ * in this mode so the default Adaptive masonry is untouched.
+ * ===================================================================== */
+.gallery-grid.gallery-mode-native {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 6px;
+    grid-template-columns: none;
+    grid-auto-rows: auto;
+}
+
+.gallery-grid.gallery-mode-native .gallery-item {
+    /* Ignore the masonry span; the tile sizes itself to its bitmap. */
+    grid-row-end: auto;
+    width: auto;
+    flex: 0 0 auto;
+    /* No content-visibility skipping here - the layout depends on real
+     * widths to flow correctly. */
+    content-visibility: visible;
+    contain-intrinsic-size: auto;
+}
+.gallery-grid.gallery-mode-native .gallery-item canvas,
+.gallery-grid.gallery-mode-native .gallery-item img {
+    /* Display each canvas at its intrinsic pixel size, period. */
+    width: auto;
+    height: auto;
+    max-width: none;
+    /* Crisp rendering so the bytes-truth promise is taken literally. */
+    image-rendering: pixelated;
+}
+/* Rotation wrapper for 90/270-rotated tiles. JS sets explicit pixel
+ * dimensions on this element in native mode (see _wrapRotatedCanvas);
+ * make sure flexbox treats it as fixed-size content rather than trying
+ * to stretch or fit it inside the parent tile. Without this rule the
+ * `.gallery-item canvas` block higher in the file (width:100%/height:100%)
+ * would still apply to the inner canvas and fight the inline transform. */
+.gallery-grid.gallery-mode-native .gallery-rotation-wrapper {
+    flex: 0 0 auto;
+    overflow: visible;
+}
+.gallery-grid.gallery-mode-native .gallery-item-placeholder {
+    /* In native mode the real width/height come from the decoded bitmap.
+     * Until the JS pre-measure runs (sets these inline based on cached
+     * primary dims and the thumbnail size cap) we hold a small neutral
+     * square so the row doesn't visibly stretch. _applyPlaceholderAspect
+     * overrides both width and padding-bottom inline as soon as fileInfo
+     * arrives. */
+    width: 200px;
+    padding-bottom: 200px;
+    height: 0;
+}
+
+/* =====================================================================
+ * Deferred-preview tile (no embedded thumbnail + huge primary).
+ *
+ * Decoding an 8K primary just to fill a 250px tile is wasteful and the
+ * main reason the gallery felt slow on certain conformance files.
+ * For files that meet the criteria (no `thmb`, large primary), we show
+ * a dedicated "Heavy preview" card and only decode when the user opts
+ * in by clicking. JS handles the click - this is purely the look.
+ * ===================================================================== */
+.gallery-item-deferred {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    background: linear-gradient(135deg,
+        var(--bg-muted) 0%,
+        var(--border-light) 100%);
+    color: var(--fg-muted);
+    text-align: center;
+    cursor: pointer;
+    z-index: 0;
+}
+.gallery-item-deferred-icon {
+    width: 28px;
+    height: 28px;
+    opacity: 0.6;
+}
+.gallery-item-deferred-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fg-default);
+}
+.gallery-item-deferred-hint {
+    font-size: 10px;
+    opacity: 0.75;
+    line-height: 1.35;
+}
+.gallery-item-deferred-action {
+    margin-top: 4px;
+    padding: 5px 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-blue-digital, #fff);
+    background: var(--accent-primary);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: filter 0.18s ease;
+}
+.gallery-item-deferred-action:hover { filter: brightness(1.1); }
+.gallery-item-deferred-action:focus-visible {
+    outline: 2px solid var(--fg-default);
+    outline-offset: 2px;
+}
+
+/* =====================================================================
+ * Set-switch crossfade.
+ *
+ * The previous behaviour wiped the grid (innerHTML = '') and rebuilt it
+ * synchronously, producing a hard flash. `.is-switching` fades the grid
+ * out, JS swaps content, then removes the class to fade back in.
+ * Backed by a real opacity transition so it's compositor-only.
+ * ===================================================================== */
+.gallery-grid {
+    transition: opacity 0.2s ease;
+}
+.gallery-grid.is-switching {
+    opacity: 0;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gallery-grid { transition: none; }
+    .gallery-status-bar { transition: none; }
+}
