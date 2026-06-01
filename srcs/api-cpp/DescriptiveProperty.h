@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,10 @@
 #pragma once
 
 #include <ItemProperty.h>
+#include "heifcommondatatypes.h"
+#include <cstdint>
+#include <string>
+#include <vector>
 
 namespace HEIFPP
 {
@@ -25,14 +29,11 @@ namespace HEIFPP
         DescriptiveProperty(Heif* aHeif, const HEIF::ItemPropertyType& aType, const HEIF::FourCC& aRawType);
 
     protected:
-        // valid types: 'pasp','colr','pixi','rloc','auxc','lsel'
+        // valid types: 'pasp','colr','pixi','rloc','auxc','lsel','tols','oinf','subs'
 
-        // hmm: 'hvcC' 'lhvC' 'avcC' 'jpgC' decoder config/init properties not exposed.
-        //     'subs'  'oinf' 'tols' decoder properties not exposed here.
-        //     'ispe'   not exposed here.
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
 
-    private:
+    public:
         DescriptiveProperty& operator=(const DescriptiveProperty&) = delete;
         DescriptiveProperty& operator=(DescriptiveProperty&&) = delete;
         DescriptiveProperty(const DescriptiveProperty&)       = delete;
@@ -44,14 +45,14 @@ namespace HEIFPP
     {
     public:
         HEIF::PixelAspectRatio mPixelAspectRatio;
-        PixelAspectRatioProperty(Heif* aHeif);
+        explicit PixelAspectRatioProperty(Heif* aHeif);
         ~PixelAspectRatioProperty() override = default;
 
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         PixelAspectRatioProperty& operator=(const PixelAspectRatioProperty&) = delete;
         PixelAspectRatioProperty& operator=(PixelAspectRatioProperty&&) = delete;
         PixelAspectRatioProperty(const PixelAspectRatioProperty&)       = delete;
@@ -63,14 +64,14 @@ namespace HEIFPP
     {
     public:
         HEIF::ColourInformation mColourInformation;
-        ColourInformationProperty(Heif* aHeif);
+        explicit ColourInformationProperty(Heif* aHeif);
         ~ColourInformationProperty() override = default;
 
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         ColourInformationProperty& operator=(const ColourInformationProperty&) = delete;
         ColourInformationProperty& operator=(ColourInformationProperty&&) = delete;
         ColourInformationProperty(const ColourInformationProperty&)       = delete;
@@ -82,14 +83,14 @@ namespace HEIFPP
     {
     public:
         HEIF::PixelInformation mPixelInformation;
-        PixelInformationProperty(Heif* aHeif);
+        explicit PixelInformationProperty(Heif* aHeif);
         ~PixelInformationProperty() override = default;
 
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         PixelInformationProperty& operator=(const PixelInformationProperty&) = delete;
         PixelInformationProperty& operator=(PixelInformationProperty&&) = delete;
         PixelInformationProperty(const PixelInformationProperty&)       = delete;
@@ -101,14 +102,14 @@ namespace HEIFPP
     {
     public:
         HEIF::RelativeLocation mRelativeLocation;
-        RelativeLocationProperty(Heif* aHeif);
+        explicit RelativeLocationProperty(Heif* aHeif);
         ~RelativeLocationProperty() override = default;
 
     protected:
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         RelativeLocationProperty& operator=(const RelativeLocationProperty&) = delete;
         RelativeLocationProperty& operator=(RelativeLocationProperty&&) = delete;
         RelativeLocationProperty(const RelativeLocationProperty&)       = delete;
@@ -119,7 +120,7 @@ namespace HEIFPP
     class AuxiliaryProperty : public HEIFPP::DescriptiveProperty
     {
     public:
-        AuxiliaryProperty(Heif* aHeif);
+        explicit AuxiliaryProperty(Heif* aHeif);
         ~AuxiliaryProperty() override = default;
         const std::string& auxType();
         void auxType(const std::string&);
@@ -132,11 +133,87 @@ namespace HEIFPP
 
         std::string mAuxType;  ///< Type of the associated auxiliary image item. This is not null-terminated.
         std::vector<std::uint8_t> mSubType;  ///< Aux subtype, semantics depends on the auxType value
-    private:
+    public:
         AuxiliaryProperty& operator=(const AuxiliaryProperty&) = delete;
         AuxiliaryProperty& operator=(AuxiliaryProperty&&) = delete;
         AuxiliaryProperty(const AuxiliaryProperty&)       = delete;
         AuxiliaryProperty(AuxiliaryProperty&&)            = delete;
         AuxiliaryProperty()                               = delete;
+    };
+
+    class LayerSelectorProperty : public HEIFPP::DescriptiveProperty
+    {
+    public:
+        HEIF::LayerSelector mLayerSelector;
+        explicit LayerSelectorProperty(Heif* aHeif);
+        ~LayerSelectorProperty() override = default;
+
+    protected:
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
+
+    public:
+        LayerSelectorProperty& operator=(const LayerSelectorProperty&) = delete;
+        LayerSelectorProperty& operator=(LayerSelectorProperty&&) = delete;
+        LayerSelectorProperty(const LayerSelectorProperty&)       = delete;
+        LayerSelectorProperty(LayerSelectorProperty&&)            = delete;
+        LayerSelectorProperty()                                   = delete;
+    };
+
+    class TargetOlsProperty : public HEIFPP::DescriptiveProperty
+    {
+    public:
+        HEIF::TargetOls mTargetOls;
+        explicit TargetOlsProperty(Heif* aHeif);
+        ~TargetOlsProperty() override = default;
+
+    protected:
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
+
+    public:
+        TargetOlsProperty& operator=(const TargetOlsProperty&) = delete;
+        TargetOlsProperty& operator=(TargetOlsProperty&&) = delete;
+        TargetOlsProperty(const TargetOlsProperty&)       = delete;
+        TargetOlsProperty(TargetOlsProperty&&)            = delete;
+        TargetOlsProperty()                               = delete;
+    };
+
+    class OperatingPointsProperty : public HEIFPP::DescriptiveProperty
+    {
+    public:
+        HEIF::OperatingPointsInfo mOperatingPoints;
+        explicit OperatingPointsProperty(Heif* aHeif);
+        ~OperatingPointsProperty() override = default;
+
+    protected:
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
+
+    public:
+        OperatingPointsProperty& operator=(const OperatingPointsProperty&) = delete;
+        OperatingPointsProperty& operator=(OperatingPointsProperty&&) = delete;
+        OperatingPointsProperty(const OperatingPointsProperty&)       = delete;
+        OperatingPointsProperty(OperatingPointsProperty&&)            = delete;
+        OperatingPointsProperty()                                     = delete;
+    };
+
+    class SubSampleProperty : public HEIFPP::DescriptiveProperty
+    {
+    public:
+        HEIF::SubSampleInfo mSubSampleInfo;
+        explicit SubSampleProperty(Heif* aHeif);
+        ~SubSampleProperty() override = default;
+
+    protected:
+        HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::PropertyId& aId) override;
+        HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
+
+    public:
+        SubSampleProperty& operator=(const SubSampleProperty&) = delete;
+        SubSampleProperty& operator=(SubSampleProperty&&) = delete;
+        SubSampleProperty(const SubSampleProperty&)       = delete;
+        SubSampleProperty(SubSampleProperty&&)            = delete;
+        SubSampleProperty()                               = delete;
     };
 }  // namespace HEIFPP

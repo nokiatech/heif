@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,23 +13,28 @@
 #pragma once
 
 #include <CodedImageItem.h>
+#include "heifcommondatatypes.h"
+#include <cstdint>
 
 namespace HEIFPP
 {
     class JPEGCodedImageItem : public HEIFPP::CodedImageItem
     {
+        // Construction is private; use Heif::create<T>() factory.
+        friend class HEIFPP::Heif;
+
     public:
-        JPEGCodedImageItem(Heif* aHeif);
         ~JPEGCodedImageItem() override = default;
 
     protected:
+        explicit JPEGCodedImageItem(Heif* aHeif);
         // serialization
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
         bool getBitstream(std::uint8_t*& aData, std::uint64_t& aSize) override;
 
-    private:
+    public:
         JPEGCodedImageItem& operator=(const JPEGCodedImageItem&) = delete;
         JPEGCodedImageItem& operator=(JPEGCodedImageItem&&) = delete;
         JPEGCodedImageItem(const JPEGCodedImageItem&)       = delete;

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,8 @@
 #ifndef VISUALEQUIVALENCEENTRY_HPP
 #define VISUALEQUIVALENCEENTRY_HPP
 
-#include "bitstream.hpp"
-#include "customallocator.hpp"
 #include "samplegroupdescriptionentry.hpp"
+#include <cstdint>
 
 /** @brief VisualEquivalenceEntry class. Inherits from SampleGroupDescriptionEntry.
  *  @details Implements VisualEquivalenceEntry as defined in HEIF standard. */
@@ -63,8 +62,8 @@ public:
 
 private:
     std::int16_t
-        mTimeOffset;  ///< Difference of the time related to the image item(s) and the composition time of sample(s).
-    std::uint16_t mTimescaleMultiplier;  ///< Timescale as a multiplier to the media timescale of the track.
+        mTimeOffset{0};  ///< Difference of the time related to the image item(s) and the composition time of sample(s).
+    std::uint16_t mTimescaleMultiplier{0};  ///< Timescale as a multiplier to the media timescale of the track.
 };
 
 #endif /* end of include guard: VISUALEQUIVALENCEENTRY_HPP */

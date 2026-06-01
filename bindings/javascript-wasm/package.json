@@ -1,0 +1,31 @@
+{
+  "name": "nokia-heif",
+  "version": "4.0.0",
+  "description": "JavaScript/WebAssembly binding for the Nokia HEIF library C facade",
+  "main": "heif.js",
+  "types": "heif.d.ts",
+  "files": [
+    "heif.js",
+    "heif.d.ts",
+    "heif-raw.js",
+    "heif-raw.wasm",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bash build-with-emcmake.sh"
+  },
+  "keywords": [
+    "heif",
+    "heic",
+    "hevc",
+    "vvc",
+    "isobmff",
+    "wasm",
+    "emscripten"
+  ],
+  "license": "SEE LICENSE IN LICENSE.TXT",
+  "repository": {
+    "type": "git",
+    "directory": "bindings/javascript-wasm"
+  }
+}

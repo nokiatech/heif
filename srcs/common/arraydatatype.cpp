@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -18,16 +18,20 @@
 #include "heifreaderdatatypes.h"
 #endif
 #if defined(HEIF_WRITER_LIB)
-#include "heifwriterdatatypes.h"
 #endif
 #include "customallocator.hpp"
+#include "heifcommondatatypes.h"
+#include <initializer_list>
+#include <stddef.h>
+#include <stdint.h>
+#include <string>
 
 namespace HEIF
 {
     template <typename T>
     Array<T>::~Array()
     {
-        CUSTOM_DELETE_ARRAY(elements, T);
+        customDestructAndDeallocateArray<T>(elements);
     }
 
     template <typename T>
@@ -40,14 +44,14 @@ namespace HEIF
     template <typename T>
     Array<T>::Array(size_t n)
         : size(n)
-        , elements(CUSTOM_NEW_ARRAY(T, n))
+        , elements(customAllocateArray<T>(n))
     {
     }
 
     template <typename T>
     Array<T>::Array(const Array& other)
         : size(other.size)
-        , elements(CUSTOM_NEW_ARRAY(T, other.size))
+        , elements(customAllocateArray<T>(other.size))
     {
         std::copy(other.elements, other.elements + other.size, elements);
     }
@@ -57,9 +61,9 @@ namespace HEIF
     {
         if (this != &other)
         {
-            CUSTOM_DELETE_ARRAY(elements, T);
+            customDestructAndDeallocateArray<T>(elements);
             size     = other.size;
-            elements = CUSTOM_NEW_ARRAY(T, size);
+            elements = customAllocateArray<T>(size);
             std::copy(other.elements, other.elements + other.size, elements);
         }
         return *this;
@@ -74,8 +78,8 @@ namespace HEIF
     }
 
 #define instance(X) template struct Array<X>
-    template HEIF_DLL_PUBLIC Array<char>::Array(String::iterator begin, String::iterator end);
-    template HEIF_DLL_PUBLIC Array<char>::Array(String::const_iterator begin, String::const_iterator end);
+    template Array<char>::Array(String::iterator begin, String::iterator end);
+    template Array<char>::Array(String::const_iterator begin, String::const_iterator end);
 
     instance(DecoderSpecificInfo);
     instance(FourCC);
@@ -92,8 +96,17 @@ namespace HEIF
     instance(uint32_t);
     instance(uint64_t);
     instance(Array<FourCC>);
+    instance(bool);
+    instance(std::string);
+    instance(GainMapData::Channel);
+    instance(PixelInformation::ChannelEntry);
+    instance(OperatingPointsInfo::ProfileTierLevel);
+    instance(OperatingPointsInfo::OperatingPoint);
+    instance(OperatingPointsInfo::OperatingPointLayer);
+    instance(OperatingPointsInfo::LayerInfo);
+    instance(SubSampleInfo::SubSampleEntry);
 
-#if HEIF_READER_LIB
+#ifdef HEIF_READER_LIB
     instance(EntityGrouping);
     instance(FourCCToIds);
     instance(SampleGrouping);
@@ -104,6 +117,10 @@ namespace HEIF
     instance(SampleVisualEquivalence);
     instance(SampleToMetadataItem);
     instance(DirectReferenceSamples);
+    instance(RectangularRegion);
+    instance(VvcSubpicOrder);
+    instance(VvcSubpicLayoutMap);
+    instance(VvcMixedNalUnitTypePic);
     instance(SequenceId);
     instance(TimestampIDPair);
     instance(TrackInformation);
@@ -111,7 +128,7 @@ namespace HEIF
     instance(SegmentInformation);
 
 #endif
-#if HEIF_WRITER_LIB
+#ifdef HEIF_WRITER_LIB
     instance(EditUnit);
 #endif
 

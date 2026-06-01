@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,14 +11,23 @@
  */
 #pragma once
 
-#include "Heif.h"
+#include <cstdint>
+#include <vector>
+
+#include "ErrorCodes.h"
+
+namespace HEIFPP
+{
+    class Heif;
+    class Track;
+}  // namespace HEIFPP
 
 namespace HEIFPP
 {
     class AlternativeTrackGroup
     {
     public:
-        AlternativeTrackGroup(Heif* aHeif);
+        explicit AlternativeTrackGroup(Heif* aHeif);
         virtual ~AlternativeTrackGroup();
         /** Sets the custom user data
          *  @param [in] aContext Pointer to the custom data */
@@ -42,6 +51,6 @@ namespace HEIFPP
     protected:
         std::vector<Track*> mTracks;
         Heif* mHeif;
-        const void* mContext;
+        const void* mContext{nullptr};
     };
 }  // namespace HEIFPP

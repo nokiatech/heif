@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,9 @@
 #ifndef TIMETOSAMPLEBOX_HPP
 #define TIMETOSAMPLEBOX_HPP
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include <cstdint>
 
 /** @brief TimeToSampleBox class. Extends from FullBox.
  *  @details 'stts' box contains display timing information of samples as defined in the ISOBMFF standard.

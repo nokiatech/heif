@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,7 +15,15 @@
 #define ENTITYTOGROUPBOX_HPP
 
 #include "customallocator.hpp"
+#include "fourccint.hpp"
 #include "fullbox.hpp"
+
+#include <cstdint>
+
+namespace ISOBMFF
+{
+    class BitStream;
+}
 
 /**
  * @brief Entity to Group box implementation as specified in the HEIF specification.
@@ -24,7 +32,7 @@ class EntityToGroupBox : public FullBox
 {
 public:
     EntityToGroupBox();
-    EntityToGroupBox(FourCCInt type);
+    explicit EntityToGroupBox(FourCCInt type);
     ~EntityToGroupBox() override = default;
 
     typedef Vector<std::uint32_t> EntityIds;  ///< Convenience type for handling entity IDs

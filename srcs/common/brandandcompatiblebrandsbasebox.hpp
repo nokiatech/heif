@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,9 +15,10 @@
 #define BRANDSANDCOMPATIBLEBRANDSBASEBOX_HPP
 
 #include "bbox.hpp"
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include "fourccint.hpp"
+#include <cstdint>
 
 /** @brief Implementation + API for ftyp, styp and ttyp boxes (and other if there is more to come with same box payload)
  *  @details box implementation as specified in the ISOBMFF specification
@@ -27,7 +28,7 @@ template <class T>
 class BrandAndCompatibleBrandsBaseBox : public T
 {
 public:
-    BrandAndCompatibleBrandsBaseBox(FourCCInt boxType);
+    explicit BrandAndCompatibleBrandsBaseBox(FourCCInt boxType);
     BrandAndCompatibleBrandsBaseBox(FourCCInt boxType, std::uint8_t version, std::uint32_t flags = 0);
 
     ~BrandAndCompatibleBrandsBaseBox() override = default;

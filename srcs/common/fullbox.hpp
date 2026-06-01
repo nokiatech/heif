@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,8 +17,7 @@
 #include <cstdint>
 
 #include "bbox.hpp"
-#include "bitstream.hpp"
-#include "customallocator.hpp"
+#include "fourccint.hpp"
 
 /** @brief Full Box class. Extends from Box.
  *  @details 'ftyp' box implementation as specified in the ISOBMFF specification

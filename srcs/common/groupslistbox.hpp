@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,6 +17,11 @@
 #include "bbox.hpp"
 #include "customallocator.hpp"
 #include "entitytogroupbox.hpp"
+
+namespace ISOBMFF
+{
+    class BitStream;
+}
 
 /** @brief Groups List Box class. Extends from Box.
  *  @details 'grpl' box implementation

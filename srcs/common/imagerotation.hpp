@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,7 +17,6 @@
 #include <cstdint>
 
 #include "bbox.hpp"
-#include "customallocator.hpp"
 
 namespace ISOBMFF
 {
@@ -47,7 +46,7 @@ public:
     void parseBox(ISOBMFF::BitStream& input) override;
 
 private:
-    std::uint32_t mAngle;  ///< Rotation angle in anti-clockwise direction. Valid values are 0, 90, 180 and 270 degrees.
+    std::uint32_t mAngle{0};  ///< Rotation angle in anti-clockwise direction. Valid values are 0, 90, 180 and 270 degrees.
 };
 
 #endif

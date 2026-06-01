@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,13 +12,19 @@
 
 #include "CodedImageItem.h"
 
+#include "Heif.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
 
 #include <cstring>
 
 #include "DecoderConfiguration.h"
+#include "ErrorContext.h"
 #include "H26xTools.h"
+#include "ImageItem.h"
+#include "heifreaderdatatypes.h"
+#include "helpers.h"
 
 using namespace HEIFPP;
 
@@ -62,8 +68,9 @@ Result CodedImageItem::setDecoderConfiguration(DecoderConfig* aConfig)
     {
         if (aConfig->getMediaFormat() != mFormat)
         {
-            // invalid configuration.
-            return Result::INVALID_CONFIG;
+            return HEIFPP_FAIL(Result::INVALID_CONFIG,
+                               ErrorSource::Api_Validation,
+                               "CodedImageItem::setDecoderConfiguration: config media format does not match item format");
         }
     }
     mConfig = aConfig;
@@ -114,10 +121,8 @@ void CodedImageItem::setBaseImage(std::uint32_t aId, ImageItem* aImage)
     {
         if (mBaseImages[aId])
         {
-            if (!removeBaseLink(mBaseImages[aId], this))
-            {
-                HEIF_ASSERT(false);
-            }
+            HEIF_LOG_INVARIANT(removeBaseLink(mBaseImages[aId], this),
+                               "setBaseImage(id): removeBaseLink failed");
         }
         mBaseImages[aId] = aImage;
         if (aImage)
@@ -135,10 +140,8 @@ void CodedImageItem::setBaseImage(ImageItem* aOldImage, ImageItem* aNewImage)
         {
             if (aOldImage)
             {
-                if (!removeBaseLink(aOldImage, this))
-                {
-                    HEIF_ASSERT(false);
-                }
+                HEIF_LOG_INVARIANT(removeBaseLink(aOldImage, this),
+                                   "setBaseImage(old,new): removeBaseLink failed");
             }
             baseImage = aNewImage;
             if (aNewImage)
@@ -165,10 +168,8 @@ void CodedImageItem::removeBaseImage(std::uint32_t aId)
         auto it = mBaseImages.begin() + static_cast<std::int32_t>(aId);
         if (*it)
         {
-            if (!removeBaseLink(*it, this))
-            {
-                HEIF_ASSERT(false);
-            }
+            HEIF_LOG_INVARIANT(removeBaseLink(*it, this),
+                               "removeBaseImage(id): removeBaseLink failed");
         }
         mBaseImages.erase(it);
     }
@@ -181,10 +182,8 @@ void CodedImageItem::removeBaseImage(ImageItem* aImage)
         {
             if (aImage)
             {
-                if (!removeBaseLink(aImage, this))
-                {
-                    HEIF_ASSERT(false);
-                }
+                HEIF_LOG_INVARIANT(removeBaseLink(aImage, this),
+                                   "removeBaseImage(image): removeBaseLink failed");
             }
             it = mBaseImages.erase(it);
         }
@@ -201,10 +200,8 @@ void CodedImageItem::reserveBaseImages(std::uint32_t aCount)
     {
         for (auto it = mBaseImages.begin() + static_cast<std::int32_t>(aCount); it != mBaseImages.end(); ++it)
         {
-            if (!removeBaseLink(*it, this))
-            {
-                HEIF_ASSERT(false);
-            }
+            HEIF_LOG_INVARIANT(removeBaseLink(*it, this),
+                               "reserveBaseImages: removeBaseLink failed");
             *it = nullptr;
         }
     }
@@ -231,8 +228,21 @@ HEIF::ErrorCode CodedImageItem::loadItemData()
         {
             delete[] mBuffer;
             mBuffer = nullptr;
+            // First query the required buffer size via getItemData.
+            // For compact VVC items the reader needs INSERT_SIZE (6) extra bytes
+            // beyond the raw item length. A size query ensures we allocate enough.
+            // Pass size=0 to force BUFFER_SIZE_TOO_SMALL and get the actual required size.
+            uint8_t dummy;
+            uint64_t requiredSize = 0;
+            HEIF::ErrorCode sizeErr = getHeif()->getReaderInstance()->getItemData(getId(), &dummy, requiredSize, false);
+            if (sizeErr == HEIF::ErrorCode::BUFFER_SIZE_TOO_SMALL && requiredSize > mBufferSize)
+            {
+                mBufferSize = requiredSize;
+            }
             mBuffer = new std::uint8_t[mBufferSize];
-            error   = getHeif()->getReaderInstance()->getItemData(getId(), mBuffer, mBufferSize, false);
+            uint64_t bufSize64 = mBufferSize;
+            error   = getHeif()->getReaderInstance()->getItemData(getId(), mBuffer, bufSize64, false);
+            mBufferSize = static_cast<uint32_t>(bufSize64);
             if (HEIF::ErrorCode::OK != error)
             {
                 // Could not get the data. fail.
@@ -246,6 +256,7 @@ HEIF::ErrorCode CodedImageItem::loadItemData()
                 {
                 case HEIF::MediaFormat::AVC:
                 case HEIF::MediaFormat::HEVC:
+                case HEIF::MediaFormat::VVC:
                 {
                     error = NAL_State::convertToByteStream(mBuffer, mBufferSize) ? HEIF::ErrorCode::OK
                                                                                  : HEIF::ErrorCode::MEDIA_PARSING_ERROR;
@@ -260,7 +271,7 @@ HEIF::ErrorCode CodedImageItem::loadItemData()
         }
         else
         {
-            HEIF_ASSERT(false);
+            HEIF_LOG_INVARIANT(false, "CodedImageItem::loadItemData: missing Heif/Reader instance");
         }
     }
     return error;
@@ -348,8 +359,7 @@ HEIF::ErrorCode CodedImageItem::save(HEIF::Writer* aWriter)
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
     if (mBuffer == nullptr)
     {
-        // TODO: actual error is NO_MEDIA
-        return HEIF::ErrorCode::BUFFER_SIZE_TOO_SMALL;
+        return HEIF::ErrorCode::NO_MEDIA;
     }
     HEIF::Data fr;
     HEIF::MediaDataId mediaDataId;

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,13 +13,14 @@
 #pragma once
 
 #include <Sample.h>
+#include "heifcommondatatypes.h"
 
 namespace HEIFPP
 {
     class AudioSample : public Sample
     {
     public:
-        AudioSample(Heif* aHeif);
+        explicit AudioSample(Heif* aHeif);
 
     private:
         // serialization methods.
@@ -28,7 +29,7 @@ namespace HEIFPP
                              const HEIF::SampleInformation& aInfo) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         AudioSample& operator=(const AudioSample&) = delete;
         AudioSample& operator=(AudioSample&&) = delete;
         AudioSample(const AudioSample&)       = delete;

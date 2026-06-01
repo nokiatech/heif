@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,11 +14,11 @@
 #ifndef AUDIOSAMPLEENTRYBOX_HPP
 #define AUDIOSAMPLEENTRYBOX_HPP
 
-#include "bitstream.hpp"
 #include "channellayoutbox.hpp"
-#include "customallocator.hpp"
 #include "sampleentrybox.hpp"
 #include "samplingratebox.hpp"
+#include "fourccint.hpp"
+#include <cstdint>
 
 /** @brief AudioSampleEntryBox (supports also v1) class. Extends from SampleEntryBox.
  *  @details This box contains information related to the audio samples of the track
@@ -27,7 +27,7 @@
 class AudioSampleEntryBox : public SampleEntryBox
 {
 public:
-    AudioSampleEntryBox(FourCCInt codingname);
+    explicit AudioSampleEntryBox(FourCCInt codingname);
     AudioSampleEntryBox(const AudioSampleEntryBox& box);
     ~AudioSampleEntryBox() override = default;
 
@@ -107,12 +107,12 @@ public:
     bool isVisual() const override;
 
 private:
-    std::uint16_t mVersion;       ///< Version of box, either 0 or 1
-    std::uint16_t mChannelCount;  ///< Number of channels 1 (mono) or 2 (stereo)
-    std::uint16_t mSampleSize;    ///< In bits and takes default value of 16
-    std::uint32_t mSampleRate;    ///< 32-bit field expressed as 16.16 fixed-point number (hi.lo)
-    bool mHasChannelLayoutBox;
-    bool mHasSamplingRateBox;
+    std::uint16_t mVersion{0};       ///< Version of box, either 0 or 1
+    std::uint16_t mChannelCount{0};  ///< Number of channels 1 (mono) or 2 (stereo)
+    std::uint16_t mSampleSize{0};    ///< In bits and takes default value of 16
+    std::uint32_t mSampleRate{0};    ///< 32-bit field expressed as 16.16 fixed-point number (hi.lo)
+    bool mHasChannelLayoutBox{false};
+    bool mHasSamplingRateBox{false};
     ChannelLayoutBox mChannelLayoutBox;  // optional
     SamplingRateBox mSamplingRateBox;    // optional
 };

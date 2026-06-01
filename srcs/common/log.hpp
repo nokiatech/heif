@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,16 +13,38 @@
 
 #ifndef LOG_HPP
 #define LOG_HPP
+#include <cstdint>
 #include <ostream>
 
-#include "customallocator.hpp"
 
 /** @brief Helper class for Logging information during execution.
- *  @details Log levels can be Error, Warning and Info */
+ *  @details Log levels can be Error, Warning and Info.
+ *
+ *  @par Relationship to the error sink
+ *  This class is a *legacy verbose-trace facility*, NOT an error-reporting
+ *  channel. It exists for ad-hoc debugging of the parser/box-walker code
+ *  paths and predates the `HEIF::ErrorInfo` / `HEIFPP::ErrorContext`
+ *  sink contract.
+ *
+ *  Default state on every fresh process is `LogLevel::NONE`, which suppresses
+ *  every emitted line. Embedders never see Log output unless they explicitly
+ *  call `Log::setLevel(...)` with a more verbose level. This is a deliberate
+ *  design choice:
+ *    - Real error reporting goes through `HEIF::setErrorSink` /
+ *      `HEIFPP::setErrorSink` (typed `ErrorInfo`/`ErrorContext`, with
+ *      file/line/code/cause). That is the contract embedders should rely on.
+ *    - `Log::setLevel(...)` is for ad-hoc developer tracing only and writes
+ *      directly to `std::cout` / `std::cerr`. It does NOT route through any
+ *      installed error sink, by design -- the two channels carry
+ *      different kinds of information.
+ *
+ *  If you need errors *and* trace, install an error sink and additionally
+ *  call `Log::setLevel(LogLevel::WARNING)` (or higher) during development.
+ */
 class Log
 {
 public:
-    enum class LogLevel
+    enum class LogLevel : std::uint8_t
     {
         INFO,
         WARNING,
@@ -84,8 +106,8 @@ public:
     Log const& operator<<(std::ostream& (*os)(std::ostream&) ) const;
 
 private:
-    Log() = delete;
-    Log(LogLevel level);
+    Log() = delete;  // NOLINT(modernize-use-equals-delete) -- intentionally private, this is a singleton-like log facade
+    explicit Log(LogLevel level);
 
     /// Log level of output
     static LogLevel mLogLevel;

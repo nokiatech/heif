@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,7 +16,6 @@
 
 #include <cstdint>
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
 
@@ -109,14 +108,14 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    std::uint64_t mCreationTime;      ///< Creation time
-    std::uint64_t mModificationTime;  ///< Modificaiton time
-    std::uint32_t mTrackID;           ///< Track ID
-    std::uint64_t mDuration;          ///< Track's duration
-    std::uint32_t mWidth;             ///< Track display width
-    std::uint32_t mHeight;            ///< Track display height
-    std::uint16_t mAlternateGroup;    ///< Alternate group Id of the track
-    std::uint16_t mVolume;            ///< Volume (for audio tracks)
+    std::uint64_t mCreationTime{0};      ///< Creation time
+    std::uint64_t mModificationTime{0};  ///< Modificaiton time
+    std::uint32_t mTrackID{0};           ///< Track ID
+    std::uint64_t mDuration{0};          ///< Track's duration
+    std::uint32_t mWidth{0};             ///< Track display width
+    std::uint32_t mHeight{0};            ///< Track display height
+    std::uint16_t mAlternateGroup{0};    ///< Alternate group Id of the track
+    std::uint16_t mVolume{0};            ///< Volume (for audio tracks)
     Vector<std::int32_t> mMatrix;     ///< Matrix
 };
 

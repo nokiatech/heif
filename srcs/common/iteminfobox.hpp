@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,8 +15,10 @@
 #define ITEMINFOBOX_HPP
 
 #include <cstdint>
+#include <memory>
 
 #include "customallocator.hpp"
+#include "fourccint.hpp"
 #include "fullbox.hpp"
 
 namespace ISOBMFF
@@ -33,7 +35,7 @@ class ItemInfoBox : public FullBox
 {
 public:
     ItemInfoBox();
-    ItemInfoBox(uint8_t version);
+    explicit ItemInfoBox(uint8_t version);
     ~ItemInfoBox() override = default;
 
     /** @brief Clear the contents of the Item Information List */
@@ -71,6 +73,10 @@ public:
      * @return ItemInfoEntry with the desired itemId
      * @throws Runtime Exception if the requested ItemInfoEntry is not found. */
     ItemInfoEntry& getItemById(uint32_t itemId);
+
+    /** @brief Returns a vector that contains all ItemInfoEntrys
+     *  @return mItemInfoList of this ItemInfoBox   */
+    const Vector<ItemInfoEntry>& getItemInfoList();
 
 private:
     Vector<ItemInfoEntry> mItemInfoList;  ///< Vector of the ItemInfoEntry Boxes
@@ -162,8 +168,8 @@ public:
 
 private:
     // Version 0, 1, 2, 3
-    std::uint32_t mItemID;               ///< ID of the item
-    std::uint16_t mItemProtectionIndex;  ///< Item protection index
+    std::uint32_t mItemID{0};               ///< ID of the item
+    std::uint16_t mItemProtectionIndex{0};  ///< Item protection index
     String mItemName;                    ///< Item name
     String mContentType;                 ///< Content type
     String mContentEncoding;             ///< Content encoding
@@ -230,11 +236,11 @@ public:
 
     /** @brief Set the transfer length.
      * @param [in] length transfer length value as defined in the ISOBMFF standard. */
-    void setTranferLength(uint64_t length);
+    void setTransferLength(uint64_t length);
 
     /** @brief Get the content length.
      * @return Content Length value as defined in the ISOBMFF standard. */
-    uint64_t getTranferLength();
+    uint64_t getTransferLength();
 
     /** @brief Set the number of entries in the Group ID list.
      * @param [in] numID Number of entries in the Group ID list. */
@@ -265,9 +271,9 @@ public:
 private:
     String mContentLocation;    ///< Content location
     String mContentMD5;         ///< MD5 value
-    uint64_t mContentLength;    ///< Content length
-    uint64_t mTransferLength;   ///< Transfer length
-    uint8_t mEntryCount;        ///< Entry count
+    uint64_t mContentLength{0};    ///< Content length
+    uint64_t mTransferLength{0};   ///< Transfer length
+    uint8_t mEntryCount{0};        ///< Entry count
     Vector<uint32_t> mGroupID;  ///< Vector of Group ID values
 };
 

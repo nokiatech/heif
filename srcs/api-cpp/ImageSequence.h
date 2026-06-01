@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,8 @@
 #pragma once
 
 #include <VideoTrack.h>
+#include "heifcommondatatypes.h"
+#include <cstdint>
 
 namespace HEIFPP
 {
@@ -21,7 +23,7 @@ namespace HEIFPP
     class ImageSequence : public VideoTrack
     {
     public:
-        ImageSequence(Heif* aHeif);
+        explicit ImageSequence(Heif* aHeif);
         ~ImageSequence() override;
 
         const HEIF::CleanAperture* clap() const;
@@ -53,7 +55,7 @@ namespace HEIFPP
         HEIF::CleanAperture mClapProperty;
         HEIF::CodingConstraints mCodingConstraints;
 
-    private:
+    public:
         ImageSequence& operator=(const ImageSequence&) = delete;
         ImageSequence& operator=(ImageSequence&&) = delete;
         ImageSequence(const ImageSequence&)       = delete;

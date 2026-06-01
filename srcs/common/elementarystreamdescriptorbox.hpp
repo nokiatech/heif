@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,9 +16,10 @@
 
 #include <vector>
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include <cstdint>
+#include <string>
 
 /// @brief Elementary Stream Descriptor box
 /// @details 'esds' box containing the ES_Descriptor as specified in ISO/IEC FDIS 14496-14 specification

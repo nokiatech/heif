@@ -1,0 +1,77 @@
+# --------------------------------------------------------------------------
+#  Nokia HEIF -- Python binding packaging
+#
+#  Pure setuptools backend -- no CMake, no compilation at install time.
+#  Requires `libheif_shared.so` to be built separately
+#  (`cmake --build build`).  The resolver in `heif/_ffi.py` finds the
+#  in-tree library automatically (tier 3 walks up to the repo root and
+#  scans `build*/lib/`).
+#
+#  -- For sdist / wheel publication, use the OTHER pyproject.toml --
+#  The repo-root `/pyproject.toml` uses `scikit-build-core` and drives
+#  the existing CMake build to produce a self-contained sdist suitable
+#  for `pip install nokia-heif` from PyPI.
+# Rationale for keeping two pyproject.toml files:
+#
+#  Both files declare the same project name (`nokia-heif`) and version
+#  (`1.0.0`); they are alternate install paths for the same
+#  distribution and are never installed simultaneously.
+# --------------------------------------------------------------------------
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "nokia-heif"
+version         = "1.0.0"
+description     = "Python binding for the Nokia HEIF reader."
+readme          = "README.md"
+license         = { text = "Nokia HEIF License v2.1" }
+requires-python = ">=3.9"
+authors         = [{ name = "Nokia" }]
+keywords        = ["heif", "heic", "iso/iec 23008-12", "image", "hdr"]
+classifiers     = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: Other/Proprietary License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Multimedia :: Graphics",
+]
+dependencies = ["cffi>=1.16"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.urls]
+"Source"      = "https://github.com/nokiatech/heif"
+"Issues"      = "https://github.com/nokiatech/heif/issues"
+# --------------------------------------------------------------------------
+#  Package layout
+#
+#  The binding is a single top-level package `heif/` next to this
+#  pyproject.toml.  We point setuptools at the binding root rather
+#  than a `src/` layout because the project is small and
+#  `import heif` resolves directly.
+# --------------------------------------------------------------------------
+
+[tool.setuptools]
+packages = ["heif"]
+
+[tool.setuptools.package-data]
+# Future: bundled libheif_shared.so* may land here.
+# For now, ship the type-stubs marker so PEP 561 tooling sees us.
+heif = ["py.typed", "*.so", "*.so.*", "*.dylib", "*.dll"]
+
+# --------------------------------------------------------------------------
+#  pytest configuration -- kept here so `pytest` from the binding
+#  root or repo root both work.
+# --------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "-q"

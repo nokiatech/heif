@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,6 +16,9 @@
 
 #include "bbox.hpp"
 #include "customallocator.hpp"
+#include "fourccint.hpp"
+
+#include <cstdint>
 
 namespace ISOBMFF
 {
@@ -61,6 +64,13 @@ public:
     const Vector<std::uint8_t>& getIccProfile() const;
     void setIccProfile(const Vector<std::uint8_t>& iccProfile);
 
+    /**
+     * @brief Check if CICP values conform to set of 'defaults' in miniBox
+     * @param hasIcc [in] Boolean indicating if item is associated with an ICC profile
+     * @return False if CICP values conform to some miniBox 'defaults', otherwise returns true
+     */
+    bool getExplicitCICPFlag(bool hasICC = false) const;
+
     /** Write box/property to ISOBMFF::BitStream.
      *  @see Box::writeBox() */
     void writeBox(ISOBMFF::BitStream& output) const override;
@@ -71,10 +81,10 @@ public:
 
 private:
     FourCCInt mColourType;
-    uint16_t mColourPrimaries;
-    uint16_t mTransferCharasteristics;
-    uint16_t mMatrixCoefficients;
-    bool mFullRangeFlag;
+    uint16_t mColourPrimaries{0};
+    uint16_t mTransferCharasteristics{0};
+    uint16_t mMatrixCoefficients{0};
+    bool mFullRangeFlag{false};
     Vector<uint8_t> mIccProfile;
 };
 

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,3 +17,31 @@ constexpr auto Version = "@GIT_DESCRIBE@";
 constexpr auto Time = "@BUILD_TIMESTAMP@";
 
 }
+
+// Numeric version macros
+//
+// Embedders compiling against multiple HEIF library versions need a way to
+// guard new-API call sites without grepping the textual version string.
+// These follow the same MAJOR/MINOR/PATCH convention as Vulkan (VK_MAKE_VERSION),
+// libcurl (LIBCURL_VERSION_NUM), and OpenSSL (OPENSSL_VERSION_NUMBER): plain
+// integers a preprocessor can compare numerically.
+//
+// Usage:
+//
+//   #include "buildinfo.hpp"
+//   #if HEIF_VERSION_AT_LEAST(3, 8, 0)
+//       HEIF::setErrorSink(&HEIF::stderrErrorSink, stderr);
+//   #endif
+//
+// The encoding (MAJOR << 16 | MINOR << 8 | PATCH) caps each component at 255
+// which matches every realistic HEIF release cadence and keeps the comparison
+// to a single 32-bit integer compare.
+#define HEIF_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define HEIF_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define HEIF_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+#define HEIF_VERSION_NUMBER \
+    ((HEIF_VERSION_MAJOR << 16) | (HEIF_VERSION_MINOR << 8) | HEIF_VERSION_PATCH)
+
+#define HEIF_VERSION_AT_LEAST(maj, min, pat) \
+    (HEIF_VERSION_NUMBER >= (((maj) << 16) | ((min) << 8) | (pat)))

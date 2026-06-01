@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,14 +14,14 @@
 #include "imageoverlay.hpp"
 
 #include <limits>
-#include <stdexcept>
 
 #include "bitstream.hpp"
+#include <vector>
 
 void writeImageOverlay(const ImageOverlay& iovl, BitStream& output)
 {
     bool write32BitFields = false;
-    if ((iovl.outputWidth > std::numeric_limits<std::uint16_t>::max()) &&
+    if ((iovl.outputWidth > std::numeric_limits<std::uint16_t>::max()) ||
         (iovl.outputHeight > std::numeric_limits<std::uint16_t>::max()))
     {
         write32BitFields = true;

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -10,7 +10,6 @@
  * of this material requires the prior written consent of Nokia.
  */
 
-#include <jni.h>
 
 #include "Helpers.h"
 #include "ItemProperty.h"
@@ -21,8 +20,12 @@ extern "C"
 {
     JNI_METHOD(void, destroyContextNative)
     {
+        JNI_TRY
+        {
         NATIVE_SELF;
         setNativeHandle(env, self, 0);
         delete nativeSelf;
+            }
+        JNI_CATCH_RETURN_VOID("ItemProperty.destroyContextNative")
     }
 }

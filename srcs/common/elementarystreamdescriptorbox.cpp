@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,11 @@
 #include "elementarystreamdescriptorbox.hpp"
 
 #include <algorithm>
-#include <stdexcept>
 
 #include "bitstream.hpp"
+#include "fourccint.hpp"
+#include <list>
+#include <utility>
 
 ElementaryStreamDescriptorBox::ElementaryStreamDescriptorBox()
     : FullBox("esds", 0, 0)
@@ -159,7 +161,7 @@ void ElementaryStreamDescriptorBox::writeBox(BitStream& bitstr) const
                 writeDecoderSpecificInfo(decConfigBitstr, decSpecificInfo);
             }
 
-            decConfigSizeConverged = decConfigBitstr.getSize() == std::uint64_t(decConfigSize) + decConfigSizeSize;
+            decConfigSizeConverged = decConfigBitstr.getSize() == static_cast<std::uint64_t>(decConfigSize) + decConfigSizeSize;
 
             if (!decConfigSizeConverged)
             {
@@ -168,11 +170,11 @@ void ElementaryStreamDescriptorBox::writeBox(BitStream& bitstr) const
         }
         esBitstr.writeBitStream(decConfigBitstr);
 
-        esSizeConverged = esBitstr.getSize() == std::uint64_t(esDescriptorSize) + esSizeSize;
+        esSizeConverged = esBitstr.getSize() == static_cast<std::uint64_t>(esDescriptorSize) + esSizeSize;
 
         if (!esSizeConverged)
         {
-            esDescriptorSize = std::uint32_t(esBitstr.getSize() - esSizeSize);
+            esDescriptorSize = static_cast<std::uint32_t>(esBitstr.getSize() - esSizeSize);
         }
     }
     bitstr.writeBitStream(esBitstr);

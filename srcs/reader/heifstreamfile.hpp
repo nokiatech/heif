@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,7 +16,6 @@
 
 #include <cstdio>
 
-#include "customallocator.hpp"
 #include "heifstreaminterface.h"
 
 namespace HEIF
@@ -25,7 +24,7 @@ namespace HEIF
     {
     public:
         FileStream();
-        FileStream(const char* filename);
+        explicit FileStream(const char* filename);
 
         FileStream(const FileStream& other) = delete;
         FileStream& operator=(const FileStream& other) = delete;

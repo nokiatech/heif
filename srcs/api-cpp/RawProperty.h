@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,13 +13,16 @@
 #pragma once
 
 #include <ItemProperty.h>
+#include "ErrorCodes.h"
+#include "heifcommondatatypes.h"
+#include <cstdint>
 
 namespace HEIFPP
 {
     class RawProperty : public HEIFPP::ItemProperty
     {
     public:
-        RawProperty(Heif* aHeif);
+        explicit RawProperty(Heif* aHeif);
         RawProperty(Heif* aHeif, const HEIF::FourCC& aType, bool aIsTransform);
         ~RawProperty() override;
         /*
@@ -37,7 +40,7 @@ namespace HEIFPP
 
         HEIF::RawProperty mRaw;
 
-    private:
+    public:
         RawProperty& operator=(const RawProperty&) = delete;
         RawProperty& operator=(RawProperty&&) = delete;
         RawProperty(const RawProperty&)       = delete;

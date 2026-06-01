@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,13 +14,13 @@
 #ifndef MEDIAINFORMATIONBOX_HPP
 #define MEDIAINFORMATIONBOX_HPP
 
-#include "bitstream.hpp"
-#include "customallocator.hpp"
+#include <cstdint>
 #include "datainformationbox.hpp"
 #include "nullmediaheaderbox.hpp"
 #include "sampletablebox.hpp"
 #include "soundmediaheaderbox.hpp"
 #include "videomediaheaderbox.hpp"
+#include "bbox.hpp"
 
 /** @brief Media Information Box class. Extends from Box.
  *  @details 'minf' box contains the information needed to access media samples and initialize decoders as defined in
@@ -31,7 +31,7 @@ public:
     MediaInformationBox();
     ~MediaInformationBox() override = default;
 
-    enum class MediaType
+    enum class MediaType : std::uint8_t
     {
         Null,
         Video,
@@ -94,7 +94,7 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    MediaType mMediaType;                      ///< Which media type?
+    MediaType mMediaType{MediaType::Null};                      ///< Which media type?
     VideoMediaHeaderBox mVideoMediaHeaderBox;  ///< Video media header box
     SoundMediaHeaderBox mSoundMediaHeaderBox;  ///< Sound Media Header box
     NullMediaHeaderBox mNullMediaHeaderBox;    ///< Null Media Header box

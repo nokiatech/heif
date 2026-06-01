@@ -1,0 +1,66 @@
+@PACKAGE_INIT@
+
+# Re-resolve transitive dependencies on the consumer side. Today the only one
+# the public API may surface is Threads (some platforms need an explicit
+# -pthread / -lpthread when linking against heif's static archives).
+# Keeping this list explicit means new transitive deps surface as a build
+# failure on the consumer side rather than a mysterious link error.
+include(CMakeFindDependencyMacro)
+find_dependency(Threads)
+
+include("${CMAKE_CURRENT_LIST_DIR}/heifTargets.cmake")
+
+# Umbrella imported target `heif::heif`.  Lets first-touch consumers write
+#
+#     find_package(heif REQUIRED)
+#     target_link_libraries(myapp PRIVATE heif::heif)
+#
+# instead of having to know about and link both `heif::heif_shared` and
+# `heif::heif_writer_shared` (or their static counterparts) plus the
+# C++ convenience layer `heif::heifpp` by hand.
+#
+# Selection policy:
+#   - Prefer shared if both shared and static are installed (the more
+#     common case for system installs and binding consumers).
+#   - Fall back to static otherwise (BUILD_ONLY_STATIC_LIB installs,
+#     iOS, embedded targets).
+#   - HEIFPP (`heif::heifpp`) is always added when present, regardless
+#     of shared-vs-static -- it is a single static archive in both
+#     install variants and contains the convenience C++ wrapper that
+#     most embedders want.  Consumers who explicitly do not want HEIFPP
+#     should link the granular `heif::heif_shared` /
+#     `heif::heif_writer_shared` targets directly instead of the
+#     umbrella.
+#   - Emit a fatal error if no reader/writer pair is available -- this
+#     is a packaging bug worth surfacing loudly.
+#
+# The granular `heif::heif_shared` / `heif::heif_writer_shared` /
+# `heif::heif_static` / `heif::heif_writer_static` / `heif::heifpp`
+# targets remain available unchanged for consumers that need fine-grained
+# control (asymmetric reader-only vs writer-only links, mixing static
+# and shared in one binary, etc.).
+if(NOT TARGET heif::heif)
+    add_library(heif::heif INTERFACE IMPORTED)
+    set(_heif_umbrella_deps "")
+    if(TARGET heif::heif_shared AND TARGET heif::heif_writer_shared)
+        list(APPEND _heif_umbrella_deps heif::heif_shared heif::heif_writer_shared)
+    elseif(TARGET heif::heif_static AND TARGET heif::heif_writer_static)
+        list(APPEND _heif_umbrella_deps heif::heif_static heif::heif_writer_static)
+    else()
+        message(FATAL_ERROR
+            "heif::heif umbrella target cannot be assembled: neither the "
+            "shared (heif::heif_shared + heif::heif_writer_shared) nor the "
+            "static (heif::heif_static + heif::heif_writer_static) target "
+            "pair is available in the imported targets. This is a packaging "
+            "bug -- please report against the heif install tree.")
+    endif()
+    if(TARGET heif::heifpp)
+        list(APPEND _heif_umbrella_deps heif::heifpp)
+    endif()
+    set_target_properties(heif::heif PROPERTIES
+        INTERFACE_LINK_LIBRARIES "${_heif_umbrella_deps}"
+    )
+    unset(_heif_umbrella_deps)
+endif()
+
+check_required_components(heif)

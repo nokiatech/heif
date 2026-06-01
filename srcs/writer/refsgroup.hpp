@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,10 +14,11 @@
 #ifndef REFSGROUP_HPP
 #define REFSGROUP_HPP
 
-#include <set>
 #include <tuple>
 
 #include "samplegroup.hpp"
+#include "customallocator.hpp"
+#include <cstdint>
 
 class SampleGroupDescriptionBox;
 class SampleToGroupBox;

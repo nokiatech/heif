@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,12 +13,18 @@
 
 #include "movieextendsbox.hpp"
 
+#include "bitstream.hpp"
+
 #include "log.hpp"
+#include "fourccint.hpp"
+#include <memory>
+#include <utility>
+#include <vector>
 
 MovieExtendsBox::MovieExtendsBox()
     : Box("mvex")
-    , mMovieExtendsHeaderBoxPresent(false)
-    , mMovieExtendsHeaderBox()
+    , 
+     mMovieExtendsHeaderBox()
     , mTrackExtends()
 {
 }
@@ -84,7 +90,7 @@ void MovieExtendsBox::parseBox(BitStream& bitstr)
         }
         else if (boxType == "trex")
         {
-            UniquePtr<TrackExtendsBox> trackExtendsBox(CUSTOM_NEW(TrackExtendsBox, ()));
+            auto trackExtendsBox = makeCustomUnique<TrackExtendsBox, TrackExtendsBox>();
             trackExtendsBox->parseBox(subBitstr);
             mTrackExtends.push_back(std::move(trackExtendsBox));
             foundTrex = true;
@@ -92,7 +98,7 @@ void MovieExtendsBox::parseBox(BitStream& bitstr)
         else
         {
             logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside MovieExtendsBox."
-                         << std::endl;
+                         << '\n';
         }
     }
 

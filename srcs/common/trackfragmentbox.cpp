@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,7 +13,15 @@
 
 #include "trackfragmentbox.hpp"
 
+#include "bitstream.hpp"
+
 #include "log.hpp"
+#include "fourccint.hpp"
+#include "moviefragmentsdatatypes.hpp"
+#include <memory>
+#include <stdint.h>
+#include <utility>
+#include <vector>
 
 TrackFragmentBox::TrackFragmentBox(Vector<MOVIEFRAGMENTS::SampleDefaults>& sampleDefaults)
     : Box("traf")
@@ -115,8 +123,8 @@ void TrackFragmentBox::parseBox(BitStream& bitstr)
         }
         else if (boxType == "tfdt")
         {
-            UniquePtr<TrackFragmentBaseMediaDecodeTimeBox> trackFragmentDecodeTimeBox(
-                CUSTOM_NEW(TrackFragmentBaseMediaDecodeTimeBox, ()));
+            auto trackFragmentDecodeTimeBox =
+                makeCustomUnique<TrackFragmentBaseMediaDecodeTimeBox, TrackFragmentBaseMediaDecodeTimeBox>();
             trackFragmentDecodeTimeBox->parseBox(subBitstr);
             mTrackFragmentDecodeTimeBox = std::move(trackFragmentDecodeTimeBox);
         }
@@ -149,7 +157,7 @@ void TrackFragmentBox::parseBox(BitStream& bitstr)
             {
                 sampleDefaults.defaultSampleFlags = mTrackFragmentHeaderBox.getDefaultSampleFlags();
             }
-            UniquePtr<TrackRunBox> trackRunBox(CUSTOM_NEW(TrackRunBox, ()));
+            auto trackRunBox = makeCustomUnique<TrackRunBox, TrackRunBox>();
             if (defaultsFound)
             {
                 trackRunBox->setSampleDefaults(sampleDefaults);
@@ -161,7 +169,7 @@ void TrackFragmentBox::parseBox(BitStream& bitstr)
         else
         {
             logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside TrackFragmentBox."
-                         << std::endl;
+                         << '\n';
         }
     }
 

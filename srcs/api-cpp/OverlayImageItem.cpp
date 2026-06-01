@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,8 +12,16 @@
 
 #include "OverlayImageItem.h"
 
+#include "Heif.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
+#include "ErrorContext.h"
+#include "DerivedImageItem.h"
+#include "ImageItem.h"
+#include "helpers.h"
+#include <stddef.h>
 
 using namespace HEIFPP;
 
@@ -86,7 +94,9 @@ Result OverlayImageItem::setImage(std::uint32_t aId, ImageItem* aImage, const HE
 {
     if (aId >= getSourceImageCount())
     {
-        return Result::INDEX_OUT_OF_BOUNDS;
+        return HEIFPP_FAIL(Result::INDEX_OUT_OF_BOUNDS,
+                           ErrorSource::Api_Validation,
+                           "OverlayImageItem::setImage: index exceeds source image count");
     }
     setSourceImage(aId, aImage);
     mOffsets[aId] = aOffset;
@@ -102,7 +112,9 @@ Result OverlayImageItem::removeImage(std::uint32_t aId)
 {
     if (aId >= getSourceImageCount())
     {
-        return Result::INDEX_OUT_OF_BOUNDS;
+        return HEIFPP_FAIL(Result::INDEX_OUT_OF_BOUNDS,
+                           ErrorSource::Api_Validation,
+                           "OverlayImageItem::removeImage: index exceeds source image count");
     }
     removeSourceImage(aId);
     mOffsets.erase(mOffsets.begin() + static_cast<std::int32_t>(aId));
@@ -129,7 +141,9 @@ Result OverlayImageItem::removeImage(ImageItem* aImage)
     }
     if (!found)
     {
-        return Result::INVALID_HANDLE;
+        return HEIFPP_FAIL(Result::INVALID_HANDLE,
+                           ErrorSource::Api_Validation,
+                           "OverlayImageItem::removeImage: image not found in overlay sources");
     }
     return Result::OK;
 }

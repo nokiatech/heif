@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,13 +13,15 @@
 #pragma once
 
 #include <DecoderConfiguration.h>
+#include "heifcommondatatypes.h"
+#include <cstdint>
 
 namespace HEIFPP
 {
     class AACDecoderConfiguration : public HEIFPP::DecoderConfig
     {
     public:
-        AACDecoderConfiguration(Heif* aHeif);
+        explicit AACDecoderConfiguration(Heif* aHeif);
         AACDecoderConfiguration(Heif* aHeif, const HEIF::FourCC& aType);
         ~AACDecoderConfiguration() override = default;
 
@@ -86,6 +88,7 @@ namespace HEIFPP
         } mAudioSpecificConfig;
 
         bool parse();
+    public:
         AACDecoderConfiguration& operator=(const AACDecoderConfiguration&) = delete;
         AACDecoderConfiguration& operator=(AACDecoderConfiguration&&) = delete;
         AACDecoderConfiguration(const AACDecoderConfiguration&)       = delete;

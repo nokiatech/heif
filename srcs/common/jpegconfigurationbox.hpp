@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,7 +16,15 @@
 
 #include "bbox.hpp"
 #include "customallocator.hpp"
+#include "decoderconfigrecord.hpp"
 #include "decoderconfigurationbox.hpp"
+
+#include <stdint.h>
+
+namespace ISOBMFF
+{
+    class BitStream;
+}
 
 /** @brief JPEG Configuration item property class
  *  @details 'jpgC' box implementation. This is used by
@@ -24,7 +32,7 @@
  *           Data can include e.g. quantization and other tables
  *           common to several JPEG image items.
  */
-class JpegConfigurationBox : public DecoderConfigurationBox
+class JpegConfigurationBox : public Box, public DecoderConfigurationBox
 {
 public:
     JpegConfigurationBox();
@@ -55,10 +63,11 @@ private:
     class JpegDecoderConfigurationRecord : public DecoderConfigurationRecord
     {
     public:
-        JpegDecoderConfigurationRecord(const Vector<uint8_t>& aRecord);
+        explicit JpegDecoderConfigurationRecord(const Vector<uint8_t>& aRecord);
         ~JpegDecoderConfigurationRecord() override;
 
-        void getConfigurationMap(ConfigurationMap& aMap) const override;
+        void getConfigurationMap(ConfigurationMap& aMap, const uint16_t& nuh_layer_id) const override;
+        void writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const override;
 
     private:
         const Vector<uint8_t>& mRecord;

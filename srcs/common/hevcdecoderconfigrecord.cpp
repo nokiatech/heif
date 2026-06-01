@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,34 +13,17 @@
 
 #include "hevcdecoderconfigrecord.hpp"
 
+#include <utility>
+#include <vector>
+
 #include "bitstream.hpp"
 #include "nalutil.hpp"
 
 HevcDecoderConfigurationRecord::HevcDecoderConfigurationRecord()
-    : mConfigurationVersion(1)
-    , mGeneralProfileSpace(0)
-    , mGeneralTierFlag(0)
-    , mGeneralProfileIdc(0)
-    , mGeneralProfileCompatibilityFlags(0)
-    , mGeneralConstraintIndicatorFlags(6, 0)
-    , mGeneralLevelIdc(0)
-    , mMinSpatialSegmentationIdc(0)
-    , mParallelismType(0)
-    , mChromaFormat(0)
-    , mPicWidthInLumaSamples(0)
-    , mPicHeightInLumaSamples(0)
-    , mConfWinLeftOffset(0)
-    , mConfWinRightOffset(0)
-    , mConfWinTopOffset(0)
-    , mConfWinBottomOffset(0)
-    , mBitDepthLumaMinus8(0)
-    , mBitDepthChromaMinus8(0)
-    , mAvgFrameRate(0)
-    , mConstantFrameRate(0)
-    , mNumTemporalLayers(0)
-    , mTemporalIdNested(0)
-    , mLengthSizeMinus1(0)
-    , mNalArray()
+    : 
+     mGeneralConstraintIndicatorFlags(6, 0)
+    , 
+     mNalArray()
 {
 }
 
@@ -319,13 +302,13 @@ void HevcDecoderConfigurationRecord::getOneParameterSet(Vector<uint8_t>& byteStr
 uint16_t HevcDecoderConfigurationRecord::getPicWidth() const
 {
     const Vector<uint16_t> subWidthC = {1, 2, 2, 1};
-    return mPicWidthInLumaSamples - subWidthC.at(mChromaFormat) * (mConfWinLeftOffset + mConfWinRightOffset);
+    return static_cast<uint16_t>(mPicWidthInLumaSamples - subWidthC.at(mChromaFormat) * (mConfWinLeftOffset + mConfWinRightOffset));
 }
 
 uint16_t HevcDecoderConfigurationRecord::getPicHeight() const
 {
     const Vector<uint16_t> subHeightC = {1, 2, 1, 1};
-    return mPicHeightInLumaSamples - subHeightC.at(mChromaFormat) * (mConfWinTopOffset + mConfWinBottomOffset);
+    return static_cast<uint16_t>(mPicHeightInLumaSamples - subHeightC.at(mChromaFormat) * (mConfWinTopOffset + mConfWinBottomOffset));
 }
 
 uint16_t HevcDecoderConfigurationRecord::getAvgFrameRate() const
@@ -358,7 +341,7 @@ std::uint8_t HevcDecoderConfigurationRecord::getGeneralLevelIdc() const
     return mGeneralLevelIdc;
 }
 
-void HevcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap) const
+void HevcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap, const uint16_t& /*nuh_layer_id*/) const
 {
     Vector<std::uint8_t> sps;
     Vector<std::uint8_t> pps;
@@ -367,7 +350,7 @@ void HevcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap)
     getOneParameterSet(pps, HevcNalUnitType::PPS);
     getOneParameterSet(vps, HevcNalUnitType::VPS);
 
-    aMap.insert({DecoderParameterType::HEVC_SPS, move(sps)});
-    aMap.insert({DecoderParameterType::HEVC_PPS, move(pps)});
-    aMap.insert({DecoderParameterType::HEVC_VPS, move(vps)});
+    aMap.insert({DecoderParameterType::HEVC_SPS, std::move(sps)});
+    aMap.insert({DecoderParameterType::HEVC_PPS, std::move(pps)});
+    aMap.insert({DecoderParameterType::HEVC_VPS, std::move(vps)});
 }

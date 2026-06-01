@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,12 +12,18 @@
 
 #include "MimeItem.h"
 
+#include "Heif.h"
+#include "helpers.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
 
 #include <cstring>
+#include "Item.h"
+#include "MetaItem.h"
+#include "heifreaderdatatypes.h"
+#include "heifwriterdatatypes.h"
 
-#include "ErrorCodes.h"
 
 using namespace HEIFPP;
 
@@ -70,8 +76,7 @@ HEIF::ErrorCode MimeItem::save(HEIF::Writer* aWriter)
 {
     if (mBuffer == nullptr)
     {
-        // TODO: actual error is NO_MEDIA
-        return HEIF::ErrorCode::BUFFER_SIZE_TOO_SMALL;
+        return HEIF::ErrorCode::NO_MEDIA;
     }
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
 
@@ -79,8 +84,7 @@ HEIF::ErrorCode MimeItem::save(HEIF::Writer* aWriter)
     HEIF::Data fr;
     if (Item::getContentType() == "")
     {
-        // TODO: "content type not set"
-        return HEIF::ErrorCode::INVALID_MEDIA_FORMAT;
+        return HEIF::ErrorCode::CONTENT_TYPE_NOT_SET;
     }
     // TODO: this should not be needed. actual contenttype is written Item::save
     fr.mediaFormat     = HEIF::MediaFormat::MPEG7;
@@ -147,7 +151,7 @@ HEIF::ErrorCode MimeItem::loadData()
         }
         else
         {
-            HEIF_ASSERT(false);
+            HEIF_LOG_INVARIANT(false, "MimeItem::load: heif or reader instance is null");
         }
     }
     return error;

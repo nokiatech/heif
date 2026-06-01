@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,10 +12,24 @@
 
 #pragma once
 
-#include <Heif.h>
+#include <heifcommondatatypes.h>
+
+#include "ErrorCodes.h"
+#include "helpers.h"
+#include "heifcommondatatypes.h"
+
+namespace HEIF
+{
+    class Reader;
+    class Writer;
+    enum class ItemPropertyType : std::uint8_t;
+}  // namespace HEIF
 
 namespace HEIFPP
 {
+    class Heif;
+    class Item;
+
     class ItemProperty
     {
         friend class Item;
@@ -38,7 +52,7 @@ namespace HEIFPP
          *  @return void* Pointer to the custom user data */
         const void* getContext() const;
 
-        const HEIF::PropertyId& getId() const;
+        const HEIF::PropertyId& getId() const noexcept;
 
         /** Returns if the property is a transformative property. */
         bool isTransformative() const;
@@ -65,6 +79,7 @@ namespace HEIFPP
         const void* mContext;
         bool mIsTransform;
 
+    public:
         ItemProperty& operator=(const ItemProperty&) = delete;
         ItemProperty& operator=(ItemProperty&&) = delete;
         ItemProperty(const ItemProperty&)       = delete;

@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -9,7 +9,7 @@
 # Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
 
 
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5...3.28 FATAL_ERROR)
 
 set(HEIFPP_LIB_NAME heifpp)
 
@@ -35,6 +35,8 @@ add_library(${HEIFPP_LIB_NAME} STATIC
     ${PROJECT_SOURCE_DIR}/AVCDecoderConfiguration.cpp
     ${PROJECT_SOURCE_DIR}/HEVCDecoderConfiguration.h
     ${PROJECT_SOURCE_DIR}/HEVCDecoderConfiguration.cpp
+    ${PROJECT_SOURCE_DIR}/LHEVCDecoderConfiguration.h
+    ${PROJECT_SOURCE_DIR}/LHEVCDecoderConfiguration.cpp
     ${PROJECT_SOURCE_DIR}/JPEGDecoderConfiguration.h
     ${PROJECT_SOURCE_DIR}/JPEGDecoderConfiguration.cpp
 
@@ -100,15 +102,24 @@ add_library(${HEIFPP_LIB_NAME} STATIC
 
     ${PROJECT_SOURCE_DIR}/ErrorCodes.h
     ${PROJECT_SOURCE_DIR}/ErrorCodes.cpp
+    ${PROJECT_SOURCE_DIR}/ErrorContext.h
+    ${PROJECT_SOURCE_DIR}/ErrorContext.cpp
     ${PROJECT_SOURCE_DIR}/H26xTools.h
     ${PROJECT_SOURCE_DIR}/H26xTools.cpp
     ${PROJECT_SOURCE_DIR}/helpers.h
     ${PROJECT_SOURCE_DIR}/helpers.cpp
+
+    ${PROJECT_SOURCE_DIR}/VvcCodedImageItem.h
+    ${PROJECT_SOURCE_DIR}/VvcCodedImageItem.cpp
+    ${PROJECT_SOURCE_DIR}/VvcDecoderConfiguration.h
+    ${PROJECT_SOURCE_DIR}/VvcDecoderConfiguration.cpp
 )
 
-set_property(TARGET ${HEIFPP_LIB_NAME} PROPERTY CXX_STANDARD 11)
+set_property(TARGET ${HEIFPP_LIB_NAME} PROPERTY CXX_STANDARD 17)
 
-target_include_directories(${HEIFPP_LIB_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
+target_include_directories(${HEIFPP_LIB_NAME}
+  PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+  PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/heif/heifpp>)
 
 if(IOS)
     if(${IOS_PLATFORM} STREQUAL "OS")

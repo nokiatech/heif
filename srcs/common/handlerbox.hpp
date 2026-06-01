@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,9 @@
 #ifndef HANDLERBOX_HPP
 #define HANDLERBOX_HPP
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include "fourccint.hpp"
 
 
 /** @brief Handler Box class. Extends from FullBox.

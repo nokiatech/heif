@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,17 +16,19 @@
 #include <heifcommondatatypes.h>
 #include <heifreaderdatatypes.h>
 #include <heifwriterdatatypes.h>
-#include <helpers.h>
 
-#include <string>
+#include <cstdint>
+#include <map>
+#include <utility>
+#include <vector>
 
 #include "ErrorCodes.h"
 
 namespace HEIF
 {
+    class OutputStreamInterface;
     class StreamInterface;
     class Reader;
-    class Writer;
 }  // namespace HEIF
 
 
@@ -45,18 +47,47 @@ namespace HEIFPP
     class MetaItem;
     class ExifItem;
     class ItemProperty;
-    class TransformativeProperty;
-    class DescriptiveProperty;
-    class PixelAspectRatioProperty;
-    class ColourInformationProperty;
-    class PixelInformationProperty;
-    class RelativeLocationProperty;
-    class AuxiliaryProperty;
-    class Heif;
     class DecoderConfig;
     class EntityGroup;
     class AlternativeTrackGroup;
-    /** @brief HEIF file abstraction*/
+    /**
+     * @brief HEIF file abstraction.
+     *
+     * @par Ownership contract (HEIFPP)
+     * `HEIFPP::Heif` is the **sole owner** of every domain object it produces:
+     * `Track`, `Sample`, `Item` (and subclasses `ImageItem`, `MetaItem`, etc.),
+     * `ItemProperty`, `DecoderConfig`, `EntityGroup`, `AlternativeTrackGroup`.
+     *
+     * Lifetime rules embedders must follow:
+     *
+     * 1. **Do not `delete` pointers returned by `getTrack()`, `getItem()`,
+     *    `getImage()`, `getProperty()`, `getDecoderConfig()`, `getGroup()`,
+     *    or any other accessor.** They are owned by this `Heif` instance and
+     *    are destroyed when the `Heif` is destroyed (or when `reset()` /
+     *    `removeXxx()` is called).
+     *
+     * 2. **To remove an object, use the matching `removeXxx()` method**
+     *    (`removeItem`, `removeTrack`, `removeProperty`, `removeDecoderConfig`,
+     *    `removeGroup`, `removeSample`, `removeAlternativeTrackGroup`,
+     *    `removeCompatibleBrand`). Those methods perform the `delete` for you
+     *    and update internal indexing.
+     *
+     * 3. **Outliving the parent is undefined.** Pointers returned by accessors
+     *    are invalidated by `~Heif()` and by `reset()`. Do not retain them
+     *    across either operation. (See also `HEIFPP::Item::~Item` which back-
+     *    references its parent during teardown.)
+     *
+     * 4. **Thread safety:** A single `Heif` instance is **not** thread-safe.
+     *    Concurrent reads of an immutable, fully-loaded instance from multiple
+     *    threads is permitted (no internal mutation), but any mutating call
+     *    (load / save / addXxx / removeXxx) must be externally synchronised.
+     *    Different `Heif` instances on different threads do not interact.
+     *
+     * The underlying `HEIF::Reader` / `HEIF::Writer` C-tier instances are
+     * created and destroyed internally by this class; embedders never see
+     * them and never need to call `Reader::Destroy()` / `Writer::Destroy()`
+     * for objects produced via this wrapper.
+     */
     class Heif
     {
         friend class EntityGroup;
@@ -84,7 +115,8 @@ namespace HEIFPP
         static const HEIF::DecoderConfigId InvalidDecoderConfig;
         static const HEIF::MediaDataId InvalidMediaData;
 
-        enum PreloadMode
+        // Underlying type pinned to std::uint8_t.
+        enum PreloadMode : std::uint8_t
         {
             LOAD_ALL_DATA = 0,  // Loads all item data to memory.
             LOAD_PREVIEW_DATA,  // Load preview data to memory (thumbnail/meta). Fast to preview file, but actual item
@@ -96,6 +128,41 @@ namespace HEIFPP
          */
         Heif();
         ~Heif();
+
+        /**
+         * @brief Factory for `HEIFPP` items whose constructors are protected.
+         *
+         * The concrete `HEIFPP::Item` subclasses
+         * (`ExifItem`, `MimeItem`, `XMPItem`, `MPEG7Item`,
+         * `IdentityImageItem`, `OverlayImageItem`, `GridImageItem`, the
+         * coded image items `HEVCCodedImageItem`, `AVCCodedImageItem`,
+         * `JPEGCodedImageItem`, `VVCCodedImageItem`) no longer expose a
+         * public constructor. Direct-`new` produced orphan items whose
+         * later use was undefined behavior because the parent `Heif`
+         * did not know about them. This factory is the only
+         * supported way to construct them: it forwards `args` to the
+         * (now `protected`) constructor and yields a heap-allocated `T*`
+         * that is properly registered with `*this` from the start.
+         *
+         *     auto* exif = heif.create<HEIFPP::ExifItem>();
+         *     auto* grid = heif.create<HEIFPP::GridImageItem>(cols, rows);
+         *
+         * Ownership: the returned pointer is owned by `*this`. Lifetime
+         * follows the same rules documented on `~Item`: do not `delete`
+         * the returned pointer, do not destroy individual items after the
+         * parent `Heif` has been destroyed, and prefer `removeItem` if
+         * you need to drop a single item early.
+         *
+         * Type constraint: `T` must befriend `HEIFPP::Heif`. Every
+         * concrete subclass listed above already does. Attempting to
+         * instantiate this factory with a type that does not befriend
+         * `Heif` is a compile error at the constructor call site.
+         */
+        template <typename T, typename... Args>
+        T* create(Args&&... args)
+        {
+            return new T(this, std::forward<Args>(args)...);
+        }
 
 
         /** Sets the custom user data
@@ -381,7 +448,7 @@ namespace HEIFPP
     protected:
         HEIF::FileInformation mFileinfo;
         HEIF::FourCC mMajorBrand;
-        std::uint32_t mMinorVersion;
+        std::uint32_t mMinorVersion{0};
         std::vector<HEIF::FourCC> mCompatibleBrands;
         // NOTE: ItemIds and SequenceIds SHOULD be in the same namespace.
         std::vector<Item*> mItems;
@@ -393,10 +460,10 @@ namespace HEIFPP
         std::vector<EntityGroup*> mGroups;
         std::vector<AlternativeTrackGroup*> mAltGroups;
         std::map<HEIF::FourCC, std::vector<EntityGroup*>> mGroupsOfType;
-        ImageItem* mPrimaryItem;
-        std::int32_t mMatrix[9];  // movie matrix.
+        ImageItem* mPrimaryItem{nullptr};
+        std::int32_t mMatrix[9]{0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000};  // movie matrix.
 
-        PreloadMode mPreLoadMode;
+        PreloadMode mPreLoadMode{PreloadMode::LOAD_ALL_DATA};
 
         // temporary objects, part of serialization.
         std::map<HEIF::ImageId, Item*> mItemsLoad;
@@ -411,10 +478,10 @@ namespace HEIFPP
         Result load(const char* aFilename, HEIF::StreamInterface* aStream, PreloadMode loadMode);
         Result save(const char* aFilename, HEIF::OutputStreamInterface* aStream);
         HEIF::ErrorCode load(HEIF::Reader* aReader);
-        const void* mContext;
-        HEIF::Reader* mReader;
+        const void* mContext{nullptr};
+        HEIF::Reader* mReader{nullptr};
 
-    private:
+    public:
         Heif& operator=(const Heif&) = delete;
         Heif& operator=(Heif&&) = delete;
         Heif(const Heif&)       = delete;

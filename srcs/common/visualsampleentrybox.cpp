@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,27 +13,28 @@
 
 #include "visualsampleentrybox.hpp"
 
-#include <cassert>
-#include <cstring>
+#include "bitstream.hpp"
+
 #include <stdexcept>
 #include <utility>
 
 #include "auxiliarytypeinfobox.hpp"
 #include "cleanaperturebox.hpp"
-#include "log.hpp"
 
 /// Length of compressorname string in VisualSampleEntry class
 static const unsigned int COMPRESSORNAME_STRING_LENGTH = 31;
 
 VisualSampleEntryBox::VisualSampleEntryBox(FourCCInt codingName, String compressorName)
     : SampleEntryBox(codingName)
-    , mWidth(0)
-    , mHeight(0)
-    , mCompressorName(std::move(compressorName))
+    , 
+     mCompressorName(std::move(compressorName))
     , mClap(nullptr)
     , mAuxi(nullptr)
 {
-    assert(mCompressorName.length() <= COMPRESSORNAME_STRING_LENGTH);
+    if (mCompressorName.length() > COMPRESSORNAME_STRING_LENGTH)
+    {
+        throw std::invalid_argument("VisualSampleEntryBox: compressor name exceeds maximum length");
+    }
     mCompressorName.resize(COMPRESSORNAME_STRING_LENGTH, '\0');  // Make fixed length
 }
 
@@ -45,7 +46,10 @@ VisualSampleEntryBox::VisualSampleEntryBox(const VisualSampleEntryBox& box)
     , mClap(box.mClap)
     , mAuxi(box.mAuxi)
 {
-    assert(mCompressorName.length() <= COMPRESSORNAME_STRING_LENGTH);
+    if (mCompressorName.length() > COMPRESSORNAME_STRING_LENGTH)
+    {
+        throw std::invalid_argument("VisualSampleEntryBox: compressor name exceeds maximum length (copy constructor)");
+    }
     mCompressorName.resize(COMPRESSORNAME_STRING_LENGTH, '\0');  // Make fixed length
 }
 
@@ -124,7 +128,7 @@ void VisualSampleEntryBox::writeBox(ISOBMFF::BitStream& bitstr) const
     bitstr.writeString(mCompressorName);  // Write entire string buffer, including padding zeros
 
     bitstr.write16Bits(0x0018);                              // depth
-    bitstr.write16Bits(static_cast<uint16_t>(int16_t(-1)));  // pre_defined
+    bitstr.write16Bits(static_cast<uint16_t>(static_cast<int16_t>(-1)));  // pre_defined
 
     if (mClap.get() != nullptr)
     {

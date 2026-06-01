@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,6 +14,7 @@
 #include "userdescriptionproperty.hpp"
 
 #include "bitstream.hpp"
+#include "fourccint.hpp"
 
 UserDescriptionProperty::UserDescriptionProperty()
     : FullBox("udes", 0, 0)

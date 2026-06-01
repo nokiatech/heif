@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,6 +12,9 @@
  */
 
 #include "requiredreferencetypesproperty.hpp"
+
+#include <cstdint>
+#include <vector>
 
 #include "bitstream.hpp"
 
@@ -36,7 +39,7 @@ void RequiredReferenceTypesProperty::writeBox(BitStream& output) const
 {
     writeFullBoxHeader(output);
 
-    output.write32Bits(static_cast<unsigned int>(mReferenceTypes.size()));
+    output.write8Bits(static_cast<uint8_t>(mReferenceTypes.size()));
     for (auto referenceType : mReferenceTypes)
     {
         output.write32Bits(referenceType.getUInt32());
@@ -49,9 +52,9 @@ void RequiredReferenceTypesProperty::parseBox(BitStream& input)
 {
     parseFullBoxHeader(input);
 
-    const std::uint32_t entryCount = input.read32Bits();
+    const std::uint32_t entryCount = input.read8Bits();
     for (std::uint32_t i = 0; i < entryCount; ++i)
     {
-        mReferenceTypes.push_back(input.read32Bits());
+        mReferenceTypes.emplace_back(input.read32Bits());
     }
 }

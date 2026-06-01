@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,9 +12,10 @@
  */
 
 #include <algorithm>
-#include <cassert>
 #include <cstring>
 #include <memory>
+
+#include "heiferrorinfo.h"
 
 #include "accessibilitytext.hpp"
 #include "auxiliarytypeproperty.hpp"
@@ -23,7 +24,6 @@
 #include "colourinformationbox.hpp"
 #include "creationtimeinformation.hpp"
 #include "customallocator.hpp"
-#include "heifallocator.h"
 #include "hevcconfigurationbox.hpp"
 #include "imagegrid.hpp"
 #include "imagemirror.hpp"
@@ -33,15 +33,48 @@
 #include "imagescaling.hpp"
 #include "imagespatialextentsproperty.hpp"
 #include "jpegconfigurationbox.hpp"
-#include "jpegparser.hpp"
+#include "layerselectorproperty.hpp"
 #include "modificationtimeinformation.hpp"
 #include "pixelaspectratiobox.hpp"
 #include "pixelinformationproperty.hpp"
 #include "rawpropertybox.hpp"
 #include "requiredreferencetypesproperty.hpp"
+#include "subsampleinformationproperty.hpp"
+#include "targetolsproperty.hpp"
+#include "operatingpointsinformationproperty.hpp"
 #include "timeutility.hpp"
 #include "userdescriptionproperty.hpp"
 #include "writerimpl.hpp"
+#include "ambientviewingenvironmentbox.hpp"
+#include "avccommondefs.hpp"
+#include "avcdecoderconfigrecord.hpp"
+#include "bitstream.hpp"
+#include "contentcolourvolumebox.hpp"
+#include "contentlightlevelbox.hpp"
+#include "filetypebox.hpp"
+#include "fourccint.hpp"
+#include "heifcommondatatypes.h"
+#include "heifwriterdatatypes.h"
+#include "hevccommondefs.hpp"
+#include "hevcdecoderconfigrecord.hpp"
+#include "idgenerators.hpp"
+#include "iteminfobox.hpp"
+#include "itempropertiesbox.hpp"
+#include "log.hpp"
+#include "masteringdisplaycolourvolumebox.hpp"
+#include "metabox.hpp"
+#include "nominaldiffusewhitebox.hpp"
+#include "referenceviewingenvironmentbox.hpp"
+#include "vvccommondefs.hpp"
+#include "vvcconfigurationbox.hpp"
+#include "vvcdecoderconfigrecord.hpp"
+#include "writerdatatypesinternal.hpp"
+#include <cstdint>
+#include <map>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 using namespace std;
 
@@ -70,18 +103,24 @@ namespace HEIF
                     configRecord.addNalUnit(nalVector, AvcNalUnitType::SPS);
                     if (configRecord.makeConfigFromSPS(nalVector) == false)
                     {
-                        return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                        return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                         ErrorOrigin::Writer_DecoderConfig,
+                                         "createAvcDecoderConfigurationRecord: makeConfigFromSPS rejected SPS NAL");
                     }
                 }
                 else
                 {
-                    return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                     ErrorOrigin::Writer_DecoderConfig,
+                                     "createAvcDecoderConfigurationRecord: unexpected/duplicate NAL unit type for AVC");
                 }
             }
 
             if (!spsFound || !ppsFound)
             {
-                return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                 ErrorOrigin::Writer_DecoderConfig,
+                                 "createAvcDecoderConfigurationRecord: missing SPS and/or PPS NAL units");
             }
 
             return ErrorCode::OK;
@@ -114,22 +153,80 @@ namespace HEIF
                     configRecord.addNalUnit(nalVector, HevcNalUnitType::SPS, true);
                     if (configRecord.makeConfigFromSPS(nalVector) == false)
                     {
-                        return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                        return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                         ErrorOrigin::Writer_DecoderConfig,
+                                         "createHevcDecoderConfigurationRecord: makeConfigFromSPS rejected SPS NAL");
                     }
                 }
                 else
                 {
-                    return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                     ErrorOrigin::Writer_DecoderConfig,
+                                     "createHevcDecoderConfigurationRecord: unexpected/duplicate NAL unit type for HEVC");
                 }
             }
 
             if (!spsFound || !ppsFound || !vpsFound)
             {
-                return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                 ErrorOrigin::Writer_DecoderConfig,
+                                 "createHevcDecoderConfigurationRecord: missing SPS/PPS/VPS NAL units");
             }
 
             return ErrorCode::OK;
         }
+
+        ErrorCode createVVCDecoderConfigurationRecord(const Array<DecoderSpecificInfo>& nalUnits,
+                                                       VvcDecoderConfigurationRecord& configRecord){
+
+            bool spsFound = false; bool ppsFound = false; bool vpsFound = false;
+            for (auto& nalUnit : nalUnits)
+            {
+                const auto nalVector = vectorize(nalUnit.decSpecInfoData);
+                if(nalVector.size() > 0){
+                    if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_PPS && !ppsFound){
+                        ppsFound = true;
+                        configRecord.addNalUnit(nalVector, VvcNalUnitType::PPS_NUT, true);
+                    }
+                    else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_VPS && !vpsFound){
+                        vpsFound = true;
+                        configRecord.addNalUnit(nalVector, VvcNalUnitType::VPS_NUT, true);
+                    }
+                    else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_SPS && !spsFound){
+                        spsFound = true;
+                        configRecord.addNalUnit(nalVector, VvcNalUnitType::SPS_NUT, true);
+                        if (!configRecord.makeConfigFromSPS(nalVector)){
+                            return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                             ErrorOrigin::Writer_DecoderConfig,
+                                             "createVVCDecoderConfigurationRecord: makeConfigFromSPS rejected SPS NAL");
+                        }
+                    }
+                    else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_APS_PREFIX){
+                        configRecord.addNalUnit(nalVector, VvcNalUnitType::PREFIX_APS_NUT, true);
+                    }
+                    else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_APS_SUFFIX){
+                        configRecord.addNalUnit(nalVector, VvcNalUnitType::SUFFIX_APS_NUT, true);
+                    }
+                    else
+                    {
+                        return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                         ErrorOrigin::Writer_DecoderConfig,
+                                         "createVVCDecoderConfigurationRecord: unexpected/duplicate NAL unit type for VVC");
+                    }
+                }
+            }
+
+            //Spec defines that at least SPS and PPS are needed
+            if (!spsFound || !ppsFound)
+            {
+                return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                 ErrorOrigin::Writer_DecoderConfig,
+                                 "createVVCDecoderConfigurationRecord: missing SPS and/or PPS NAL units");
+            }
+
+            return ErrorCode::OK;
+        }
+
 
         String charArrayToString(const Array<char>& input)
         {
@@ -143,37 +240,54 @@ namespace HEIF
 
     ErrorCode WriterImpl::setPrimaryItem(const ImageId& imageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setPrimaryItem: called before initialize()");
         }
 
         if (!checkImageIds({imageId}))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::setPrimaryItem: item id not found");
         }
 
         if (mImageCollection.images[imageId].isHidden)
         {
-            return ErrorCode::HIDDEN_PRIMARY_ITEM;
+            return HEIF_FAIL(ErrorCode::HIDDEN_PRIMARY_ITEM,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setPrimaryItem: primary item is hidden, operation not allowed");
         }
 
         mMetaBox.setPrimaryItem(imageId.get());
         mPrimaryItemSet = true;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::setPrimaryItem: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addImage(const MediaDataId& aMediaDataId, ImageId& aImageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addImage(ImageId): called before initialize()");
         }
 
         if (mMediaData.count(aMediaDataId) == 0)
         {
-            return ErrorCode::INVALID_MEDIADATA_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_MEDIADATA_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addImage(ImageId): media-data id not found");
         }
 
         const MediaData& mediaData = mMediaData.at(aMediaDataId);
@@ -192,6 +306,7 @@ namespace HEIF
         };
         const map<MediaFormat, FormatNames> formatMapping = {{MediaFormat::AVC, {FourCCInt("avc1"), ""}},
                                                              {MediaFormat::HEVC, {FourCCInt("hvc1"), ""}},
+                                                             {MediaFormat::VVC, {FourCCInt("vvc1"), ""}},
                                                              {MediaFormat::JPEG, {FourCCInt("jpeg"), ""}}};
 
         const FormatNames& format = formatMapping.at(mediaData.mediaFormat);
@@ -199,7 +314,7 @@ namespace HEIF
         mMetaBox.addItem(newImage.imageId.get(), format.type, format.name);
         mMetaBox.addIloc(newImage.imageId.get(), mediaData.offset, mediaData.size, 0);
 
-        if ((mediaData.mediaFormat == MediaFormat::AVC) || (mediaData.mediaFormat == MediaFormat::HEVC))
+        if ((mediaData.mediaFormat == MediaFormat::AVC) || (mediaData.mediaFormat == MediaFormat::HEVC) || (mediaData.mediaFormat == MediaFormat::VVC))
         {
             uint16_t configPropertyIndex;
             ErrorCode error = getConfigIndex(mediaData.decoderConfigId, configPropertyIndex);
@@ -230,7 +345,7 @@ namespace HEIF
             mMetaBox.addProperty(ispePropertyIndex, {aImageId.get()}, false);
         }
 
-        if (!mInitialMdat)
+        if (!mInitialMdat && !mWriteMini) //mini files doesn't include mif1 in ftyp
         {
             mFileTypeBox.addCompatibleBrand("mif1");
         }
@@ -241,15 +356,22 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+        }
+        HEIF_CATCH_AND_RETURN(ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addImage(MediaDataId): exception escaped")
     }
 
     ErrorCode WriterImpl::addImage(const MediaDataId& mediaDataId,
                                    const Array<ImageId>& referenceImageIds,
                                    ImageId& imageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (!checkImageIds({referenceImageIds}))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addImage(Arra): item id not found");
         }
 
         auto error = addImage(mediaDataId, imageId);
@@ -286,18 +408,27 @@ namespace HEIF
         }
 
         return error;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addImage(Arra): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::setItemDescription(const ImageId& imageId, const ItemDescription& itemDescription)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setItemDescription(ItemDescription): called before initialize()");
         }
 
         if (!checkImageIds({imageId}) && (!checkMetadataIds(imageId.get())))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::setItemDescription(ItemDescription): item id not found");
         }
 
         ItemInfoEntry& itemInfo = mMetaBox.getItemInfoBox().getItemById(imageId.get());
@@ -305,62 +436,94 @@ namespace HEIF
         itemInfo.setContentType({itemDescription.contentType.begin(), itemDescription.contentType.end()});
         itemInfo.setContentEncoding({itemDescription.contentEncoding.begin(), itemDescription.contentEncoding.end()});
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::setItemDescription(ItemDescription): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::setImageHidden(const ImageId& imageId, const bool hidden)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setImageHidden: called before initialize()");
         }
 
         if (!checkImageIds({imageId.get()}))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::setImageHidden: item id not found");
         }
 
         mMetaBox.setImageHidden(imageId.get(), hidden);
         mImageCollection.images[imageId].isHidden = hidden;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::setImageHidden: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addAuxiliaryReference(const ImageId& fromImageId, const ImageId& toImageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addAuxiliaryReference: called before initialize()");
         }
 
         if (!checkImageIds({fromImageId, toImageId}))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addAuxiliaryReference: item id not found");
         }
 
         mMetaBox.addItemReference("auxl", fromImageId.get(), toImageId.get());
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addAuxiliaryReference: exception escaped firewall")
     }
 
 
     ErrorCode WriterImpl::addThumbnail(const ImageId& thumbImageId, const ImageId& masterImageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addThumbnail: called before initialize()");
         }
 
         if (!checkImageIds({thumbImageId, masterImageId}))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addThumbnail: item id not found");
         }
 
         mMetaBox.addItemReference("thmb", thumbImageId.get(), masterImageId.get());
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addThumbnail: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::finalizeMetaBox()
     {
+        HEIF_TRY
+        {
         mMetaBox.setHandlerType("pict");
 
         // If primary item was not set, default to the first non-hidden image.
@@ -417,18 +580,25 @@ namespace HEIF
             }
         }
 
-        /** @todo Validity checks?
-         * if (!mPrimaryItemSet) still, in case all items were hidden.
-         * if (mImageCollection.images.size() == 0) */
+        ///@todo Validity checks?
+        // if (!mPrimaryItemSet) still, in case all items were hidden.
+        // if (mImageCollection.images.size() == 0)
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::finalizeMetaBox: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const CleanAperture& clap, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(CleanAperture): called before initialize()");
         }
 
         auto clapBox = makeCustomShared<::CleanApertureBox>();
@@ -439,10 +609,10 @@ namespace HEIF
         value.numerator   = clap.widthN;
         value.denominator = clap.widthD;
         clapBox->setWidth(value);
-        value.numerator   = clap.horizontalOffsetN;
+        value.numerator   = static_cast<uint32_t>(clap.horizontalOffsetN);
         value.denominator = clap.horizontalOffsetD;
         clapBox->setHorizOffset(value);
-        value.numerator   = clap.verticalOffsetN;
+        value.numerator   = static_cast<uint32_t>(clap.verticalOffsetN);
         value.denominator = clap.verticalOffsetD;
         clapBox->setVertOffset(value);
 
@@ -452,13 +622,20 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(CleanAperture): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const Mirror& imir, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(Mirror): called before initialize()");
         }
 
         auto imirBox = makeCustomShared<ImageMirror>();
@@ -470,13 +647,20 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(Mirror): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const Rotate& irot, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(Rotate): called before initialize()");
         }
 
         auto irotBox = makeCustomShared<ImageRotation>();
@@ -488,19 +672,28 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(Rotate): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const Scale& iscl, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(Scale): called before initialize()");
         }
 
         if ((iscl.targetWidthD == 0) || (iscl.targetWidthN == 0) || (iscl.targetHeightD == 0) ||
             (iscl.targetHeightN == 0))
         {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addProperty(Scale): invalid argument");
         }
 
         auto isclBox = makeCustomShared<ImageScaling>();
@@ -518,13 +711,20 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(Scale): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const RelativeLocation& rloc, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(RelativeLocation): called before initialize()");
         }
 
         auto rlocBox = makeCustomShared<ImageRelativeLocationProperty>();
@@ -537,13 +737,200 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(RelativeLocation): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const LayerSelector& lsel, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(LayerSelector): called before initialize()");
+        }
+
+        auto lselBox = makeCustomShared<LayerSelectorProperty>();
+        lselBox->setLayerId(lsel.layerId);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(lselBox), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(LayerSelector): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const TargetOls& tols, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(TargetOls): called before initialize()");
+        }
+
+        auto tolsBox = makeCustomShared<TargetOlsProperty>();
+        tolsBox->setOlsIndex(tols.targetOlsIndex);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(tolsBox), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(TargetOls): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const OperatingPointsInfo& oinf, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(OperatingPointsInfo): called before initialize()");
+        }
+
+        auto oinfBox = makeCustomShared<OperatingPointsInformationProperty>();
+        oinfBox->setScalabilityMask(oinf.scalabilityMask);
+
+        Vector<OperatingPointsInformationProperty::ProfileTierLevel> ptls;
+        ptls.reserve(oinf.profileTierLevels.size);
+        for (std::size_t i = 0; i < oinf.profileTierLevels.size; ++i)
+        {
+            OperatingPointsInformationProperty::ProfileTierLevel ptl{};
+            ptl.generalProfileSpace              = oinf.profileTierLevels[i].generalProfileSpace;
+            ptl.generalTierFlag                  = oinf.profileTierLevels[i].generalTierFlag;
+            ptl.generalProfileIdc                = oinf.profileTierLevels[i].generalProfileIdc;
+            ptl.generalProfileCompatibilityFlags = oinf.profileTierLevels[i].generalProfileCompatibilityFlags;
+            ptl.generalConstraintIndicatorFlags  = oinf.profileTierLevels[i].generalConstraintIndicatorFlags;
+            ptl.generalLevelIdc                  = oinf.profileTierLevels[i].generalLevelIdc;
+            ptls.push_back(ptl);
+        }
+        oinfBox->setProfileTierLevels(ptls);
+
+        Vector<OperatingPointsInformationProperty::OperatingPoint> ops;
+        ops.reserve(oinf.operatingPoints.size);
+        for (std::size_t i = 0; i < oinf.operatingPoints.size; ++i)
+        {
+            const auto& src = oinf.operatingPoints[i];
+            OperatingPointsInformationProperty::OperatingPoint op{};
+            op.outputLayerSetIdx = src.outputLayerSetIdx;
+            op.maxTemporalId     = src.maxTemporalId;
+            op.layers.reserve(src.layers.size);
+            for (std::size_t j = 0; j < src.layers.size; ++j)
+            {
+                OperatingPointsInformationProperty::OperatingPointLayer layer{};
+                layer.ptlIdx                 = src.layers[j].ptlIdx;
+                layer.layerId                = src.layers[j].layerId;
+                layer.isOutputLayer          = src.layers[j].isOutputLayer != 0;
+                layer.isAlternateOutputLayer = src.layers[j].isAlternateOutputLayer != 0;
+                op.layers.push_back(layer);
+            }
+            op.minPicWidth        = src.minPicWidth;
+            op.minPicHeight       = src.minPicHeight;
+            op.maxPicWidth        = src.maxPicWidth;
+            op.maxPicHeight       = src.maxPicHeight;
+            op.maxChromaFormat    = src.maxChromaFormat;
+            op.maxBitDepthMinus8  = src.maxBitDepthMinus8;
+            op.frameRateInfoFlag  = src.frameRateInfoFlag != 0;
+            op.bitRateInfoFlag    = src.bitRateInfoFlag != 0;
+            op.avgFrameRate       = src.avgFrameRate;
+            op.constantFrameRate  = src.constantFrameRate;
+            op.maxBitRate         = src.maxBitRate;
+            op.avgBitRate         = src.avgBitRate;
+            ops.push_back(op);
+        }
+        oinfBox->setOperatingPoints(ops);
+
+        Vector<OperatingPointsInformationProperty::LayerInfo> layers;
+        layers.reserve(oinf.layers.size);
+        for (std::size_t i = 0; i < oinf.layers.size; ++i)
+        {
+            OperatingPointsInformationProperty::LayerInfo layer{};
+            layer.dependentLayerId = oinf.layers[i].dependentLayerId;
+            layer.dependsOnLayerIds.reserve(oinf.layers[i].dependsOnLayerIds.size);
+            for (std::size_t j = 0; j < oinf.layers[i].dependsOnLayerIds.size; ++j)
+            {
+                layer.dependsOnLayerIds.push_back(oinf.layers[i].dependsOnLayerIds[j]);
+            }
+            layer.dimensionIdentifiers.reserve(oinf.layers[i].dimensionIdentifiers.size);
+            for (std::size_t j = 0; j < oinf.layers[i].dimensionIdentifiers.size; ++j)
+            {
+                layer.dimensionIdentifiers.push_back(oinf.layers[i].dimensionIdentifiers[j]);
+            }
+            layers.push_back(layer);
+        }
+        oinfBox->setLayers(layers);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(oinfBox), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(OperatingPointsInfo): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const SubSampleInfo& subs, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(SubSampleInfo): called before initialize()");
+        }
+
+        auto subsBox = makeCustomShared<SubSampleInformationProperty>();
+        Vector<SubSampleInformationProperty::SubSampleEntry> entries;
+        entries.reserve(subs.subSamples.size);
+        for (uint64_t i = 0; i < subs.subSamples.size; ++i)
+        {
+            SubSampleInformationProperty::SubSampleEntry e{};
+            e.subsampleSize           = subs.subSamples[i].subsampleSize;
+            e.subsamplePriority       = subs.subSamples[i].subsamplePriority;
+            e.discardable             = subs.subSamples[i].discardable;
+            e.codecSpecificParameters = subs.subSamples[i].codecSpecificParameters;
+            entries.push_back(e);
+        }
+        subsBox->setSubSamples(entries);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(subsBox), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(SubSampleInfo): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const PixelAspectRatio& pasp, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(PixelAspectRatio): called before initialize()");
         }
 
         auto paspBox = makeCustomShared<PixelAspectRatioBox>();
@@ -557,16 +944,25 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(PixelAspectRatio): exception escaped firewall")
     }
-
     ErrorCode WriterImpl::addProperty(const PixelInformation& pixi, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(PixelInformation): called before initialize()");
         }
 
         auto pixiBox = makeCustomShared<PixelInformationProperty>();
+
+        pixiBox->setNumChannels(pixi.numChannels);
+
         Vector<std::uint8_t> bitsPerChannelVector;
         for (const auto bitsPerChannel : pixi.bitsPerChannel)
         {
@@ -574,19 +970,41 @@ namespace HEIF
         }
         pixiBox->setBitsPerChannels(bitsPerChannelVector);
 
+        std::map<uint8_t, PixelInformationProperty::ChannelInfo> channelDataMap;
+        for(size_t i = 0; i < pixi.ChannelData.size; ++i){
+            const auto& entry = pixi.ChannelData[i];
+            PixelInformationProperty::ChannelInfo outputChannelInfo;
+            outputChannelInfo.ComponentFormat = entry.info.ComponentFormat;
+            outputChannelInfo.SubSamplingFlag = entry.info.SubSamplingFlag;
+            outputChannelInfo.ChannelLabelFlag = entry.info.ChannelLabelFlag;
+            outputChannelInfo.SubSamplingType = entry.info.SubSamplingType;
+            outputChannelInfo.SubSamplingLocation = entry.info.SubSamplingLocation;
+            outputChannelInfo.ChannelLabel = std::string(entry.info.ChannelLabel.begin(), entry.info.ChannelLabel.end());
+
+            channelDataMap.emplace(entry.channelIdc, outputChannelInfo);
+        }
+        pixiBox->setChannelData(channelDataMap);
+
         PropertyInformation info;
         info.isTransformative   = false;
         propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(pixiBox), {}, false));
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(PixelInformation): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const ColourInformation& colr, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(ColourInformation): called before initialize()");
         }
 
         auto colrBox = makeCustomShared<ColourInformationBox>();
@@ -597,7 +1015,9 @@ namespace HEIF
         }
         else
         {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addProperty(ColourInformation): invalid argument");
         }
 
         colrBox->setColourPrimaries(colr.colourPrimaries);
@@ -617,13 +1037,20 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(ColourInformation): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const AuxiliaryType& auxC, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(AuxiliaryType): called before initialize()");
         }
 
         auto auxCBox = makeCustomShared<AuxiliaryTypeProperty>();
@@ -641,13 +1068,20 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(AuxiliaryType): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const RequiredReferenceTypes& rref, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(RequiredReferenceTypes): called before initialize()");
         }
 
         auto rrefBox = makeCustomShared<RequiredReferenceTypesProperty>();
@@ -663,13 +1097,20 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(RequiredReferenceTypes): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const UserDescription& udes, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(UserDescription): called before initialize()");
         }
 
         auto udesProperty = makeCustomShared<UserDescriptionProperty>();
@@ -685,13 +1126,20 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(UserDescription): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const AccessibilityText& altt, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(AccessibilityText): called before initialize()");
         }
 
         auto alttProperty = makeCustomShared<AccessibilityTextProperty>();
@@ -705,13 +1153,217 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(AccessibilityText): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const SpatialExtents& ispe, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING){
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(SpatialExtents): called before initialize()");
+        }
+        std::shared_ptr<ImageSpatialExtentsProperty> ispeProperty = makeCustomShared<ImageSpatialExtentsProperty>();
+
+        ispeProperty->setDisplayHeight(ispe.mImageHeight);
+        ispeProperty->setDisplayWidth(ispe.mImageWidth);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(ispeProperty), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(SpatialExtents): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const ContentLightLevel& clli, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if(mState != State::WRITING){
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(ContentLightLevel): called before initialize()");
+        }
+        std::shared_ptr<ContentLightLevelBox> clliProperty = makeCustomShared<ContentLightLevelBox>();
+        clliProperty->setMaxContentLightLevel(clli.maxContentLightLevel);
+        clliProperty->setMaxPicAverageLightLevel(clli.maxPicAverageLightLevel);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(clliProperty), {}, false));
+        mProperties[propertyId] = info;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(ContentLightLevel): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const MasteringDisplayColorVolume& mdcv, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if(mState != State::WRITING){
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(MasteringDisplayColorVolume): called before initialize()");
+        }
+        std::shared_ptr<MasteringDisplayColourVolumeBox> mdcvProperty = makeCustomShared<MasteringDisplayColourVolumeBox>();
+
+        Vector<uint16_t> primariesXVec; 
+        for(const auto& px : mdcv.displayPrimariesX){ primariesXVec.push_back(px); }
+        mdcvProperty->setDisplayPrimariesX(primariesXVec);
+
+        Vector<uint16_t> primariesYVec; 
+        for(const auto& py : mdcv.displayPrimariesY){ primariesYVec.push_back(py); }
+        mdcvProperty->setDisplayPrimariesY(primariesYVec);
+
+        mdcvProperty->setWhitePointX(mdcv.whitePointX);
+        mdcvProperty->setWhitePointY(mdcv.whitePointY);
+
+        mdcvProperty->setMaxDisplayMasteringLuminance(mdcv.maxDisplayMasteringLuminance);
+        mdcvProperty->setMinDisplayMasteringLuminance(mdcv.minDisplayMasteringLuminance);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(mdcvProperty), {}, false));
+        mProperties[propertyId] = info;
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(MasteringDisplayColorVolume): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const ContentColorVolume& cclv, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if(mState != State::WRITING){
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(ContentColorVolume): called before initialize()");
+        }
+        std::shared_ptr<ContentColourVolumeBox> cclvProperty = makeCustomShared<ContentColourVolumeBox>();
+
+        cclvProperty->setCcvPrimariesPresent(cclv.ccvPrimariesPresent);
+        cclvProperty->setCcvMinLuminanceValuePresent(cclv.ccvMinLuminanceValuePresent);
+        cclvProperty->setCcvMaxLuminanceValuePresent(cclv.ccvMaxLuminanceValuePresent);
+        cclvProperty->setCcvAvgLuminanceValuePresent(cclv.ccvAvgLuminanceValuePresent);
+
+        if(cclv.ccvPrimariesPresent){
+            Vector<uint32_t> primariesXVec; 
+            for(const auto& px : cclv.ccvPrimariesX){ primariesXVec.push_back(px); }
+            cclvProperty->setCcvPrimariesX(primariesXVec);
+
+            Vector<uint32_t> primariesYVec; 
+            for(const auto& py : cclv.ccvPrimariesY){ primariesYVec.push_back(py); }
+            cclvProperty->setCcvPrimariesY(primariesYVec);
+        }
+
+        if(cclv.ccvMinLuminanceValuePresent){cclvProperty->setCcvMinLuminance(cclv.ccvMinLuminanceValue);}
+        if(cclv.ccvMaxLuminanceValuePresent){cclvProperty->setCcvMaxLuminance(cclv.ccvMaxLuminanceValue);}
+        if(cclv.ccvAvgLuminanceValuePresent){cclvProperty->setCcvAvgLuminance(cclv.ccvAvgLuminanceValue);}
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(cclvProperty), {}, false));
+        mProperties[propertyId] = info;
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(ContentColorVolume): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const AmbientViewingEnvironment& amve, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if(mState != State::WRITING){
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(AmbientViewingEnvironment): called before initialize()");
+        }
+        std::shared_ptr<AmbientViewingEnvironmentBox> amveProperty = makeCustomShared<AmbientViewingEnvironmentBox>();
+        amveProperty->setAmbientIlluminance(amve.ambientIlluminance);
+        amveProperty->setAmbientLightX(amve.ambientLightX);
+        amveProperty->setAmbientLightY(amve.ambientLightY);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(amveProperty), {}, false));
+        mProperties[propertyId] = info;
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(AmbientViewingEnvironment): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const ReferenceViewingEnvironment& reve, PropertyId& propertyId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if(mState != State::WRITING){
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(ReferenceViewingEnvironment): called before initialize()");
+        }
+        std::shared_ptr<ReferenceViewingEnvironmentBox> reveProperty = makeCustomShared<ReferenceViewingEnvironmentBox>();
+        reveProperty->setSurroundLuminance(reve.surroundLuminance);
+        reveProperty->setSurroundLightX(reve.surroundLightX);
+        reveProperty->setSurroundLightY(reve.surroundLightY);
+        reveProperty->setPeripheryLuminance(reve.peripheryLuminance);
+        reveProperty->setPeripheryLightX(reve.peripheryLightX);
+        reveProperty->setPeripheryLightY(reve.peripheryLightY);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(reveProperty), {}, false));
+        mProperties[propertyId] = info;
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(ReferenceViewingEnvironment): exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addProperty(const NominalDiffuseWhite& ndwt, PropertyId& propertyId)
+    {
+        HEIF_TRY
+        {
+        if (mState != State::WRITING){
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(NominalDiffuseWhite): called before initialize()");
+        }
+        std::shared_ptr<NominalDiffuseWhiteBox> ndwtProperty = makeCustomShared<NominalDiffuseWhiteBox>();
+        ndwtProperty->setDiffuseWhiteLuminance(ndwt.diffuseWhiteLuminance);
+
+        PropertyInformation info;
+        info.isTransformative   = false;
+        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(ndwtProperty), {}, false));
+        mProperties[propertyId] = info;
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(NominalDiffuseWhite): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const CreationTimeInformation& crtt, PropertyId& propertyId)
     {
+        HEIF_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(CreationTimeInformation): called before initialize()");
         }
 
         auto crttProperty = makeCustomShared<CreationTimeProperty>();
@@ -724,13 +1376,20 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(CreationTimeInformation): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const ModificationTimeInformation& mdft, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(ModificationTimeInformation): called before initialize()");
         }
 
         auto mdftProperty = makeCustomShared<ModificationTimeProperty>();
@@ -743,38 +1402,104 @@ namespace HEIF
         mProperties[propertyId] = info;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(ModificationTimeInformation): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const RawProperty& property, const bool isTransformative, PropertyId& propertyId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty(RawProperty): called before initialize()");
         }
 
-        auto customBox = makeCustomShared<RawPropertyBox>();
+        //TBD scenario with RAW property with 4CC type specified? Currently 4CC type value is not used for anything?
 
-        Vector<uint8_t> data(property.data.begin(), property.data.end());
-        customBox->setData(data);
+        //if the property has no 4cc type it should be handled as raw
+        if(property.type == FourCC()){
+            auto customBox = makeCustomShared<RawPropertyBox>();
 
-        PropertyInformation info;
-        info.isTransformative   = isTransformative;
-        propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(customBox), {}, false));
-        mProperties[propertyId] = info;
+            Vector<uint8_t> data(property.data.begin(), property.data.end());
+            customBox->setData(data);
+
+            PropertyInformation info;
+            info.isTransformative   = isTransformative;
+            propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(customBox), {}, false));
+            mProperties[propertyId] = info;
+        }
+
+        //workarounds if writer->feedDecoderConfig() doesn't work, if common occurence fix cfg side
+        else if(property.type == "vvcC"){
+            logWarning() << "vvcC config passed as RawProperty. Possible error in recognizing cfg." << '\n';
+
+            std::shared_ptr<VvcConfigurationBox> vvcc = makeCustomShared<VvcConfigurationBox>();
+            ISOBMFF::BitStream confBitstream;
+            Vector<uint8_t> confData(property.data.begin(), property.data.end());
+            confBitstream.write8BitsArray(confData, confData.size());
+            vvcc->parseBox(confBitstream);
+
+            PropertyInformation info;
+            info.isTransformative   = isTransformative;
+            propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(vvcc), {}, true));
+            mProperties[propertyId] = info;
+        }
+        else if(property.type =="hvcC")
+        {
+            logWarning() << "hvcC config passed as RawProperty. Possible error in recognizing cfg." << '\n';
+
+            std::shared_ptr<HevcConfigurationBox> hvcc = makeCustomShared<HevcConfigurationBox>();
+            ISOBMFF::BitStream confBitstream;
+            Vector<uint8_t> confData(property.data.begin(), property.data.end());
+            confBitstream.write8BitsArray(confData, confData.size());
+            hvcc->parseBox(confBitstream);
+
+            PropertyInformation info;
+            info.isTransformative   = isTransformative;
+            propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(hvcc), {}, true));
+            mProperties[propertyId] = info;            
+        }
+        else
+        {
+            //Handle unknown 4cc type RAW property as raw
+            
+            auto customBox = makeCustomShared<RawPropertyBox>();
+
+            Vector<uint8_t> data(property.data.begin(), property.data.end());
+            customBox->setData(data);
+
+            PropertyInformation info;
+            info.isTransformative   = isTransformative;
+            propertyId              = PropertyId(mMetaBox.addProperty(static_pointer_cast<Box>(customBox), {}, false));
+            mProperties[propertyId] = info;
+        }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty(RawProperty): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addDerivedImage(const ImageId& imageId, ImageId& derivedImageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addDerivedImage: called before initialize()");
         }
 
         if (!checkImageIds({imageId}))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addDerivedImage: item id not found");
         }
         derivedImageId = Context::getValue();
         ImageCollection::Image newImage;
@@ -788,7 +1513,10 @@ namespace HEIF
 
         const auto ispeIndex =
             mMetaBox.getItemPropertiesBox().findPropertyIndex(ItemPropertiesBox::PropertyType::ISPE, imageId.get());
-        assert(ispeIndex != 0);
+        if (ispeIndex == 0)
+        {
+            throw std::runtime_error("addIdentityDerivation: no ISPE property found for source image");
+        }
         mMetaBox.addProperty(static_cast<uint16_t>(ispeIndex), {derivedImageId.get()}, false);
 
         if (mWriteItemCreationTimes)
@@ -797,25 +1525,36 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addDerivedImage: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::associateProperty(const GroupId& groupId,
                                             const PropertyId& propertyId,
                                             const bool isEssential)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::associateProperty(bool): called before initialize()");
         }
 
         if (mEntityGroups.count(groupId) == 0)
         {
-            return ErrorCode::INVALID_GROUP_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_GROUP_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::associateProperty(bool): group id not found");
         }
 
         if (mProperties.count(propertyId) == 0)
         {
-            return ErrorCode::INVALID_PROPERTY_INDEX;
+            return HEIF_FAIL(ErrorCode::INVALID_PROPERTY_INDEX,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::associateProperty(bool): property index out of range");
         }
 
         PropertyAssociation association;
@@ -832,25 +1571,36 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::associateProperty(bool): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::associateProperty(const ImageId& imageId,
                                             const PropertyId& propertyId,
                                             const bool isEssential)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::associateProperty(bool): called before initialize()");
         }
 
         if (!checkImageIds({imageId}))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::associateProperty(bool): item id not found");
         }
 
         if (mProperties.count(propertyId) == 0)
         {
-            return ErrorCode::INVALID_PROPERTY_INDEX;
+            return HEIF_FAIL(ErrorCode::INVALID_PROPERTY_INDEX,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::associateProperty(bool): property index out of range");
         }
 
         PropertyAssociation association;
@@ -867,28 +1617,41 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::associateProperty(bool): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addDerivedImageItem(const Grid& grid, ImageId& gridId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addDerivedImageItem: called before initialize()");
         }
 
         if (!checkImageIds(grid.imageIds))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addDerivedImageItem: item id not found");
         }
 
-        if ((grid.rows * grid.columns) != grid.imageIds.size)
+        if ((static_cast<size_t>(grid.rows) * grid.columns) != grid.imageIds.size)
         {
-            return ErrorCode::INVALID_REFERENCE_COUNT;
+            return HEIF_FAIL(ErrorCode::INVALID_REFERENCE_COUNT,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addDerivedImageItem: reference count mismatch");
         }
 
         if (grid.outputHeight == 0 || grid.outputWidth == 0)
         {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addDerivedImageItem: invalid argument");
         }
 
         gridId = Context::getValue();
@@ -918,28 +1681,41 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addDerivedImageItem: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addDerivedImageItem(const Overlay& iovl, ImageId& overlayId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addDerivedImageItem: called before initialize()");
         }
 
         if (!checkImageIds(iovl.imageIds))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addDerivedImageItem: item id not found");
         }
 
         if (iovl.offsets.size != iovl.imageIds.size)
         {
-            return ErrorCode::INVALID_REFERENCE_COUNT;
+            return HEIF_FAIL(ErrorCode::INVALID_REFERENCE_COUNT,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addDerivedImageItem: reference count mismatch");
         }
 
         if (iovl.outputHeight == 0 || iovl.outputWidth == 0)
         {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addDerivedImageItem: invalid argument");
         }
 
         overlayId = Context::getValue();
@@ -981,19 +1757,28 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addDerivedImageItem: exception escaped firewall")
     }
 
 
     ErrorCode WriterImpl::addMetadataItemReference(const MetadataItemId& metadataItemId, const ImageId& toImageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addMetadataItemReference(ImageId): called before initialize()");
         }
 
         if (!checkImageIds({toImageId}))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addMetadataItemReference(ImageId): item id not found");
         }
 
         bool found = false;
@@ -1008,40 +1793,60 @@ namespace HEIF
 
         if (!found)
         {
-            return ErrorCode::INVALID_METADATAITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_METADATAITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addMetadataItemReference(ImageId): metadata item id not found");
         }
 
         mMetaBox.addItemReference("cdsc", metadataItemId.get(), toImageId.get());
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addMetadataItemReference(ImageId): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addTbasItemReference(const ImageId& fromImageId, const ImageId& toImageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addTbasItemReference: called before initialize()");
         }
 
         if (!checkImageIds({fromImageId}) || !checkImageIds({toImageId}))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addTbasItemReference: item id not found");
         }
 
         mMetaBox.addItemReference("tbas", fromImageId.get(), toImageId.get());
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addTbasItemReference: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addBaseItemReference(const ImageId& fromImageId, const Array<ImageId>& toImageIds)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addBaseItemReference: called before initialize()");
         }
 
         if (!checkImageIds({fromImageId}) || !checkImageIds(toImageIds))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addBaseItemReference: item id not found");
         }
 
         for (const auto toImageId : toImageIds)
@@ -1050,18 +1855,27 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addBaseItemReference: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addMetadata(const MediaDataId& mediaDataId, MetadataItemId& metadataItemId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addMetadata: called before initialize()");
         }
 
         if (mMediaData.count(mediaDataId) == 0)
         {
-            return ErrorCode::INVALID_MEDIADATA_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_MEDIADATA_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addMetadata: media-data id not found");
         }
 
         if (!mMetadataItems.count(mediaDataId))
@@ -1073,6 +1887,9 @@ namespace HEIF
             metadataItemId = mMetadataItems.at(mediaDataId);
             return ErrorCode::OK;
         }
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addMetadata: exception escaped firewall")
     }
 
     /* *************************************************************** */
@@ -1081,9 +1898,13 @@ namespace HEIF
 
     ErrorCode WriterImpl::createMetadataItem(const MediaDataId& mediaDataId, MetadataItemId& metadataItemId)
     {
+        HEIF_TRY
+        {
         if (mMediaData.count(mediaDataId) == 0)
         {
-            return ErrorCode::INVALID_MEDIADATA_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_MEDIADATA_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::createMetadataItem: media-data id not found");
         }
 
         if (!mMetadataItems.count(mediaDataId))
@@ -1116,6 +1937,9 @@ namespace HEIF
         }
         metadataItemId = mMetadataItems.at(mediaDataId);
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::createMetadataItem: exception escaped firewall")
     }
 
     bool WriterImpl::checkMetadataIds(const MetadataItemId& metadataItemId) const
@@ -1163,8 +1987,18 @@ namespace HEIF
         return mIspeIndexes[size];
     }
 
+// C6262: MSVC /analyze reports ~60 KB stack.  This function dispatches
+// to makeVVC/HEVC/AVC/JPEG SampleEntryBox helpers, each of which
+// constructs a decoder config record with VVC spec-mandated fixed-size
+// arrays.  The analyser sums the worst-case across all branches even
+// though only one executes.  60 KB is well within the 1 MB default stack.
+#if defined(_MSC_VER)
+#pragma warning(suppress : 6262)
+#endif
     ErrorCode WriterImpl::getConfigIndex(const DecoderConfigId decoderConfigId, uint16_t& propertyIndex)
     {
+        HEIF_TRY
+        {
         // Create a new decoder configuration property, if a matching one was not present already.
         if (mDecoderConfigs.count(decoderConfigId) == 0)
         {
@@ -1211,18 +2045,42 @@ namespace HEIF
                                           configNalUnits.begin()->decSpecInfoData.end()});
                     const auto index = mMetaBox.addProperty(static_pointer_cast<Box>(configBox), {}, true);
                     mDecoderConfigs[decoderConfigId] = index;
-                    // TODO:
-                    // mDecoderConfigIndexToSize[index] = {configRecord.getPicWidth(), configRecord.getPicHeight()};
+                    // JPEG dimensions come from the bitstream (mJpegDimensions),
+                    // not from the decoder config -- no mDecoderConfigIndexToSize entry needed.
+                }
+                else if (configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::VVC_SPS ||
+                         configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::VVC_PPS ||
+                         configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::VVC_VPS ||
+                         configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::VVC_APS_PREFIX ||
+                         configNalUnits.begin()->decSpecInfoType == DecoderSpecInfoType::VVC_APS_SUFFIX){
+                    auto confbox = makeCustomShared<VvcConfigurationBox>();
+                    VvcDecoderConfigurationRecord vvcc;
+                    ErrorCode error = createVVCDecoderConfigurationRecord(configNalUnits, vvcc);
+                    if (error != ErrorCode::OK){
+                        return error;
+                    }
+                    confbox->setConfiguration(vvcc);
+                    const auto index = mMetaBox.addProperty(static_pointer_cast<Box>(confbox), {}, true);
+                    mDecoderConfigs[decoderConfigId] = index;
+
+                    //create data for 'ispe'
+                    ///@note at least in compact vvc conf maxpicwidth is set to image width
+                    mDecoderConfigIndexToSize[index] = {vvcc.getMaxPictureWidth(), vvcc.getMaxPictureHeight()};
                 }
                 else
                 {
-                    return ErrorCode::UNSUPPORTED_CODE_TYPE;
+                    return HEIF_FAIL(ErrorCode::UNSUPPORTED_CODE_TYPE,
+                                     ErrorOrigin::Writer_DecoderConfig,
+                                     "WriterImpl::getConfigIndex: codec type not supported");
                 }
             }
         }
 
         propertyIndex = mDecoderConfigs.at(decoderConfigId);
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::getConfigIndex: exception escaped firewall")
     }
 
     void WriterImpl::addCreationTimeInformation(const ImageId& imageId)

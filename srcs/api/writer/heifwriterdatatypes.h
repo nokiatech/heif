@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -25,17 +25,32 @@
 
 namespace HEIF
 {
+    // NOLINTNEXTLINE(google-explicit-constructor) -- IdType uses intentional implicit conversion.
     IdType(std::uint32_t, MediaDataId);
 
     struct HEIF_DLL_PUBLIC OutputConfig
     {
+        /// @brief boolean to enable writing of miniBox
+        bool writeMini = false;
+
+        /// @brief minor version to indicate item type "infe" in mini
+        uint32_t minorVersion;
+
         /**
          * Output filename */
         const char* fileName;
 
         /**
-         * Output stream interface
-         * If set all writes will be directed here*/
+         * Output stream interface.
+         *
+         * If set, all writes will be directed here instead of to a file
+         * named by `fileName`.
+         *
+         * @warning **Ownership stays with the caller.** The library does
+         * NOT delete the pointer in `Writer::Destroy()` / `~Writer()`.
+         * The embedder must keep the stream alive for the full lifetime
+         * of the `Writer` instance and free it themselves afterwards.
+         */
         OutputStreamInterface* outputStream = nullptr;
 
         /**
@@ -65,19 +80,31 @@ namespace HEIF
         bool itemCreationTimes = false;
     };
 
-    enum class MediaFormat
+    /** @brief Media format enumeration for the writer. */
+    enum class MediaFormat : std::uint8_t
     {
         INVALID = 0,  ///< Undefined MediaForamt, invalid value used internal error checking.
 
         AVC,   ///< Image(s) encoded with AVC/H.264 encoder (Annex E in HEIF ISO/IEC 23008-12:2017(E) spec for details).
         HEVC,  ///< Image(s) encoded with HEVC/H.265 encoder (Annex B in HEIF ISO/IEC 23008-12:2017(E) spec for
                ///< details).
+        VVC,
+        VVC_SUBPIC,
+
+        LHEVC,  ///< Enhancement-layer image(s) in a Layered HEVC bitstream (ISO/IEC 14496-15 Section 9.6,
+                ///< item type "lhv1"). Uses an LHEVCDecoderConfigurationRecord (Section 9.4) instead of
+                ///< an HEVCDecoderConfigurationRecord, but the NAL unit payload is structurally
+                ///< identical (VPS/SPS/PPS).
+
         JPEG,  ///< Image(s) encoded with JPEG encoder (Annex H in HEIF ISO/IEC 23008-12:2017(E) spec for details).
         EXIF,  ///< EXIF Metadata binary data (ExifDataBlock() as defined in Annex A.2.1 in HEIF ISO/IEC
                ///< 23008-12:2017(E)).
         XMP,   ///< XMP Metadata binary data (Annex A.3 in HEIF ISO/IEC 23008-12:2017(E) spec for details).
         MPEG7,  ///< MPEG-7 Metadata binary data (Annex A.4 in HEIF ISO/IEC 23008-12:2017(E) spec for details).
-        AAC     ///< AAC-LC audio track data.
+        AAC     ///< AAC-LC audio track data. NOTE: AAC-LC is the only writable audio codec; the
+                ///< writer's makeMP4AudioSampleEntryBox hard-codes streamType=0x05 / OTI=0x40
+                ///< (MPEG-4 Audio). Opus, FLAC, AC-3, MPEG-H, and PCM are not supported.
+                ///< See the MP4 support documentation for the full audio contract.
     };
 
     struct HEIF_DLL_PUBLIC Data

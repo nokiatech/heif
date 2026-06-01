@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,18 +12,20 @@
 
 #include "ImageItem.h"
 
+#include "Heif.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
 
 #include "CodedImageItem.h"
 #include "DerivedImageItem.h"
 #include "DescriptiveProperty.h"
-#include "GridImageItem.h"
-#include "IdentityImageItem.h"
 #include "MetaItem.h"
-#include "OverlayImageItem.h"
-#include "RawProperty.h"
 #include "TransformativeProperty.h"
+#include "Item.h"
+#include "ItemProperty.h"
+#include "heifreaderdatatypes.h"
+#include <utility>
 
 using namespace HEIFPP;
 
@@ -509,7 +511,7 @@ void ImageItem::removeThumbnail(ImageItem* aImage)
             {
                 if (!aImage->mIsThumbnailTo.removeLink(this))
                 {
-                    HEIF_ASSERT(false);
+                    HEIF_LOG_INVARIANT(false, "ImageItem: thumbnail back-link missing on removeThumbnail");
                 }
             }
             it = mThumbnailImages.erase(it);
@@ -560,7 +562,7 @@ void ImageItem::removeAuxImage(ImageItem* aImage)
             {
                 if (!aImage->mIsAuxiliaryTo.removeLink(this))
                 {
-                    HEIF_ASSERT(false);
+                    HEIF_LOG_INVARIANT(false, "ImageItem: auxiliary back-link missing on removeAuxImage");
                 }
             }
             it = mAuxImages.erase(it);

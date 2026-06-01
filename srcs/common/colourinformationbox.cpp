@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -18,11 +18,8 @@
 ColourInformationBox::ColourInformationBox()
     : Box("colr")
     , mColourType(0)
-    , mColourPrimaries(0)
-    , mTransferCharasteristics(0)
-    , mMatrixCoefficients(0)
-    , mFullRangeFlag(false)
-    , mIccProfile()
+    , 
+     mIccProfile()
 {
 }
 
@@ -84,6 +81,24 @@ const Vector<std::uint8_t>& ColourInformationBox::getIccProfile() const
 void ColourInformationBox::setIccProfile(const Vector<std::uint8_t>& iccProfile)
 {
     mIccProfile = iccProfile;
+}
+
+bool ColourInformationBox::getExplicitCICPFlag(bool hasICC) const
+{
+    if(hasICC){
+        //ICC item exists, but does not necessarily mean explicit cicp
+        if(mColourPrimaries == 2 && mTransferCharasteristics == 2 &&
+            (mMatrixCoefficients == 2 || mMatrixCoefficients == 6)){
+                return false;
+            }
+    }else if(!hasICC){
+        //No ICC item
+        if(mColourPrimaries == 1 && mTransferCharasteristics == 13 &&
+            (mMatrixCoefficients == 2 || mMatrixCoefficients == 6)){
+                return false;
+            }
+    }
+    return true;
 }
 
 void ColourInformationBox::writeBox(BitStream& output) const

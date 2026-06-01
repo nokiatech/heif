@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -36,10 +36,14 @@ const FourCCInt OVERLAY_ITEM_TYPE = "iovl";  ///< 4CC identifier of overlay item
 const FourCCInt XML_ITEM_TYPE     = "xml1";  ///< 4CC identifier of XML metadata item type in ItemInfoEntry
 
 // Track References
-const FourCCInt THUMB_TREF_TYPE = "thmb";  ///< 4CC identifier of thumbnail track reference
 const FourCCInt AUXL_TREF_TYPE  = "auxl";  ///< 4CC identifier of auxiliry track reference
+const FourCCInt SUBP_TREF_TYPE  = "subp";  ///< 4CC identifier of subpicture track reference
+const FourCCInt THUMB_TREF_TYPE = "thmb";  ///< 4CC identifier of thumbnail track reference
+const FourCCInt MIXN_TREF_TYPE  = "mixn";  ///< 4CC identifier of mixed VCL NAL unit type track reference
+
 
 // Grouping Types
 const FourCCInt STMI_GROUP_TYPE = "stmi";  ///< 4CC identifier of Sample To Metadata Item grouping
+const FourCCInt MINP_GROUP_TYPE = "minp";  ///< 4CC identifier of VVC Mixed NAL Unit Type sample grouping
 
 #endif

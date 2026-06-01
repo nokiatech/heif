@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,45 +13,99 @@
 
 #include "heifreaderimpl.hpp"
 
+#include "heiferrorinfo.h"
 #include <algorithm>
 #include <bitset>
-#include <cassert>
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <limits>
 
 #include "audiosampleentrybox.hpp"
 #include "auxiliarytypeinfobox.hpp"
-#include "auxiliarytypeproperty.hpp"
-#include "avcconfigurationbox.hpp"
-#include "avcdecoderconfigrecord.hpp"
-#include "avcsampleentry.hpp"
 #include "buildinfo.hpp"
 #include "cleanaperturebox.hpp"
 #include "codingconstraintsbox.hpp"
 #include "directreferencesampleslist.hpp"
 #include "extendedtypebox.hpp"
 #include "heiffiledatatypesinternal.hpp"
-#include "hevccommondefs.hpp"
-#include "hevcconfigurationbox.hpp"
-#include "hevcdecoderconfigrecord.hpp"
-#include "hevcsampleentry.hpp"
 #include "imagegrid.hpp"
-#include "imagemirror.hpp"
 #include "imageoverlay.hpp"
-#include "imagerelativelocationproperty.hpp"
-#include "imagerotation.hpp"
 #include "log.hpp"
-#include "mediadatabox.hpp"
 #include "metabox.hpp"
 #include "moviebox.hpp"
 #include "moviefragmentbox.hpp"
-#include "mp4audiosampleentrybox.hpp"
+#include "rectangularregiongroupentry.hpp"
 #include "requiredreferencetypesproperty.hpp"
 #include "sampletometadataitementry.hpp"
 #include "segmentindexbox.hpp"
 #include "visualequivalenceentry.hpp"
+#include "vvcmixednalunittypepicentry.hpp"
+#include "vvcsubpicorderentry.hpp"
+#include "vvcsubpicturelayoutmapentry.hpp"
+#include "vvcdecoderconfigrecord.hpp"
+#include "bbox.hpp"
+#include "chunkoffsetbox.hpp"
+#include "compositionoffsetbox.hpp"
+#include "decoderconfigrecord.hpp"
+#include "decoderconfigurationbox.hpp"
+#include "editbox.hpp"
+#include "entitytogroupbox.hpp"
+#include "groupslistbox.hpp"
+#include "handlerbox.hpp"
+#include "heifexport.h"
+#include "heifstreamgeneric.hpp"
+#include "heifstreaminterface.h"
+#include "heifstreaminternal.hpp"
+#include "imagespatialextentsproperty.hpp"
+#include "itemdatabox.hpp"
+#include "iteminfobox.hpp"
+#include "itemlocationbox.hpp"
+#include "itempropertiesbox.hpp"
+#include "itemreferencebox.hpp"
+#include "mediabox.hpp"
+#include "mediaheaderbox.hpp"
+#include "mediainformationbox.hpp"
+#include "movieextendsbox.hpp"
+#include "movieextendsheaderbox.hpp"
+#include "moviefragmentsdatatypes.hpp"
+#include "movieheaderbox.hpp"
+#include "primaryitembox.hpp"
+#include "rawpropertybox.hpp"
+#include "sampledescriptionbox.hpp"
+#include "sampleentrybox.hpp"
+#include "samplegroupdescriptionbox.hpp"
+#include "samplesizebox.hpp"
+#include "sampletablebox.hpp"
+#include "sampletochunkbox.hpp"
+#include "sampletogroupbox.hpp"
+#include "segmenttypebox.hpp"
+#include "syncsamplebox.hpp"
+#include "timetosamplebox.hpp"
+#include "trackbox.hpp"
+#include "trackextendsbox.hpp"
+#include "trackfragmentbasemediadecodetimebox.hpp"
+#include "trackfragmentbox.hpp"
+#include "trackfragmentheaderbox.hpp"
+#include "trackgroupbox.hpp"
+#include "trackgrouptypebox.hpp"
+#include "trackheaderbox.hpp"
+#include "trackreferencebox.hpp"
+#include "trackreferencetypebox.hpp"
+#include "trackrunbox.hpp"
+#include "tracktypebox.hpp"
+#include "visualsampleentrybox.hpp"
+#include "vvccommondefs.hpp"
+#include "writeoncemap.hpp"
+#include <exception>
+#include <list>
+#include <memory>
+#include <new>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
+
 
 using namespace std;
 
@@ -80,15 +134,16 @@ namespace HEIF
     /* ********************************************************************** */
 
     HeifReaderImpl::HeifReaderImpl()
-        : mState(State::UNINITIALIZED)
-        , mIsPrimaryItemSet(false)
-        , mPrimaryItemId(0)
-        , mMetaBoxLoaded(false)
+        : 
+         mPrimaryItemId(0)
+         
     {
     }
 
     ErrorCode HeifReaderImpl::initialize(const char* fileName)
     {
+        HEIF_ENTRY_TRY
+        {
         ErrorCode rc;
         auto& io = mFileStream;
         io.fileStream.reset(openFile(fileName));
@@ -98,15 +153,22 @@ namespace HEIF
             io.fileStream.reset();
         }
         return rc;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::initialize: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::initialize(StreamInterface* stream)
     {
-        UniquePtr<InternalStream> internalStream(CUSTOM_NEW(InternalStream, (stream)));
+        HEIF_ENTRY_TRY
+        {
+        auto internalStream = makeCustomUnique<InternalStream, InternalStream>(stream);
 
         if (!internalStream->good())
         {
-            return ErrorCode::FILE_OPEN_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_OPEN_ERROR,
+                             ErrorOrigin::Reader_FileOpen,
+                             "HeifReaderImpl::initialize: stream is not good (file missing, permission denied, or stream broken)");
         }
 
         reset();
@@ -126,18 +188,27 @@ namespace HEIF
         }
         catch (const ISOBMFF::Exception& exc)
         {
-            logError() << "Error: " << exc.what() << std::endl;
-            return ErrorCode::FILE_READ_ERROR;
+            logError() << "Error: " << exc.what() << '\n';
+            return HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                  ErrorOrigin::Reader_BoxParse,
+                                  "HeifReaderImpl::initialize: ISOBMFF parse threw",
+                                  exc);
         }
         catch (const std::exception& e)
         {
-            logError() << "Error: " << e.what() << std::endl;
-            return ErrorCode::FILE_READ_ERROR;
+            logError() << "Error: " << e.what() << '\n';
+            return HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                  ErrorOrigin::Reader_FileRead,
+                                  "HeifReaderImpl::initialize: stream IO threw",
+                                  e);
         }
 
         mFileInformation = makeFileInformation(mFileProperties);
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::initialize: exception escaped firewall")
     }
 
     FileInformation HeifReaderImpl::makeFileInformation(const FileInformationInternal& intInfo) const
@@ -153,15 +224,35 @@ namespace HEIF
 
     void HeifReaderImpl::close()
     {
-        reset();
+        // close() returns void, so it cannot use HEIF_CATCH_AND_RETURN to
+        // translate an exception into an error code. Under bad_alloc-style
+        // pressure (S.10 / R.x), reset() can throw -- internal Array<T>
+        // assignment routes through customAllocate which throws std::bad_alloc
+        // when the embedder's allocator returns nullptr. Swallow here so the
+        // exception does not unwind through the public boundary into a host
+        // language runtime that cannot handle a C++ throw.
+        try
+        {
+            reset();
+        }
+        catch (...)
+        {
+            // Best-effort cleanup: if reset() threw mid-way, internal state
+            // may still be partially populated. A subsequent Destroy will
+            // continue cleanup and Destroy itself swallows.
+        }
     }
 
     ErrorCode HeifReaderImpl::invalidateSegment(const SegmentId segmentId)
     {
+        HEIF_ENTRY_TRY
+        {
         const bool isSegment = (mFileProperties.segmentPropertiesMap.count(segmentId) == 1u);
         if (isSegment == false)
         {
-            return ErrorCode::INVALID_SEGMENT;
+            return HEIF_FAIL(ErrorCode::INVALID_SEGMENT,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::invalidateSegment: segment id not found");
         }
 
         auto& segmentProperties = mFileProperties.segmentPropertiesMap.at(segmentId);
@@ -173,23 +264,35 @@ namespace HEIF
         mFileProperties.segmentPropertiesMap.erase(segmentId);
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_ItemValidation,
+                              "HeifReaderImpl::invalidateSegment: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::getSegmentIndex(Array<SegmentInformation>& segmentIndex)
     {
+        HEIF_ENTRY_TRY
+        {
         segmentIndex = mFileProperties.segmentIndex;
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::getSegmentIndex: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::parseSegmentIndex(StreamInterface* streamInterface,
                                                 Array<SegmentInformation>& segmentIndex)
     {
+        HEIF_ENTRY_TRY
+        {
         StreamIO io;
-        io.stream.reset(CUSTOM_NEW(InternalStream, (streamInterface)));
+        io.stream.reset(customNew<InternalStream>(streamInterface));
         if (io.stream->peekEof())
         {
             io.stream.reset();
-            return ErrorCode::FILE_READ_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::parseSegmentIndex: underlying stream read failed");
         }
         io.size = streamInterface->size();
 
@@ -217,6 +320,7 @@ namespace HEIF
                             break;
                         }
                     }
+
                     else if (boxType == "styp" || boxType == "moof" || boxType == "mdat")
                     {
                         // skip as we are not interested in it.
@@ -224,7 +328,7 @@ namespace HEIF
                     }
                     else
                     {
-                        logWarning() << "Skipping root level box of unknown type '" << boxType << "'" << std::endl;
+                        logWarning() << "Skipping root level box of unknown type '" << boxType << "'" << '\n';
                         error = skipBox(io);
                     }
                 }
@@ -232,18 +336,24 @@ namespace HEIF
         }
         catch (ISOBMFF::Exception& exc)
         {
-            logError() << "parseSegmentIndex Exception Error: " << exc.what() << std::endl;
-            error = ErrorCode::FILE_READ_ERROR;
+            logError() << "parseSegmentIndex Exception Error: " << exc.what() << '\n';
+            error = HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                   ErrorOrigin::Reader_BoxParse,
+                                   "HeifReaderImpl::parseSegmentIndex: ISOBMFF parse threw",
+                                   exc);
         }
         catch (std::exception& e)
         {
-            logError() << "parseSegmentIndex std::exception Error:: " << e.what() << std::endl;
-            error = ErrorCode::FILE_READ_ERROR;
+            logError() << "parseSegmentIndex std::exception Error:: " << e.what() << '\n';
+            error = HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                   ErrorOrigin::Reader_FileRead,
+                                   "HeifReaderImpl::parseSegmentIndex: stream IO threw",
+                                   e);
         }
 
         if (!segmentIndexFound)
         {
-            logError() << "parseSegmentIndex couldn't find sidx box: " << std::endl;
+            logError() << "parseSegmentIndex couldn't find sidx box: " << '\n';
             error = ErrorCode::INVALID_SEGMENT;
         }
 
@@ -253,17 +363,24 @@ namespace HEIF
             // should clear stream after eof, but this does not seem to be always happening.
             if ((!io.stream->good()) && (!io.stream->eof()))
             {
-                return ErrorCode::FILE_READ_ERROR;
+                return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                 ErrorOrigin::Reader_BoxParse,
+                                 "HeifReaderImpl::parseSegmentIndex: underlying stream read failed");
             }
             io.stream->clear();
         }
         return error;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::parseSegmentIndex: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::parseSegment(StreamInterface* streamInterface,
                                            SegmentId segmentId,
                                            uint64_t earliestPTSinTS)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mFileProperties.segmentPropertiesMap.count(segmentId) != 0u)
         {
             return ErrorCode::OK;
@@ -274,12 +391,14 @@ namespace HEIF
 
         SegmentProperties& segmentProperties = mFileProperties.segmentPropertiesMap[segmentId];
         StreamIO& io                         = segmentProperties.io;
-        io.stream.reset(CUSTOM_NEW(InternalStream, (streamInterface)));
+        io.stream.reset(customNew<InternalStream>(streamInterface));
         if (io.stream->peekEof())
         {
             mState = prevState;
             io.stream.reset();
-            return ErrorCode::FILE_READ_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::parseSegment: underlying stream read failed");
         }
         io.size = streamInterface->size();
 
@@ -331,7 +450,7 @@ namespace HEIF
                                 {
                                     auto trackId = initTrackInfo.first;
                                     earliestPTSTS[trackId] =
-                                        DecodePts::PresentationTimeTS(sidx.getEarliestPresentationTime());
+                                        static_cast<DecodePts::PresentationTimeTS>(sidx.getEarliestPresentationTime());
                                 }
                             }
                         }
@@ -346,7 +465,7 @@ namespace HEIF
                     }
                     else
                     {
-                        logWarning() << "Skipping root level box of unknown type '" << boxType << "'" << std::endl;
+                        logWarning() << "Skipping root level box of unknown type '" << boxType << "'" << '\n';
                         error = skipBox(io);
                     }
                 }
@@ -354,13 +473,19 @@ namespace HEIF
         }
         catch (ISOBMFF::Exception& exc)
         {
-            logError() << "parseSegment Exception Error: " << exc.what() << std::endl;
-            error = ErrorCode::FILE_READ_ERROR;
+            logError() << "parseSegment Exception Error: " << exc.what() << '\n';
+            error = HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                   ErrorOrigin::Reader_BoxParse,
+                                   "HeifReaderImpl::parseSegment: ISOBMFF parse threw",
+                                   exc);
         }
         catch (std::exception& e)
         {
-            logError() << "parseSegment std::exception Error:: " << e.what() << std::endl;
-            error = ErrorCode::FILE_READ_ERROR;
+            logError() << "parseSegment std::exception Error:: " << e.what() << '\n';
+            error = HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                   ErrorOrigin::Reader_FileRead,
+                                   "HeifReaderImpl::parseSegment: stream IO threw",
+                                   e);
         }
 
         if (error == ErrorCode::OK)
@@ -376,7 +501,9 @@ namespace HEIF
             // should clear stream after eof, but this does not seem to be always happening.
             if ((!io.stream->good()) && (!io.stream->eof()))
             {
-                return ErrorCode::FILE_READ_ERROR;
+                return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                 ErrorOrigin::Reader_BoxParse,
+                                 "HeifReaderImpl::parseSegment: underlying stream read failed");
             }
             io.stream->clear();
 
@@ -389,13 +516,18 @@ namespace HEIF
             invalidateSegment(segmentId);
         }
         return error;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::parseSegment: exception escaped firewall")
     }
 
     HEIF_DLL_PUBLIC ErrorCode Reader::SetCustomAllocator(CustomAllocator* customAllocator)
     {
         if (!setCustomAllocator(customAllocator))
         {
-            return ErrorCode::ALLOCATOR_ALREADY_SET;
+            return HEIF_FAIL(ErrorCode::ALLOCATOR_ALREADY_SET,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::parseSegment: custom allocator has already been installed");
         }
 
         return ErrorCode::OK;
@@ -403,12 +535,65 @@ namespace HEIF
 
     HEIF_DLL_PUBLIC Reader* Reader::Create()
     {
-        return CUSTOM_NEW(HeifReaderImpl, ());
+        // OOM-safe construction. Placement-new on the
+        // result of customAllocate(); under
+        // bad_alloc-equivalent allocator pressure customAllocate now
+        // throws std::bad_alloc, and the ctor body itself can throw any
+        // exception during member init. Translate every escape into a
+        // null return so the embedder sees the documented failure mode
+        // (Reader::Create returning nullptr) instead of the host process
+        // unwinding through a noexcept boundary.
+        try
+        {
+            void* mem = customAllocate(sizeof(HeifReaderImpl));
+            try
+            {
+                return new (mem) HeifReaderImpl();
+            }
+            catch (...)
+            {
+                customDeallocate(mem);
+                return nullptr;
+            }
+        }
+        catch (...)
+        {
+            return nullptr;
+        }
     }
 
-    HEIF_DLL_PUBLIC void Reader::Destroy(Reader* imageFileInterface)
+    HEIF_DLL_PUBLIC void Reader::Destroy(Reader* imageFileInterface) noexcept
     {
-        CUSTOM_DELETE(imageFileInterface, Reader);
+        // Swallow any unexpected throw from a destructor / allocator hook;
+        // Destroy() is contractually noexcept (JNI / COM bindings assume
+        // no-throw and would call std::terminate otherwise).
+        try
+        {
+            // Reader::~Reader is protected; as a member function we have
+            // access, but the customDelete<T> free template does not.
+            if (imageFileInterface)
+            {
+                imageFileInterface->~Reader();
+                customDeallocate(imageFileInterface);
+            }
+        }
+        catch (...)
+        {
+            // Intentionally swallowed. Log via the sink if installed so the
+            // diagnostic isn't lost completely.
+            if (::HEIF::hasErrorSink())
+            {
+                ::HEIF::ErrorInfo info;
+                info.setCode     (::HEIF::ErrorCode::UNKNOWN_ERROR);
+                info.setOrigin   (::HEIF::ErrorOrigin::Reader_BoxParse);
+                info.setMessage  ("Reader::Destroy: destructor threw (swallowed for noexcept contract)");
+                info.setCauseWhat("(unknown C++ exception)");
+                info.setFile     (__FILE__);
+                info.setLine     (__LINE__);
+                info.setValid    (true);
+                ::HEIF::setErrorInfo(info);
+            }
+        }
     }
 
     HEIF_DLL_PUBLIC const char* Reader::GetVersion()
@@ -422,21 +607,28 @@ namespace HEIF
 
     Segments HeifReaderImpl::segmentsBySequence()
     {
-        return {*this};
+        return Segments{*this};
     }
 
     ConstSegments HeifReaderImpl::segmentsBySequence() const
     {
-        return {*this};
+        return ConstSegments{*this};
     }
 
     ErrorCode HeifReaderImpl::isInitialized() const
     {
+        HEIF_TRY
+        {
         if (!(mState == State::INITIALIZING || mState == State::READY))
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::isInitialized: called before initialize()");
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::isInitialized: exception escaped firewall")
     }
 
     void HeifReaderImpl::reset()
@@ -506,19 +698,24 @@ namespace HEIF
         unsigned int i = 0;
         for (const auto& trackInfo : initTrackInfoMap)
         {
-            const InitTrackInfo& initTrackInfo = trackInfo.second;
-            trackInfoOut[i].trackId            = trackInfo.first;
-            trackInfoOut[i].alternateGroupId   = initTrackInfo.alternateGroupId;
-            trackInfoOut[i].features           = initTrackInfo.trackFeature.getFeatureMask();
-            trackInfoOut[i].alternateTrackIds  = makeArray<SequenceId>(initTrackInfo.alternateTrackIds);
-            trackInfoOut[i].referenceTrackIds  = mapToArray(initTrackInfo.referenceTrackIds);
-            trackInfoOut[i].sampleGroups       = initTrackInfo.groupedSamples;
-            trackInfoOut[i].equivalences       = initTrackInfo.equivalences;
-            trackInfoOut[i].metadatas          = initTrackInfo.metadatas;
-            trackInfoOut[i].referenceSamples   = initTrackInfo.referenceSamples;
-            trackInfoOut[i].maxSampleSize      = initTrackInfo.maxSampleSize;
-            trackInfoOut[i].timeScale          = initTrackInfo.timeScale;
-            trackInfoOut[i].editList           = initTrackInfo.editList;
+            const InitTrackInfo& initTrackInfo      = trackInfo.second;
+            trackInfoOut[i].trackId                 = trackInfo.first;
+            trackInfoOut[i].alternateGroupId        = initTrackInfo.alternateGroupId;
+            trackInfoOut[i].features                = initTrackInfo.trackFeature.getFeatureMask();
+            trackInfoOut[i].alternateTrackIds       = makeArray<SequenceId>(initTrackInfo.alternateTrackIds);
+            trackInfoOut[i].referenceTrackIds       = mapToArray(initTrackInfo.referenceTrackIds);
+            trackInfoOut[i].sampleGroups            = initTrackInfo.groupedSamples;
+            trackInfoOut[i].equivalences            = initTrackInfo.equivalences;
+            trackInfoOut[i].rectangularRegions      = initTrackInfo.rectangularRegions;
+            trackInfoOut[i].vvcSubpicOrders         = initTrackInfo.vvcSubpicOrders;
+            trackInfoOut[i].vvcSubpicLayoutMaps     = initTrackInfo.vvcSubpicLayoutMaps;
+            trackInfoOut[i].vvcMixedNalUnitTypePics = initTrackInfo.vvcMixedNalUnitTypePics;
+            trackInfoOut[i].metadatas               = initTrackInfo.metadatas;
+            trackInfoOut[i].referenceSamples        = initTrackInfo.referenceSamples;
+            trackInfoOut[i].maxSampleSize           = initTrackInfo.maxSampleSize;
+            trackInfoOut[i].timeScale               = initTrackInfo.timeScale;
+            trackInfoOut[i].editList                = initTrackInfo.editList;
+
 
             trackInfoOut[i].trackGroupIds = Array<FourCCToIds>(initTrackInfo.trackGroupInfoMap.size());
             unsigned int k                = 0;
@@ -530,12 +727,37 @@ namespace HEIF
             }
 
             const SegmentId intializationSegmentId = 0;
-            const SamplePropertyVector& samplePropertyVector =
-                mFileProperties.segmentPropertiesMap.at(intializationSegmentId)
-                    .trackInfos.at(trackInfoOut[i].trackId)
-                    .samples;
+            const auto& initSegTrackInfo =
+                mFileProperties.segmentPropertiesMap.at(intializationSegmentId).trackInfos.at(trackInfoOut[i].trackId);
+            const SamplePropertyVector& samplePropertyVector = initSegTrackInfo.samples;
+
+            // Track-type ('ttyp') brand information.  Mirrors the
+            // hasTtyp branch in getTrackInformations(); without this
+            // copy the file-info path leaves hasTypeInformation /
+            // type.* default-initialised, so C-facade callers see
+            // has_type_information=0 and an empty compatible-brands
+            // list even on assets that do carry a 'ttyp' box.
+            if (initSegTrackInfo.hasTtyp)
+            {
+                const auto& tBox                       = initSegTrackInfo.ttyp;
+                trackInfoOut[i].hasTypeInformation     = true;
+                trackInfoOut[i].type.majorBrand        = tBox.getMajorBrand().getUInt32();
+                trackInfoOut[i].type.minorVersion      = tBox.getMinorVersion();
+                Vector<FourCC> convertedCompatibleBrands;
+                for (const auto& compatibleBrand : tBox.getCompatibleBrands())
+                {
+                    convertedCompatibleBrands.emplace_back(compatibleBrand.getUInt32());
+                }
+                trackInfoOut[i].type.compatibleBrands = makeArray<FourCC>(convertedCompatibleBrands);
+            }
+            else
+            {
+                trackInfoOut[i].hasTypeInformation = false;
+            }
+
             Array<SampleInformation> sampleInfo(samplePropertyVector.size());
-            unsigned int j = 0;
+            unsigned int j        = 0;
+            std::uint64_t durSum  = 0;
             for (const auto& sampleProp : samplePropertyVector)
             {
                 sampleInfo[j].sampleId                  = sampleProp.sampleId;
@@ -548,31 +770,88 @@ namespace HEIF
                 sampleInfo[j].hasAuxi                   = sampleProp.hasAuxi;
                 sampleInfo[j].codingConstraints         = sampleProp.codingConstraints;
                 sampleInfo[j].size                      = sampleProp.dataLength;
+                // Per-sample fields previously left default-init by
+                // this routine; getTrackInformations() populates them
+                // from the same SampleProperties source.  Without
+                // this copy: segment_id and sample_flags read as 0
+                // (so every sample looks like a sync point even when
+                // it is not), and earliest_timestamp[_ts] read as 0.
+                sampleInfo[j].segmentId                 = sampleProp.segmentId;
+                sampleInfo[j].sampleFlags               = sampleProp.sampleFlags;
+                if (!sampleProp.compositionTimes.empty())
+                {
+                    // Edit list has been applied to these timestamps
+                    // already so negative times are not expected.
+                    sampleInfo[j].earliestTimestamp =
+                        static_cast<std::uint64_t>(sampleProp.compositionTimes.front());
+                    sampleInfo[j].earliestTimestampTS = sampleProp.compositionTimesTS.front();
+                }
+                else
+                {
+                    sampleInfo[j].earliestTimestamp   = 0;
+                    sampleInfo[j].earliestTimestampTS = 0;
+                }
+                durSum += static_cast<std::uint64_t>(sampleProp.sampleDurationTS);
                 ++j;
             }
             trackInfoOut[i].sampleProperties = sampleInfo;
+            // Frame-rate derivation mirrors the per-segment branch in
+            // getTrackInformations() so callers reading the cheaper
+            // getFileInformation() path see the same value instead of
+            // the default-init Rational{0, 0}. Average sample duration
+            // (timeScale ticks) is sufficient for fixed-rate tracks
+            // and a useful approximation for variable-rate; rate is
+            // left at {0, 0} for empty tracks (degenerate input).
+            if (samplePropertyVector.size() > 0u)
+            {
+                const std::uint64_t avgDurTS = durSum / samplePropertyVector.size();
+                if (avgDurTS != 0u)
+                {
+                    trackInfoOut[i].frameRate = Rational{initTrackInfo.timeScale, avgDurTS};
+                }
+            }
             ++i;
         }
 
         return trackInfoOut;
     }
 
-    ErrorCode HeifReaderImpl::handleMeta(StreamIO& io)
+    ErrorCode HeifReaderImpl::handleMeta(StreamIO& io, bool fromMini = false)
     {
+        HEIF_TRY
+        {
+        //Deserialize box's bitstream from iostream
         BitStream bitstream;
         auto error = readBox(io, bitstream);
         if (error != ErrorCode::OK)
         {
             return error;
         }
-        MetaBox& metaBox = mMetaBox;
-        metaBox.parseBox(bitstream);
 
-        mFileProperties.rootLevelMetaBoxProperties = extractMetaBoxProperties(metaBox);
-        mMetaBoxInfo                               = extractItems(metaBox);
-        processDecoderConfigProperties(metaBox.getItemPropertiesBox(),
-                                       mFileProperties.rootLevelMetaBoxProperties.itemFeaturesMap,
-                                       mImageItemParameterSetMap, mImageToParameterSetMap, mImageItemCodeTypeMap);
+        //Parsing the data from bitstream to MetaBox structure
+        mMetaBox.setFromMini(fromMini);
+        if(mMetaBox.isFromMini()){
+            error = mMetaBox.parseMiniBox(bitstream, mFtyp.getMinorVersion());
+        }else{
+            mMetaBox.parseBox(bitstream);
+        }
+
+        //Check for mini read errors
+        if(error != ErrorCode::OK){
+            return error;
+        }
+
+        mFileProperties.rootLevelMetaBoxProperties = extractMetaBoxProperties(mMetaBox);
+        mMetaBoxInfo                               = extractItems(mMetaBox);
+        error                                      = processDecoderConfigProperties(
+            mMetaBox.getItemPropertiesBox(), mFileProperties.rootLevelMetaBoxProperties.itemFeaturesMap,
+            mMetaBox,
+            mImageItemParameterSetMap, mImageToParameterSetMap, mImageItemCodeTypeMap);
+        if (error != ErrorCode::OK)
+        {
+            return error;
+        }
+
 
         Array<ImageId> masterImages;
         getMasterImages(masterImages);
@@ -590,10 +869,15 @@ namespace HEIF
         mMetaBoxLoaded = true;
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::handleMeta: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::handleMoov(StreamIO& io)
     {
+        HEIF_TRY
+        {
         BitStream bitstream;
         SegmentId initializationSegmentId = 0;
 
@@ -612,6 +896,9 @@ namespace HEIF
         }
 
         return error;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::handleMoov: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::handleSegmentMoof(StreamIO& io,
@@ -620,6 +907,8 @@ namespace HEIF
                                                 Map<SequenceId, DecodePts::PresentationTimeTS>& earliestPTSTS,
                                                 uint64_t& earliestPTSinTS)
     {
+        HEIF_TRY
+        {
         // we need to save moof start byte for possible trun dataoffset depending on its flags.
         const StreamInterface::offset_t moofFirstByte = io.stream->tell();
 
@@ -642,7 +931,7 @@ namespace HEIF
                 SequenceId trackId = initTrackInfo.first;
                 if (earliestPTSinTS != UINT64_MAX)
                 {
-                    earliestPTSTS[trackId] = DecodePts::PresentationTimeTS(earliestPTSinTS);
+                    earliestPTSTS[trackId] = static_cast<DecodePts::PresentationTimeTS>(earliestPTSinTS);
                 }
                 else if (const TrackInfoInSegment* precTrackInfo =
                              getPrecedingTrackInfo(SegmentTrackId(segmentId, trackId)))
@@ -668,10 +957,15 @@ namespace HEIF
         addToTrackProperties(segmentId, moof, earliestPTSTSForTrack);
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::handleSegmentMoof: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::handleInitSegmentMoof(StreamIO& io, const SegmentId segmentId)
     {
+        HEIF_TRY
+        {
         BitStream bitstream;
 
         // we need to save moof start byte for possible trun dataoffset depending on its flags.
@@ -711,10 +1005,15 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::handleInitSegmentMoof: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::handleFtyp(StreamIO& io)
     {
+        HEIF_TRY
+        {
         BitStream bitstream;
         auto error = readBox(io, bitstream);
         if (error == ErrorCode::OK)
@@ -725,6 +1024,21 @@ namespace HEIF
             // Check supported brands
             Set<String> supportedBrands;
             ftyp.addCompatibleBrand(ftyp.getMajorBrand());
+            if(ftyp.checkCompatibleBrand("mif3")){  //Mini requirement
+                ftyp.addCompatibleBrand("mif1");
+                if(FourCC(ftyp.getMinorVersion()) == "heic"){
+                    ftyp.addCompatibleBrand("heic");
+                    supportedBrands.insert("[mif3/heic] Low-overhead HEVC image");
+                }else if(FourCC(ftyp.getMinorVersion()) == "avic"){
+                    ftyp.addCompatibleBrand("avic");
+                    supportedBrands.insert("[mif3/avic] Low-overhead AVC image");
+                }else if(FourCC(ftyp.getMinorVersion())== "vvi3"){
+                    ftyp.addCompatibleBrand("vvic");
+                    supportedBrands.insert("[mif3/vvic] Low-overhead VVC image");
+                }else if(FourCC(ftyp.getMinorVersion()) == "avif"){
+                    supportedBrands.insert("[mif3/avif] Low-overhead AVIF image");
+                }
+            }
             if (ftyp.checkCompatibleBrand("msf1"))  // contains image sequence
             {
                 if (ftyp.checkCompatibleBrand("hevc"))
@@ -736,7 +1050,7 @@ namespace HEIF
                     supportedBrands.insert("[msf1/avcs] AVC image sequence");
                 }
             }
-            if (ftyp.checkCompatibleBrand("mif1"))  // contains image collection
+            if (ftyp.checkCompatibleBrand("mif1"))  // contains a still image and/or collection
             {
                 if (ftyp.checkCompatibleBrand("heic"))
                 {
@@ -754,28 +1068,40 @@ namespace HEIF
                 {
                     supportedBrands.insert("[mif1/jpeg] JPEG image and image collection");
                 }
+                if(ftyp.checkCompatibleBrand("vvic")){
+                    supportedBrands.insert("[mif1/vvic] VVC image and image collection");
+                }
+            }
+
+            if(ftyp.checkCompatibleBrand("tmap")){
+                supportedBrands.insert("[tmap] Tonemap derived image");
             }
 
             if (supportedBrands.empty())
             {
-                logInfo() << "No supported brands found. Trying to continue parsing anyway." << std::endl;
+                logInfo() << "No supported brands found. Trying to continue parsing anyway." << '\n';
             }
             else
             {
-                logInfo() << "Compatible brands found:" << std::endl;
+                logInfo() << "Compatible brands found:" << '\n';
                 for (const auto& brand : supportedBrands)
                 {
-                    logInfo() << " " << brand << std::endl;
+                    logInfo() << " " << brand << '\n';
                 }
             }
             mFtyp = ftyp;
         }
 
         return error;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::handleFtyp: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::handleEtyp(StreamIO& io)
     {
+        HEIF_TRY
+        {
         BitStream bitstream;
         auto error = readBox(io, bitstream);
         if (error != ErrorCode::OK)
@@ -787,14 +1113,19 @@ namespace HEIF
         if (mEtyp.checkCompatibility({"avcs", "avic", "heic", "heix", "jpeg", "msf1"}) == false)
         {
             logWarning() << "No supported brand combination found from Extended Type Box. Continuing parsing anyway."
-                         << std::endl;
+                         << '\n';
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::handleEtyp: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::readStream()
     {
+        HEIF_TRY
+        {
         State prevState = mState;
         mState          = State::INITIALIZING;
 
@@ -803,7 +1134,9 @@ namespace HEIF
         {
             mState = prevState;
             io.stream.reset();
-            return ErrorCode::FILE_READ_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_FileRead,
+                             "HeifReaderImpl::readStream: input is empty (peekEof on first byte)");
         }
         io.size = io.stream->size();
 
@@ -811,6 +1144,9 @@ namespace HEIF
         bool etypFound = false;
         bool metaFound = false;
         bool moovFound = false;
+        bool miniFound = false;
+
+        bool lastBox = false;
 
         ErrorCode error = ErrorCode::OK;
         if (io.stream->peekEof())
@@ -820,19 +1156,36 @@ namespace HEIF
 
         try
         {
+            //Read bytestream box by box
             while ((error == ErrorCode::OK) && !io.stream->peekEof())
             {
+                //0-size box found, but still trying to read stream
+                if(lastBox){
+                    error = HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                      ErrorOrigin::Reader_BoxParse,
+                                      "HeifReaderImpl::readStream: encountered zero-sized box while still expecting more boxes"); //File/Box error
+                    break;
+                }
+
                 String boxType;
                 std::int64_t boxSize = 0;
-                BitStream bitstream;
+
+                //If this returns error, reading boxes has misaligned due to incorrect size field
                 error = readBoxParameters(io, boxType, boxSize);
+
+                if(boxSize == io.size - io.stream->tell()){
+                    lastBox = true;
+                }
+
                 if (error == ErrorCode::OK)
                 {
                     if (boxType == "ftyp")
                     {
                         if (ftypFound)
                         {
-                            return ErrorCode::FILE_READ_ERROR;  // Multiple ftyp boxes.
+                            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                             ErrorOrigin::Reader_BoxParse,
+                                             "HeifReaderImpl::readStream: underlying stream read failed");
                         }
                         ftypFound = true;
                         error     = handleFtyp(io);
@@ -841,7 +1194,9 @@ namespace HEIF
                     {
                         if (!ftypFound || etypFound)
                         {
-                            return ErrorCode::FILE_READ_ERROR;  // Multiple etyp boxes, also must be after ftyp.
+                            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                             ErrorOrigin::Reader_BoxParse,
+                                             "HeifReaderImpl::readStream: 'etyp' box without preceding 'ftyp', or duplicate 'etyp'");
                         }
                         etypFound = true;
                         error     = handleEtyp(io);
@@ -850,16 +1205,30 @@ namespace HEIF
                     {
                         if (metaFound)
                         {
-                            return ErrorCode::FILE_READ_ERROR;  // Multiple root-level meta boxes.
+                            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                             ErrorOrigin::Reader_BoxParse,
+                                             "HeifReaderImpl::readStream: underlying stream read failed");
                         }
                         metaFound = true;
                         error     = handleMeta(io);
+                    }
+                    else if (boxType == "mini") //Minibox found
+                    {
+                        if (miniFound){
+                            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                             ErrorOrigin::Reader_BoxParse,
+                                             "HeifReaderImpl::readStream: multiple top-level 'mini' boxes found");
+                        }
+                        miniFound = true;
+                        error = handleMeta(io, true);
                     }
                     else if (boxType == "moov")
                     {
                         if (moovFound)
                         {
-                            error = ErrorCode::FILE_READ_ERROR;
+                            error = HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                              ErrorOrigin::Reader_BoxParse,
+                                              "HeifReaderImpl::readStream: multiple top-level 'moov' boxes found");
                             break;
                         }
                         moovFound = true;
@@ -879,7 +1248,7 @@ namespace HEIF
                     }
                     else
                     {
-                        logWarning() << "Skipping root level box of unknown type '" << boxType << "'" << std::endl;
+                        logWarning() << "Skipping root level box of unknown type '" << boxType << "'" << '\n';
                         error = skipBox(io);
                     }
                 }
@@ -887,17 +1256,23 @@ namespace HEIF
         }
         catch (const ISOBMFF::Exception& exc)
         {
-            logError() << "readStream Exception Error: " << exc.what() << std::endl;
-            error = ErrorCode::FILE_READ_ERROR;
+            logError() << "readStream Exception Error: " << exc.what() << '\n';
+            error = HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                   ErrorOrigin::Reader_BoxParse,
+                                   "HeifReaderImpl::readStream: ISOBMFF parse threw",
+                                   exc);
         }
         catch (const std::exception& e)
         {
-            logError() << "readStream std::exception Error:: " << e.what() << std::endl;
-            error = ErrorCode::FILE_READ_ERROR;
+            logError() << "readStream std::exception : " << e.what() << '\n';
+            error = HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                   ErrorOrigin::Reader_FileRead,
+                                   "HeifReaderImpl::readStream: stream IO threw",
+                                   e);
         }
 
-        // Set error if parsing was OK, but either ftyp was missing and neither meta nor moov was found.
-        if (((error == ErrorCode::OK) && !ftypFound) || ((error == ErrorCode::OK) && !moovFound && !metaFound))
+        // Set error if parsing was OK, but either ftyp was missing or no meta, mini or moov was found.
+        if (((error == ErrorCode::OK) && !ftypFound) || ((error == ErrorCode::OK) && !moovFound && !metaFound && !miniFound))
         {
             error = ErrorCode::FILE_HEADER_ERROR;
         }
@@ -910,7 +1285,9 @@ namespace HEIF
             // should clear stream after eof, but this does not seem to be always happening.
             if ((!io.stream->good()) && (!io.stream->eof()))
             {
-                return ErrorCode::FILE_READ_ERROR;
+                return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                 ErrorOrigin::Reader_BoxParse,
+                                 "HeifReaderImpl::readStream: underlying stream read failed");
             }
             io.stream->clear();
             mFileProperties.fileFeature = getFileFeatures();
@@ -918,38 +1295,38 @@ namespace HEIF
         }
 
         return error;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::readStream: exception escaped firewall")
     }
 
     HeifReaderImpl::ItemInfoMap HeifReaderImpl::extractItemInfoMap(const MetaBox& metaBox)
     {
         ItemInfoMap itemInfoMap;
         const auto& itemIds = metaBox.getItemInfoBox().getItemIds();
-        for (const auto itemId : itemIds)
-        {
+        for (const auto itemId : itemIds){
             const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemById(itemId);
-            ItemInfo itemInfo         = makeItemInfo(item);
 
-            if (isImageItem(makeItemInfo(item)))
-            {
+            ItemInfo itemInfo = makeItemInfo(item);
+
+            if (isImageItem(makeItemInfo(item))){
                 const ItemPropertiesBox& iprp = metaBox.getItemPropertiesBox();
                 const std::uint32_t ispeIndex = iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::ISPE, itemId);
-                if (ispeIndex != 0u)
-                {
+                if (ispeIndex != 0u){
                     auto imageSpatialExtentsProperties =
                         static_cast<const ImageSpatialExtentsProperty*>(iprp.getPropertyByIndex(ispeIndex - 1));
-                    itemInfo.height = imageSpatialExtentsProperties->getDisplayHeight();
-                    itemInfo.width  = imageSpatialExtentsProperties->getDisplayWidth();
-                }
-                else
-                {
+                    if (imageSpatialExtentsProperties != nullptr)
+                    {
+                        itemInfo.height = imageSpatialExtentsProperties->getDisplayHeight();
+                        itemInfo.width  = imageSpatialExtentsProperties->getDisplayWidth();
+                    }
+                }else{
                     logWarning() << "No ImageSpatialExtentsPropertyIndex found for image item id " << itemId
-                                 << std::endl;
+                                 << '\n';
                 }
             }
-
             itemInfoMap.insert({itemId, itemInfo});
         }
-
         return itemInfoMap;
     }
 
@@ -989,6 +1366,8 @@ namespace HEIF
 
     ErrorCode HeifReaderImpl::readBytes(StreamIO& io, const unsigned int count, std::int64_t& result)
     {
+        HEIF_TRY
+        {
         std::int64_t value = 0;
 
         for (unsigned int i = 0; i < count; ++i)
@@ -996,12 +1375,17 @@ namespace HEIF
             value = (value << 8) | static_cast<int64_t>(io.stream->get());
             if (!io.stream->good())
             {
-                return ErrorCode::FILE_READ_ERROR;
+                return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                 ErrorOrigin::Reader_BoxParse,
+                                 "HeifReaderImpl::readBytes: underlying stream read failed");
             }
         }
 
         result = value;
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::readBytes: exception escaped firewall")
     }
 
     void HeifReaderImpl::seekInput(StreamIO& io, const std::int64_t pos)
@@ -1014,6 +1398,8 @@ namespace HEIF
 
     ErrorCode HeifReaderImpl::skipBox(StreamIO& io)
     {
+        HEIF_TRY
+        {
         const std::int64_t startLocation = io.stream->tell();
 
         String boxType;
@@ -1027,13 +1413,20 @@ namespace HEIF
         seekInput(io, startLocation + boxSize);
         if (!io.stream->good())
         {
-            return ErrorCode::FILE_READ_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::skipBox: underlying stream read failed");
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::skipBox: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::readBox(StreamIO& io, BitStream& bitstream)
     {
+        HEIF_TRY
+        {
         String boxType;
         std::int64_t boxSize = 0;
 
@@ -1047,16 +1440,23 @@ namespace HEIF
         io.stream->read(reinterpret_cast<char*>(data.data()), boxSize);
         if (!io.stream->good())
         {
-            return ErrorCode::FILE_READ_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::readBox: underlying stream read failed");
         }
         bitstream.clear();
         bitstream.reset();
-        bitstream.write8BitsArray(data, std::uint64_t(boxSize));
+        bitstream.write8BitsArray(data, static_cast<std::uint64_t>(boxSize));
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::readBox: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::readBoxParameters(StreamIO& io, String& boxType, std::int64_t& boxSize)
     {
+        HEIF_TRY
+        {
         const std::int64_t startLocation = io.stream->tell();
 
         // Read the 32-bit length field of the box
@@ -1072,7 +1472,9 @@ namespace HEIF
         io.stream->read(&boxType[0], TYPE_LENGTH);
         if (!io.stream->good())
         {
-            return ErrorCode::FILE_READ_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::readBoxParameters: underlying stream read failed");
         }
 
         // Check if 64-bit largesize field is used
@@ -1085,27 +1487,45 @@ namespace HEIF
             }
         }
 
-        int64_t boxEndOffset = startLocation + boxSize;
-        if (boxSize < 8 || (boxEndOffset < 8) || ((io.size > 0) && (boxEndOffset > io.size)))
-        {
-            return ErrorCode::FILE_READ_ERROR;
+        if(boxSize == 0){
+            // box extends to end of file (must be the last box in the file)
+            if(io.size <= 0 || startLocation > io.size){
+                return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                 ErrorOrigin::Reader_BoxParse,
+                                 "HeifReaderImpl::readBoxParameters: underlying stream read failed");
+            }else{
+                boxSize = io.size - startLocation; //set the box size to be == remaining iostream size
+            }
+        }else{
+            int64_t boxEndOffset = startLocation + boxSize;
+            if (boxSize < 8 || (boxEndOffset < 8) || ((io.size > 0) && (boxEndOffset > io.size)))
+            {
+                return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                 ErrorOrigin::Reader_BoxParse,
+                                 "HeifReaderImpl::readBoxParameters: underlying stream read failed");
+            }
         }
 
         // Seek to box beginning
         seekInput(io, startLocation);
         if (!io.stream->good())
         {
-            return ErrorCode::FILE_READ_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::readBoxParameters: underlying stream read failed");
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::readBoxParameters: exception escaped firewall")
     }
 
-    ParameterSetMap HeifReaderImpl::makeDecoderParameterSetMap(const DecoderConfigurationRecord& record)
+    ParameterSetMap HeifReaderImpl::makeDecoderParameterSetMap(const DecoderConfigurationRecord& record, const uint16_t& nuh_layer_id)
     {
         ParameterSetMap pm;
         DecoderConfigurationRecord::ConfigurationMap tmp;
-        record.getConfigurationMap(tmp);
-        for (auto t : tmp)
+        record.getConfigurationMap(tmp, nuh_layer_id);
+        for (const auto &t : tmp)
         {
             DecoderSpecInfoType type;
             switch (t.first)
@@ -1135,6 +1555,35 @@ namespace HEIF
                 type = DecoderSpecInfoType::HEVC_PPS;
                 break;
             }
+            case DecoderConfigurationRecord::VVC_VPS:
+            {
+                type = DecoderSpecInfoType::VVC_VPS;
+                break;
+            }
+            case DecoderConfigurationRecord::VVC_SPS:
+            {
+                type = DecoderSpecInfoType::VVC_SPS;
+                break;
+            }
+            case DecoderConfigurationRecord::VVC_PPS:
+            {
+                type = DecoderSpecInfoType::VVC_PPS;
+                break;
+            }
+            case DecoderConfigurationRecord::VVC_APS:
+            {
+                // VVC NAL header: byte[1] bits [7:3] carry nal_unit_type.
+                // PREFIX_APS_NUT = 17, SUFFIX_APS_NUT = 18.
+                if (t.second.size() >= 2) {
+                    const uint8_t nalType = (t.second[1] >> 3) & 0x1F;
+                    type = (nalType == static_cast<uint8_t>(VvcNalUnitType::SUFFIX_APS_NUT))
+                               ? DecoderSpecInfoType::VVC_APS_SUFFIX
+                               : DecoderSpecInfoType::VVC_APS_PREFIX;
+                } else {
+                    type = DecoderSpecInfoType::VVC_APS_PREFIX;
+                }
+                break;
+            }
             case DecoderConfigurationRecord::AudioSpecificConfig:
             {
                 type = DecoderSpecInfoType::AudioSpecificConfig;
@@ -1151,8 +1600,9 @@ namespace HEIF
                 break;
             }
             }
-            auto& e = pm[type];
-            e.insert(e.begin(), t.second.begin(), t.second.end());
+            pm.insert({type, t.second});
+            //auto& e = pm[type];
+            //e.insert(e.begin(), t.second.begin(), t.second.end());
         }
         return pm;
     }
@@ -1171,6 +1621,8 @@ namespace HEIF
 
     ErrorCode HeifReaderImpl::getSamples(SequenceId sequenceId, Vector<SequenceImageId>& samples) const
     {
+        HEIF_TRY
+        {
         ErrorCode error = isValidTrack(sequenceId);
         if (error != ErrorCode::OK)
         {
@@ -1193,10 +1645,15 @@ namespace HEIF
             }
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::getSamples: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::getProtection(const ImageId itemId, bool& isProtected) const
     {
+        HEIF_TRY
+        {
         ItemInfoEntry entry;
         try
         {
@@ -1204,7 +1661,9 @@ namespace HEIF
         }
         catch (...)
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL_FROM_UNKNOWN(ErrorCode::INVALID_ITEM_ID,
+                                          ErrorOrigin::Reader_ItemValidation,
+                                          "HeifReaderImpl::getProtection: getItemById threw");
         }
 
         isProtected = false;
@@ -1213,10 +1672,15 @@ namespace HEIF
             isProtected = true;
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::getProtection: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::processAvcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize)
     {
+        HEIF_TRY
+        {
         uint32_t outputOffset = 0;
         uint32_t byteOffset   = 0;
 
@@ -1239,10 +1703,15 @@ namespace HEIF
             byteOffset = 0;
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_AvcParser,
+                              "HeifReaderImpl::processAvcItemData: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::processHevcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize)
     {
+        HEIF_TRY
+        {
         uint32_t outputOffset = 0;
         uint32_t byteOffset   = 0;
 
@@ -1266,6 +1735,119 @@ namespace HEIF
             byteOffset = 0;
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_HevcParser,
+                              "HeifReaderImpl::processHevcItemData: exception escaped firewall")
+    }
+
+    ErrorCode HeifReaderImpl::processVvcItemData(uint8_t* memoryBuffer,uint64_t& memoryBufferSize, const uint8_t& lengthSize)
+    {
+        HEIF_TRY
+        {
+        uint32_t outputOffset = 0;
+        uint32_t byteOffset   = 0;
+
+        //in Output 266 items will have startcodes of 4 bytes, check if byte insertion is necessary
+        const uint8_t INSERT_SIZE = 4 - lengthSize;
+
+        //Reading Item Data Nal Unit(s) (in case of multilayer or -item file)
+        while (outputOffset < memoryBufferSize)
+        {
+            //Read NALULength field (of size 'lengthSize' bytes)
+            uint32_t nalSize = 0;
+            for(uint8_t i=lengthSize;i>0;i--){
+                nalSize = (nalSize << 8) | memoryBuffer[outputOffset + byteOffset];
+                memoryBuffer[outputOffset + byteOffset] = 0;
+                byteOffset++;
+            }
+
+            byteOffset = 0;
+
+            if(INSERT_SIZE > 0){
+                //Save original remaining size before adjustment
+                const uint64_t remainingDataSize = memoryBufferSize - outputOffset;
+
+                //Adjust memoryBuffer to allow inserting of bytes
+                memoryBufferSize += INSERT_SIZE;
+
+                //Shift the rest of the item data to the right, allowing insertion of bytes
+                std::memmove(memoryBuffer+outputOffset+INSERT_SIZE,//Destination, itemoffset+insert
+                            memoryBuffer+outputOffset,//Source, itemoffset
+                            remainingDataSize);//Count, original remaining data size (not the expanded size)
+                    
+                //Setting values at the new inserted indexes to be 0
+                std::memset(memoryBuffer+outputOffset,0,INSERT_SIZE);
+            }
+
+            //Convert LengthSize field to 4 byte startcode
+            memoryBuffer[outputOffset + byteOffset] = 0;
+            byteOffset++;
+            memoryBuffer[outputOffset + byteOffset] = 0;
+            byteOffset++;
+            memoryBuffer[outputOffset + byteOffset] = 0;
+            byteOffset++;
+            memoryBuffer[outputOffset + byteOffset] = 1;
+
+            //Skip to the end of the Nal Unit (The start of the next Nal Unit)
+            outputOffset += nalSize + 4;  //Add 4 bytes (nal length information) to offset enabling correct reading
+            byteOffset = 0;
+        }
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_VvcParser,
+                              "HeifReaderImpl::processVvcItemData: exception escaped firewall")
+    }
+
+    ErrorCode HeifReaderImpl::processCompactVvcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize){
+        HEIF_TRY
+        {
+
+        //Constant size of the two Nalu header information bytes
+        const uint8_t NALU_HEADER_SIZE = 2;
+        //Constant size of length field. Will be set to 4 for now.
+        const uint8_t NALU_LENGTH_SIZE = 4;
+
+        //Size of bytes being inserted to compact VVC item data to expand it to normal
+        const uint8_t INSERT_SIZE = NALU_LENGTH_SIZE + NALU_HEADER_SIZE;
+
+        //Save original data size before adjustment
+        const uint64_t originalDataSize = memoryBufferSize;
+
+        //Adjust memoryBuffer to allow inserting of bytes
+        memoryBufferSize += INSERT_SIZE;
+
+        //Shift the rest of the item data to the right, allowing insertion of bytes
+        std::memmove(memoryBuffer+INSERT_SIZE,//Destination, itemoffset+insert
+                    memoryBuffer,//Source, itemoffset
+                    originalDataSize);//Count, original data size (not the expanded size)
+        
+        //Setting values at the new inserted indexes to be 0
+        std::memset(memoryBuffer,0,INSERT_SIZE);
+
+        uint64_t byteOffset = 0u;//for per item indexing
+
+        //Write the 4 byte length field for the item
+        const auto nalSize = static_cast<uint32_t>(memoryBufferSize - NALU_LENGTH_SIZE); //includes header+payload, but not the length size itself
+        memoryBuffer[byteOffset] = static_cast<uint8_t>((nalSize >> 24) & 0xFF);
+        byteOffset++;
+        memoryBuffer[byteOffset] = static_cast<uint8_t>((nalSize >> 16) & 0xFF);
+        byteOffset++;
+        memoryBuffer[byteOffset] = static_cast<uint8_t>((nalSize >> 8) & 0xFF);
+        byteOffset++;
+        memoryBuffer[byteOffset] = static_cast<uint8_t>(nalSize & 0xFF);
+        byteOffset++;
+
+        //Write Nal Header defined in 23008-12 AMD 2 L.4.3.3.3 Semantics
+        //Byte syntax from 23090-3 7.3.1.2 NAL Header Syntax
+        //nal_unit_type, nuh_temporal_id_plus1 and nuh_layer_id equal to 8 (IDR_N_LP), 1 and 0, respectively
+        memoryBuffer[byteOffset] = 0; byteOffset++;
+        memoryBuffer[byteOffset] = 65; byteOffset++;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_VvcParser,
+                              "HeifReaderImpl::processCompactVvcItemData: exception escaped firewall")
     }
 
     /* ********************************************************************** */
@@ -1274,6 +1856,8 @@ namespace HEIF
 
     ErrorCode HeifReaderImpl::isValidImageItem(const ImageId& imageId) const
     {
+        HEIF_TRY
+        {
         ErrorCode error;
         if ((error = isInitialized()) != ErrorCode::OK)
         {
@@ -1287,18 +1871,27 @@ namespace HEIF
         }
         catch (...)
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL_FROM_UNKNOWN(ErrorCode::INVALID_ITEM_ID,
+                                          ErrorOrigin::Reader_ItemValidation,
+                                          "HeifReaderImpl::isValidImageItem: getItemById threw");
         }
 
         if (isImageItem(makeItemInfo(item)))
         {
             return ErrorCode::OK;
         }
-        return ErrorCode::INVALID_ITEM_ID;
+        return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                         ErrorOrigin::Reader_ItemValidation,
+                         "HeifReaderImpl::isValidImageItem: item id not found");
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_ItemValidation,
+                              "HeifReaderImpl::isValidImageItem: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::isValidItem(const ImageId& imageId) const
     {
+        HEIF_TRY
+        {
         ErrorCode error;
         if ((error = isInitialized()) != ErrorCode::OK)
         {
@@ -1310,10 +1903,15 @@ namespace HEIF
         }
         catch (...)
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL_FROM_UNKNOWN(ErrorCode::INVALID_ITEM_ID,
+                                          ErrorOrigin::Reader_ItemValidation,
+                                          "HeifReaderImpl::isValidItem: getItemById/getItemType threw");
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_ItemValidation,
+                              "HeifReaderImpl::isValidItem: exception escaped firewall")
     }
 
     MetaBoxProperties HeifReaderImpl::extractMetaBoxProperties(const MetaBox& metaBox)
@@ -1433,12 +2031,6 @@ namespace HEIF
                 {
                     itemFeatures.setFeature(ItemFeatureEnum::IsDerivedImage);
                 }
-                // Is this master image (<=> not a thumb and not an auxiliary image)
-                if (!itemFeatures.hasFeature(ItemFeatureEnum::IsThumbnailImage) &&
-                    !itemFeatures.hasFeature(ItemFeatureEnum::IsAuxiliaryImage))
-                {
-                    itemFeatures.setFeature(ItemFeatureEnum::IsMasterImage);
-                }
 
                 if (doReferencesToItemIdExist(metaBox, itemId, FourCCInt("thmb")))
                 {
@@ -1475,6 +2067,21 @@ namespace HEIF
                 if ((item.getFlags() & HIDDEN_IMAGE_MASK) != 0u)
                 {
                     itemFeatures.setFeature(ItemFeatureEnum::IsHiddenImage);
+                }
+
+                // Check if this is a gainmap image (hidden + referenced by derived image via dimg)
+                if (itemFeatures.hasFeature(ItemFeatureEnum::IsHiddenImage) &&
+                    itemFeatures.hasFeature(ItemFeatureEnum::HasLinkedDerivedImage))
+                {
+                    itemFeatures.setFeature(ItemFeatureEnum::IsGainmapImage);
+                }
+
+                // Is this master image (<=> not a thumb, not an auxiliary image, and not a gainmap)
+                if (!itemFeatures.hasFeature(ItemFeatureEnum::IsThumbnailImage) &&
+                    !itemFeatures.hasFeature(ItemFeatureEnum::IsAuxiliaryImage) &&
+                    !itemFeatures.hasFeature(ItemFeatureEnum::IsGainmapImage))
+                {
+                    itemFeatures.setFeature(ItemFeatureEnum::IsMasterImage);
                 }
             }
             else
@@ -1518,18 +2125,21 @@ namespace HEIF
                 {
                     auto rref =
                         static_cast<const RequiredReferenceTypesProperty*>(iprp.getPropertyByIndex(rrefIndex - 1));
-                    auto referenceTypes                                     = rref->getReferenceTypes();
-                    static const vector<FourCCInt> EXPECTED_REFERENCE_TYPES = {"auxl", "base", "thmb",
-                                                                               "exbl", "tbas", "pred"};
-                    for (const auto referenceType : referenceTypes)
+                    if (rref != nullptr)
                     {
-                        if (find(EXPECTED_REFERENCE_TYPES.cbegin(), EXPECTED_REFERENCE_TYPES.cend(), referenceType) ==
-                            EXPECTED_REFERENCE_TYPES.cend())
+                        auto referenceTypes                                     = rref->getReferenceTypes();
+                        static const vector<FourCCInt> EXPECTED_REFERENCE_TYPES = {"auxl", "base", "thmb",
+                                                                                "exbl", "tbas", "pred"};
+                        for (const auto referenceType : referenceTypes)
                         {
-                            logWarning() << "Reading image item id " << itemId << " with unknown reference type '"
-                                         << referenceType.getString()
-                                         << "' in associated RequiredReferenceTypesProperty." << endl;
-                            itemFeatures.setFeature(ItemFeatureEnum::HasUnrecognzedRequiredReferences);
+                            if (find(EXPECTED_REFERENCE_TYPES.cbegin(), EXPECTED_REFERENCE_TYPES.cend(), referenceType) ==
+                                EXPECTED_REFERENCE_TYPES.cend())
+                            {
+                                logWarning() << "Reading image item id " << itemId << " with unknown reference type '"
+                                            << referenceType.getString()
+                                            << "' in associated RequiredReferenceTypesProperty." << '\n';
+                                itemFeatures.setFeature(ItemFeatureEnum::HasUnrecognzedRequiredReferences);
+                            }
                         }
                     }
                 }
@@ -1548,8 +2158,10 @@ namespace HEIF
             {PROPERTY_MAPPING(RAW)},  {PROPERTY_MAPPING(ALTT)}, {PROPERTY_MAPPING(AUXC)}, {PROPERTY_MAPPING(AVCC)},
             {PROPERTY_MAPPING(CLAP)}, {PROPERTY_MAPPING(COLR)}, {PROPERTY_MAPPING(CRTT)}, {PROPERTY_MAPPING(HVCC)},
             {PROPERTY_MAPPING(IMIR)}, {PROPERTY_MAPPING(IROT)}, {PROPERTY_MAPPING(ISCL)}, {PROPERTY_MAPPING(ISPE)},
-            {PROPERTY_MAPPING(JPGC)}, {PROPERTY_MAPPING(MDFT)}, {PROPERTY_MAPPING(PASP)}, {PROPERTY_MAPPING(PIXI)},
-            {PROPERTY_MAPPING(RLOC)}, {PROPERTY_MAPPING(RREF)}, {PROPERTY_MAPPING(UDES)},
+            {PROPERTY_MAPPING(JPGC)}, {PROPERTY_MAPPING(LHVC)}, {PROPERTY_MAPPING(LSEL)}, {PROPERTY_MAPPING(MDFT)}, {PROPERTY_MAPPING(PASP)}, {PROPERTY_MAPPING(PIXI)},
+            {PROPERTY_MAPPING(RLOC)}, {PROPERTY_MAPPING(RREF)}, {PROPERTY_MAPPING(UDES)}, {PROPERTY_MAPPING(VVCC)},
+            {PROPERTY_MAPPING(AMVE)}, {PROPERTY_MAPPING(CLLI)}, {PROPERTY_MAPPING(CCLV)}, {PROPERTY_MAPPING(MDCV)},
+            {PROPERTY_MAPPING(NDWT)}, {PROPERTY_MAPPING(REVE)}, {PROPERTY_MAPPING(SUBS)}, {PROPERTY_MAPPING(TOLS)}, {PROPERTY_MAPPING(OINF)}
         };
 #undef PROPERTY_MAPPING
 
@@ -1619,26 +2231,96 @@ namespace HEIF
         return propertyMap;
     }
 
-    void HeifReaderImpl::processDecoderConfigProperties(const ItemPropertiesBox& iprp,
-                                                        const ItemFeaturesMap& itemFeaturesMap,
-                                                        Map<DecoderConfigId, ParameterSetMap>& imageItemParameterSetMap,
-                                                        Map<ImageId, DecoderConfigId>& imageToParameterSetMap,
-                                                        Map<ImageId, FourCCInt>& imageItemCodeTypeMap)
+    ErrorCode HeifReaderImpl::getVvcItemNuhLayerId(const MetaBox& metaBox,
+                                                   const ImageId itemId,
+                                                   const uint8_t lengthSize,
+                                                   uint16_t& nuhLayerId) const
     {
+        HEIF_TRY
+        {
+        // Item layout (vvc1, length-prefixed): [length(lengthSize bytes)][NAL header(2)][payload]
+        // We only need the very first byte of the NAL header -- the lower 6 bits
+        // are nuh_layer_id. Read just lengthSize+1 bytes via loadItemData; the
+        // overhead is negligible and only happens once at init time per item.
+        DataVector data;
+        ErrorCode err = loadItemData(metaBox, itemId, data);
+        if (err != ErrorCode::OK)
+        {
+            return err;
+        }
+        const size_t needed = static_cast<size_t>(lengthSize) + 1u;
+        if (data.size() < needed)
+        {
+            return HEIF_FAIL(ErrorCode::FILE_HEADER_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::getVvcItemNuhLayerId: file header (ftyp) is malformed or missing");
+        }
+        nuhLayerId = static_cast<uint16_t>(data[lengthSize] & 0x3F);
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_VvcParser,
+                              "HeifReaderImpl::getVvcItemNuhLayerId: exception escaped firewall")
+    }
+
+    ErrorCode
+    HeifReaderImpl::processDecoderConfigProperties(const ItemPropertiesBox& iprp,
+                                                   const ItemFeaturesMap& itemFeaturesMap,
+                                                   const MetaBox& metaBox,
+                                                   Map<DecoderConfigId, ParameterSetMap>& imageItemParameterSetMap,
+                                                   Map<ImageId, DecoderConfigId>& imageToParameterSetMap,
+                                                   Map<ImageId, FourCCInt>& imageItemCodeTypeMap) const
+
+    {
+        HEIF_TRY
+        {
+        // Synthesize a unique cache key for (configIndex, nuhLayerId) pairs so
+        // multiple items sharing one vvcC but living on different layers get
+        // distinct ParameterSetMap entries instead of all aliasing layer 0.
+        // Layer 0 keeps the bare configIndex value -> backward compatible with
+        // every non-VVC code path and with single-layer VVC files.
+        // nuh_layer_id is 6 bits (0..63); shifting by 24 preserves the original
+        // configIndex in the low 24 bits (iprp property indexes are sequential
+        // and never approach that range in practice).
+        auto makeCacheKey = [](DecoderConfigId base, uint16_t layerId) -> DecoderConfigId {
+            if (layerId == 0)
+            {
+                return base;
+            }
+            return DecoderConfigId(base.get() | (static_cast<uint32_t>(layerId & 0x3F) << 24));
+        };
+
         for (const auto& imageProperties : itemFeaturesMap)
         {
             const ImageId imageId = imageProperties.first;
             const std::uint32_t hvccIndex =
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::HVCC, imageId.get());
+            // L-HEVC enhancement items carry both an hvcC (inherited base
+            // layer config, often via property association) and an lhvC
+            // (the Section 9.4 layered record). lhvcIndex must therefore be
+            // checked BEFORE hvccIndex so the dispatch picks the layered
+            // record for lhv1 items; falling through to hvcC would feed
+            // base-layer-only parameter sets to a multi-layer decoder.
+            const std::uint32_t lhvcIndex =
+                iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::LHVC, imageId.get());
             const std::uint32_t avccIndex =
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::AVCC, imageId.get());
             const std::uint32_t jpegIndex =
                 iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::JPGC, imageId.get());
+            const std::uint32_t vvccIndex =
+                iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::VVCC, imageId.get());
+            const std::uint32_t rawIndex =
+                iprp.findPropertyIndex(ItemPropertiesBox::PropertyType::RAW, imageId.get());
+
 
             FourCCInt type;
             DecoderConfigId configIndex           = 0;
             const DecoderConfigurationBox* record = nullptr;
-            if (hvccIndex != 0u)
+            if (lhvcIndex != 0u)
+            {
+                configIndex = lhvcIndex;
+                type        = "lhv1";
+            }
+            else if (hvccIndex != 0u)
             {
                 configIndex = hvccIndex;
                 type        = "hvc1";
@@ -1648,23 +2330,111 @@ namespace HEIF
                 configIndex = avccIndex;
                 type        = "avc1";
             }
+            else if (vvccIndex != 0u)
+            {
+                configIndex = vvccIndex;
+                type        = "vvc1";
+            }
             else if (jpegIndex != 0u)
             {
                 configIndex = jpegIndex;
                 type        = "jpeg";
             }
+            else if(rawIndex != 0u)
+            {
+                configIndex = rawIndex;
+                type        = "raw1";
+            }
             else
             {
                 continue;
             }
-            record = static_cast<const DecoderConfigurationBox*>(iprp.getPropertyByIndex(configIndex.get() - 1));
-            if (imageItemParameterSetMap.count(configIndex) == 0u)
+            auto test = iprp.getPropertyByIndex(configIndex.get() - 1);
+            record = dynamic_cast<const DecoderConfigurationBox*>(test);
+            if (record == nullptr)
             {
-                imageItemParameterSetMap[configIndex] = makeDecoderParameterSetMap(record->getConfiguration());
+                const RawPropertyBox* rawRecord = dynamic_cast<const RawPropertyBox*>(test);
+                if(rawRecord == nullptr){
+                    return HEIF_FAIL(ErrorCode::FILE_HEADER_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::getVvcItemNuhLayerId: file header (ftyp) is malformed or missing");
+                }else{
+                    HEIF::ParameterSetMap rawpm;
+                    rawpm.insert({DecoderSpecInfoType::RAW, rawRecord->getData()});
+                    imageItemParameterSetMap[configIndex] = rawpm;
+                    imageToParameterSetMap[imageId] = configIndex;
+                    imageItemCodeTypeMap[imageId]   = type;
+                }
+                continue;
             }
-            imageToParameterSetMap[imageId] = configIndex;
+
+            // Default: assume base layer (correct for AVC/HEVC/JPEG and for
+            // single-layer VVC items). For VVC items we attempt to read the
+            // real nuh_layer_id from the item's first NAL header so multi-layer
+            // VVC files (e.g. compact mini with multi_layer_flag=1) get the
+            // SPS/PPS that actually correspond to their layer.
+            uint16_t itemLayerId = 0;
+            bool itemIsMultiLayerVvc = false;
+            if (type == FourCCInt("vvc1"))
+            {
+                const auto* vvcRec = dynamic_cast<const VvcDecoderConfigurationRecord*>(
+                    &record->getConfiguration());
+                if (vvcRec != nullptr && vvcRec->getMultiLayerFlag())
+                {
+                    itemIsMultiLayerVvc = true;
+                    const uint8_t lengthSize = vvcRec->getLengthSize();
+                    uint16_t detected = 0;
+                    ErrorCode lidErr = getVvcItemNuhLayerId(metaBox, imageId, lengthSize, detected);
+                    if (lidErr == ErrorCode::OK)
+                    {
+                        itemLayerId = detected;
+                    }
+                    // If detection fails we silently fall back to layer 0; that
+                    // matches pre-fix behavior and avoids breaking init for
+                    // pathological items.
+                }
+            }
+
+            // NOTE: itemLayerId is intentionally NOT stored in a separate
+            // ImageId->layer map. It is already encoded in the upper 6 bits of
+            // the cacheKey written to mImageToParameterSetMap below, so the
+            // value is recoverable from there if a future caller needs it.
+
+            const DecoderConfigId cacheKey = makeCacheKey(configIndex, itemLayerId);
+
+            // Multiple items may share a single (config, layer) pair; only
+            // build the ParameterSetMap once per pair.
+            if (imageItemParameterSetMap.count(cacheKey) == 0u)
+            {
+                imageItemParameterSetMap[cacheKey] =
+                    makeDecoderParameterSetMap(record->getConfiguration(), itemLayerId);
+            }
+            imageToParameterSetMap[imageId] = cacheKey;
             imageItemCodeTypeMap[imageId]   = type;
+
+            // For multi-layer VVC items, ALSO cache the full all-layers
+            // parameter set bundle keyed by the BASE configIndex. This is
+            // what getDecoderParameterSetsForAllLayers() returns and is what
+            // a client (e.g. readerapp) needs to reassemble the original
+            // multi-layer Annex-B bitstream that all sibling items came from.
+            // The base configIndex is identical across all sibling items, so
+            // they all map to the same all-layers entry and can be grouped
+            // on it.
+            if (itemIsMultiLayerVvc)
+            {
+                if (mImageItemAllLayersParameterSetMap.count(configIndex) == 0u)
+                {
+                    mImageItemAllLayersParameterSetMap[configIndex] =
+                        makeDecoderParameterSetMap(record->getConfiguration(),
+                                                   VvcDecoderConfigurationRecord::ALL_LAYERS);
+                }
+                mImageToAllLayersParameterSetMap[imageId] = configIndex;
+            }
         }
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_DecoderConfig,
+                              "HeifReaderImpl::processDecoderConfigProperties: exception escaped firewall")
     }
 
     HeifReaderImpl::MetaBoxInfo HeifReaderImpl::extractItems(const MetaBox& metaBox) const
@@ -1675,7 +2445,12 @@ namespace HEIF
         {
             const ItemInfoEntry& item = metaBox.getItemInfoBox().getItemById(itemId);
             const auto type           = item.getItemType();
-            if (type == "grid" || type == "iovl")
+            // The inner type-dispatch below also handles "tmap"; the outer
+            // gate must admit it for the tonemap branch to be reachable
+            // (otherwise metaBoxInfo.tmapItems stays permanently empty and
+            // every getTonemap*() accessor returns NOT_FOUND regardless of
+            // file content).
+            if (type == "grid" || type == "iovl" || type == "tmap")
             {
                 bool isProtected = false;
                 ErrorCode error  = getProtection(itemId, isProtected);
@@ -1723,6 +2498,11 @@ namespace HEIF
                     getReferencedFromItemListByType(itemId, "dimg", iovl.imageIds);
                     metaBoxInfo.iovlItems.insert({itemId, iovl});
                 }
+                if(type == "tmap"){
+                    ToneMapImage toneMapImage;
+                    toneMapImage.read(bitstream);
+                    metaBoxInfo.tmapItems.insert({itemId, toneMapImage});
+                }
             }
         }
 
@@ -1734,6 +2514,8 @@ namespace HEIF
 
     ErrorCode HeifReaderImpl::loadItemData(const MetaBox& metaBox, const ImageId itemId, DataVector& data) const
     {
+        HEIF_TRY
+        {
         const auto& io = mFileProperties.segmentPropertiesMap.at(0).io;
 
         const streampos oldPosition = io.stream->tell();
@@ -1741,14 +2523,14 @@ namespace HEIF
         uint64_t itemLength(0);
         List<ImageId> pastReferences;
         ErrorCode error = getItemLength(metaBox, itemId, itemLength, pastReferences);
-        if (error != ErrorCode::OK)
-        {
+
+        if (error != ErrorCode::OK){
             return error;
         }
-        if (static_cast<int64_t>(itemLength) > io.size)
-
-        {
-            return ErrorCode::FILE_HEADER_ERROR;
+        if (static_cast<int64_t>(itemLength) > io.size){
+            return HEIF_FAIL(ErrorCode::FILE_HEADER_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::loadItemData: file header (ftyp) is malformed or missing");
         }
         data.resize(itemLength);
 
@@ -1756,6 +2538,9 @@ namespace HEIF
         error            = readItem(metaBox, itemId, dataPtr, itemLength);
         io.stream->seek(oldPosition);
         return error;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::loadItemData: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::getItemLength(const MetaBox& metaBox,
@@ -1763,6 +2548,8 @@ namespace HEIF
                                             std::uint64_t& itemLength,
                                             List<ImageId>& pastReferences) const
     {
+        HEIF_TRY
+        {
         ErrorCode error = isValidItem(itemId);
         if (error != ErrorCode::OK)
         {
@@ -1779,7 +2566,9 @@ namespace HEIF
         }
         else
         {
-            return ErrorCode::FILE_HEADER_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_HEADER_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::getItemLength: file header (ftyp) is malformed or missing");
         }
 
         const ItemLocationBox& iloc = metaBox.getItemLocationBox();
@@ -1787,7 +2576,9 @@ namespace HEIF
         if (!iloc.hasItemIdEntry(itemId.get()))
         {
             itemLength = 0;
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Reader_ItemValidation,
+                             "HeifReaderImpl::getItemLength: item id not found");
         }
         const ItemLocation& itemLocation                          = iloc.getItemLocationForID(itemId.get());
         const ItemLocation::ConstructionMethod constructionMethod = itemLocation.getConstructionMethod();
@@ -1795,7 +2586,9 @@ namespace HEIF
 
         if (extentList.empty())
         {
-            return ErrorCode::FILE_READ_ERROR;  // No extents given for an item.
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::getItemLength: underlying stream read failed");
         }
 
         // The size of the item is the sum of the extent lengths.
@@ -1811,7 +2604,9 @@ namespace HEIF
                 std::find_if(allIlocReferences.cbegin(), allIlocReferences.cend(), isWantedItemId);
             if (ilocReference == allIlocReferences.end())
             {
-                return ErrorCode::FILE_READ_ERROR;
+                return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                 ErrorOrigin::Reader_BoxParse,
+                                 "HeifReaderImpl::getItemLength: underlying stream read failed");
             }
             const auto& toItemIds = ilocReference->getToItemIds();
 
@@ -1829,7 +2624,9 @@ namespace HEIF
                 const ImageId subItemId = toItemIds.at(extentSourceItemIndex - 1);
                 if (itemId == subItemId)
                 {
-                    return ErrorCode::FILE_HEADER_ERROR;  // avoid looping references.
+                    return HEIF_FAIL(ErrorCode::FILE_HEADER_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::getItemLength: file header (ftyp) is malformed or missing");
                 }
 
                 error = getItemLength(metaBox, subItemId, subItemLength, pastReferences);
@@ -1840,7 +2637,9 @@ namespace HEIF
                 if (static_cast<int64_t>(subItemLength) > io.size)
 
                 {
-                    return ErrorCode::FILE_HEADER_ERROR;
+                    return HEIF_FAIL(ErrorCode::FILE_HEADER_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::getItemLength: file header (ftyp) is malformed or missing");
                 }
 
                 // If extent_length value = 0, length is the length of the entire item.
@@ -1863,6 +2662,9 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::getItemLength: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::readItem(const MetaBox& metaBox,
@@ -1870,6 +2672,8 @@ namespace HEIF
                                        uint8_t* memoryBuffer,
                                        uint64_t maxSize) const
     {
+        HEIF_TRY
+        {
         ErrorCode error = isValidItem(itemId);
         if (error != ErrorCode::OK)
         {
@@ -1882,7 +2686,9 @@ namespace HEIF
         const unsigned int version  = iloc.getVersion();
         if (!iloc.hasItemIdEntry(itemId.get()))
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_ITEM_ID,
+                             ErrorOrigin::Reader_ItemValidation,
+                             "HeifReaderImpl::readItem: item id not found");
         }
         const ItemLocation& itemLocation                          = iloc.getItemLocationForID(itemId.get());
         const ItemLocation::ConstructionMethod constructionMethod = itemLocation.getConstructionMethod();
@@ -1891,7 +2697,9 @@ namespace HEIF
 
         if (extentList.empty())
         {
-            return ErrorCode::FILE_READ_ERROR;  // No extents given for an item.
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::readItem: underlying stream read failed");
         }
 
         uint64_t totalLenght(0);
@@ -1903,16 +2711,22 @@ namespace HEIF
                 io.stream->seek(offset);
                 if (!io.stream->good())
                 {
-                    return ErrorCode::FILE_READ_ERROR;
+                    return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::readItem: underlying stream read failed");
                 }
                 if (totalLenght + extent.mExtentLength > maxSize)
                 {
-                    return ErrorCode::FILE_READ_ERROR;
+                    return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::readItem: underlying stream read failed");
                 }
-                io.stream->read(reinterpret_cast<char*>(memoryBuffer), std::streamsize(extent.mExtentLength));
+                io.stream->read(reinterpret_cast<char*>(memoryBuffer), static_cast<std::streamsize>(extent.mExtentLength));
                 if (!io.stream->good())
                 {
-                    return ErrorCode::FILE_READ_ERROR;
+                    return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::readItem: underlying stream read failed");
                 }
                 totalLenght += extent.mExtentLength;
                 memoryBuffer += extent.mExtentLength;
@@ -1925,11 +2739,15 @@ namespace HEIF
                 const size_t offset = baseOffset + extent.mExtentOffset;
                 if (totalLenght + extent.mExtentLength > maxSize)
                 {
-                    return ErrorCode::FILE_READ_ERROR;
+                    return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::readItem: underlying stream read failed");
                 }
                 if (!metaBox.getItemDataBox().read(memoryBuffer, offset, extent.mExtentLength))
                 {
-                    return ErrorCode::FILE_READ_ERROR;
+                    return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::readItem: underlying stream read failed");
                 }
                 totalLenght += extent.mExtentLength;
                 memoryBuffer += extent.mExtentLength;
@@ -1959,7 +2777,9 @@ namespace HEIF
                 const ImageId subItemId = toItemIds.at(extentSourceItemIndex - 1);
                 if (itemId == subItemId)
                 {
-                    return ErrorCode::FILE_HEADER_ERROR;
+                    return HEIF_FAIL(ErrorCode::FILE_HEADER_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::readItem: file header (ftyp) is malformed or missing");
                 }
                 uint64_t subItemLength(0);
                 List<ImageId> pastReferences;
@@ -1972,7 +2792,9 @@ namespace HEIF
                 if (static_cast<int64_t>(subItemLength) > io.size)
 
                 {
-                    return ErrorCode::FILE_HEADER_ERROR;
+                    return HEIF_FAIL(ErrorCode::FILE_HEADER_ERROR,
+                                     ErrorOrigin::Reader_BoxParse,
+                                     "HeifReaderImpl::readItem: file header (ftyp) is malformed or missing");
                 }
 
                 Vector<std::uint8_t> subItemData;
@@ -1990,7 +2812,9 @@ namespace HEIF
                 {
                     if (totalLenght + subItemData.size() > maxSize)
                     {
-                        return ErrorCode::FILE_READ_ERROR;
+                        return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                         ErrorOrigin::Reader_BoxParse,
+                                         "HeifReaderImpl::readItem: underlying stream read failed");
                     }
                     std::memcpy(memoryBuffer, subItemData.data(), subItemData.size());
                     totalLenght += subItemData.size();
@@ -2001,7 +2825,9 @@ namespace HEIF
                     if (totalLenght + extent.mExtentLength > maxSize ||
                         extent.mExtentOffset + extent.mExtentLength > subItemData.size())
                     {
-                        return ErrorCode::FILE_READ_ERROR;
+                        return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                         ErrorOrigin::Reader_BoxParse,
+                                         "HeifReaderImpl::readItem: underlying stream read failed");
                     }
                     std::memcpy(memoryBuffer, subItemData.data() + static_cast<int64_t>(extent.mExtentOffset),
                                 extent.mExtentLength);
@@ -2012,10 +2838,15 @@ namespace HEIF
         }
         else
         {
-            return ErrorCode::FILE_READ_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::readItem: underlying stream read failed");
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::readItem: exception escaped firewall")
     }
 
 
@@ -2037,6 +2868,8 @@ namespace HEIF
 
     ErrorCode HeifReaderImpl::isValidTrack(const SequenceId& sequenceId) const
     {
+        HEIF_TRY
+        {
         ErrorCode error;
         if ((error = isInitialized()) != ErrorCode::OK)
         {
@@ -2046,11 +2879,18 @@ namespace HEIF
         {
             return ErrorCode::OK;
         }
-        return ErrorCode::INVALID_SEQUENCE_ID;
+        return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                         ErrorOrigin::Reader_ItemValidation,
+                         "HeifReaderImpl::isValidTrack: sequence (track) id not found");
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_ItemValidation,
+                              "HeifReaderImpl::isValidTrack: exception escaped firewall")
     }
 
     ErrorCode HeifReaderImpl::isValidSample(const SequenceId& sequenceId, const SequenceImageId& sequenceImageId) const
     {
+        HEIF_TRY
+        {
         ErrorCode error;
         if ((error = isValidTrack(sequenceId)) != ErrorCode::OK)
         {
@@ -2061,6 +2901,9 @@ namespace HEIF
         error = segmentIdOf(sequenceId, sequenceImageId, segmentId);
 
         return error;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_ItemValidation,
+                              "HeifReaderImpl::isValidSample: exception escaped firewall")
     }
 
     InitTrackInfoMap HeifReaderImpl::extractInitTrackInfos(SegmentId segmentId,
@@ -2084,20 +2927,25 @@ namespace HEIF
 
             fillSampleEntryMap(stsdBox, initTrackInfo);
 
-            initTrackInfo.trackId           = sequenceId.get();
-            initTrackInfo.trackFeature      = getTrackFeatures(trackBox);
-            initTrackInfo.referenceTrackIds = getReferenceTrackIds(trackBox);
-            initTrackInfo.trackGroupInfoMap = getTrackGroupInfoMap(trackBox);
-            initTrackInfo.groupedSamples    = getSampleGroupings(trackBox);
-            initTrackInfo.equivalences      = getEquivalenceGroups(trackBox);
-            initTrackInfo.metadatas         = getSampleToMetadataItemGroups(trackBox);
-            initTrackInfo.referenceSamples  = getDirectReferenceSamplesGroups(trackBox);
-            initTrackInfo.alternateTrackIds = getAlternateTrackIds(trackBox, moovBox);
-            initTrackInfo.alternateGroupId  = trackBox->getTrackHeaderBox().getAlternateGroup();
-            initTrackInfo.maxSampleSize     = maxSampleSize;
-            initTrackInfo.timeScale         = trackBox->getMediaBox().getMediaHeaderBox().getTimeScale();
-            initTrackInfo.editList          = getEditList(trackBox, trackInfo.repetitions);
-            initTrackInfo.editBox           = trackBox->getEditBox();
+            initTrackInfo.trackId                 = sequenceId.get();
+            initTrackInfo.trackFeature            = getTrackFeatures(trackBox);
+            initTrackInfo.referenceTrackIds       = getReferenceTrackIds(trackBox);
+            initTrackInfo.trackGroupInfoMap       = getTrackGroupInfoMap(trackBox);
+            initTrackInfo.groupedSamples          = getSampleGroupings(trackBox);
+            initTrackInfo.equivalences            = getEquivalenceGroups(trackBox);
+            initTrackInfo.metadatas               = getSampleToMetadataItemGroups(trackBox);
+            initTrackInfo.referenceSamples        = getDirectReferenceSamplesGroups(trackBox);
+            initTrackInfo.rectangularRegions      = getRectangularRegionGroups(trackBox);
+            initTrackInfo.vvcSubpicOrders         = getVvcSubpicOrderEntryGroups(trackBox);
+            initTrackInfo.vvcSubpicLayoutMaps     = getVvcSubpicLayoutEntryGroups(trackBox);
+            initTrackInfo.vvcMixedNalUnitTypePics = getVvcMixedNalUnitTypePicEntryGroups(trackBox);
+            initTrackInfo.alternateTrackIds       = getAlternateTrackIds(trackBox, moovBox);
+            initTrackInfo.alternateGroupId        = trackBox->getTrackHeaderBox().getAlternateGroup();
+            initTrackInfo.maxSampleSize           = maxSampleSize;
+            initTrackInfo.timeScale               = trackBox->getMediaBox().getMediaHeaderBox().getTimeScale();
+            initTrackInfo.editList                = getEditList(trackBox, trackInfo.repetitions);
+            initTrackInfo.editBox                 = trackBox->getEditBox();
+
 
             if (initTrackInfo.trackFeature.hasFeature(TrackFeatureEnum::HasEditList) && (trackInfo.pMap.size() <= 1))
             {
@@ -2511,6 +3359,129 @@ namespace HEIF
         return refsInfos;
     }
 
+    Array<RectangularRegion> HeifReaderImpl::getRectangularRegionGroups(const TrackBox* trackBox)
+        {
+        const SampleTableBox& stblBox         = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        const SampleGroupDescriptionBox* sgpd = stblBox.getSampleGroupDescriptionBox("trif");
+        if (sgpd == nullptr)
+        {
+            return Array<RectangularRegion>();
+        }
+        const auto entries = sgpd->getEntryCount();
+        Array<RectangularRegion> trifInfos(entries);
+        for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
+        {
+            auto trif = static_cast<const RectangularRegionGroupEntry*>(sgpd->getEntry(groupIndex));
+
+            trifInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
+            trifInfos[groupIndex - 1].trif.groupId                = trif->getGroupId();
+            trifInfos[groupIndex - 1].trif.rectRegionFlag         = trif->getRectRegionFlag();
+            trifInfos[groupIndex - 1].trif.independentIdc         = trif->getIndependentIdc();
+            trifInfos[groupIndex - 1].trif.fullPicture            = trif->getFullPicture();
+            trifInfos[groupIndex - 1].trif.filteringDisabled      = trif->getFilteringDisabled();
+            trifInfos[groupIndex - 1].trif.horizontalOffset       = trif->getHorizontalOffset();
+            trifInfos[groupIndex - 1].trif.verticalOffset         = trif->getVerticalOffset();
+            trifInfos[groupIndex - 1].trif.regionWidth            = trif->getRegionWidth();
+            trifInfos[groupIndex - 1].trif.regionHeight           = trif->getRegionHeight();
+
+            trifInfos[groupIndex - 1].trif.dependencyRectRegionGroupIds =
+                makeArray<std::uint16_t>(trif->getDependencyRectRegionGroupIds());
+        }
+        return trifInfos;
+    }
+
+    Array<VvcSubpicOrder> HeifReaderImpl::getVvcSubpicOrderEntryGroups(const TrackBox* trackBox)
+    {
+        const SampleTableBox& stblBox         = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        const SampleGroupDescriptionBox* sgpd = stblBox.getSampleGroupDescriptionBox("spor");
+        if (sgpd == nullptr)
+        {
+            return Array<VvcSubpicOrder>();
+        }
+        const auto entries = sgpd->getEntryCount();
+        Array<VvcSubpicOrder> sporInfos(entries);
+        for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
+        {
+            auto spor = static_cast<const VvcSubpicOrderEntry*>(sgpd->getEntry(groupIndex));
+
+            sporInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
+            sporInfos[groupIndex - 1].subpicIdInfoFlag            = spor->getSubpicIdInfoFlag();
+            sporInfos[groupIndex - 1].subpTrackRefIdx             = makeArray<std::uint16_t>(spor->getSubpicRefIdx());
+            sporInfos[groupIndex - 1].subpicdLenMinus1            = static_cast<uint8_t>(spor->getSubpicIdLenMinus1());
+            sporInfos[groupIndex - 1].subpicIdBitPos              = spor->getSubpicIdBitPos();
+            sporInfos[groupIndex - 1].startCodeEmulFlag           = spor->getStartCodeEmulFlag();
+            sporInfos[groupIndex - 1].ppsSpsSubpicIdFlag          = spor->getPpsSpsSubpicIdFlag();
+            sporInfos[groupIndex - 1].ppsId                       = spor->getPpsId();
+            sporInfos[groupIndex - 1].spsId                       = spor->getSpsId();
+        }
+        return sporInfos;
+    }
+
+    Array<VvcSubpicLayoutMap> HeifReaderImpl::getVvcSubpicLayoutEntryGroups(const TrackBox* trackBox)
+    {
+        const SampleTableBox& stblBox         = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        const SampleGroupDescriptionBox* sgpd = stblBox.getSampleGroupDescriptionBox("sulm");
+        if (sgpd == nullptr)
+        {
+            return Array<VvcSubpicLayoutMap>();
+        }
+        const auto entries = sgpd->getEntryCount();
+        Array<VvcSubpicLayoutMap> sulmInfos(entries);
+        for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
+        {
+            auto sulm = static_cast<const VvcSubpictureLayoutMapEntry*>(sgpd->getEntry(groupIndex));
+
+            sulmInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
+            sulmInfos[groupIndex - 1].groupIdInfo4cc              = sulm->getGroupIdInfo4CC().getUInt32();
+            sulmInfos[groupIndex - 1].groupIds                    = makeArray<std::uint16_t>(sulm->getGroupIds());
+        }
+        return sulmInfos;
+    }
+
+    Array<VvcMixedNalUnitTypePic> HeifReaderImpl::getVvcMixedNalUnitTypePicEntryGroups(const TrackBox* trackBox)
+    {
+        const SampleTableBox& stblBox         = trackBox->getMediaBox().getMediaInformationBox().getSampleTableBox();
+        const SampleGroupDescriptionBox* sgpd = stblBox.getSampleGroupDescriptionBox("minp");
+        if (sgpd == nullptr)
+        {
+            return Array<VvcMixedNalUnitTypePic>();
+        }
+        const auto entries = sgpd->getEntryCount();
+        Array<VvcMixedNalUnitTypePic> minpInfos(entries);
+        for (unsigned int groupIndex = 1; groupIndex < (entries + 1); ++groupIndex)
+        {
+            auto minp = static_cast<const VvcMixedNalUnitTypePicEntry*>(sgpd->getEntry(groupIndex));
+
+            minpInfos[groupIndex - 1].sampleGroupDescriptionIndex = groupIndex;
+            const auto indexPairs                                 = minp->getMixSubpTrackIds();
+            minpInfos[groupIndex - 1].mixSubpTrackIdx1            = Array<std::uint16_t>(indexPairs.size());
+            minpInfos[groupIndex - 1].mixSubpTrackIdx2            = Array<std::uint16_t>(indexPairs.size());
+            // Pre-existing bug surfaced by clang-tidy adding `explicit` to
+            // Array<T>(size_t): the loop body previously wrote `arr = scalar`
+            // which (when the size_t ctor was implicit) silently replaced
+            // each Array with a default-initialized Array of size `scalar`,
+            // losing both the allocation just made above and every prior
+            // iteration's value. Element-indexed assignment is what was
+            // intended.
+            {
+                std::size_t pairIdx = 0;
+                for (const auto& indexes : indexPairs)
+                {
+                    // Track IDs in this context are always within the 16-bit range
+                    // (ISOBMFF subpicture track ids); the explicit narrowing cast
+                    // satisfies MSVC C4244 / -Wconversion.
+                    minpInfos[groupIndex - 1].mixSubpTrackIdx1[pairIdx] = static_cast<std::uint16_t>(indexes.first);
+                    minpInfos[groupIndex - 1].mixSubpTrackIdx2[pairIdx] = static_cast<std::uint16_t>(indexes.second);
+                    ++pairIdx;
+                }
+            }
+
+            minpInfos[groupIndex - 1].ppsMixNaluTypesInPicBitPos = minp->getPpsMixNaluTypesInPicBitPos();
+            minpInfos[groupIndex - 1].ppsId                      = minp->getPpsId();
+        }
+        return minpInfos;
+    }
+
     InitTrackInfo HeifReaderImpl::extractInitTrackInfo(const TrackBox* trackBox)
     {
         InitTrackInfo initTrackInfo;
@@ -2581,7 +3552,7 @@ namespace HEIF
         }
 
         // Always generate track duration regardless of the information in the header
-        trackInfo.durationTS = DecodePts::PresentationTimeTS(decodePts.getSpan());
+        trackInfo.durationTS = static_cast<DecodePts::PresentationTimeTS>(decodePts.getSpan());
         trackInfo.pMap       = decodePts.getTime(mediaTimeScale);
         trackInfo.pMapTS     = decodePts.getTimeTS();
 
@@ -2592,7 +3563,7 @@ namespace HEIF
         }
         else
         {
-            trackInfo.duration = tkhdDuration / static_cast<double>(movieTimescale);
+            trackInfo.duration = static_cast<double>(tkhdDuration) / static_cast<double>(movieTimescale);
         }
 
         if (editBox != nullptr)
@@ -2606,7 +3577,7 @@ namespace HEIF
                 const auto trackDuration      = static_cast<int64_t>(trackInfo.duration * 1000u);
                 const auto editListDuration   = static_cast<int64_t>(decodePts.getSpan() * 1000u / mediaTimeScale);
                 const auto editListDurationTS = decodePts.getSpan();
-                trackInfo.repetitions         = double(trackDuration) / double(editListDuration);
+                trackInfo.repetitions         = static_cast<double>(trackDuration) / static_cast<double>(editListDuration);
                 auto iter                     = trackInfo.pMap.cbegin();
                 int64_t nextSampleTimestamp   = iter->first;
                 int64_t offset                = 0;
@@ -2633,7 +3604,7 @@ namespace HEIF
                     if (iterTS == trackInfo.pMapTS.cend())
                     {
                         iterTS = trackInfo.pMapTS.cbegin();
-                        offsetTS += editListDurationTS;
+                        offsetTS += static_cast<int64_t>(editListDurationTS);
                     }
                     nextSampleTimestampTS = iterTS->first + offsetTS;
                 }
@@ -2738,7 +3709,7 @@ namespace HEIF
                     }
                     else
                     {
-                        logError() << "Error: Coding Constraints Box not present in a sample description entry.";
+                        logWarning() << "Coding Constraints Box not present in a sample description entry." << '\n';
                     }
                     sampleProperties.hasClap = (sampleEntry->getClap() != nullptr);
                     sampleProperties.hasAuxi = (sampleEntry->getAuxi() != nullptr);
@@ -2804,8 +3775,8 @@ namespace HEIF
             }
             else if (handlerType == "soun")
             {
-                auto sampleEntry = static_cast<const SampleEntryBox*>(
-                    stsdBox.getSampleEntry(sampleProperties.sampleDescriptionIndex.get()));
+                auto sampleEntry =
+                    stsdBox.getSampleEntry(sampleProperties.sampleDescriptionIndex.get());
                 if (sampleEntry != nullptr)
                 {
                     sampleProperties.sampleEntryType = sampleEntry->getType();
@@ -2932,7 +3903,7 @@ namespace HEIF
         for (auto entryId : sampleIds)
         {
             const uint32_t entryIndex = sgpd->getEntryIndexOfSampleId(entryId);
-            ids.push_back(sampleToGroupBox.getSampleId(entryIndex));
+            ids.emplace_back(sampleToGroupBox.getSampleId(entryIndex));
         }
 
         return ids;
@@ -2949,7 +3920,13 @@ namespace HEIF
             // FourCCInt type = entry->getType();
             if (entry != nullptr)
             {
-                parameterSetMaps[index] = makeDecoderParameterSetMap(*entry->getConfigurationRecord());
+                const DecoderConfigurationRecord* configPtr = entry->getConfigurationRecord();
+                if (configPtr == nullptr)
+                {
+                    continue;
+                }
+
+                parameterSetMaps[index] = makeDecoderParameterSetMap(*configPtr);
 
                 if (entry->isVisual())
                 {
@@ -2979,7 +3956,15 @@ namespace HEIF
     {
         Vector<TimestampIDPair> output;
 
-        // Add dependencies for each sample
+        // Track which sampleIds the output already covers so the dependency
+        // walk does not duplicate samples that are themselves entries in
+        // itemDecodingOrder. The 0xFFFFFFFF timestamp is a marker for
+        // "decode-only, no presentation time" used when a referenced sample
+        // is not present as a normal entry (a NON_OUTPUT_REFERENCE_FRAME
+        // pulled in by 'pred'); the marker MUST NOT be emitted for samples
+        // already scheduled by their real timestamp.
+        Set<SequenceImageId> emitted;
+
         for (const auto& entry : itemDecodingOrder)
         {
             Array<SequenceImageId> dependencies;
@@ -2990,10 +3975,20 @@ namespace HEIF
             {
                 for (const auto& sampleId : dependencies)
                 {
+                    if (sampleId == entry.itemId)
+                    {
+                        continue;
+                    }
+                    if (emitted.find(sampleId) != emitted.end())
+                    {
+                        continue;
+                    }
                     output.push_back(TimestampIDPair{0xffffffff, sampleId});
+                    emitted.insert(sampleId);
                 }
             }
             output.push_back(entry);
+            emitted.insert(entry.itemId);
         }
 
         return output;
@@ -3107,7 +4102,7 @@ namespace HEIF
             bool hasSamples               = prevSampleInfoSize > 0;
             if (auto* timeBox = trackFragmentBox->getTrackFragmentBaseMediaDecodeTimeBox())
             {
-                trackInfo.nextPTSTS = DecodePts::PresentationTimeTS(timeBox->getBaseMediaDecodeTime());
+                trackInfo.nextPTSTS = static_cast<DecodePts::PresentationTimeTS>(timeBox->getBaseMediaDecodeTime());
             }
             else if (!hasSamples)
             {
@@ -3157,7 +4152,7 @@ namespace HEIF
                 }
                 if ((trackRunBox->getFlags() & TrackRunBox::DataOffsetPresent) != 0)
                 {
-                    baseDataOffset += std::uint32_t(trackRunBox->getDataOffset());
+                    baseDataOffset += static_cast<std::uint32_t>(trackRunBox->getDataOffset());
                 }
 
                 // @note: if we need to support more than one trun for track we need to calculate last sample PTS +
@@ -3194,7 +4189,7 @@ namespace HEIF
     {
         for (std::size_t sampleIndex = prevSampleInfoSize; sampleIndex < sampleInfo.size(); ++sampleIndex)
         {
-            auto itemId            = SequenceImageIdPair(sequenceId, sampleIndex);
+            auto itemId            = SequenceImageIdPair(sequenceId, static_cast<std::uint32_t>(sampleIndex));
             auto parameterSetMapId = sampleInfo[sampleIndex].sampleDescriptionIndex;
             sampleToParameterSetMap.insert(std::make_pair(itemId, parameterSetMapId));
         }
@@ -3303,6 +4298,8 @@ namespace HEIF
 
     ErrorCode HeifReaderImpl::parseInitializationSegment(StreamInterface* streamInterface)
     {
+        HEIF_ENTRY_TRY
+        {
         SegmentId segmentId = 0;  // all "segment" info for initialization segment goes to key=0 of SegmentPropertiesMap
 
         State prevState = mState;
@@ -3310,12 +4307,14 @@ namespace HEIF
 
         SegmentProperties& segmentProperties = mFileProperties.segmentPropertiesMap[segmentId];
         StreamIO& io                         = segmentProperties.io;
-        io.stream.reset(CUSTOM_NEW(InternalStream, (streamInterface)));
+        io.stream.reset(customNew<InternalStream>(streamInterface));
         if (io.stream->peekEof())
         {
             mState = prevState;
             io.stream.reset();
-            return ErrorCode::FILE_READ_ERROR;
+            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                             ErrorOrigin::Reader_BoxParse,
+                             "HeifReaderImpl::parseInitializationSegment: underlying stream read failed");
         }
         io.size = streamInterface->size();
 
@@ -3346,7 +4345,9 @@ namespace HEIF
                     {
                         if (ftypFound)
                         {
-                            return ErrorCode::FILE_READ_ERROR;  // Multiple ftyp boxes.
+                            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                             ErrorOrigin::Reader_BoxParse,
+                                             "HeifReaderImpl::parseInitializationSegment: underlying stream read failed");
                         }
                         ftypFound = true;
                         error     = handleFtyp(io);
@@ -3355,7 +4356,9 @@ namespace HEIF
                     {
                         if (metaFound)
                         {
-                            return ErrorCode::FILE_READ_ERROR;  // Multiple root-level meta boxes.
+                            return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                             ErrorOrigin::Reader_BoxParse,
+                                             "HeifReaderImpl::parseInitializationSegment: underlying stream read failed");
                         }
                         metaFound = true;
                         error     = handleMeta(io);
@@ -3388,7 +4391,7 @@ namespace HEIF
                     else if (boxType == "moof")
                     {
                         logWarning() << "Skipping root level 'moof' box - not allowed in Initialization Segment"
-                                     << std::endl;
+                                     << '\n';
                         error = skipBox(io);
                     }
                     else if (boxType == "mdat")
@@ -3398,7 +4401,7 @@ namespace HEIF
                     }
                     else
                     {
-                        logWarning() << "Skipping root level box of unknown type '" << boxType << "'" << std::endl;
+                        logWarning() << "Skipping root level box of unknown type '" << boxType << "'" << '\n';
                         error = skipBox(io);
                     }
                 }
@@ -3406,13 +4409,19 @@ namespace HEIF
         }
         catch (ISOBMFF::Exception& exc)
         {
-            logError() << "parseInitializationSegment Exception Error: " << exc.what() << std::endl;
-            error = ErrorCode::FILE_READ_ERROR;
+            logError() << "parseInitializationSegment Exception Error: " << exc.what() << '\n';
+            error = HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                   ErrorOrigin::Reader_BoxParse,
+                                   "HeifReaderImpl::parseInitializationSegment: ISOBMFF parse threw",
+                                   exc);
         }
         catch (std::exception& e)
         {
-            logError() << "parseInitializationSegment std::exception Error:: " << e.what() << std::endl;
-            error = ErrorCode::FILE_READ_ERROR;
+            logError() << "parseInitializationSegment std::exception Error:: " << e.what() << '\n';
+            error = HEIF_FAIL_FROM(ErrorCode::FILE_READ_ERROR,
+                                   ErrorOrigin::Reader_FileRead,
+                                   "HeifReaderImpl::parseInitializationSegment: stream IO threw",
+                                   e);
         }
 
         if (error == ErrorCode::OK && (!ftypFound || !moovFound))
@@ -3433,7 +4442,9 @@ namespace HEIF
             // should clear stream after eof, but this does not seem to be always happening.
             if ((!io.stream->good()) && (!io.stream->eof()))
             {
-                return ErrorCode::FILE_READ_ERROR;
+                return HEIF_FAIL(ErrorCode::FILE_READ_ERROR,
+                                 ErrorOrigin::Reader_BoxParse,
+                                 "HeifReaderImpl::parseInitializationSegment: underlying stream read failed");
             }
             io.stream->clear();
 
@@ -3442,11 +4453,10 @@ namespace HEIF
 
             mState = State::READY;
         }
-        else
-        {
-            /// @todo reset reader?
-        }
         return error;
+        } //HEIF_ENTRY_TRY
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Reader_BoxParse,
+                              "HeifReaderImpl::parseInitializationSegment: exception escaped firewall")
     }
 
     void HeifReaderImpl::setupSegmentSidxFallback(SegmentTrackId segTrackId)
@@ -3501,7 +4511,7 @@ namespace HEIF
                     {
                         continue;
                     }
-                    trackInfo.samples.at(pair.second).compositionTimesTS.push_back(std::uint64_t(pair.first));
+                    trackInfo.samples.at(pair.second).compositionTimesTS.push_back(static_cast<std::uint64_t>(pair.first));
                 }
             }
         }
@@ -3588,7 +4598,9 @@ namespace HEIF
         }
         catch (...)
         {
-            return ErrorCode::INVALID_ITEM_ID;
+            return HEIF_FAIL_FROM_UNKNOWN(ErrorCode::INVALID_ITEM_ID,
+                                          ErrorOrigin::Reader_ItemValidation,
+                                          "getRawItemType: getItemById/getItemType threw");
         }
 
         return ErrorCode::OK;
@@ -3596,16 +4608,18 @@ namespace HEIF
 
     CleanAperture makeClap(const CleanApertureBox* clapBox)
     {
-        assert(clapBox);
+        if(clapBox == nullptr){
+            throw std::invalid_argument("makeClap: clapBox is null");
+        }
 
         CleanAperture clap{};
         clap.widthN            = clapBox->getWidth().numerator;
         clap.widthD            = clapBox->getWidth().denominator;
         clap.heightN           = clapBox->getHeight().numerator;
         clap.heightD           = clapBox->getHeight().denominator;
-        clap.horizontalOffsetN = clapBox->getHorizOffset().numerator;
+        clap.horizontalOffsetN = static_cast<int32_t>(clapBox->getHorizOffset().numerator);
         clap.horizontalOffsetD = clapBox->getHorizOffset().denominator;
-        clap.verticalOffsetN   = clapBox->getVertOffset().numerator;
+        clap.verticalOffsetN   = static_cast<int32_t>(clapBox->getVertOffset().numerator);
         clap.verticalOffsetD   = clapBox->getVertOffset().denominator;
 
         return clap;
@@ -3613,14 +4627,15 @@ namespace HEIF
 
     AuxiliaryType makeAuxi(const AuxiliaryTypeInfoBox* auxiBox)
     {
-        assert(auxiBox);
-        String auxTypeStr = auxiBox->getAuxType();
-
-        AuxiliaryType auxi;
+    if (auxiBox == nullptr)
+    {
+        throw std::invalid_argument("makeAuxi: auxiBox is null");
+    }
+    String auxTypeStr = auxiBox->getAuxType();        AuxiliaryType auxi;
         auxi.auxType = Array<char>(auxTypeStr.size());
         for (String::const_iterator it = auxTypeStr.begin(); it != auxTypeStr.end(); ++it)
         {
-            auxi.auxType.elements[it - auxTypeStr.begin()] = char(*it);
+            auxi.auxType.elements[it - auxTypeStr.begin()] = static_cast<char>(*it);
         }
         auxi.subType = {};
         return auxi;
@@ -3628,7 +4643,13 @@ namespace HEIF
 
     bool HeifReaderImpl::isImageItem(const ItemInfo& info)
     {
-        static const std::set<FourCCInt> IMAGE_TYPES = {"avc1", "hvc1", "grid", "iovl", "iden", "jpeg"};
+        // "lhv1" is the L-HEVC enhancement-layer item type defined by
+        // ISO/IEC 14496-15 Section 9.6. It carries an lhvC decoder configuration
+        // record and (per Section 9.4) lives alongside a base-layer hvc1 item; the
+        // pair together encodes a layered image. Without lhv1 in this set
+        // every L-HEVC enhancement item silently disappears from
+        // getMasterImages() and from the public item enumeration helpers.
+        static const std::set<FourCCInt> IMAGE_TYPES = {"avc1", "hvc1", "lhv1", "vvc1", "grid", "iovl", "iden", "jpeg", "av01", "tmap"};
 
         auto type = info.type;
 
@@ -3652,11 +4673,11 @@ namespace HEIF
         if (trackBox->getHasTrackGroup())
         {
             const auto& trackGroupTypeBoxes = trackBox->getTrackGroupBox().getTrackGroupTypeBoxes();
-            for (auto trackGroupTypeBox : trackGroupTypeBoxes)
+            for (const auto &trackGroupTypeBox : trackGroupTypeBoxes)
             {
                 Vector<SequenceId> trackGroupId;
                 const TrackGroupTypeBox& box = trackGroupTypeBox;
-                trackGroupId.push_back(box.getTrackGroupId());
+                trackGroupId.emplace_back(box.getTrackGroupId());
                 TrackGroupInfo trackGroupInfo{};
                 trackGroupInfo.ids               = trackGroupId;
                 trackGroupInfoMap[box.getType()] = trackGroupInfo;
@@ -3716,6 +4737,7 @@ namespace HEIF
     template Array<SequenceImageId> makeArray(const Vector<SequenceImageId>& container);
     template Array<TimestampIDPair> makeArray(const Vector<TimestampIDPair>& container);
     template Array<char> makeArray(const String& container);
+    template Array<std::string> makeArray(const Vector<std::string>& container);
     template Array<std::int32_t> makeArray(const Vector<std::int32_t>& container);
     template Array<std::uint32_t> makeArray(const Vector<std::uint32_t>& container);
     template Array<std::int64_t> makeArray(const Vector<std::int64_t>& container);
@@ -3723,5 +4745,6 @@ namespace HEIF
     template Array<std::uint8_t> makeArray(const Vector<std::uint8_t>& container);
     template Array<EditUnit> makeArray(const Vector<EditUnit>& container);
     template Array<FourCC> makeArray(const Vector<FourCC>& container);
+    template Array<bool> makeArray(const Vector<bool>& container);
 
 }  // namespace HEIF

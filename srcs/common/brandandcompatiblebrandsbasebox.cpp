@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,14 +13,36 @@
 
 #include "brandandcompatiblebrandsbasebox.hpp"
 
+#include "bitstream.hpp"
+
 #include <algorithm>
 
 #include "fullbox.hpp"
-#include "log.hpp"
+#include <vector>
 
 template <>
 BrandAndCompatibleBrandsBaseBox<Box>::BrandAndCompatibleBrandsBaseBox(FourCCInt boxType)
     : Box(boxType)
+    , mMajorBrand()
+    , mMinorVersion(0)
+    , mCompatibleBrands()
+{
+}
+
+template <>
+BrandAndCompatibleBrandsBaseBox<Box>::BrandAndCompatibleBrandsBaseBox(FourCCInt boxType,
+                                                                       std::uint8_t /*version*/,
+                                                                       std::uint32_t /*flags*/)
+    : Box(boxType)
+    , mMajorBrand()
+    , mMinorVersion(0)
+    , mCompatibleBrands()
+{
+}
+
+template <>
+BrandAndCompatibleBrandsBaseBox<FullBox>::BrandAndCompatibleBrandsBaseBox(FourCCInt boxType)
+    : FullBox(boxType, 0, 0)
     , mMajorBrand()
     , mMinorVersion(0)
     , mCompatibleBrands()
@@ -110,8 +132,17 @@ void BrandAndCompatibleBrandsBaseBox<T>::writeBox(ISOBMFF::BitStream& bitstr) co
 
     // major_brand
     bitstr.write32Bits(mMajorBrand.getUInt32());
+
     // minor_version
-    bitstr.write32Bits(mMinorVersion);
+    //Only write minor version for defined brand mini files (currently only VVC)
+    if(mMinorVersion == FourCCInt("vvi3").getUInt32()){
+        bitstr.write32Bits(mMinorVersion);
+    }else{
+        //"When any of the brands specified in this document is in the major_brand, the minor_version 
+        //shall be set to zero when writing the file, and ignored by readers. "
+        bitstr.write32Bits(0);
+    }
+
     // compatible_brands[]
     for (auto const& brand : mCompatibleBrands)
     {

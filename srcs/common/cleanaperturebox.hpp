@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,7 +17,6 @@
 #include <cstdint>
 
 #include "bbox.hpp"
-#include "customallocator.hpp"
 
 /** @brief Implementation of CleanApertureBox as defined in ISO/IEC 14496-12.
  *  @details The class can be used as an item property, and can be included in VisualSampleEntry as on optional box. */

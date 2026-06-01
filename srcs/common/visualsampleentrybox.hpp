@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,11 @@
 #ifndef VISUALSAMPLEENTRYBOX_HPP
 #define VISUALSAMPLEENTRYBOX_HPP
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "sampleentrybox.hpp"
+#include "fourccint.hpp"
+#include <cstdint>
+#include <memory>
 
 
 class CleanApertureBox;
@@ -109,8 +111,8 @@ public:
     bool isVisual() const override;
 
 private:
-    std::uint16_t mWidth;                         ///< Sample display width
-    std::uint16_t mHeight;                        ///< Sample display height
+    std::uint16_t mWidth{0};                         ///< Sample display width
+    std::uint16_t mHeight{0};                        ///< Sample display height
     String mCompressorName;                       ///< Compressor name used, e.g. "HEVC Coding"
     std::shared_ptr<CleanApertureBox> mClap;      ///< Clean Aperture data structure
     std::shared_ptr<AuxiliaryTypeInfoBox> mAuxi;  ///< HEIF: AuxiliaryTypeInfoBox

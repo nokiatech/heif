@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,13 +13,19 @@
 #pragma once
 
 #include <DerivedImageItem.h>
+#include "ErrorCodes.h"
+#include "heifcommondatatypes.h"
+#include <cstdint>
+#include <vector>
 
 namespace HEIFPP
 {
     class OverlayImageItem : public HEIFPP::DerivedImageItem
     {
+        // Construction is private; use Heif::create<T>() factory.
+        friend class HEIFPP::Heif;
+
     public:
-        OverlayImageItem(Heif* aHeif);
         ~OverlayImageItem() override = default;
 
         /** Returns the red component of the background color. The RGB values are in the sRGB color space as defined in
@@ -87,13 +93,14 @@ namespace HEIFPP
         Result removeImage(ImageItem* aImage) override;
 
     protected:
+        explicit OverlayImageItem(Heif* aHeif);
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
         std::uint16_t mR, mG, mB, mA;
         std::vector<HEIF::Overlay::Offset> mOffsets;
 
-    private:
+    public:
         OverlayImageItem& operator=(const OverlayImageItem&) = delete;
         OverlayImageItem& operator=(OverlayImageItem&&) = delete;
         OverlayImageItem(const OverlayImageItem&)       = delete;

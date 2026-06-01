@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,8 +12,11 @@
 
 #include "DerivedImageItem.h"
 
+#include "Heif.h"
+#include "helpers.h"
+
 #include <heifreader.h>
-#include <heifwriter.h>
+#include "ImageItem.h"
 
 using namespace HEIFPP;
 
@@ -27,10 +30,8 @@ DerivedImageItem::~DerivedImageItem()
     {
         if (*it)
         {
-            if (!removeSourceLink(*it, this))
-            {
-                HEIF_ASSERT(false);
-            }
+            HEIF_LOG_INVARIANT(removeSourceLink(*it, this),
+                               "~DerivedImageItem: removeSourceLink failed");
         }
         it = mSourceImages.erase(it);
     }
@@ -87,10 +88,8 @@ void DerivedImageItem::setSourceImage(std::uint32_t aId, ImageItem* aImage)
         auto it = mSourceImages.begin() + static_cast<std::int32_t>(aId);
         if (*it)
         {
-            if (!removeSourceLink(*it, this))
-            {
-                HEIF_ASSERT(false);
-            }
+            HEIF_LOG_INVARIANT(removeSourceLink(*it, this),
+                               "setSourceImage(id): removeSourceLink failed");
         }
         *it = aImage;
         if (aImage)
@@ -110,10 +109,8 @@ bool DerivedImageItem::setSourceImage(ImageItem* aOldImage, ImageItem* aNewImage
             found = true;
             if (aOldImage)
             {
-                if (!removeSourceLink(aOldImage, this))
-                {
-                    HEIF_ASSERT(false);
-                }
+                HEIF_LOG_INVARIANT(removeSourceLink(aOldImage, this),
+                                   "setSourceImage(old,new): removeSourceLink failed");
             }
             sourceImage = aNewImage;
             if (aNewImage)
@@ -132,10 +129,8 @@ void DerivedImageItem::removeSourceImage(std::uint32_t aId)
         auto it = mSourceImages.begin() + static_cast<std::int32_t>(aId);
         if (*it)
         {
-            if (!removeSourceLink(*it, this))
-            {
-                HEIF_ASSERT(false);
-            }
+            HEIF_LOG_INVARIANT(removeSourceLink(*it, this),
+                               "removeSourceImage(id): removeSourceLink failed");
         }
         mSourceImages.erase(it);
     }
@@ -160,10 +155,8 @@ bool DerivedImageItem::removeSourceImage(ImageItem* aImage)
             found = true;
             if (aImage)
             {
-                if (!removeSourceLink(aImage, this))
-                {
-                    HEIF_ASSERT(false);
-                }
+                HEIF_LOG_INVARIANT(removeSourceLink(aImage, this),
+                                   "removeSourceImage(image): removeSourceLink failed");
             }
             it = mSourceImages.erase(it);
         }
@@ -181,11 +174,12 @@ void DerivedImageItem::reserveSourceImages(std::uint32_t aCount)
     {
         for (auto it = mSourceImages.begin() + static_cast<std::int32_t>(aCount); it != mSourceImages.end(); ++it)
         {
-            if (!removeSourceLink(*it, this))
+            if (*it)
             {
-                HEIF_ASSERT(false);
+                HEIF_LOG_INVARIANT(removeSourceLink(*it, this),
+                                   "reserveSourceImages: removeSourceLink failed");
+                *it = nullptr;
             }
-            *it = nullptr;
         }
     }
     mSourceImages.resize(aCount);

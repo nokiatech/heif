@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -20,6 +20,11 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <cstddef>
+#include <functional>
+#include <iosfwd>
+#include <new>
+#include <utility>
 
 namespace HEIF
 {
@@ -83,6 +88,18 @@ public:
     }
 };
 
+// The CUSTOM_NEW / CUSTOM_DELETE macros are intentionally not parenthesized:
+//   * `class` is a type-name used in sizeof(class), placement-new of `class`,
+//     and explicit `~class()` destruction -- none of those grammar positions
+//     accept a parenthesized type.
+//   * `args` is a parens-tuple by call convention (callers always write
+//     `CUSTOM_NEW(Foo, (a, b))`); wrapping it in parens here would expand to
+//     `Foo((a, b))` and call the ctor with a single comma-tuple expression.
+//
+// DEPRECATED -- use customNew<T>(...) / customDelete(ptr) instead.
+// Retained only for third-party code that may reference them; all in-tree
+// call sites have been migrated to the function-template equivalents.
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define CUSTOM_NEW(class, args) (new (customAllocate(sizeof(class))) class args)
 #define CUSTOM_NEW_ARRAY(class, n) (customAllocateArray<class>(n))
 #define CUSTOM_DELETE(object, class)  \
@@ -93,10 +110,45 @@ public:
             customDeallocate(object); \
         }                             \
     }
+// NOLINTEND(bugprone-macro-parentheses)
 #define CUSTOM_DELETE_ARRAY(object, class)               \
     {                                                    \
         customDestructAndDeallocateArray<class>(object); \
     }
+
+// Type-safe replacements for CUSTOM_NEW / CUSTOM_DELETE.
+// T is deduced or explicitly specified; no separate type token to get wrong.
+
+/// Allocate via the custom allocator and placement-construct T.
+/// Returns a raw T*; caller is responsible for pairing with customDelete().
+template <typename T, typename... Args>
+T* customNew(Args&&... args)
+{
+    void* mem = customAllocate(sizeof(T));
+    try
+    {
+        return new (mem) T(std::forward<Args>(args)...);
+    }
+    catch (...)
+    {
+        customDeallocate(mem);
+        throw;
+    }
+}
+
+/// Destroy and deallocate a pointer returned by customNew<T>().
+/// T is deduced from the pointer type -- no way to pass the wrong destructor.
+/// nullptr is a no-op (matches free(3) / delete convention).
+template <typename T>
+void customDelete(T* ptr)
+{
+    if (ptr)
+    {
+        ptr->~T();
+        customDeallocate(ptr);
+    }
+}
+
 #if !defined(HEIF_GCC_ALLOCATOR_FIX)
 #define HEIF_GCC_ALLOCATOR_FIX 0
 #endif
@@ -139,18 +191,28 @@ public:
     ~Allocator() = default;
 
     template <class U>
+    // NOLINTBEGIN(google-explicit-constructor): the std::allocator interface
+    // requires this rebind-style converting ctor to be implicit so the standard
+    // library can transparently convert Allocator<T> to Allocator<U>.
     Allocator(const Allocator<U>&) noexcept
     {
     }
+    // NOLINTEND(google-explicit-constructor)
 
     T* allocate(const std::size_t n) const
     {
-        return static_cast<T*>(customAllocate(n * sizeof(T)));
+        // When T is a pointer type (e.g. Allocator<SomeBox*> backing a vector
+        // of pointers), sizeof(T) is intentionally sizeof(void*) -- we are
+        // sizing storage for an array of pointers, not for the pointees.
+        return static_cast<T*>(customAllocate(n * sizeof(T)));  // NOLINT(bugprone-sizeof-expression)
     }
 
     void deallocate(T* const p, std::size_t) const noexcept
     {
-        return customDeallocate((void*) p);
+        // reinterpret_cast (not C-cast or static_cast) makes the deliberate
+        // type-erasure explicit when T itself is a pointer type, satisfying
+        // bugprone-multi-level-implicit-pointer-conversion.
+        return customDeallocate(reinterpret_cast<void*>(p));
     }
 
     template <class U>
@@ -179,6 +241,9 @@ using Set = std::set<T, Compare, Allocator<T>>;
 template <typename K, typename V, typename Compare = std::less<K>>
 using Map = std::map<K, V, Compare, Allocator<std::pair<const K, V>>>;
 
+template <typename K, typename V, typename Compare = std::less<K>>
+using MultiMap = std::multimap<K, V, Compare, Allocator<std::pair<const K, V>>>;
+
 typedef std::basic_istringstream<char, std::char_traits<char>, Allocator<char>> IStringStream;
 typedef std::basic_ostringstream<char, std::char_traits<char>, Allocator<char>> OStringStream;
 
@@ -200,7 +265,7 @@ std::shared_ptr<T> makeCustomShared(Args&&... args)
 template <typename T, typename ParentWithVirtualDeleteOrSelf, typename... Args>
 UniquePtr<T, ParentWithVirtualDeleteOrSelf> makeCustomUnique(Args&&... args)
 {
-    return UniquePtr<T, ParentWithVirtualDeleteOrSelf>(CUSTOM_NEW(T, (std::forward<Args>(args)...)));
+    return UniquePtr<T, ParentWithVirtualDeleteOrSelf>(customNew<T>(std::forward<Args>(args)...));
 }
 
 namespace ISOBMFF
@@ -209,7 +274,7 @@ namespace ISOBMFF
     {
     public:
         Exception() = default;
-        Exception(const char* msg)
+        explicit Exception(const char* msg)
             : mMessage(msg)
         {
         }
@@ -227,12 +292,12 @@ namespace ISOBMFF
 class RuntimeError : public ISOBMFF::Exception
 {
 public:
-    RuntimeError(const char* str)
+    explicit RuntimeError(const char* str)
         : Exception(str)
     {
     }
 
-    RuntimeError(const String& str)
+    explicit RuntimeError(const String& str)
         : Exception(str.c_str())
     {
     }
@@ -241,7 +306,7 @@ public:
 class LogicError : public ISOBMFF::Exception
 {
 public:
-    LogicError(const char* str)
+    explicit LogicError(const char* str)
         : Exception(str)
     {
     }

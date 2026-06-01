@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,8 @@
 #ifndef COMPOSITIONTODECODEBOX_HPP
 #define COMPOSITIONTODECODEBOX_HPP
 
-#include "bitstream.hpp"
-#include "customallocator.hpp"
 #include "fullbox.hpp"
+#include <cstdint>
 
 /** @brief Composition To Decode Box class
  *  @details 'cslg' box implementation. Extends from FullBox. Only version 0 is supported.
@@ -72,19 +71,19 @@ private:
     void updateVersion();
 
     /// @brief Composition to Dts shift value as specified in the ISOBMFF standard
-    std::int64_t mCompositionToDtsShift;
+    std::int64_t mCompositionToDtsShift{0};
 
     /// @brief Least Decode to Display Time Delta value as specified in the ISOBMFF standard
-    std::int64_t mLeastDecodeToDisplayDelta;
+    std::int64_t mLeastDecodeToDisplayDelta{0};
 
     /// @brief Greatest Decode to Display Time Delta value as specified in the ISOBMFF standard
-    std::int64_t mGreatestDecodeToDisplayDelta;
+    std::int64_t mGreatestDecodeToDisplayDelta{0};
 
     /// @brief Composition start time value as specified in the ISOBMFF standard
-    std::int64_t mCompositionStartTime;
+    std::int64_t mCompositionStartTime{0};
 
     /// @brief Composition end time value as specified in the ISOBMFF standard
-    std::int64_t mCompositionEndTime;
+    std::int64_t mCompositionEndTime{0};
 };
 
 #endif /* end of include guard: COMPOSITIONTODECODEBOX_HPP */

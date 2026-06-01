@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,20 +13,24 @@
 #pragma once
 
 #include <MimeItem.h>
+#include "heifcommondatatypes.h"
 
 namespace HEIFPP
 {
     class XMPItem : public HEIFPP::MimeItem
     {
+        // Construction is private; use Heif::create<T>() factory.
+        friend class HEIFPP::Heif;
+
     public:
-        XMPItem(Heif* aHeif);
         ~XMPItem() override = default;
 
     protected:
+        explicit XMPItem(Heif* aHeif);
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         XMPItem& operator=(const XMPItem&) = delete;
         XMPItem& operator=(XMPItem&&) = delete;
         XMPItem(const XMPItem&)       = delete;

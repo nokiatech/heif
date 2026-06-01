@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,18 +12,27 @@
 
 #pragma once
 
-#include <Heif.h>
+#include <heifcommondatatypes.h>
+#include <heifreaderdatatypes.h>
+#include <helpers.h>
+
+#include <cstdint>
+#include <map>
+#include <utility>
+#include <vector>
+
+namespace HEIF
+{
+    class Reader;
+    class Writer;
+}  // namespace HEIF
 
 namespace HEIFPP
 {
-    class Track;
-    class VideoTrack;
-    class Sample;
-    class AudioSample;
-    class VideoSample;
-    class CleanApertureProperty;
-    class AuxProperty;
     class AlternativeTrackGroup;
+    class EntityGroup;
+    class Heif;
+    class Sample;
 
     /** @brief Track abstraction*/
     class Track
@@ -124,7 +133,7 @@ namespace HEIFPP
         /** Returns a pointer to the custom user data. */
         const void* getContext() const;
 
-        const HEIF::SequenceId& getId() const;
+        const HEIF::SequenceId& getId() const noexcept;
 
         /** Returns the parent HEIF object of the item */
         Heif* getHeif();
@@ -161,7 +170,7 @@ namespace HEIFPP
 
         void setId(const HEIF::SequenceId&);
 
-        Track(Heif* aHeif);
+        explicit Track(Heif* aHeif);
         Heif* mHeif;
         HEIF::SequenceId mId;
         const void* mContext;
@@ -192,7 +201,7 @@ namespace HEIFPP
         HEIF::FourCC mHandler;  // soun,vide,pict
         HEIF::Array<HEIF::TimestampIDPair> mTimestamps;
 
-    private:
+    public:
         Track& operator=(const Track&) = delete;
         Track& operator=(Track&&) = delete;
         Track(const Track&)       = delete;

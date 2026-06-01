@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,15 +13,17 @@
 
 #include "samplesizebox.hpp"
 
-#include "log.hpp"
+#include "bitstream.hpp"
+
+#include "fourccint.hpp"
+#include <stdint.h>
 
 using namespace std;
 
 SampleSizeBox::SampleSizeBox()
     : FullBox("stsz", 0, 0)
-    , mSampleSize(0)
-    , mSampleCount(0)
-    , mEntrySize()
+    , 
+     mEntrySize()
 {
 }
 
@@ -71,9 +73,10 @@ void SampleSizeBox::writeBox(ISOBMFF::BitStream& bitstr) const
     writeFullBoxHeader(bitstr);
     bitstr.write32Bits(mSampleSize);
     bitstr.write32Bits(mSampleCount);  // number of samples in the track
-    for (uint32_t i = 0; i < mSampleCount; i++)
-    {
-        bitstr.write32Bits(mEntrySize.at(i));
+    if(mSampleSize == 0){
+        for(uint32_t i = 0; i < mSampleCount; i++){
+            bitstr.write32Bits(mEntrySize.at(i));
+        }
     }
 
     updateSize(bitstr);

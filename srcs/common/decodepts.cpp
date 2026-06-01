@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,28 +12,22 @@
  */
 
 #include "decodepts.hpp"
+#include "customallocator.hpp"
 
 #include <algorithm>
-#include <iostream>
 #include <iterator>
 #include <limits>
 
 #include "compositionoffsetbox.hpp"
-#include "compositiontodecodebox.hpp"
 #include "editbox.hpp"
 #include "timetosamplebox.hpp"
+#include "trackrunbox.hpp"
+#include <utility>
+#include <vector>
 
 DecodePts::DecodePts()
-    : mEditListBox(nullptr)
-    , mMovieTimescale(0)
-    , mMediaTimescale(0)
-    , mTimeToSampleBox(nullptr)
-    , mCompositionOffsetBox(nullptr)
-    , mCompositionToDecodeBox(nullptr)
-    , mTrackRunBox(nullptr)
-    , mMovieOffset(0)
-{
-}
+     
+= default;
 
 template <typename T>
 void DecodePts::applyEdit(T& entry)
@@ -146,7 +140,7 @@ void DecodePts::applyShiftEditForward(T& entry)
     {
         segmentBeginTime = entry.mMediaTime;
         segmentEndTime =
-            entry.mMediaTime + static_cast<std::int64_t>(fromMovieToMediaTS(entry.mSegmentDuration / sampleTimeRatio));
+            entry.mMediaTime + static_cast<std::int64_t>(fromMovieToMediaTS(static_cast<double>(entry.mSegmentDuration) / sampleTimeRatio));
     }
 
     std::int64_t lastInsertedSampleT1 = segmentBeginTime;
@@ -166,7 +160,7 @@ void DecodePts::applyShiftEditForward(T& entry)
             if (sampleT0 < segmentEndTime)
             {
                 std::int64_t insertedSampleDuration = 0;
-                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (sampleT0 - lastInsertedSampleT1));
+                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * static_cast<double>(sampleT0 - lastInsertedSampleT1));
                 mMoviePtsTS.insert(std::make_pair(mMovieOffset, sampleId));
                 if (sampleT1 <= segmentEndTime)
                 {
@@ -178,7 +172,7 @@ void DecodePts::applyShiftEditForward(T& entry)
                     insertedSampleDuration = segmentEndTime - sampleT0;
                     lastInsertedSampleT1   = segmentEndTime;
                 }
-                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (insertedSampleDuration));
+                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * static_cast<double>(insertedSampleDuration));
             }
             else
             {
@@ -189,7 +183,7 @@ void DecodePts::applyShiftEditForward(T& entry)
         {
             if (sampleT1 > segmentBeginTime)
             {
-                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (segmentBeginTime - lastInsertedSampleT1));
+                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * static_cast<double>(segmentBeginTime - lastInsertedSampleT1));
                 std::int64_t insertedSampleDuration = 0;
                 mMoviePtsTS.insert(std::make_pair(mMovieOffset, sampleId));
                 if (sampleT1 >= segmentEndTime)
@@ -202,7 +196,7 @@ void DecodePts::applyShiftEditForward(T& entry)
                     insertedSampleDuration = sampleT1 - segmentBeginTime;
                     lastInsertedSampleT1   = sampleT1;
                 }
-                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (insertedSampleDuration));
+                mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * static_cast<double>(insertedSampleDuration));
             }
             else
             {
@@ -213,7 +207,7 @@ void DecodePts::applyShiftEditForward(T& entry)
     if (entry.mSegmentDuration)
     {
         // gap the distance between last inserted sample and the segment end time
-        mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * (segmentEndTime - lastInsertedSampleT1));
+        mMovieOffset += static_cast<std::uint64_t>(sampleTimeRatio * static_cast<double>(segmentEndTime - lastInsertedSampleT1));
     }
 }
 
@@ -348,6 +342,8 @@ void DecodePts::applyEditList()
             case 1:
                 applyEdit(mEditListBox->getEntry<EditListBox::EntryVersion1>(i));
                 break;
+            default:
+                break;
             }
         }
     }
@@ -357,9 +353,9 @@ bool DecodePts::unravel()
 {
     bool success = true;
 
-    /** @todo Currently it has been assumed that only version 0 entries are used
-     * in the time to sample box. To be more generic the getSampleTimes method
-     * in TimeToSample box has to be templated. */
+    ///@todo Currently it has been assumed that only version 0 entries are used
+    // in the time to sample box. To be more generic the getSampleTimes method
+    // in TimeToSample box has to be templated.
 
     // First fetch the decode time stamps
     Vector<std::uint32_t> mediaDtsTS;
@@ -466,7 +462,7 @@ void DecodePts::unravelTrackRun()
     {
         std::transform(mediaDts.begin(), mediaDts.end(), ptsDelta.begin(), std::back_inserter(mediaPts),
                        [](std::uint32_t theMediaDts, std::int32_t thePtsDelta) {
-                           return std::uint32_t(std::int32_t(theMediaDts) + thePtsDelta);
+                           return static_cast<std::uint32_t>(static_cast<std::int32_t>(theMediaDts) + thePtsDelta);
                        });
     }
     else
@@ -494,7 +490,7 @@ void DecodePts::applyLocalTime(std::uint64_t ptsOffset)
     {
         for (const auto& entry : mMediaPtsTS)
         {
-            mMoviePtsTS.insert(std::make_pair(PresentationTimeTS(ptsOffset) + entry.first, entry.second));
+            mMoviePtsTS.insert(std::make_pair(static_cast<PresentationTimeTS>(ptsOffset) + entry.first, entry.second));
         }
 
         if (mMoviePtsTS.size() > 0)

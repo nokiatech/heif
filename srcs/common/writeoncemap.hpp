@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -51,14 +51,14 @@ public:
     WriteOnceMap(const WriteOnceMap<Key, Value>& other);
 
     /** Moves a map. No map is explicitly validated at this point. */
-    WriteOnceMap(WriteOnceMap<Key, Value>&& other);
+    WriteOnceMap(WriteOnceMap<Key, Value>&& other) noexcept;
 
     ~WriteOnceMap();
 
     /** Copies a map. The _source_ map is validated first to reduce
      * the overhead of copying the map multiple times. */
     WriteOnceMap<Key, Value>& operator=(const WriteOnceMap<Key, Value>& other);
-    WriteOnceMap<Key, Value>& operator=(WriteOnceMap<Key, Value>&& other);
+    WriteOnceMap<Key, Value>& operator=(WriteOnceMap<Key, Value>&& other) noexcept;
 
     /** Implements the equal_range operation familiar from Map */
     std::pair<iterator, iterator> equal_range(const Key& key);
@@ -124,12 +124,12 @@ private:
     static bool lessThanProjectFirst(const Entry& a, const Entry& b)
     {
         return a.first < b.first;
-    };
+    }
 
     static bool equalThanProjectFirst(const Entry& a, const Entry& b)
     {
         return a.first == b.first;
-    };
+    }
 };
 
 template <typename Key, typename Value>
@@ -157,7 +157,7 @@ WriteOnceMap<Key, Value>::WriteOnceMap(const WriteOnceMap<Key, Value>& other)
 }
 
 template <typename Key, typename Value>
-WriteOnceMap<Key, Value>::WriteOnceMap(WriteOnceMap<Key, Value>&& other)
+WriteOnceMap<Key, Value>::WriteOnceMap(WriteOnceMap<Key, Value>&& other) noexcept
     : mData(std::move(other.mData))
     , mRequireValidation(other.mRequireValidation)
     , mNumInsertionsCountdown(other.mNumInsertionsCountdown)
@@ -191,10 +191,7 @@ void WriteOnceMap<Key, Value>::checkValidation() const
 }
 
 template <typename Key, typename Value>
-WriteOnceMap<Key, Value>::~WriteOnceMap()
-{
-    // nothing
-}
+WriteOnceMap<Key, Value>::~WriteOnceMap() = default;
 
 template <typename Key, typename Value>
 WriteOnceMap<Key, Value>& WriteOnceMap<Key, Value>::operator=(const WriteOnceMap<Key, Value>& other)
@@ -209,7 +206,7 @@ WriteOnceMap<Key, Value>& WriteOnceMap<Key, Value>::operator=(const WriteOnceMap
 }
 
 template <typename Key, typename Value>
-WriteOnceMap<Key, Value>& WriteOnceMap<Key, Value>::operator=(WriteOnceMap<Key, Value>&& other)
+WriteOnceMap<Key, Value>& WriteOnceMap<Key, Value>::operator=(WriteOnceMap<Key, Value>&& other) noexcept
 {
     if (&other != this)
     {

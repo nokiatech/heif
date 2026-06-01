@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,16 +14,19 @@
 #ifndef WRITERIMPL_HPP
 #define WRITERIMPL_HPP
 
-#include "OutputStreamInterface.h"
+#include <cstdint>
 #include "extendedtypebox.hpp"
 #include "filetypebox.hpp"
 #include "heifcommondatatypes.h"
 #include "heifwriter.h"
-#include "idgenerators.hpp"
 #include "mediadatabox.hpp"
 #include "metabox.hpp"
 #include "moviebox.hpp"
 #include "writerdatatypesinternal.hpp"
+#include "vvcparser.hpp"
+#include "customallocator.hpp"
+#include "editbox.hpp"
+#include "heifwriterdatatypes.h"
 
 namespace HEIF
 {
@@ -57,6 +60,10 @@ namespace HEIF
         ErrorCode addProperty(const Rotate& irot, PropertyId& propertyId) override;
         ErrorCode addProperty(const Scale& iscl, PropertyId& propertyId) override;
         ErrorCode addProperty(const RelativeLocation& rloc, PropertyId& propertyId) override;
+        ErrorCode addProperty(const LayerSelector& lsel, PropertyId& propertyId) override;
+        ErrorCode addProperty(const TargetOls& tols, PropertyId& propertyId) override;
+        ErrorCode addProperty(const OperatingPointsInfo& oinf, PropertyId& propertyId) override;
+        ErrorCode addProperty(const SubSampleInfo& subs, PropertyId& propertyId) override;
         ErrorCode addProperty(const PixelAspectRatio& pasp, PropertyId& propertyId) override;
         ErrorCode addProperty(const PixelInformation& pixi, PropertyId& propertyId) override;
         ErrorCode addProperty(const ColourInformation& colr, PropertyId& propertyId) override;
@@ -66,6 +73,13 @@ namespace HEIF
         ErrorCode addProperty(const CreationTimeInformation& crtt, PropertyId& propertyId) override;
         ErrorCode addProperty(const ModificationTimeInformation& mdft, PropertyId& propertyId) override;
         ErrorCode addProperty(const AccessibilityText& altt, PropertyId& propertyId) override;
+        ErrorCode addProperty(const SpatialExtents& imir, PropertyId& propertyId) override;
+        ErrorCode addProperty(const ContentLightLevel& clli, PropertyId& propertyId) override;
+        ErrorCode addProperty(const MasteringDisplayColorVolume& mdcv, PropertyId& propertyId) override;
+        ErrorCode addProperty(const ContentColorVolume& cclv, PropertyId& propertyId) override;
+        ErrorCode addProperty(const AmbientViewingEnvironment& amve, PropertyId& propertyId) override;
+        ErrorCode addProperty(const ReferenceViewingEnvironment& reve, PropertyId& propertyId) override;
+        ErrorCode addProperty(const NominalDiffuseWhite& ndwh, PropertyId& propertyId) override;
 
         ErrorCode addProperty(const RawProperty& property,
                               const bool isTransformative,
@@ -126,11 +140,30 @@ namespace HEIF
                            const MediaDataId& mediaDataId,
                            const SampleInfo& sampleInfo,
                            SequenceImageId& sampleid) override;
+        ErrorCode addSubpictureTrack(const SequenceId& baseSequenceId,
+                                     unsigned int decodingOrder,
+                                     SequenceId& id) override;
         ErrorCode addAudioTrack(const Rational& timeBase, const AudioParams& config, SequenceId& id) override;
         ErrorCode addAudio(const SequenceId& sequenceId,
                            const MediaDataId& mediaDataId,
                            const SampleInfo& sampleInfo,
                            SequenceImageId& sampleid) override;
+
+        ErrorCode addMixedNalTypeGrouping(const SequenceId& baseTrackId,
+                                          unsigned int ppsId,
+                                          MixedNalUnitTypeId& minpId) override;
+        ErrorCode addMixedNalPair(const MixedNalUnitTypeId& minpId,
+                                  std::uint16_t mixSubpTrackIdx1,
+                                  std::uint16_t mixSubpTrackIdx2) override;
+        ErrorCode addMixedNalGrouping(const MixedNalUnitTypeId& minpId,
+                                      const SequenceImageId& sequenceImageId) override;
+        ErrorCode addRectangularRegionGrouping(const Trif& trif, const SequenceId& sequenceId) override;
+        ErrorCode addVvcSubpictureLayoutMapEntry(const Sulm& sulm, const SequenceId& sequenceId) override;
+        ErrorCode addTrackReference(const SequenceId& from, const TrackGroupId& to, const FourCC& refType) override;
+        ErrorCode addTrackReference(const SequenceId& from, const SequenceId& to, const FourCC& refType) override;
+        void resetSubpictureIds() override;
+        ErrorCode setSubstituteSubpictureTrack(const SequenceId& sequence, bool isSubstituteSubpictureTrack) override;
+
 
     private:
         ErrorCode isValidSequenceImage(const SequenceId& sequenceId, const SequenceImageId& sequenceImageId) const;
@@ -147,6 +180,12 @@ namespace HEIF
         void writeRefSampleList(ImageSequence& sequence);
         void writeMetadataItemGroups(ImageSequence& sequence);
         void writeTrackGroups(ImageSequence& imageSequence);
+
+        void writeVvcSubpicIdEntry(ImageSequence& sequence);
+        ErrorCode writeVvcSubpicOrderEntry(ImageSequence& sequence);
+        ErrorCode writeVvcMixedNalUnitTypePicEntry(ImageSequence& sequence);
+        ErrorCode writeRectangularRegionGroupEntry(ImageSequence& sequence);
+        ErrorCode writeVvcSubpictureLayoutMapEntry(ImageSequence& sequence);
 
         // helpers for handling fed mediaData
         ErrorCode validateFedMediaData(const Data& aData);
@@ -245,16 +284,34 @@ namespace HEIF
         void addCreationTimeInformation(const ImageId& imageId);
 
     private:
-        enum class State
+        enum class State : std::uint8_t
         {
             UNINITIALIZED,  ///< State before starting to write the file and after closing it
             WRITING         ///< State during writing media data and metadata to the file
         };
 
     private:
-        State mState;  ///< Running state of the reader API implementation
+
+        bool mWriteMini;    ///< Flag for writer to keep track if writer output target type is a mini
+        
+        State mState{State::UNINITIALIZED};  ///< Running state of the reader API implementation
 
         Map<DecoderConfigId, Array<DecoderSpecificInfo>> mAllDecoderConfigs;
+
+        /// One-shot per-VVC-config cache. Holds the SpsInfo / PpsInfo derived
+        /// from the SPS / PPS NALs supplied via feedDecoderConfig() so that
+        /// finalize-time consumers (e.g. writeVvcSubpicOrderEntry) can read
+        /// pps/sps id, subpic mapping, etc. without re-invoking
+        /// VvcParser::parseSps / parsePps. Only entries for VVC configs are
+        /// populated; non-VVC configs have no entry in this map.
+        struct VvcParsedConfig
+        {
+            bool                       hasSps = false;
+            bool                       hasPps = false;
+            VvcParser::SpsInfo         sps{};
+            VvcParser::PpsInfo         pps{};
+        };
+        Map<DecoderConfigId, VvcParsedConfig> mVvcParsedConfigs;
         Map<MediaDataId, MediaData> mMediaData;
         Map<std::uint64_t, MediaDataId> mMediaDataHashes;
 
@@ -294,6 +351,8 @@ namespace HEIF
         bool mWriteItemCreationTimes = false;  ///< Create and associate CreationTimeProperty to added image items.
 
         PropertyId mPredRrefPropertyId = 0;  ///< ID of 'pred' Required reference types property. 0 if not created.
+
+        std::uint16_t mNextSubpicId = 0;  ///< Next free subpicture ID
     };
 
     namespace

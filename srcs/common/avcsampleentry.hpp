@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,9 +15,7 @@
 #define AVCSAMPLEENTRY_HPP
 
 #include "avcconfigurationbox.hpp"
-#include "bitstream.hpp"
 #include "codingconstraintsbox.hpp"
-#include "customallocator.hpp"
 #include "visualsampleentrybox.hpp"
 
 /** @brief AVC Sample Entry class. Extends from VisualSampleEntry.
@@ -73,7 +71,7 @@ public:
 private:
     AvcConfigurationBox mAvcConfigurationBox;
     CodingConstraintsBox mCodingConstraintsBox;
-    bool mIsCodingConstraintsPresent;
+    bool mIsCodingConstraintsPresent{false};
 };
 
 #endif

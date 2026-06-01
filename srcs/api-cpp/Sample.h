@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,10 +12,26 @@
 
 #pragma once
 
-#include <DecoderConfiguration.h>
-#include <Heif.h>
+#include <heifcommondatatypes.h>
+#include <helpers.h>
+
+#include <cstdint>
+#include <vector>
+
+namespace HEIF
+{
+    class Reader;
+    class Writer;
+    enum SampleType : std::uint8_t;
+    struct SampleInformation;
+}  // namespace HEIF
+
 namespace HEIFPP
 {
+    class DecoderConfig;
+    class EntityGroup;
+    class Heif;
+    class MetaItem;
     class Track;
 
     class Sample
@@ -50,7 +66,7 @@ namespace HEIFPP
 
         void setSampleType(const HEIF::SampleType&);
         const HEIF::SampleType& getSampleType() const;
-        const HEIF::SequenceImageId& getId() const;
+        const HEIF::SequenceImageId& getId() const noexcept;
         void setDuration(std::uint64_t);
         std::uint64_t getDuration() const;
 
@@ -66,10 +82,16 @@ namespace HEIFPP
          * @param [in] aLength: The amount of data. */
         void setItemData(const std::uint8_t* aData, std::uint64_t aLength);
 
-        /** Returns the size of the sample data */
+        /** Returns the size of the sample data.
+         *  HEIFPP layer: hides the probe-and-fetch protocol. The bytes are
+         *  pre-loaded by `loadSampleData()` and cached on the parent `Heif`.
+         *  Uses the probe-and-fetch protocol (Layer 2), relating to
+         *  the raw `HEIF::Reader::getItemData` probe. */
         std::uint64_t getSampleDataSize() const;
 
-        /** Returns a pointer to the sample data */
+        /** Returns a pointer to the sample data. Buffer is owned by this
+         *  Sample; lifetime is the parent `Heif`. See `getSampleDataSize()`
+         *  for the byte-fetch contract. */
         const std::uint8_t* getSampleData();
 
         /** Returns the amount of metadata items */
@@ -116,7 +138,7 @@ namespace HEIFPP
 
         void setId(const HEIF::SequenceImageId&);
 
-        Sample(Heif* aHeif);
+        explicit Sample(Heif* aHeif);
         Heif* mHeif;
 
         HEIF::FourCC mType;
@@ -148,7 +170,7 @@ namespace HEIFPP
     private:
         HEIF::ErrorCode loadSampleData(const HEIF::SequenceId& aTrackId);
 
-    private:
+    public:
         Sample& operator=(const Sample&) = delete;
         Sample& operator=(Sample&&) = delete;
         Sample(const Sample&)       = delete;

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,8 +14,8 @@
 #ifndef CODINGCONSTRAINTSBOX_HPP
 #define CODINGCONSTRAINTSBOX_HPP
 
-#include "customallocator.hpp"
 #include "fullbox.hpp"
+#include <cstdint>
 
 /** @brief Coding Constraints box class
  *  @details 'ccst' box implementation. It includes fields specifying that certain constraints are obeyed by the
@@ -57,9 +57,9 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    bool mAllRefPicsIntra;        ///< CodingConstraintsBox field all_ref_pics_intra
-    bool mIntraPredUsed;          ///< CodingConstraintsBox field intra_pred_used
-    std::uint8_t mMaxRefPicUsed;  ///< CodingConstraintsBox field max_ref_per_pic
+    bool mAllRefPicsIntra{false};        ///< CodingConstraintsBox field all_ref_pics_intra
+    bool mIntraPredUsed{false};          ///< CodingConstraintsBox field intra_pred_used
+    std::uint8_t mMaxRefPicUsed{0};  ///< CodingConstraintsBox field max_ref_per_pic
 };
 
 #endif /* end of include guard: CODINGCONSTRAINTSBOX_HPP */

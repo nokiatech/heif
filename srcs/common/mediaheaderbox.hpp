@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,8 +16,6 @@
 
 #include <cstdint>
 
-#include "bitstream.hpp"
-#include "customallocator.hpp"
 #include "fullbox.hpp"
 
 /** @brief Media Header Box class. Extends from FullBox.
@@ -78,11 +76,11 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    std::uint64_t mCreationTime;      ///< Creation time
-    std::uint64_t mModificationTime;  ///< Modification time
-    std::uint32_t mTimeScale;         ///< Timescale
-    std::uint64_t mDuration;          ///< Duration
-    std::uint16_t mLanguage;          ///< Language
+    std::uint64_t mCreationTime{0};      ///< Creation time
+    std::uint64_t mModificationTime{0};  ///< Modification time
+    std::uint32_t mTimeScale{0};         ///< Timescale
+    std::uint64_t mDuration{0};          ///< Duration
+    std::uint16_t mLanguage{0};          ///< Language
 };
 
 #endif /* end of include guard: MEDIAHEADERBOX_HPP */

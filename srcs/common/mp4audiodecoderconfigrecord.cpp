@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,11 @@
 
 #include "mp4audiodecoderconfigrecord.hpp"
 
+#include <cstdint>
+#include <utility>
+#include <vector>
+
+#include "customallocator.hpp"
 #include "elementarystreamdescriptorbox.hpp"
 
 MP4AudioDecoderConfigurationRecord::MP4AudioDecoderConfigurationRecord(ElementaryStreamDescriptorBox& aBox)
@@ -20,7 +25,7 @@ MP4AudioDecoderConfigurationRecord::MP4AudioDecoderConfigurationRecord(Elementar
 {
 }
 
-void MP4AudioDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap) const
+void MP4AudioDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap, const uint16_t& /*nuh_layer_id*/) const
 {
     Vector<std::uint8_t> decoderSpecInfo;
     aMap.clear();
@@ -29,4 +34,9 @@ void MP4AudioDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& a
         // Only handle AudioSpecificConfig from 1.6.2.1 AudioSpecificConfig of ISO/IEC 14496-3:200X(E) subpart 1
         aMap.insert({DecoderParameterType::AudioSpecificConfig, std::move(decoderSpecInfo)});
     }
+}
+
+void MP4AudioDecoderConfigurationRecord::writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const
+{
+    mESDBox.writeBox(bitstr);
 }

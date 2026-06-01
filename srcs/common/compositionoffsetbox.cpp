@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,10 @@
 #include "compositionoffsetbox.hpp"
 
 #include <limits>
-#include <stdexcept>
 
 #include "bitstream.hpp"
+#include "fourccint.hpp"
+#include <vector>
 
 CompositionOffsetBox::CompositionOffsetBox()
     : FullBox("ctts", 0, 0)

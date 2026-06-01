@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,6 +16,8 @@
 #include "OutputStreamInterface.h"
 #include "customallocator.hpp"
 #include "fileoutputstream.hpp"
+#include <cstdint>
+#include <cstdio>
 
 
 namespace HEIF

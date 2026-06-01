@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,9 +13,13 @@
 
 #include "editbox.hpp"
 
-#include <stdexcept>
+#include "bitstream.hpp"
 
-#include "log.hpp"
+
+#include "fourccint.hpp"
+#include <stddef.h>
+#include <utility>
+#include <vector>
 
 EditBox::EditBox()
     : Box("edts")
@@ -120,7 +124,7 @@ void EditListBox::writeBox(ISOBMFF::BitStream& bitstr) const
     else if (mEntryVersion1.empty() == false)
     {
         bitstr.write32Bits(static_cast<std::uint32_t>(mEntryVersion1.size()));
-        for (const auto& entry : mEntryVersion0)
+        for (const auto& entry : mEntryVersion1)
         {
             bitstr.write64Bits(entry.mSegmentDuration);
             bitstr.write64Bits(static_cast<std::uint64_t>(entry.mMediaTime));

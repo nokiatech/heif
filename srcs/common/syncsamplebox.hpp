@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,6 +16,13 @@
 
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+
+#include <cstdint>
+
+namespace ISOBMFF
+{
+    class BitStream;
+}
 
 /** @brief SyncSampleBox class. Extends from FullBox.
  *  @details 'stss' box contains Sync sample entries as defined in the ISOBMFF standard. */
@@ -44,7 +51,7 @@ public:
 private:
     Vector<std::uint32_t> mSampleNumber;  ///< Vector of sync sample Ids
 
-    int64_t mSampleCountMax;
+    int64_t mSampleCountMax{-1};
 };
 
 #endif /* end of include guard: SYNCSAMPLEBOX_HPP */

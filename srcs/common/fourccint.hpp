@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -29,6 +29,7 @@ public:
         // nothing
     }
 
+    // NOLINTNEXTLINE(google-explicit-constructor): implicit so call sites can pass uint32_t literals directly.
     FourCCInt(std::uint32_t value) noexcept
         : mValue(value)
     {
@@ -37,15 +38,17 @@ public:
 
     /** Accept 4-character string literals and check their length at
      * compile time */
+    // NOLINTNEXTLINE(google-explicit-constructor): implicit so Box("foo") and FourCCInt("foo") == x compile.
     FourCCInt(const char (&str)[5])
-        : mValue(0 | (std::uint32_t(str[0]) << 24) | (std::uint32_t(str[1]) << 16) | (std::uint32_t(str[2]) << 8) |
-                 (std::uint32_t(str[3]) << 0))
+        : mValue(0 | (static_cast<std::uint32_t>(str[0]) << 24) | (static_cast<std::uint32_t>(str[1]) << 16) | (static_cast<std::uint32_t>(str[2]) << 8) |
+                 (static_cast<std::uint32_t>(str[3]) << 0))
     {
         // nothing
     }
 
     /** Checks the argument length at runtime */
-    explicit FourCCInt(const String& str);
+    // NOLINTNEXTLINE(google-explicit-constructor): implicit for symmetry with the const char[5] ctor.
+    FourCCInt(const String& str);
 
     std::uint32_t getUInt32() const
     {

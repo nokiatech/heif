@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -19,6 +19,9 @@
 #include <initializer_list>
 #include <iterator>
 
+#include <string>
+#include <map>
+
 #include "heifexport.h"
 #include "heifid.h"
 
@@ -29,41 +32,56 @@
 
 namespace HEIF
 {
-    /** @brief HEIF file reader and writer ErrorCode enumeration. */
-    enum class ErrorCode
+    /** @brief HEIF file reader and writer ErrorCode enumeration.
+     *          These might need updating with more informational comment
+     *           descriptions based on actual usage in code.
+     *
+     * Underlying type pinned to std::uint8_t. */
+    enum class ErrorCode : std::uint8_t
     {
-        OK = 0,
-        ALLOCATOR_ALREADY_SET,
-        ALREADY_INITIALIZED,
-        BRANDS_NOT_SET,
-        BUFFER_SIZE_TOO_SMALL,
-        DECODER_CONFIGURATION_ERROR,
-        FILE_HEADER_ERROR,
-        FILE_OPEN_ERROR,
-        FILE_READ_ERROR,
-        FTYP_ALREADY_WRITTEN,
-        HIDDEN_PRIMARY_ITEM,
-        INVALID_FUNCTION_PARAMETER,
-        INVALID_GROUP_ID,
-        INVALID_ITEM_ID,
-        INVALID_MEDIADATA_ID,
-        INVALID_METADATAITEM_ID,
-        INVALID_MEDIA_FORMAT,
-        INVALID_PROPERTY_INDEX,
-        INVALID_REFERENCE_COUNT,
-        INVALID_SAMPLE_DESCRIPTION_INDEX,
-        INVALID_SEGMENT,
-        INVALID_SEQUENCE_ID,
-        INVALID_DECODER_CONFIG_ID,
-        INVALID_SEQUENCE_IMAGE_ID,
-        MEDIA_PARSING_ERROR,
-        MEMORY_TOO_SMALL_BUFFER,
-        NOT_APPLICABLE,
-        PRIMARY_ITEM_NOT_SET,
-        PROTECTED_ITEM,
-        UNINITIALIZED,
-        UNPROTECTED_ITEM,
-        UNSUPPORTED_CODE_TYPE
+        OK = 0,                          ///< Operation completed successfully.
+        ALLOCATOR_ALREADY_SET,           ///< Custom allocator was already configured.
+        ALREADY_INITIALIZED,             ///< Reader or writer instance already initialised.
+        BRANDS_NOT_SET,                  ///< File brands have not been set before writing.
+        BUFFER_SIZE_TOO_SMALL,           ///< Caller-supplied buffer is too small for the result.
+        CONTENT_TYPE_NOT_SET,            ///< Content type not configured for the item.
+        DECODER_CONFIGURATION_ERROR,     ///< Decoder configuration record is invalid or missing.
+        FILE_HEADER_ERROR,               ///< File-level header (ftyp/meta) could not be parsed.
+        FILE_OPEN_ERROR,                 ///< File could not be opened for reading.
+        FILE_READ_ERROR,                 ///< I/O error while reading file data.
+        FTYP_ALREADY_WRITTEN,            ///< FileTypeBox has already been emitted.
+        HIDDEN_PRIMARY_ITEM,             ///< Primary item is marked as hidden (spec violation).
+        INVALID_FUNCTION_PARAMETER,      ///< A function argument is out of range or null.
+        INVALID_GROUP_ID,                ///< Entity group ID does not exist in this file.
+        INVALID_ITEM_ID,                 ///< Item ID does not exist in this file.
+        INVALID_MEDIADATA_ID,            ///< Media data ID does not exist in this file.
+        INVALID_METADATAITEM_ID,         ///< Metadata item ID does not exist in this file.
+        INVALID_MEDIA_FORMAT,            ///< Media format is not recognised or supported.
+        INVALID_PROPERTY_INDEX,          ///< Property index is out of range.
+        INVALID_REFERENCE_COUNT,         ///< Reference count does not match expectations.
+        INVALID_SAMPLE_DESCRIPTION_INDEX,///< Sample description index is out of range.
+        INVALID_SEGMENT,                 ///< Segment index or data is invalid.
+        INVALID_SEQUENCE_ID,             ///< Sequence (track) ID does not exist in this file.
+        INVALID_DECODER_CONFIG_ID,       ///< Decoder configuration ID does not exist.
+        INVALID_SEQUENCE_IMAGE_ID,       ///< Sequence image (sample) ID does not exist.
+        MEDIA_PARSING_ERROR,             ///< Media-level bitstream parsing failed.
+        MEMORY_TOO_SMALL_BUFFER,         ///< Internal buffer allocation was too small.
+        NOT_APPLICABLE,                  ///< Operation is not applicable to this item/track.
+        NO_MEDIA,                        ///< No media data found in the file.
+        PRIMARY_ITEM_NOT_SET,            ///< Primary item has not been designated.
+        PROTECTED_ITEM,                  ///< Item is protected; access requires decryption.
+        UNINITIALIZED,                   ///< Reader or writer has not been initialised.
+        UNPROTECTED_ITEM,                ///< Item is not protected when protection was expected.
+        UNSUPPORTED_CODE_TYPE,           ///< Codec type is not supported by this build.
+
+        // MiniBox-specific error codes.
+        TMI,                             ///< Too many items for a MiniBox-constrained file.
+        MISSING_PROPERTIES,              ///< MinBox requires ispe, colr, pixi, and a codec config.
+        MULTIPLE_GAINMAPS,               ///< More than one gain map is not supported in MiniBox.
+        INVALID_EXIF_ORIENTATION_VALUE,  ///< Exif orientation value is outside the 0-7 range.
+        BYTESTREAM_READ_ERROR,           ///< Low-level bitstream read failed.
+        VVC_DISABLED,                    ///< VVC support is disabled in this build.
+        UNKNOWN_ERROR                    ///< Unclassified internal error.
     };
 
     struct HEIF_DLL_PUBLIC FourCC
@@ -73,39 +91,36 @@ namespace HEIF
             : value{}
         {
         }
+        // NOLINTNEXTLINE(google-explicit-constructor): public API: integrators write FourCC fcc = 0x68656963; ("heic").
         inline FourCC(uint32_t v) noexcept
         {
-            value[0] = char((v >> 24) & 0xff);
-            value[1] = char((v >> 16) & 0xff);
-            value[2] = char((v >> 8) & 0xff);
-            value[3] = char((v >> 0) & 0xff);
+            value[0] = static_cast<char>((v >> 24) & 0xff);
+            value[1] = static_cast<char>((v >> 16) & 0xff);
+            value[2] = static_cast<char>((v >> 8) & 0xff);
+            value[3] = static_cast<char>((v >> 0) & 0xff);
             value[4] = '\0';
         }
+        // NOLINTNEXTLINE(google-explicit-constructor): public API: integrators write FourCC fcc = "heic";
         inline FourCC(const char* str) noexcept
         {
-            value[0] = str[0];
-            value[1] = str[1];
-            value[2] = str[2];
-            value[3] = str[3];
+            // Copy up to 4 characters, stopping at the null terminator
+            // to avoid reading past the end of short strings (e.g. "").
+            for (int i = 0; i < 4; ++i)
+            {
+                value[i] = str[i];
+                if (str[i] == '\0')
+                {
+                    for (int j = i + 1; j < 4; ++j)
+                    {
+                        value[j] = '\0';
+                    }
+                    break;
+                }
+            }
             value[4] = '\0';
         }
-        inline FourCC(const FourCC& fourcc) noexcept
-        {
-            value[0] = fourcc.value[0];
-            value[1] = fourcc.value[1];
-            value[2] = fourcc.value[2];
-            value[3] = fourcc.value[3];
-            value[4] = '\0';
-        }
-        inline FourCC& operator=(const FourCC& other)
-        {
-            value[0] = other.value[0];
-            value[1] = other.value[1];
-            value[2] = other.value[2];
-            value[3] = other.value[3];
-            value[4] = '\0';
-            return *this;
-        }
+        inline FourCC(const FourCC& fourcc) noexcept = default;
+        inline FourCC& operator=(const FourCC& other) = default;
         inline bool operator==(const FourCC& other) const
         {
             return (value[0] == other.value[0]) && (value[1] == other.value[1]) && (value[2] == other.value[2]) &&
@@ -152,7 +167,7 @@ namespace HEIF
         size_t size;
         T* elements;
         Array();
-        Array(size_t n);
+        explicit Array(size_t n);
         Array(const Array& other);
         Array& operator=(const Array& other);
         inline T& operator[](size_t index)
@@ -196,6 +211,8 @@ namespace HEIF
         virtual ~Array();
     };
 
+    // NOLINTBEGIN(google-explicit-constructor) -- IdType wraps a uint with intentional implicit
+    // conversion from the underlying integer; that's the public API contract for these handles.
     IdType(std::uint32_t, GroupId);
     IdType(std::uint32_t, ImageId);
     IdType(std::uint32_t, SegmentId);
@@ -205,6 +222,8 @@ namespace HEIF
     IdType(std::uint32_t, PropertyId);
     IdType(std::uint32_t, MetadataItemId);
     IdType(std::uint32_t, TrackGroupId);
+    IdType(std::uint32_t, MixedNalUnitTypeId);
+    // NOLINTEND(google-explicit-constructor)
 
     struct HEIF_DLL_PUBLIC Rational
     {
@@ -219,6 +238,12 @@ namespace HEIF
         AVC_PPS = 8,  ///< H.264/AVC Picture Parameter Set (PPS) nal unit, bytestream header (0001) if any is stripped
                       ///< internally.
 
+        VVC_VPS = 14,
+        VVC_SPS = 15,
+        VVC_PPS = 16,
+        VVC_APS_PREFIX = 17,
+        VVC_APS_SUFFIX = 18,
+
         HEVC_VPS = 32,  ///< H.265/HEVC Video Parameter Set (VPS) nal unit, bytestream header (0001) if any is stripped
                         ///< internally.
         HEVC_SPS = 33,  ///< H.265/HEVC Sequence Parameter Set (SPS) nal unit, bytestream header (0001) if any is
@@ -231,13 +256,17 @@ namespace HEIF
 
         AudioSpecificConfig = 63,  ///< As defined in 1.6.2.1 AudioSpecificConfig of ISO/IEC 14496-3:200X(E)
 
-        JPEG = 108  ///< This number probably comes from ISO/IEC 10918-1
+        JPEG = 108,  ///< This number probably comes from ISO/IEC 10918-1
+
+        //Placeholder, use with caution
+        RAW = 255   ///< RAW typing, used to passing unrecognized data
     };
 
     struct HEIF_DLL_PUBLIC DecoderSpecificInfo
     {
         DecoderSpecInfoType decSpecInfoType;  // can be "SPS" and "PPS" for AVC, additional "VPS" for HEVC
         Array<uint8_t> decSpecInfoData;
+                int id;
     };
 
     struct HEIF_DLL_PUBLIC ItemDescription
@@ -262,6 +291,13 @@ namespace HEIF
         uint32_t angle;  ///< Angle of rotation in anti-clockwise direction. Valid values are 0, 90, 180 and 270.
     };
 
+    /// Data of descriptive item property Image Spatial Extents 'ispe'
+    struct HEIF_DLL_PUBLIC SpatialExtents
+    {
+        std::uint32_t mImageWidth;   ///< Width of the reconstructed image in pixels.
+        std::uint32_t mImageHeight;  ///< Height of the reconstructed image in pixels.
+    };
+
     /// Data of Image scaling transformative item property 'iscl'.
     struct HEIF_DLL_PUBLIC Scale
     {
@@ -280,6 +316,98 @@ namespace HEIF
         uint32_t verticalOffset;    ///< Vertical offset in pixels of the top-most pixel row
     };
 
+    /// Data of descriptive item property Layer selector 'lsel'.
+    /// Identifies the layer of a multi-layer (e.g. L-HEVC) item that the
+    /// associated decoder configuration produces. Spec: ISO/IEC 23008-12.
+    struct HEIF_DLL_PUBLIC LayerSelector
+    {
+        uint16_t layerId;  ///< Layer identifier value of the selected layer.
+    };
+
+    /// Data of descriptive item property Target Output Layer Set 'tols'.
+    /// Identifies the target Output Layer Set within an associated 'oinf'
+    /// operating-points table for a multi-layer (e.g. L-HEVC) image item.
+    /// Spec: ISO/IEC 23008-12.
+    struct HEIF_DLL_PUBLIC TargetOls
+    {
+        uint16_t targetOlsIndex;  ///< Index of the selected output layer set in the 'oinf' table.
+    };
+
+    /// Data of descriptive item property Operating Points Information 'oinf'.
+    /// Enumerates the operating points (output layer sets), the
+    /// profile/tier/level descriptors they reference, and the inter-layer
+    /// dependency graph for a multi-layer (e.g. L-HEVC) image item.
+    /// Spec: ISO/IEC 14496-15 Section 11.6.2 (record body),
+    /// ISO/IEC 23008-12 (HEIF item-property wrapper).
+    struct HEIF_DLL_PUBLIC OperatingPointsInfo
+    {
+        struct ProfileTierLevel
+        {
+            uint8_t  generalProfileSpace;               ///< 2-bit field
+            uint8_t  generalTierFlag;                   ///< 1-bit field
+            uint8_t  generalProfileIdc;                 ///< 5-bit field
+            uint32_t generalProfileCompatibilityFlags;
+            uint64_t generalConstraintIndicatorFlags;   ///< 48-bit field, upper 16 bits zero
+            uint8_t  generalLevelIdc;
+        };
+
+        struct OperatingPointLayer
+        {
+            uint8_t ptlIdx;                  ///< 1-based index into profileTierLevels
+            uint8_t layerId;                 ///< 6-bit layer id within the OLS
+            uint8_t isOutputLayer;           ///< 1-bit flag, 0 or 1
+            uint8_t isAlternateOutputLayer;  ///< 1-bit flag, 0 or 1
+        };
+
+        struct OperatingPoint
+        {
+            uint16_t                   outputLayerSetIdx;  ///< Matches the value in a 'tols' property.
+            uint8_t                    maxTemporalId;
+            Array<OperatingPointLayer> layers;
+            uint16_t                   minPicWidth;
+            uint16_t                   minPicHeight;
+            uint16_t                   maxPicWidth;
+            uint16_t                   maxPicHeight;
+            uint8_t                    maxChromaFormat;     ///< 2-bit field
+            uint8_t                    maxBitDepthMinus8;   ///< 3-bit field
+            uint8_t                    frameRateInfoFlag;   ///< 1 if avgFrameRate / constantFrameRate are valid
+            uint8_t                    bitRateInfoFlag;     ///< 1 if maxBitRate / avgBitRate are valid
+            uint16_t                   avgFrameRate;        ///< Valid only if frameRateInfoFlag != 0
+            uint8_t                    constantFrameRate;   ///< 2-bit field, valid only if frameRateInfoFlag != 0
+            uint32_t                   maxBitRate;          ///< Valid only if bitRateInfoFlag != 0
+            uint32_t                   avgBitRate;          ///< Valid only if bitRateInfoFlag != 0
+        };
+
+        struct LayerInfo
+        {
+            uint8_t          dependentLayerId;
+            Array<uint8_t>   dependsOnLayerIds;
+            Array<uint8_t>   dimensionIdentifiers;  ///< One entry per set bit in scalabilityMask, lowest-bit first.
+        };
+
+        uint16_t                 scalabilityMask;
+        Array<ProfileTierLevel>  profileTierLevels;
+        Array<OperatingPoint>    operatingPoints;
+        Array<LayerInfo>         layers;
+    };
+
+    /// Data of descriptive item property Sub-sample information 'subs'.
+    /// Each entry describes one sub-sample (byte range) within the coded
+    /// image item's data, together with a priority and codec-specific role.
+    /// Spec: ISO/IEC 14496-12 Section 8.7.7.
+    struct HEIF_DLL_PUBLIC SubSampleInfo
+    {
+        struct SubSampleEntry
+        {
+            uint32_t subsampleSize;            ///< Byte count of this sub-sample.
+            uint8_t  subsamplePriority;        ///< Lower values are more important.
+            uint8_t  discardable;              ///< Non-zero if this sub-sample may be discarded.
+            uint32_t codecSpecificParameters;  ///< Codec-defined semantics.
+        };
+
+        Array<SubSampleEntry> subSamples;
+    };
+
     /// Data of descriptive item property Pixel aspect ratio 'pasp'.
     struct HEIF_DLL_PUBLIC PixelAspectRatio
     {
@@ -290,7 +418,24 @@ namespace HEIF
     /// Data of descriptive item property Pixel information 'pixi'.
     struct HEIF_DLL_PUBLIC PixelInformation
     {
-        Array<uint8_t> bitsPerChannel;  ///< Bits per channel for the pixels of the image.
+        struct ChannelInfo{
+            uint8_t ComponentFormat;
+            bool SubSamplingFlag;
+            bool ChannelLabelFlag;
+            uint8_t SubSamplingType;
+            uint8_t SubSamplingLocation;
+            Array<char> ChannelLabel;  ///< UTF-8 channel label string
+        };
+        /// A single channel entry: channel IDC key + channel info value.
+        /// Channel IDC values: 0=Unused, 1=Unspecified, 2=(Y/R),
+        /// 3=Second color (U/G), 4=Third color (V/B), 5=Alpha, 6=Depth, 7=Fourth color (K)
+        struct ChannelEntry{
+            uint8_t channelIdc;  ///< Channel identifier code (0-7)
+            ChannelInfo info;    ///< Channel properties
+        };
+        uint8_t numChannels;
+        Array<std::uint8_t> bitsPerChannel;  ///< Bits per each channel.
+        Array<ChannelEntry> ChannelData;     ///< Channel specific values
     };
 
     /// Data of descriptive item property Colour information 'colr'.
@@ -313,11 +458,11 @@ namespace HEIF
         uint32_t widthD;             ///< Denominator of clean aperture width fractional value, in counted pixels
         uint32_t heightN;            ///< Numerator of clean aperture height fractional value, in counted pixels
         uint32_t heightD;            ///< Denominator of clean aperture height fractional value, in counted pixels
-        uint32_t horizontalOffsetN;  ///< Numerator of fractional number to define the horizontal offset of clean
+        int32_t horizontalOffsetN;  ///< Numerator of fractional number to define the horizontal offset of clean
                                      ///< aperture center minus (width-1)/2.
         uint32_t horizontalOffsetD;  ///< Denominator of fractional number to define the horizontal offset of clean
                                      ///< aperture center minus (width-1)/2.
-        uint32_t verticalOffsetN;    ///< Numerator of fractional number to define the vertical offset of clean aperture
+        int32_t verticalOffsetN;    ///< Numerator of fractional number to define the vertical offset of clean aperture
                                      ///< center minus (height-1)/2.
         uint32_t verticalOffsetD;  ///< Denominator of fractional number to define the vertical offset of clean aperture
                                    ///< center minus (height-1)/2.
@@ -370,6 +515,60 @@ namespace HEIF
         uint64_t time;  ///< Microseconds since midnight, January 1st, 1904, in UTC time.
     };
 
+    struct HEIF_DLL_PUBLIC ContentLightLevel
+    {
+        uint16_t maxContentLightLevel;      ///< Maximum Content Light Level (MaxCLL) in candelas per square meter
+        uint16_t maxPicAverageLightLevel;   ///< Maximum Frame-Average Light Level (MaxFALL) in candelas per square
+                                            ///< meter
+    };
+
+    struct HEIF_DLL_PUBLIC MasteringDisplayColorVolume
+    {
+        Array<uint16_t> displayPrimariesX;
+        Array<uint16_t> displayPrimariesY;
+        uint16_t whitePointX;
+        uint16_t whitePointY;
+        uint32_t maxDisplayMasteringLuminance;
+        uint32_t minDisplayMasteringLuminance;
+    };
+
+    struct HEIF_DLL_PUBLIC ContentColorVolume
+    {
+        bool ccvPrimariesPresent;
+        bool ccvMinLuminanceValuePresent;
+        bool ccvMaxLuminanceValuePresent;
+        bool ccvAvgLuminanceValuePresent;
+
+        Array<uint32_t> ccvPrimariesX;
+        Array<uint32_t> ccvPrimariesY;
+
+        uint32_t ccvMinLuminanceValue;
+        uint32_t ccvMaxLuminanceValue;
+        uint32_t ccvAvgLuminanceValue;
+    };
+
+    struct HEIF_DLL_PUBLIC AmbientViewingEnvironment
+    {
+        uint32_t ambientIlluminance;
+        uint16_t ambientLightX;
+        uint16_t ambientLightY;
+    };
+
+    struct HEIF_DLL_PUBLIC ReferenceViewingEnvironment
+    {
+        uint32_t surroundLuminance;
+        uint16_t surroundLightX;
+        uint16_t surroundLightY;
+        uint32_t peripheryLuminance;
+        uint16_t peripheryLightX;
+        uint16_t peripheryLightY;
+    };
+
+    struct HEIF_DLL_PUBLIC NominalDiffuseWhite
+    {
+        uint32_t diffuseWhiteLuminance;
+    };
+
     /// Data of raw/custom item property.
     struct HEIF_DLL_PUBLIC RawProperty
     {
@@ -420,6 +619,41 @@ namespace HEIF
         Array<ImageId> imageIds;     ///< Ids of the images to display in the grid. Array size must match columns*rows.
     };
 
+    struct HEIF_DLL_PUBLIC GainMapData{
+        uint16_t minimumVersion;
+        uint16_t writerVersion;
+
+        bool isMultichannel;
+        bool useBaseColourSpace;
+
+        int channelCount;
+
+        uint32_t baseHdrHeadroomNumerator;
+        uint32_t baseHdrHeadroomDenominator;
+        uint32_t alternateHdrHeadroomNumerator;
+        uint32_t alternateHdrHeadroomDenominator;
+
+        struct Channel{
+            int32_t gainMapMinNumerator;
+            uint32_t gainMapMinDenominator;
+            int32_t gainMapMaxNumerator;
+            uint32_t gainMapMaxDenominator;
+            uint32_t gammaNumerator;
+            uint32_t gammaDenominator;
+            int32_t baseOffsetNumerator;
+            uint32_t baseOffsetDenominator;
+            int32_t alternateOffsetNumerator;
+            uint32_t alternateOffsetDenominator;
+        };
+
+        Array<Channel> channels;
+    };
+
+    struct HEIF_DLL_PUBLIC Tonemap{
+        Array<ImageId> imageIds; ///< Ids of the images to which tonemapping is applied. Array size must be 1 or more.
+        GainMapData gain_map_metadata;
+    };
+
     struct HEIF_DLL_PUBLIC CodingConstraints
     {
         bool allRefPicsIntra;  ///< This flag when set to one indicates the restriction that samples that are not sync
@@ -430,7 +664,8 @@ namespace HEIF
                                ///< within an image sequence. (value 15 = any number)
     };
 
-    enum class EditType
+    /** @brief Edit list edit unit type. Underlying type pinned to std::uint8_t. */
+    enum class EditType : std::uint8_t
     {
         EMPTY,
         DWELL,
@@ -459,6 +694,31 @@ namespace HEIF
                                      ///< true. Zero means infinite looping.
         Array<EditUnit> editUnits;   ///< Edit units in the order they should be applied.
     };
+
+    /**
+     * @brief VVC RectangularRegionGroupEntry 'trif' */
+    struct HEIF_DLL_PUBLIC Trif
+    {
+       uint16_t groupId;
+       bool rectRegionFlag;
+       uint16_t independentIdc;
+       bool fullPicture;
+       bool filteringDisabled;
+       uint16_t horizontalOffset;
+       uint16_t verticalOffset;
+       uint16_t regionWidth;
+       uint16_t regionHeight;
+       Array<std::uint16_t> dependencyRectRegionGroupIds;
+    };
+
+    /**
+     * @brief VVC VvcSubpictureLayoutMapEntry 'sulm' */
+    struct HEIF_DLL_PUBLIC Sulm
+    {
+       FourCC groupIdInfo;
+       Array<std::uint16_t> groupIds;
+    };
+
 }  // namespace HEIF
 
 #endif /* HEIFCOMMONDATATYPES_H */

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,8 +13,14 @@
 
 #include "sampletablebox.hpp"
 
+#include "bitstream.hpp"
+
 #include "log.hpp"
 #include "smallvector.hpp"
+#include "samplegroupdescriptionbox.hpp"
+#include <stdint.h>
+#include <utility>
+#include <vector>
 
 using namespace std;
 
@@ -28,7 +34,7 @@ SampleTableBox::SampleTableBox()
     , mCompositionToDecodeBox(nullptr)
     , mSampleGroupDescriptionBoxes()
     , mSampleToGroupBoxes()
-    , mHasSyncSampleBox(false)
+     
 {
 }
 
@@ -263,7 +269,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         else if (boxType == "stts")
         {
             mTimeToSampleBox.parseBox(subBitstr);
-            auto sampleCount = static_cast<uint32_t>(mTimeToSampleBox.getSampleCount());
+            auto sampleCount = mTimeToSampleBox.getSampleCount();
             if (sampleCountMax == -1)
             {
                 if (sampleCount > absoluteSampleCountMax)
@@ -297,15 +303,15 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else if (boxType == "sgpd")
         {
-            UniquePtr<SampleGroupDescriptionBox> sgpd(CUSTOM_NEW(SampleGroupDescriptionBox, ()));
+            auto sgpd = makeCustomUnique<SampleGroupDescriptionBox, SampleGroupDescriptionBox>();
             sgpd->parseBox(subBitstr);
-            mSampleGroupDescriptionBoxes.push_back(move(sgpd));
+            mSampleGroupDescriptionBoxes.push_back(std::move(sgpd));
         }
         else if (boxType == "sbgp")
         {
             SampleToGroupBox sampleToGroupBox;
             sampleToGroupBox.parseBox(subBitstr);
-            auto sampleCount = static_cast<uint32_t>(sampleToGroupBox.getNumberOfSamples());
+            auto sampleCount = sampleToGroupBox.getNumberOfSamples();
             if (sampleCountMax == -1)
             {
                 if (sampleCount > absoluteSampleCountMax)
@@ -318,7 +324,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
             {  // special case, there can be less samples defined in this box, but not more
                 throw RuntimeError("Non-matching sample counts from sbgp to rest of sample table");
             }
-            mSampleToGroupBoxes.push_back(move(sampleToGroupBox));
+            mSampleToGroupBoxes.push_back(std::move(sampleToGroupBox));
         }
         else if (boxType == "cslg")
         {
@@ -329,7 +335,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         {
             mCompositionOffsetBox = makeCustomShared<CompositionOffsetBox>();
             mCompositionOffsetBox->parseBox(subBitstr);
-            auto sampleCount = static_cast<uint32_t>(mCompositionOffsetBox->getSampleCount());
+            auto sampleCount = mCompositionOffsetBox->getSampleCount();
             if (sampleCountMax == -1)
             {
                 if (sampleCount > absoluteSampleCountMax)
@@ -346,7 +352,7 @@ void SampleTableBox::parseBox(ISOBMFF::BitStream& bitstr)
         else
         {
             logWarning() << "Skipping unknown box of type '" << boxType.getString() << "' inside SampleTableBox"
-                         << endl;
+                         << '\n';
         }
     }
 

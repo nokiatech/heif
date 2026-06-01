@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,13 +13,17 @@
 #pragma once
 
 #include <MetaItem.h>
+#include "heifcommondatatypes.h"
+#include <cstdint>
 
 namespace HEIFPP
 {
     class ExifItem : public HEIFPP::MetaItem
     {
+        // Construction is private; use Heif::create<T>() factory.
+        friend class HEIFPP::Heif;
+
     public:
-        ExifItem(Heif* aHeif);
         ~ExifItem() override;
 
         /** Returns the size of the data */
@@ -34,6 +38,7 @@ namespace HEIFPP
         void setData(const std::uint8_t* aData, std::uint64_t aSize);
 
     protected:
+        explicit ExifItem(Heif* aHeif);
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
@@ -43,7 +48,7 @@ namespace HEIFPP
     private:
         HEIF::ErrorCode loadData();
 
-    private:
+    public:
         ExifItem& operator=(const ExifItem&) = delete;
         ExifItem& operator=(ExifItem&&) = delete;
         ExifItem(const ExifItem&)       = delete;

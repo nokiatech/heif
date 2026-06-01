@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,8 +15,9 @@
 #include <AVCCodedImageItem.h>
 #include <jni.h>
 
-#include "CodedImageItem.h"
+#include "Heif.h"
 #include "Helpers.h"
+#include "jni_md.h"
 
 #define CLASS_NAME AVCImageItem
 
@@ -24,9 +25,13 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        JNI_TRY
+        {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
-        auto* nativeObject = new HEIFPP::AVCCodedImageItem(nativeHeif);
+        auto* nativeObject = nativeHeif->create<HEIFPP::AVCCodedImageItem>();
         return reinterpret_cast<jlong>(nativeObject);
+            }
+        JNI_CATCH_RETURN(0, "AVCImageItem.createContextNative")
     }
 }

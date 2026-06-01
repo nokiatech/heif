@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,12 +14,9 @@
 #ifndef TRACKFRAGMENTBOX_HPP
 #define TRACKFRAGMENTBOX_HPP
 
-#include <memory>
 
 #include "bbox.hpp"
-#include "bitstream.hpp"
 #include "customallocator.hpp"
-#include "trackextendsbox.hpp"
 #include "trackfragmentbasemediadecodetimebox.hpp"
 #include "trackfragmentheaderbox.hpp"
 #include "trackrunbox.hpp"
@@ -31,7 +28,7 @@
 class TrackFragmentBox : public Box
 {
 public:
-    TrackFragmentBox(Vector<MOVIEFRAGMENTS::SampleDefaults>& sampleDefaults);
+    explicit TrackFragmentBox(Vector<MOVIEFRAGMENTS::SampleDefaults>& sampleDefaults);
     ~TrackFragmentBox() override = default;
 
     /** @return Reference to the contained TrackFragmentHeaderBox. */

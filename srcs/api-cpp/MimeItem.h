@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,14 +13,20 @@
 #pragma once
 
 #include <MetaItem.h>
+#include "ErrorCodes.h"
+#include "heifcommondatatypes.h"
+#include <cstdint>
+#include <string>
 
 namespace HEIFPP
 {
     // generic base for all 'mime' type items. (xmp, mpeg-7, possibly others later.)
     class MimeItem : public HEIFPP::MetaItem
     {
+        // Construction is private; use Heif::create<T>() factory.
+        friend class HEIFPP::Heif;
+
     public:
-        MimeItem(Heif* aHeif);
         ~MimeItem() override;
 
         /** Gets the content type of the MimeItem */
@@ -37,10 +43,14 @@ namespace HEIFPP
          * @param [in] aType: Encoding type */
         HEIFPP::Result setContentEncoding(const std::string& aType);
 
-        /** Returns the size of the data */
+        /** Returns the size of the data.
+         *  HEIFPP layer: hides the probe-and-fetch protocol. Bytes are
+         *  loaded lazily on the first `getData()` call. See
+         *  Uses the standard probe-and-fetch protocol (Layer 2). */
         std::uint64_t getDataSize() const;
 
-        /** Returns a pointer to the data */
+        /** Returns a pointer to the data. Owned by this MimeItem; lifetime
+         *  is the parent `Heif`. */
         const std::uint8_t* getData();
 
         /** Sets the data for the MimeItem
@@ -49,6 +59,7 @@ namespace HEIFPP
         void setData(const std::uint8_t* aData, std::uint64_t aSize);
 
     protected:
+        explicit MimeItem(Heif* aHeif);
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
@@ -58,7 +69,7 @@ namespace HEIFPP
     private:
         HEIF::ErrorCode loadData();
 
-    private:
+    public:
         MimeItem& operator=(const MimeItem&) = delete;
         MimeItem& operator=(MimeItem&&) = delete;
         MimeItem(const MimeItem&)       = delete;

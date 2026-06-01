@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,8 +12,15 @@
 
 #include "IdentityImageItem.h"
 
-#include <heifreader.h>
+#include "Heif.h"
+
 #include <heifwriter.h>
+
+#include "ErrorContext.h"
+#include "DerivedImageItem.h"
+#include "ImageItem.h"
+#include <cstdint>
+#include <vector>
 
 using namespace HEIFPP;
 
@@ -66,7 +73,9 @@ Result IdentityImageItem::removeImage(ImageItem* aImage)
                 index++;
             }
         }
-        return Result::INVALID_HANDLE;
+        return HEIFPP_FAIL(Result::INVALID_HANDLE,
+                           ErrorSource::Api_Validation,
+                           "IdentityImageItem::removeImage: image not found as source");
     }
     setSourceImage(static_cast<uint32_t>(0), nullptr);
     return Result::OK;

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,15 +13,15 @@
 
 #include "itemlocationbox.hpp"
 
+#include "bitstream.hpp"
+
 #include <algorithm>
-#include <stdexcept>
+#include "fourccint.hpp"
+#include <vector>
 
 ItemLocation::ItemLocation()
-    : mItemID(0)
-    , mConstructionMethod(ConstructionMethod::FILE_OFFSET)
-    , mDataReferenceIndex(0)
-    , mBaseOffset(0)
-    , mExtentList()
+    : 
+     mExtentList()
 {
 }
 
@@ -82,11 +82,8 @@ const ExtentList& ItemLocation::getExtentList() const
 
 ItemLocationBox::ItemLocationBox()
     : FullBox("iloc", 0, 0)
-    , mOffsetSize(4)
-    , mLengthSize(4)
-    , mBaseOffsetSize(4)
-    , mIndexSize(0)
-    , mItemLocations()
+    , 
+     mItemLocations()
 {
 }
 
@@ -170,7 +167,11 @@ bool ItemLocationBox::hasItemIdEntry(std::uint32_t itemId) const
     return false;
 }
 
+// itemId+dataReferenceIndex are part of the ISO/IEC 14496-12 ItemLocationBox spec;
+// types are dictated by the standard.
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 bool ItemLocationBox::setItemDataReferenceIndex(const std::uint32_t itemId, const std::uint16_t dataReferenceIndex)
+// NOLINTEND(bugprone-easily-swappable-parameters)
 {
     const auto iter = findItem(itemId);
     if (iter != mItemLocations.end())
@@ -315,6 +316,14 @@ const ItemLocation& ItemLocationBox::getItemLocationForID(const unsigned int ite
         "ItemLocationBox::getItemLocationForID: invalid item ID, should be wrapped internally with hasItemIdEntry()");
 }
 
+uint64_t ItemLocationBox::getBaseOffset() const{
+    uint64_t minOffset = UINT64_MAX;
+    for(const ItemLocation& loc : mItemLocations){
+        if(loc.getBaseOffset() < minOffset){minOffset = loc.getBaseOffset();}
+    }
+    return minOffset;
+}
+
 const ItemLocationExtent& ItemLocation::getExtent(const unsigned int i) const
 {
     if (i >= mExtentList.size())
@@ -325,6 +334,15 @@ const ItemLocationExtent& ItemLocation::getExtent(const unsigned int i) const
     {
         return mExtentList.at(i);
     }
+}
+
+uint64_t ItemLocation::getItemSize() const
+{
+    uint64_t ItemSize = 0;
+    for(auto extent : mExtentList){
+        ItemSize += extent.mExtentLength;
+    }
+    return ItemSize;
 }
 
 ItemLocationVector::const_iterator ItemLocationBox::findItem(const std::uint32_t itemId) const

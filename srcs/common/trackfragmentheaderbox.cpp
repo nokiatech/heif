@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,16 +12,15 @@
  */
 
 #include "trackfragmentheaderbox.hpp"
+#include "customallocator.hpp"
 
-#include <stdexcept>
+#include "bitstream.hpp"
+
+#include "fourccint.hpp"
 
 TrackFragmentHeaderBox::TrackFragmentHeaderBox(std::uint32_t tr_flags)
     : FullBox("tfhd", 0, tr_flags)
-    , mTrackId(0)
-    , mBaseDataOffset(0)
-    , mSampleDescriptionIndex(0)
-    , mDefaultSampleDuration(0)
-    , mDefaultSampleSize(0)
+     
 {
     mDefaultSampleFlags.flagsAsUInt = 0;
 }

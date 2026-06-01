@@ -4,10 +4,10 @@ buildscript {
     
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.1'
+        classpath 'com.android.tools.build:gradle:8.0.1'
         
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -18,7 +18,7 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
 
@@ -27,9 +27,9 @@ task clean(type: Delete) {
 }
 
 ext {
-    compileSdkVersion = 30
+    compileSdkVersion = 34
     minSdkVersion = 27
-    targetSdkVersion = 30
+    targetSdkVersion = 34
 
     chosenAbiFilters = ["armeabi-v7a", "arm64-v8a", "x86"]
 }

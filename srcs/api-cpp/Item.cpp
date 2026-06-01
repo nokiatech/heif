@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,10 +15,15 @@
 #include <heifreader.h>
 #include <heifwriter.h>
 
+#include "ErrorContext.h"
 #include "EntityGroup.h"
+#include "Heif.h"
 #include "ItemProperty.h"
 #include "MimeItem.h"
 #include "RawProperty.h"
+#include "heifreaderdatatypes.h"
+#include "helpers.h"
+#include <stddef.h>
 
 using namespace HEIFPP;
 
@@ -43,18 +48,29 @@ const Heif* Item::getHeif() const
 }
 Item::~Item()
 {
-    for (; !mProps.empty();)
+    // Dtors are implicitly noexcept since C++11. removeProperty / removeItem
+    // reach into the HEIFPP graph (and may indirectly trip setLastError or
+    // throw if a deeper helper does). Swallow the exception here rather than
+    // call std::terminate -- the slot/sink contract carries the diagnostic.
+    try
     {
-        removeProperty(mProps.begin()->first);
-    }
+        for (; !mProps.empty();)
+        {
+            removeProperty(mProps.begin()->first);
+        }
 
-    // disconnect from groups
-    for (; !mGroups.empty();)
+        // disconnect from groups
+        for (; !mGroups.empty();)
+        {
+            (*mGroups.begin())->removeItem(this);
+        }
+
+        mHeif->removeItem(this);
+    }
+    catch (...)  // NOLINT(bugprone-empty-catch): see comment above; dtor must not throw.
     {
-        (*mGroups.begin())->removeItem(this);
+        // Already reported via the slot/sink path; nothing useful to do here.
     }
-
-    mHeif->removeItem(this);
 }
 
 void Item::setContext(const void* aContext)
@@ -128,7 +144,7 @@ void Item::setId(const HEIF::ImageId& id)
 {
     mId = id;
 }
-const HEIF::ImageId& Item::getId() const
+const HEIF::ImageId& Item::getId() const noexcept
 {
     return mId;
 }
@@ -154,8 +170,9 @@ HEIFPP::Result Item::setContentType(const std::string& aType)
     {
         if (mContentType != aType)
         {
-            // Error.
-            return HEIFPP::Result::ALREADY_SET;
+            return HEIFPP_FAIL(HEIFPP::Result::ALREADY_SET,
+                               HEIFPP::ErrorSource::Api_State,
+                               "Item::setContentType: content type already set to a different value");
         }
     }
     return HEIFPP::Result::OK;
@@ -169,6 +186,13 @@ HEIFPP::Result Item::setContentEncoding(const std::string& aType)
     if (mContentEncoding.empty())
     {
         mContentEncoding = aType;
+    }
+    else{
+        if(mContentEncoding != aType){
+            return HEIFPP_FAIL(HEIFPP::Result::ALREADY_SET,
+                               HEIFPP::ErrorSource::Api_State,
+                               "Item::setContentEncoding: content encoding already set to a different value");
+        }
     }
     return HEIFPP::Result::OK;
 }
@@ -184,7 +208,7 @@ HEIF::ErrorCode Item::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)
     {
         return error;
     }
-    HEIF_ASSERT(mType == type);
+    HEIF_LOG_INVARIANT(mType == type, "Item::load: stored type does not match fourcc reported by reader");
     const auto* i = mHeif->getItemInformation(aId);
     if (i)
     {
@@ -375,6 +399,7 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
     case HEIF::ItemPropertyType::JPGC:  ///< JPEG configuration
     case HEIF::ItemPropertyType::AVCC:  ///< AVC configuration
     case HEIF::ItemPropertyType::HVCC:  ///< HEVC configuration
+    case HEIF::ItemPropertyType::LHVC:  ///< L-HEVC configuration
     {
         // These properties should not be set with addProperty.
         invalidProp = true;
@@ -387,9 +412,12 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
     case HEIF::ItemPropertyType::COLR:
     case HEIF::ItemPropertyType::IMIR:
     case HEIF::ItemPropertyType::IROT:
+    case HEIF::ItemPropertyType::LSEL:
+    case HEIF::ItemPropertyType::OINF:
     case HEIF::ItemPropertyType::PASP:
     case HEIF::ItemPropertyType::PIXI:
     case HEIF::ItemPropertyType::RLOC:
+    case HEIF::ItemPropertyType::TOLS:
     default:
     {
         // Allow all other property types.
@@ -417,43 +445,31 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
             case HEIF::ItemPropertyType::COLR:  ///< Colour information
             case HEIF::ItemPropertyType::IMIR:  ///< Image mirror
             case HEIF::ItemPropertyType::IROT:  ///< Image rotation
+            case HEIF::ItemPropertyType::LSEL:  ///< Layer selector ('lhv1' multi-layer items, zero or one per spec)
+            case HEIF::ItemPropertyType::OINF:  ///< Operating Points Information ('lhv1' items only, MUST have exactly one)
             case HEIF::ItemPropertyType::PASP:  ///< Pixel aspect ratio
             case HEIF::ItemPropertyType::PIXI:  ///< Pixel information
             case HEIF::ItemPropertyType::RLOC:  ///< Relative location
+            case HEIF::ItemPropertyType::TOLS:  ///< Target Output Layer Set ('lhv1' items only, MUST have exactly one)
             {
                 // Allow only one.
                 invalidProp = true;
                 break;
             }
+            case HEIF::ItemPropertyType::SUBS:  ///< Sub-sample information (zero or more per HEVC/AVC item)
+            {
+                // Zero or more allowed -- do not flag as invalid.
+                break;
+            }
             case HEIF::ItemPropertyType::RAW:  ///< Property of an unrecognized/unknown type. It is accessible only as
                                                ///< raw data.
             {
-                // Low level reader does not currently support these types and returns them as raw props.
-                // Although 'lhv1' is not a valid image either.
+                // Really unknown -- allow multiples.
                 const auto* raw  = static_cast<const RawProperty*>(prop.first);
                 const auto* raw2 = static_cast<const RawProperty*>(aProp);
                 if (raw->rawType() == raw2->rawType())
                 {
-                    if ((raw->rawType() == "lsel") ||  // Layer selection          (zero or one)
-                        (raw->rawType() ==
-                         "lhvC") ||  // Layered HEVC configuration item property   ('lhv1' items only, MUST have one)
-                        (raw->rawType() ==
-                         "oinf") ||  // Operating points information property      ('lhv1' items only, MUST have one)
-                        (raw->rawType() ==
-                         "tols"))  // Target output layer set property             ('lhv1' items only, MUST have one)
-                    {
-                        // allow only one.
-                        invalidProp = true;
-                    }
-                    else if (raw->rawType() ==
-                             "subs")  // Sub-sample item property (zero or more for HEVC item and 'avc1'.)
-                    {
-                        // Zero or more.
-                    }
-                    else
-                    {
-                        // really unknown. so allow multiples.
-                    }
+                    // same unknown fourcc -- allow multiples
                 }
                 else
                 {
@@ -465,6 +481,7 @@ void Item::addProperty(ItemProperty* aProp, bool aEssential)
             case HEIF::ItemPropertyType::AVCC:
             case HEIF::ItemPropertyType::HVCC:
             case HEIF::ItemPropertyType::JPGC:
+            case HEIF::ItemPropertyType::LHVC:
             case HEIF::ItemPropertyType::ISPE:
             case HEIF::ItemPropertyType::INVALID:
             {

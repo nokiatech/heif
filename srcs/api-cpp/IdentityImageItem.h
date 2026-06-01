@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,13 +13,17 @@
 #pragma once
 
 #include <DerivedImageItem.h>
+#include "ErrorCodes.h"
+#include "heifcommondatatypes.h"
 
 namespace HEIFPP
 {
     class IdentityImageItem : public HEIFPP::DerivedImageItem
     {
+        // Construction is private; use Heif::create<T>() factory.
+        friend class HEIFPP::Heif;
+
     public:
-        IdentityImageItem(Heif* aHeif);
         ~IdentityImageItem() override = default;
 
         /** Returns the origin image of the derived image */
@@ -35,10 +39,11 @@ namespace HEIFPP
         Result removeImage(ImageItem* aImage) override;
 
     protected:
+        explicit IdentityImageItem(Heif* aHeif);
         HEIF::ErrorCode load(HEIF::Reader* aReader, const HEIF::ImageId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         IdentityImageItem& operator=(const IdentityImageItem&) = delete;
         IdentityImageItem& operator=(IdentityImageItem&&) = delete;
         IdentityImageItem(const IdentityImageItem&)       = delete;

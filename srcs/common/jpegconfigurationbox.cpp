@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,6 +14,9 @@
 #include "jpegconfigurationbox.hpp"
 
 #include "bitstream.hpp"
+#include "fourccint.hpp"
+
+#include <vector>
 
 JpegConfigurationBox::JpegDecoderConfigurationRecord::JpegDecoderConfigurationRecord(const Vector<uint8_t>& aRecord)
     : mRecord(aRecord)
@@ -22,13 +25,18 @@ JpegConfigurationBox::JpegDecoderConfigurationRecord::JpegDecoderConfigurationRe
 
 JpegConfigurationBox::JpegDecoderConfigurationRecord::~JpegDecoderConfigurationRecord() = default;
 
-void JpegConfigurationBox::JpegDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap) const
+void JpegConfigurationBox::JpegDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap, const uint16_t& /*nuh_layer_id*/) const
 {
-    aMap[JPEG] = mRecord;
+    aMap.insert({JPEG, mRecord});
+}
+
+void JpegConfigurationBox::JpegDecoderConfigurationRecord::writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const
+{
+    bitstr.write8BitsArray(mRecord,mRecord.size());
 }
 
 JpegConfigurationBox::JpegConfigurationBox()
-    : DecoderConfigurationBox("jpgC")
+    : Box("jpgC")
     , mJpegPrefix()
     , mRecord(mJpegPrefix)
 {

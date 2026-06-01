@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,15 +16,12 @@
 #include <limits>
 
 #include "bitstream.hpp"
+#include "fourccint.hpp"
 #include "fullbox.hpp"
 
 CompositionToDecodeBox::CompositionToDecodeBox()
     : FullBox("cslg", 0, 0)
-    , mCompositionToDtsShift(0)
-    , mLeastDecodeToDisplayDelta(0)
-    , mGreatestDecodeToDisplayDelta(0)
-    , mCompositionStartTime(0)
-    , mCompositionEndTime(0)
+     
 {
 }
 

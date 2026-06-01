@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,7 +13,9 @@
 
 #include "movieheaderbox.hpp"
 
-#include <stdexcept>
+#include "bitstream.hpp"
+
+#include "fourccint.hpp"
 
 using namespace std;
 
@@ -21,12 +23,9 @@ static const int MATRIX_LENGTH = 9;
 
 MovieHeaderBox::MovieHeaderBox()
     : FullBox("mvhd", 0, 0)
-    , mCreationTime(0)
-    , mModificationTime(0)
-    , mTimeScale(0)
-    , mDuration(0)
-    , mMatrix({0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000})
-    , mNextTrackID(0)
+    , 
+     mMatrix({0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000})
+     
 {
 }
 

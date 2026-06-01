@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,6 +16,13 @@
 
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+
+#include <cstdint>
+
+namespace ISOBMFF
+{
+    class BitStream;
+}
 
 /**
  * Movie Header Box class
@@ -59,12 +66,12 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    std::uint64_t mCreationTime;
-    std::uint64_t mModificationTime;
-    std::uint32_t mTimeScale;
-    std::uint64_t mDuration;
+    std::uint64_t mCreationTime{0};
+    std::uint64_t mModificationTime{0};
+    std::uint32_t mTimeScale{0};
+    std::uint64_t mDuration{0};
     Vector<std::int32_t> mMatrix;
-    std::uint32_t mNextTrackID;
+    std::uint32_t mNextTrackID{0};
 };
 
 #endif /* end of include guard: MOVIEHEADERBOX_HPP */

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -33,6 +33,8 @@ public class HEIF
 
     public static final FourCC FOURCC_AVC = new FourCC("avc1", true);
     public static final FourCC FOURCC_HEVC = new FourCC("hvc1", true);
+    public static final FourCC FOURCC_LHEVC = new FourCC("lhv1", true);
+    public static final FourCC FOURCC_VVC = new FourCC("vvc1", true);
     public static final FourCC FOURCC_JPEG = new FourCC("jpeg", true);
     public static final FourCC FOURCC_IDENTITY = new FourCC("iden", true);
     public static final FourCC FOURCC_OVERLAY = new FourCC("iovl", true);
@@ -55,11 +57,16 @@ public class HEIF
     public static final FourCC FOURCC_PIXEL_ASPECT_RATIO_PROPERTY = new FourCC("pasp", true);
     public static final FourCC FOURCC_PIXEL_INFORMATION_RATIO_PROPERTY = new FourCC("pixi", true);
     public static final FourCC FOURCC_RELATIVE_LOCATION_PROPERTY = new FourCC("rloc", true);
+    public static final FourCC FOURCC_LAYER_SELECTOR_PROPERTY = new FourCC("lsel", true);
+    public static final FourCC FOURCC_TARGET_OLS_PROPERTY = new FourCC("tols", true);
+    public static final FourCC FOURCC_OPERATING_POINTS_PROPERTY = new FourCC("oinf", true);
+    public static final FourCC FOURCC_SUBSAMPLE_PROPERTY = new FourCC("subs", true);
 
     public static final FourCC BRAND_MIF1 = new FourCC("mif1", true);
     public static final FourCC BRAND_HEIC = new FourCC("heic", true);
     public static final FourCC BRAND_HEIX = new FourCC("heix", true);
     public static final FourCC BRAND_HEVC = new FourCC("hevc", true);
+    public static final FourCC BRAND_VVIC = new FourCC("vvic", true);
     public static final FourCC BRAND_AVCS = new FourCC("avcs", true);
     public static final FourCC BRAND_AVCI = new FourCC("avci", true);
     public static final FourCC BRAND_JPEG = new FourCC("jpeg", true);
@@ -568,6 +575,10 @@ public class HEIF
         ITEM_PROPERTY_CLASSES.put(FOURCC_PIXEL_ASPECT_RATIO_PROPERTY.toString(), PixelAspectRatioProperty.class);
         ITEM_PROPERTY_CLASSES.put(FOURCC_PIXEL_INFORMATION_RATIO_PROPERTY.toString(), PixelInformationProperty.class);
         ITEM_PROPERTY_CLASSES.put(FOURCC_RELATIVE_LOCATION_PROPERTY.toString(), RelativeLocationProperty.class);
+        ITEM_PROPERTY_CLASSES.put(FOURCC_LAYER_SELECTOR_PROPERTY.toString(), LayerSelectorProperty.class);
+        ITEM_PROPERTY_CLASSES.put(FOURCC_TARGET_OLS_PROPERTY.toString(), TargetOlsProperty.class);
+        ITEM_PROPERTY_CLASSES.put(FOURCC_OPERATING_POINTS_PROPERTY.toString(), OperatingPointsProperty.class);
+        ITEM_PROPERTY_CLASSES.put(FOURCC_SUBSAMPLE_PROPERTY.toString(), SubSampleProperty.class);
     }
 
 
@@ -575,6 +586,7 @@ public class HEIF
     {
         ITEM_CLASSES = new HashMap<>();
         ITEM_CLASSES.put(FOURCC_HEVC.toString(), HEVCImageItem.class);
+        ITEM_CLASSES.put(FOURCC_VVC.toString(), VVCImageItem.class);
         ITEM_CLASSES.put(FOURCC_AVC.toString(), AVCImageItem.class);
         ITEM_CLASSES.put(FOURCC_JPEG.toString(), JPEGImageItem.class);
         ITEM_CLASSES.put(FOURCC_IDENTITY.toString(), IdentityImageItem.class);
@@ -589,6 +601,8 @@ public class HEIF
     {
         DECODER_CONFIG_CLASSES = new HashMap<>();
         DECODER_CONFIG_CLASSES.put(FOURCC_HEVC.toString(), HEVCDecoderConfig.class);
+        DECODER_CONFIG_CLASSES.put(FOURCC_LHEVC.toString(), LHEVCDecoderConfig.class);
+        DECODER_CONFIG_CLASSES.put(FOURCC_VVC.toString(), VVCDecoderConfig.class);
         DECODER_CONFIG_CLASSES.put(FOURCC_AVC.toString(), AVCDecoderConfig.class);
         DECODER_CONFIG_CLASSES.put(FOURCC_AAC.toString(), AACDecoderConfig.class);
         DECODER_CONFIG_CLASSES.put(FOURCC_JPEG.toString(), JPEGDecoderConfig.class);
@@ -598,6 +612,7 @@ public class HEIF
     {
         SAMPLE_CLASSES = new HashMap<>();
         SAMPLE_CLASSES.put(FOURCC_HEVC.toString(), HEVCSample.class);
+        SAMPLE_CLASSES.put(FOURCC_VVC.toString(), VVCSample.class);
         SAMPLE_CLASSES.put(FOURCC_AVC.toString(), AVCSample.class);
         SAMPLE_CLASSES.put(FOURCC_AAC.toString(), AACSample.class);
 
@@ -836,4 +851,28 @@ public class HEIF
 
     private native int getEntityGroupCountNative();
     private native EntityGroup getEntityGroupNative(int index);
+
+    /**
+     * Diagnostic hook. Invokes a HEIF_ASSERT(false) on the native side so
+     * the JNI exception-translation firewall can be verified. The expected
+     * outcome is a java.lang.IllegalStateException propagated to the Java
+     * caller - NOT a JVM crash.
+     *
+     * Do not call this from production code; it is a deliberate
+     * tripwire for invariant-violation handling.
+     */
+    public static native void triggerHeifAssertForTesting();
+
+    /**
+     * Diagnostic hooks for the JNI exception-translation table. Each one
+     * forces the native side to throw a different std::exception subclass
+     * to verify that translateNativeException (Helpers.cpp) maps each one
+     * to the documented Java exception type.
+     * Do not call from production code.
+     */
+    public static native void triggerInvalidArgumentForTesting();
+    public static native void triggerOutOfRangeForTesting();
+    public static native void triggerBadAllocForTesting();
+    public static native void triggerRuntimeErrorForTesting();
+    public static native void triggerUnknownThrowForTesting();
 }

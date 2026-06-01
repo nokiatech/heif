@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,7 +17,7 @@
 #include <cstdint>
 
 #include "bbox.hpp"
-#include "customallocator.hpp"
+#include "fourccint.hpp"
 #include "decoderconfigrecord.hpp"
 
 /** @brief Sample Entry Box class. Extends from Box.
@@ -25,7 +25,7 @@
 class SampleEntryBox : public Box
 {
 public:
-    SampleEntryBox(FourCCInt codingname);
+    explicit SampleEntryBox(FourCCInt codingname);
     SampleEntryBox(const SampleEntryBox& box);
     ~SampleEntryBox() override = default;
 
@@ -59,7 +59,7 @@ public:
     virtual bool isVisual() const = 0;
 
 private:
-    std::uint16_t mDataReferenceIndex;  /// data reference index value
+    std::uint16_t mDataReferenceIndex{0};  /// data reference index value
 };
 
 #endif

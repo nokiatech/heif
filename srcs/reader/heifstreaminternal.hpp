@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,7 +14,6 @@
 #ifndef HEIFSTREAMINTERNAL_HPP_
 #define HEIFSTREAMINTERNAL_HPP_
 
-#include "customallocator.hpp"
 #include "heifstreaminterface.h"
 
 namespace HEIF
@@ -22,7 +21,7 @@ namespace HEIF
     class InternalStream
     {
     public:
-        InternalStream(StreamInterface* stream = nullptr);
+        explicit InternalStream(StreamInterface* stream = nullptr);
         ~InternalStream() = default;
 
         /** Returns the number of bytes read. A short read sets the EOF flag.
@@ -65,8 +64,8 @@ namespace HEIF
 
     private:
         StreamInterface* m_stream;
-        bool m_error;
-        bool m_eof;
+        bool m_error{false};
+        bool m_eof{false};
     };
 }  // namespace HEIF
 

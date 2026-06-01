@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -20,11 +20,10 @@
 using namespace std;
 
 Box::Box(FourCCInt boxType)
-    : mSize(8)
-    , mType(boxType)
+    : 
+     mType(boxType)
     , mUserType()
-    , mStartLocation(0)
-    , mLargeSize(false)
+     
 {
 }
 
@@ -108,23 +107,20 @@ void Box::updateSize(ISOBMFF::BitStream& bitstr) const
     }
 
     // Write updated size to the bitstream.
-    if (mLargeSize)
-    {
-        bitstr.setByte(mStartLocation + 8, (mSize >> 56) & 0xff);
-        bitstr.setByte(mStartLocation + 9, (mSize >> 48) & 0xff);
-        bitstr.setByte(mStartLocation + 10, (mSize >> 40) & 0xff);
-        bitstr.setByte(mStartLocation + 11, (mSize >> 32) & 0xff);
-        bitstr.setByte(mStartLocation + 12, (mSize >> 24) & 0xff);
-        bitstr.setByte(mStartLocation + 13, (mSize >> 16) & 0xff);
-        bitstr.setByte(mStartLocation + 14, (mSize >> 8) & 0xff);
-        bitstr.setByte(mStartLocation + 15, mSize & 0xff);
-    }
-    else
-    {
-        bitstr.setByte(mStartLocation + 0, (mSize >> 24) & 0xff);
-        bitstr.setByte(mStartLocation + 1, (mSize >> 16) & 0xff);
-        bitstr.setByte(mStartLocation + 2, (mSize >> 8) & 0xff);
-        bitstr.setByte(mStartLocation + 3, mSize & 0xff);
+    if(mLargeSize){
+        bitstr.setByte(mStartLocation + 8, static_cast<std::uint8_t>((mSize >> 56) & 0xff));
+        bitstr.setByte(mStartLocation + 9, static_cast<std::uint8_t>((mSize >> 48) & 0xff));
+        bitstr.setByte(mStartLocation + 10, static_cast<std::uint8_t>((mSize >> 40) & 0xff));
+        bitstr.setByte(mStartLocation + 11, static_cast<std::uint8_t>((mSize >> 32) & 0xff));
+        bitstr.setByte(mStartLocation + 12, static_cast<std::uint8_t>((mSize >> 24) & 0xff));
+        bitstr.setByte(mStartLocation + 13, static_cast<std::uint8_t>((mSize >> 16) & 0xff));
+        bitstr.setByte(mStartLocation + 14, static_cast<std::uint8_t>((mSize >> 8) & 0xff));
+        bitstr.setByte(mStartLocation + 15, static_cast<std::uint8_t>(mSize & 0xff));
+    }else{
+        bitstr.setByte(mStartLocation + 0, static_cast<std::uint8_t>((mSize >> 24) & 0xff));
+        bitstr.setByte(mStartLocation + 1, static_cast<std::uint8_t>((mSize >> 16) & 0xff));
+        bitstr.setByte(mStartLocation + 2, static_cast<std::uint8_t>((mSize >> 8) & 0xff));
+        bitstr.setByte(mStartLocation + 3, static_cast<std::uint8_t>(mSize & 0xff));
     }
 }
 

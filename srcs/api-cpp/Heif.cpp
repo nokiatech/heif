@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,7 +13,6 @@
 #include "Heif.h"
 
 #include <heifreader.h>
-#include <heifstreaminterface.h>
 #include <heifwriter.h>
 
 #include "AACDecoderConfiguration.h"
@@ -25,10 +24,12 @@
 #include "DescriptiveProperty.h"
 #include "EntityGroup.h"
 #include "EqivGroup.h"
+#include "ErrorContext.h"
 #include "ExifItem.h"
 #include "GridImageItem.h"
 #include "HEVCCodedImageItem.h"
 #include "HEVCDecoderConfiguration.h"
+#include "LHEVCDecoderConfiguration.h"
 #include "IdentityImageItem.h"
 #include "ImageSequence.h"
 #include "JPEGCodedImageItem.h"
@@ -39,7 +40,25 @@
 #include "TransformativeProperty.h"
 #include "VideoSample.h"
 #include "VideoTrack.h"
+#include "VvcCodedImageItem.h"
+#include "VvcDecoderConfiguration.h"
 #include "XMPItem.h"
+#include "CodedImageItem.h"
+#include "DecoderConfiguration.h"
+#include "ImageItem.h"
+#include "Item.h"
+#include "ItemProperty.h"
+#include "MetaItem.h"
+#include "MimeItem.h"
+#include "Sample.h"
+#include "Track.h"
+#include "heifcommondatatypes.h"
+#include "heifreaderdatatypes.h"
+#include "heifwriterdatatypes.h"
+#include "helpers.h"
+#include <exception>
+#include <stddef.h>
+#include <string>
 
 using namespace HEIFPP;
 
@@ -58,26 +77,42 @@ const HEIF::MediaDataId Heif::InvalidMediaData(static_cast<std::uint32_t>(0));
 Heif::Heif()
     : mFileinfo{}
     , mMajorBrand()
-    , mMinorVersion(0)
-    , mCompatibleBrands()
+    , 
+     mCompatibleBrands()
     , mItems()
     , mItemsOfType()
     , mProperties()
     , mDecoderConfigs()
-    , mPrimaryItem(nullptr)
-    , mMatrix{0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000}
-    , mPreLoadMode(PreloadMode::LOAD_ALL_DATA)
-    , mItemsLoad()
+    , 
+     mItemsLoad()
     , mPropertiesLoad()
     , mDecoderConfigsLoad()
-    , mContext(nullptr)
-    , mReader(nullptr)
+     
 {
 }
 
 Heif::~Heif()
 {
-    reset();
+    // OOM-safe teardown (S.10 / R.x companion). reset() walks the owned
+    // child collections (mItems, mProperties, mTracks, ...) and re-routes
+    // through customAllocate via the standard-container allocator path;
+    // under bad_alloc-equivalent pressure that rebound allocator now
+    // throws std::bad_alloc, and a destructor allowed to escape with an
+    // active exception calls std::terminate. Swallow here so the OOM
+    // contract ("do not crash, do not leak") holds at the C++ object
+    // boundary the same way Reader::Destroy / Writer::Destroy hold it
+    // at the C-tier boundary.
+    try
+    {
+        reset();
+    }
+    catch (...)
+    {
+        // Best-effort cleanup: container state may be partial. The
+        // owning process is tearing down anyway in OOM scenarios; the
+        // remaining child objects are dropped when the std:: containers
+        // themselves run their destructors below this frame.
+    }
 }
 
 void Heif::reset()
@@ -138,7 +173,6 @@ void Heif::reset()
     }
 }
 
-/** Custom user data can be bound to objects. */
 void Heif::setContext(const void* aContext)
 {
     mContext = aContext;
@@ -161,22 +195,30 @@ Result Heif::save(HEIF::OutputStreamInterface* aStream)
 
 Result Heif::save(const char* aFileName, HEIF::OutputStreamInterface* aStream)
 {
+    // Drain any stale error context from a previous call so that, if this
+    // call succeeds, an embedder won't see a misleading "last error" from
+    // an unrelated earlier failure on this thread.
+    clearLastError();
+
     if (mMajorBrand == HEIF::FourCC())
     {
-        return Result::BRANDS_NOT_SET;
+        return HEIFPP_FAIL(Result::BRANDS_NOT_SET, ErrorSource::Api_State,
+                           "Heif::save: major brand has not been set (call setMajorBrand first)");
     }
     if (mPrimaryItem == nullptr)
     {
         if (mTracks.empty())
         {
-            return Result::PRIMARY_ITEM_NOT_SET;
+            return HEIFPP_FAIL(Result::PRIMARY_ITEM_NOT_SET, ErrorSource::Api_State,
+                               "Heif::save: no primary item set and no tracks present");
         }
     }
     else
     {
         if (mPrimaryItem->isHidden())
         {
-            return Result::HIDDEN_PRIMARY_ITEM;
+            return HEIFPP_FAIL(Result::HIDDEN_PRIMARY_ITEM, ErrorSource::Api_State,
+                               "Heif::save: primary item is hidden, cannot save");
         }
     }
 
@@ -218,6 +260,13 @@ Result Heif::save(const char* aFileName, HEIF::OutputStreamInterface* aStream)
 
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
     HEIF::Writer* writer  = HEIF::Writer::Create();
+    // Cross-language firewall: mirrors the try/catch in Heif::load. The
+    // writer C-API does not currently install a top-level handler, so any
+    // ISOBMFF / std::exception that escapes the writer pipeline would
+    // otherwise propagate into the host (JNI/Obj-C++/COM) and abort the
+    // process. Catch here, destroy the writer, surface as ErrorContext.
+    try
+    {
     HEIF::OutputConfig output;
     output.fileName         = aFileName;
     output.outputStream     = aStream;
@@ -354,8 +403,34 @@ Result Heif::save(const char* aFileName, HEIF::OutputStreamInterface* aStream)
             error = writer->finalize();
         }
     }
+    }
+    catch (const std::exception& e)
+    {
+        // Writer pipeline threw past its own (non-existent) handlers.
+        // Capture the cause and surface as a generic writer failure.
+        HEIF::Writer::Destroy(writer);
+        return HEIFPP_FAIL_CAUSED_BY(Result::ERROR_UNDEFINED,
+                                     ErrorSource::Writer_BoxBuild,
+                                     "Heif::save: writer threw while assembling output",
+                                     e);
+    }
+    catch (...)
+    {
+        HEIF::Writer::Destroy(writer);
+        HEIFPP::ErrorContext ctx;
+        ctx.code      = Result::ERROR_UNDEFINED;
+        ctx.source    = ErrorSource::Writer_BoxBuild;
+        ctx.message   = "Heif::save: writer threw a non-std exception";
+        ctx.causeWhat = "(unknown C++ exception)";
+        ctx.file      = __FILE__;
+        ctx.line      = __LINE__;
+        ctx.valid     = true;
+        HEIFPP::setLastError(ctx);
+        return Result::ERROR_UNDEFINED;
+    }
     HEIF::Writer::Destroy(writer);
-    return convertErrorCode(error);
+    return HEIFPP_FAIL_CONVERTED(error, ErrorSource::Writer_FileIO,
+                                 "Heif::save: writer pipeline returned an error");
 }
 const HEIF::FileInformation* Heif::getFileInformation() const
 {
@@ -395,33 +470,44 @@ Result Heif::load(HEIF::StreamInterface* aStream, PreloadMode loadMode)
 }
 Result Heif::load(const char* aFilename, HEIF::StreamInterface* aStream, PreloadMode loadMode)
 {
+    // Drain stale per-thread error context so a successful load() does not
+    // leave an embedder reading a context from an unrelated earlier failure.
+    clearLastError();
+
     if (mMajorBrand != HEIF::FourCC())
     {
-        return Result::ALREADY_INITIALIZED;
+        return HEIFPP_FAIL(Result::ALREADY_INITIALIZED, ErrorSource::Api_State,
+                           "Heif::load: instance already has a major brand; call reset() before reloading");
     }
     if (!mCompatibleBrands.empty())
     {
-        return Result::ALREADY_INITIALIZED;
+        return HEIFPP_FAIL(Result::ALREADY_INITIALIZED, ErrorSource::Api_State,
+                           "Heif::load: instance already has compatible brands; call reset() before reloading");
     }
     if (!mItems.empty())
     {
-        return Result::ALREADY_INITIALIZED;
+        return HEIFPP_FAIL(Result::ALREADY_INITIALIZED, ErrorSource::Api_State,
+                           "Heif::load: instance already has items; call reset() before reloading");
     }
     if (!mItemsOfType.empty())
     {
-        return Result::ALREADY_INITIALIZED;
+        return HEIFPP_FAIL(Result::ALREADY_INITIALIZED, ErrorSource::Api_State,
+                           "Heif::load: instance already has typed items; call reset() before reloading");
     }
     if (!mProperties.empty())
     {
-        return Result::ALREADY_INITIALIZED;
+        return HEIFPP_FAIL(Result::ALREADY_INITIALIZED, ErrorSource::Api_State,
+                           "Heif::load: instance already has properties; call reset() before reloading");
     }
     if (!mDecoderConfigs.empty())
     {
-        return Result::ALREADY_INITIALIZED;
+        return HEIFPP_FAIL(Result::ALREADY_INITIALIZED, ErrorSource::Api_State,
+                           "Heif::load: instance already has decoder configs; call reset() before reloading");
     }
     if (mPrimaryItem)
     {
-        return Result::ALREADY_INITIALIZED;
+        return HEIFPP_FAIL(Result::ALREADY_INITIALIZED, ErrorSource::Api_State,
+                           "Heif::load: instance already has a primary item; call reset() before reloading");
     }
 
     if (mReader != nullptr)
@@ -432,18 +518,69 @@ Result Heif::load(const char* aFilename, HEIF::StreamInterface* aStream, Preload
 
     mReader               = HEIF::Reader::Create();
     HEIF::ErrorCode error = HEIF::ErrorCode::OK;
-    if (aStream)
+    // The lower-level reader catches its own ISOBMFF / parser exceptions
+    // and converts them to ErrorCode (the original what() string is logged
+    // to stderr and discarded). Wrap the call in our own try/catch so that
+    // any exception that DOES escape - e.g. a bug or a path the reader
+    // does not currently guard - still lands in the ErrorContext with its
+    // what() preserved as the cause. This is belt-and-braces: in the happy
+    // case nothing is thrown and the reader-returned ErrorCode flows
+    // through HEIFPP_FAIL_CONVERTED below.
+    try
     {
-        error = mReader->initialize(aStream);
+        if (aStream)
+        {
+            error = mReader->initialize(aStream);
+        }
+        else
+        {
+            error = mReader->initialize(aFilename);
+        }
+        if (HEIF::ErrorCode::OK == error)
+        {
+            mPreLoadMode = loadMode;
+            error        = load(mReader);
+        }
     }
-    else
+    catch (const std::exception& e)
     {
-        error = mReader->initialize(aFilename);
+        // Reader threw past its own catch handlers. Capture cause and
+        // surface as FILE_READ_ERROR so existing callers' switch
+        // statements continue to work.
+        reset();
+        if (mPreLoadMode == PreloadMode::LOAD_ALL_DATA && mReader)
+        {
+            HEIF::Reader::Destroy(mReader);
+            mReader = nullptr;
+        }
+        return HEIFPP_FAIL_CAUSED_BY(Result::FILE_READ_ERROR,
+                                     ErrorSource::Reader_BoxParse,
+                                     aStream ? "Heif::load: reader threw while parsing stream"
+                                             : "Heif::load: reader threw while parsing file",
+                                     e);
     }
-    if (HEIF::ErrorCode::OK == error)
+    catch (...)
     {
-        mPreLoadMode = loadMode;
-        error        = load(mReader);
+        // Non-std exception escaped the reader. Same cleanup as above
+        // but synthesise an ErrorContext directly since we have no
+        // std::exception to feed HEIFPP_FAIL_CAUSED_BY.
+        reset();
+        if (mPreLoadMode == PreloadMode::LOAD_ALL_DATA && mReader)
+        {
+            HEIF::Reader::Destroy(mReader);
+            mReader = nullptr;
+        }
+        HEIFPP::ErrorContext ctx;
+        ctx.code      = Result::FILE_READ_ERROR;
+        ctx.source    = ErrorSource::Reader_BoxParse;
+        ctx.message   = aStream ? "Heif::load: reader threw a non-std exception (stream)"
+                                : "Heif::load: reader threw a non-std exception (file)";
+        ctx.causeWhat = "(unknown C++ exception)";
+        ctx.file      = __FILE__;
+        ctx.line      = __LINE__;
+        ctx.valid     = true;
+        HEIFPP::setLastError(ctx);
+        return Result::FILE_READ_ERROR;
     }
     mItemsLoad.clear();
     mTracksLoad.clear();
@@ -460,11 +597,51 @@ Result Heif::load(const char* aFilename, HEIF::StreamInterface* aStream, Preload
 
     if (mPreLoadMode == PreloadMode::LOAD_ALL_DATA)
     {
+        // Cleanup ordering note (audit P2): the *Load lookup maps above
+        // were drained BEFORE we destroy the reader on purpose. Those
+        // maps store raw HEIFPP wrapper pointers keyed by reader-side
+        // ids (mItemsLoad: ImageId -> Item*, etc.); they are scratch
+        // state used only during load() to wire references between
+        // wrappers as the box tree is walked. Once load() returns
+        // (or fails) the maps are dead, but the wrapper objects they
+        // point to are owned by the persistent mItems / mTracks / ...
+        // vectors and survive past Reader::Destroy. Order is therefore:
+        //   1. Drain *Load maps         (above)
+        //   2. reset() if errored       (above; tears down wrapper objects)
+        //   3. Destroy the reader       (here, in LOAD_ALL_DATA mode only)
+        // In LOAD_ON_DEMAND / LOAD_PREVIEW_DATA modes the reader is kept
+        // alive past load() so subsequent getItemData() / getSampleData()
+        // calls can still page bytes from the underlying stream; it is
+        // destroyed in save() / dtor / reset() instead.
         HEIF::Reader::Destroy(mReader);
         mReader = nullptr;
     }
 
-    return convertErrorCode(error);
+    // Pick a source category from the ErrorCode so embedders can branch
+    // on "file not found" vs "file corrupt" without parsing strings.
+    ErrorSource src = ErrorSource::Reader_BoxParse;
+    switch (error)
+    {
+        case HEIF::ErrorCode::FILE_OPEN_ERROR:
+        case HEIF::ErrorCode::FILE_READ_ERROR:
+        case HEIF::ErrorCode::FILE_HEADER_ERROR:
+        case HEIF::ErrorCode::BYTESTREAM_READ_ERROR:
+            src = ErrorSource::Reader_FileIO;
+            break;
+        case HEIF::ErrorCode::DECODER_CONFIGURATION_ERROR:
+            src = ErrorSource::Reader_DecoderConfig;
+            break;
+        case HEIF::ErrorCode::MEDIA_PARSING_ERROR:
+        case HEIF::ErrorCode::INVALID_MEDIA_FORMAT:
+        case HEIF::ErrorCode::UNSUPPORTED_CODE_TYPE:
+            src = ErrorSource::Reader_BoxParse;
+            break;
+        default:
+            break;
+    }
+    return HEIFPP_FAIL_CONVERTED(error, src,
+                                 aStream ? "Heif::load: reader pipeline returned an error (stream)"
+                                         : "Heif::load: reader pipeline returned an error (file)");
 }
 
 HEIF::ErrorCode Heif::load(HEIF::Reader* aReader)
@@ -906,6 +1083,21 @@ ImageItem* Heif::constructImageItem(HEIF::Reader* aReader,
         {
             item = new HEVCCodedImageItem(this);
         }
+        else if (type == HEIF::FourCC("lhv1"))
+        {
+            // L-HEVC enhancement-layer items are structurally HEVC coded
+            // image items (same NAL unit format). A dedicated
+            // LHEVCCodedImageItem may be added in a future cut; for now
+            // reusing HEVCCodedImageItem with the correct four-cc and
+            // media format is sufficient because the decoder configuration
+            // dispatch already picks LHEVCDecoderConfiguration based on
+            // the "lhv1" four-cc returned by mediaFormatFromFourCC.
+            item = new HEVCCodedImageItem(this, HEIF::FourCC("lhv1"), HEIF::MediaFormat::LHEVC);
+        }
+        else if (type == HEIF::FourCC("vvc1"))
+        {
+            item = new VVCCodedImageItem(this);
+        }
         else if (type == HEIF::FourCC("jpeg"))
         {
             // mime image/jpeg handled in separate case
@@ -1071,6 +1263,26 @@ ItemProperty* Heif::constructItemProperty(HEIF::Reader* aReader,
             p = new RelativeLocationProperty(this);
             break;
         }
+        case HEIF::ItemPropertyType::LSEL:
+        {
+            p = new LayerSelectorProperty(this);
+            break;
+        }
+        case HEIF::ItemPropertyType::TOLS:
+        {
+            p = new TargetOlsProperty(this);
+            break;
+        }
+        case HEIF::ItemPropertyType::OINF:
+        {
+            p = new OperatingPointsProperty(this);
+            break;
+        }
+        case HEIF::ItemPropertyType::SUBS:
+        {
+            p = new SubSampleProperty(this);
+            break;
+        }
         case HEIF::ItemPropertyType::AUXC:
         {
             p = new AuxiliaryProperty(this);
@@ -1174,7 +1386,7 @@ void Heif::removeProperty(ItemProperty* aProperty)
     if (!RemoveItemFrom(mProperties, aProperty))
     {
         // tried to remove property that was not added
-        HEIF_ASSERT(false);
+        HEIF_LOG_INVARIANT(false, "Heif::removeProperty: property was not in mProperties");
     }
 }
 void Heif::removeItem(Item* aItem)
@@ -1188,7 +1400,7 @@ void Heif::removeItem(Item* aItem)
     if (!RemoveItemFrom(mItems, aItem))
     {
         // Tried to remove an item that was not added!
-        HEIF_ASSERT(false);
+        HEIF_LOG_INVARIANT(false, "Heif::removeItem: item was not in mItems");
     }
 
     // secondly remove the item from the mItemsOfType lists..
@@ -1198,7 +1410,7 @@ void Heif::removeItem(Item* aItem)
         if (!RemoveItemFrom(tmp->second, aItem))
         {
             // Tried to remove an item that was not added!
-            HEIF_ASSERT(false);
+            HEIF_LOG_INVARIANT(false, "Heif::removeItem: item missing from mItemsOfType bucket");
         }
         // and cleanup the type map if it was the last of it's type
         if (tmp->second.empty())
@@ -1477,6 +1689,17 @@ DecoderConfig* Heif::constructDecoderConfig(HEIF::Reader* aReader,
             config = new HEVCDecoderConfiguration(this, aType);
             break;
         }
+        case HEIF::MediaFormat::LHEVC:
+        {
+            config = new LHEVCDecoderConfiguration(this, aType);
+            break;
+        }
+        case HEIF::MediaFormat::VVC:
+        {
+            config = new VVCDecoderConfiguration(this, aType);
+            break;
+        }
+
         case HEIF::MediaFormat::AAC:
         {
             config = new AACDecoderConfiguration(this, aType);
@@ -1547,7 +1770,7 @@ void Heif::removeDecoderConfig(DecoderConfig* aDecoderConfig)
     if (!RemoveItemFrom(mDecoderConfigs, aDecoderConfig))
     {
         // Tried to remove a non added DecoderConfiguration
-        HEIF_ASSERT(false);
+        HEIF_LOG_INVARIANT(false, "Heif::removeDecoderConfig: config was not in mDecoderConfigs");
     }
 }
 
@@ -1558,12 +1781,20 @@ std::uint32_t Heif::getTrackCount() const
 
 Track* Heif::getTrack(std::uint32_t aTrack)
 {
-    return mTracks[aTrack];
+    if (aTrack < mTracks.size())
+    {
+        return mTracks[aTrack];
+    }
+    return nullptr;
 }
 
 const Track* Heif::getTrack(std::uint32_t aTrack) const
 {
-    return mTracks[aTrack];
+    if (aTrack < mTracks.size())
+    {
+        return mTracks[aTrack];
+    }
+    return nullptr;
 }
 
 void Heif::addTrack(Track* aTrack)
@@ -1577,7 +1808,7 @@ void Heif::removeTrack(Track* aTrack)
     if (!RemoveItemFrom(mTracks, aTrack))
     {
         // Tried to remove an item that was not added!
-        HEIF_ASSERT(false);
+        HEIF_LOG_INVARIANT(false, "Heif::removeTrack: track was not in mTracks");
     }
 }
 
@@ -1592,7 +1823,7 @@ void Heif::removeSample(Sample* aSample)
     if (!RemoveItemFrom(mSamples, aSample))
     {
         // Tried to remove an item that was not added!
-        HEIF_ASSERT(false);
+        HEIF_LOG_INVARIANT(false, "Heif::removeSample: sample was not in mSamples");
     }
 }
 
@@ -1609,7 +1840,7 @@ void Heif::removeGroup(EntityGroup* aItem)
     if (!RemoveItemFrom(mGroups, aItem))
     {
         // Tried to remove an item that was not added!
-        HEIF_ASSERT(false);
+        HEIF_LOG_INVARIANT(false, "Heif::removeGroup: group was not in mGroups");
     }
 
     // secondly remove the item from the mItemsOfType lists..
@@ -1619,7 +1850,7 @@ void Heif::removeGroup(EntityGroup* aItem)
         if (!RemoveItemFrom(tmp->second, aItem))
         {
             // Tried to remove an item that was not added!
-            HEIF_ASSERT(false);
+            HEIF_LOG_INVARIANT(false, "Heif::removeGroup: group missing from mGroupsOfType bucket");
         }
         // and cleanup the type map if it was the last of it's type
         if (tmp->second.empty())
@@ -1752,6 +1983,10 @@ HEIF::MediaFormat Heif::mediaFormatFromFourCC(const HEIF::FourCC& aType)
     {
         return HEIF::MediaFormat::HEVC;
     }
+    else if (aType == "lhv1")
+    {
+        return HEIF::MediaFormat::LHEVC;
+    }
     else if (aType == "avc1")
     {
         return HEIF::MediaFormat::AVC;
@@ -1771,6 +2006,14 @@ HEIF::MediaFormat Heif::mediaFormatFromFourCC(const HEIF::FourCC& aType)
     else if (aType == "mjpg")
     {
         return HEIF::MediaFormat::JPEG;
+    }
+    else if (aType == "vvc1")
+    {
+        return HEIF::MediaFormat::VVC;
+    }
+    else if (aType == "vvi1")
+    {
+        return HEIF::MediaFormat::VVC;
     }
     else
     {

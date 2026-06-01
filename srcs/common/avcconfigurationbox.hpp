@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,13 +15,13 @@
 #define AVCCONFIGURATIONBOX_HPP
 
 #include "avcdecoderconfigrecord.hpp"
-#include "customallocator.hpp"
 #include "decoderconfigurationbox.hpp"
+#include "bbox.hpp"
 
 /// @brief AVC Configuration Box class
 /// @details 'avcC' box implementation. This is used by tracks as a part of AVC Sample Entry implementation, and by
 ///          items as a decoder configuration property.
-class AvcConfigurationBox : public DecoderConfigurationBox
+class AvcConfigurationBox : public Box, public DecoderConfigurationBox
 {
 public:
     AvcConfigurationBox();

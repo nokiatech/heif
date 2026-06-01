@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,14 +14,17 @@
 #ifndef WRITERDATATYPESINTERNAL_HPP
 #define WRITERDATATYPESINTERNAL_HPP
 
+#include <cstdint>
 #include "customallocator.hpp"
 #include "fourccint.hpp"
 #include "heifwriterdatatypes.h"
 
 namespace HEIF
 {
+    // NOLINTBEGIN(google-explicit-constructor) -- IdType uses intentional implicit conversion.
     IdType(std::uint32_t, TrackId);
     IdType(std::uint16_t, AlternateGroupId);
+    // NOLINTEND(google-explicit-constructor)
 
     /// Data of one image/sample/frame
     struct MediaData
@@ -32,6 +35,13 @@ namespace HEIF
         uint64_t offset;  ///< Data offset. When mdat is after ftyp this is fileoffset. When mdat is lcoated after moov
                           ///< this is offset from mdat start.
         size_t size;
+    };
+
+    /// VVC Mixed NAL unit type pictures sample group.
+    struct MinpVisualSampleGrouping
+    {
+        unsigned int ppsId;
+        Vector<std::pair<SequenceId, SequenceId>> mixedNalUnitInfos;
     };
 
     struct Dimensions
@@ -80,6 +90,9 @@ namespace HEIF
             Vector<std::uint32_t> referenceSamples;
             Map<GroupId, EquivalenceTimeOffset> equivalenceGroups;
             Set<MetadataItemId> metadataItemsIds;
+            Set<MixedNalUnitTypeId>
+                mixedNalUnitTypeIds;  ///< 'minp' VisualSampleGroupEntries. Only for VVC base tracks.
+
         };
         Vector<Sample> samples;
         Vector<DecoderConfigId> decoderConfigs;
@@ -89,6 +102,15 @@ namespace HEIF
         CleanAperture clap;
         EditList editList;
         Vector<int32_t> matrix;
+
+        // VVC subpicture track related variables
+        uint16_t subpicId;  ///< subpic_id for a subpicture track
+        bool isBaseTrack;   ///< True if this is this a VVC base track
+        bool isSubstituteSubpictureTrack; ///< True if this is a substitute subpicture track
+        Vector<unsigned int> subpictureTrackDecodingOrder; ///< Decoding order of subpicture tracks of the VVC base track
+        Map<MixedNalUnitTypeId, MinpVisualSampleGrouping> minpGroupings;  ///< VVC Mixed NAL unit type pictures sample group entries
+        Vector<Trif> trifEntries;
+        Vector<Sulm> sulmEntries;
     };
 
     struct PropertyInformation
@@ -124,7 +146,7 @@ namespace HEIF
         struct Entity
         {
             uint32_t id;
-            enum class Type
+            enum class Type : std::uint8_t
             {
                 ITEM,
                 SEQUENCE

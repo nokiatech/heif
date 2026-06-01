@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,8 @@
 #ifndef ITEMLOCATIONBOX_HPP
 #define ITEMLOCATIONBOX_HPP
 
-#include <iterator>
+#include <cstdint>
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
 
@@ -40,7 +39,7 @@ public:
     ~ItemLocation() = default;
 
     /// Construction Method
-    enum class ConstructionMethod
+    enum class ConstructionMethod : std::uint8_t
     {
         FILE_OFFSET = 0,
         IDAT_OFFSET = 1,
@@ -98,14 +97,22 @@ public:
 
     /** @brief Writes the ItemLocation to the bitstream in the standard-defined format
      *  @param [in] version version of the ItemLocation
-     *  @param [out] bitstr output ISOBMFF::BitStream */
-    void write(ISOBMFF::BitStream& bitstr, unsigned int version);  // TODO: not-implemented!
+     *  @param [out] bitstr output ISOBMFF::BitStream 
+     *  @note Doesn't work yet.
+     *  @note ItemLocationBox has working implementation that writes all these
+     *  @todo Implementation */
+    void write(ISOBMFF::BitStream& bitstr, unsigned int version);
+
+    /** @brief Sum the size of all extents for an item
+     *  @return Sum of the extent sizes for an item
+     */
+    uint64_t getItemSize() const;
 
 private:
-    std::uint32_t mItemID;                   ///< Item ID
-    ConstructionMethod mConstructionMethod;  ///< Construction method enumeration
-    std::uint16_t mDataReferenceIndex;       ///< Data reference index
-    std::uint64_t mBaseOffset;               ///< Base offset value
+    std::uint32_t mItemID{0};                   ///< Item ID
+    ConstructionMethod mConstructionMethod{ConstructionMethod::FILE_OFFSET};  ///< Construction method enumeration
+    std::uint16_t mDataReferenceIndex{0};       ///< Data reference index
+    std::uint64_t mBaseOffset{0};               ///< Base offset value
     ExtentList mExtentList;                  ///< List of extents
 };
 
@@ -194,11 +201,17 @@ public:
      *  @throws Run-time Exception if an entry with the given item Id is not found. */
     const ItemLocation& getItemLocationForID(unsigned int itemID) const;
 
+    /** @brief Get the file offset for the very first item data byte
+     *  @return The smallest base offset of all items (start of mdat in mini heif)
+     *  @note Usage for files with FILE_OFFSET construction method only
+     */
+    uint64_t getBaseOffset() const;
+
 private:
-    std::uint8_t mOffsetSize;           ///< Offset size {0,4, or 8}
-    std::uint8_t mLengthSize;           ///< Length size {0,4, or 8}
-    std::uint8_t mBaseOffsetSize;       ///< Base offset size {0,4, or 8}
-    std::uint8_t mIndexSize;            ///< Index size {0,4, or 8} and only if version == 1, otherwise reserved
+    std::uint8_t mOffsetSize{4};           ///< Offset size {0,4, or 8}
+    std::uint8_t mLengthSize{4};           ///< Length size {0,4, or 8}
+    std::uint8_t mBaseOffsetSize{4};       ///< Base offset size {0,4, or 8}
+    std::uint8_t mIndexSize{0};            ///< Index size {0,4, or 8} and only if version == 1, otherwise reserved
     ItemLocationVector mItemLocations;  ///< Vector of item location entries
 
     ItemLocationVector::const_iterator

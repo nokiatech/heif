@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,13 @@
 
 #include "AACDecoderConfiguration.h"
 #include "AudioSample.h"
-#include "MetaItem.h"
-#include "heifreader.h"
+#include "Heif.h"
 #include "heifwriter.h"
+#include "DecoderConfiguration.h"
+#include "Sample.h"
+#include "Track.h"
+#include "heifwriterdatatypes.h"
+#include <vector>
 
 using namespace HEIFPP;
 
@@ -70,7 +74,7 @@ HEIF::ErrorCode AudioTrack::save(HEIF::Writer* aWriter)
         time += smpl->getDuration();
         if (time >= mTimeScale)
         {
-            br = bytes / (time / static_cast<float>(mTimeScale));  //~one second average.
+            br = static_cast<float>(bytes) / (static_cast<float>(time) / static_cast<float>(mTimeScale));  //~one second average.
             time -= mTimeScale;
             bytes = 0;
             if (br > max)
@@ -82,7 +86,7 @@ HEIF::ErrorCode AudioTrack::save(HEIF::Writer* aWriter)
     }
     config.maxBitrate = static_cast<std::uint32_t>(max * 8);
     config.averageBitrate =
-        static_cast<std::uint32_t>(((totalBytes / (totalTime / static_cast<float>(mTimeScale))) * 8));
+        static_cast<std::uint32_t>(((static_cast<float>(totalBytes) / (static_cast<float>(totalTime) / static_cast<float>(mTimeScale))) * 8));
 
     err = aWriter->addAudioTrack(tb, config, mId);
     for (auto smpl : mSamples)

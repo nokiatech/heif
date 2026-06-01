@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,13 +13,17 @@
 #pragma once
 
 #include <Track.h>
+#include "heifcommondatatypes.h"
+#include <cstdint>
 
 namespace HEIFPP
 {
+    class VideoSample;
+
     class VideoTrack : public Track
     {
     public:
-        VideoTrack(Heif* aHeif);
+        explicit VideoTrack(Heif* aHeif);
         ~VideoTrack() override;
 
         void addSample(VideoSample* aSample);
@@ -40,7 +44,7 @@ namespace HEIFPP
         std::int32_t mMatrix[9];
         std::uint32_t mWidth, mHeight;
 
-    private:
+    public:
         VideoTrack& operator=(const VideoTrack&) = delete;
         VideoTrack& operator=(VideoTrack&&) = delete;
         VideoTrack(const VideoTrack&)       = delete;

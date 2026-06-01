@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,8 +14,27 @@
 
 #include <Item.h>
 
+#include <heifreaderdatatypes.h>
+#include <helpers.h>
+#include "heifcommondatatypes.h"
+#include "helpers.h"
+#include <cstdint>
+#include <vector>
+
 namespace HEIFPP
 {
+    class AuxiliaryProperty;
+    class CodedImageItem;
+    class ColourInformationProperty;
+    class DerivedImageItem;
+    class Heif;
+    class ItemProperty;
+    class MetaItem;
+    class PixelAspectRatioProperty;
+    class PixelInformationProperty;
+    class RelativeLocationProperty;
+    class TransformativeProperty;
+
     /** @brief Image item abstraction*/
     class ImageItem : public HEIFPP::Item
     {
@@ -200,6 +219,7 @@ namespace HEIFPP
         std::uint32_t mHeight;
 
 
+    public:
         ImageItem& operator=(const ImageItem&) = delete;
         ImageItem& operator=(ImageItem&&) = delete;
         ImageItem(const ImageItem&)       = delete;

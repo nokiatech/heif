@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,10 @@
 #ifndef SEGMENTINDEXBOX_HPP
 #define SEGMENTINDEXBOX_HPP
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include <stddef.h>
+#include <stdint.h>
 
 /**
  * @brief  Segment Index Box class
@@ -25,7 +26,7 @@
 class SegmentIndexBox : public FullBox
 {
 public:
-    SegmentIndexBox(uint8_t version = 0);
+    explicit SegmentIndexBox(uint8_t version = 0);
     ~SegmentIndexBox() override = default;
 
     struct Reference
@@ -96,12 +97,12 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    uint32_t mReferenceID;
-    uint32_t mTimescale;
-    uint64_t mEarliestPresentationTime;
-    uint64_t mFirstOffset;
+    uint32_t mReferenceID{0};
+    uint32_t mTimescale{0};
+    uint64_t mEarliestPresentationTime{0};
+    uint64_t mFirstOffset{0};
     Vector<Reference> mReferences;  // contains ReferenceCount amount of References.
-    size_t mReserveTotal;
+    size_t mReserveTotal{0};
 };
 
 #endif /* end of include guard: SEGMENTINDEXBOX_HPP */

@@ -3,9 +3,12 @@ apply plugin: 'com.android.library'
 def projectDir = getProjectDir().absolutePath
 def rootPath = file(projectDir + "/../../../").path
 
+
 def javaApiSourcePath = file(rootPath + "/srcs/api-java/").path
 def javaApiJavaPath = file(javaApiSourcePath + "/java/").path
 def javaApiNativePath = file(javaApiSourcePath + "/cpp/").path
+
+
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -20,7 +23,7 @@ android {
                 targets "heifjni"
                 abiFilters = rootProject.ext.chosenAbiFilters
                 arguments "-DANDROID_STL=c++_shared", "-DNO_TESTS=true"
-                cppFlags "-std=c++11"
+                cppFlags "-std=c++17"
             }
         }
         ndk {

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,7 +13,10 @@
 
 #include "iteminfobox.hpp"
 
-#include <stdexcept>
+#include "bitstream.hpp"
+
+#include <stddef.h>
+#include <vector>
 
 using namespace std;
 
@@ -62,6 +65,11 @@ ItemInfoEntry& ItemInfoBox::getItemById(const uint32_t itemId)
         }
     }
     throw RuntimeError("Requested ItemInfoEntry not found.");
+}
+
+const Vector<ItemInfoEntry>& ItemInfoBox::getItemInfoList()
+{
+    return mItemInfoList;
 }
 
 void ItemInfoBox::clear()
@@ -129,9 +137,8 @@ void ItemInfoBox::parseBox(ISOBMFF::BitStream& bitstr)
 
 ItemInfoEntry::ItemInfoEntry()
     : FullBox("infe", 0, 0)
-    , mItemID(0)
-    , mItemProtectionIndex(0)
-    , mItemName()
+    , 
+     mItemName()
     , mContentType()
     , mContentEncoding()
     , mExtensionType()
@@ -376,10 +383,8 @@ ItemInfoEntry* ItemInfoBox::findItemWithType(FourCCInt itemType, const unsigned 
 FDItemInfoExtension::FDItemInfoExtension()
     : mContentLocation()
     , mContentMD5()
-    , mContentLength(0)
-    , mTransferLength(0)
-    , mEntryCount(0)
-    , mGroupID(256, 0)
+    , 
+     mGroupID(256, 0)
 {
 }
 
@@ -413,12 +418,12 @@ uint64_t FDItemInfoExtension::getContentLength()
     return mContentLength;
 }
 
-void FDItemInfoExtension::setTranferLength(const uint64_t length)
+void FDItemInfoExtension::setTransferLength(const uint64_t length)
 {
     mTransferLength = length;
 }
 
-uint64_t FDItemInfoExtension::getTranferLength()
+uint64_t FDItemInfoExtension::getTransferLength()
 {
     return mTransferLength;
 }

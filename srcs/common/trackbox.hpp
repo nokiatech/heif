@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,14 +15,13 @@
 #define TRACKBOX_HPP
 
 #include "bbox.hpp"
-#include "bitstream.hpp"
-#include "customallocator.hpp"
 #include "editbox.hpp"
 #include "mediabox.hpp"
 #include "trackgroupbox.hpp"
 #include "trackheaderbox.hpp"
 #include "trackreferencebox.hpp"
 #include "tracktypebox.hpp"
+#include <memory>
 
 /** @brief TrackBox class. Extends from Box.
  *  @details 'trak' box contains all relevant meta information of a media track as defined in ISOBMFF specification. */
@@ -115,13 +114,13 @@ private:
     MediaBox mMediaBox;              ///< Media Box related to this track
 
     TrackReferenceBox mTrackReferenceBox;  ///< Track Reference Box
-    bool mHasTrackReferences;              ///< Flag that shows whether the track has references from other tracks
+    bool mHasTrackReferences{false};              ///< Flag that shows whether the track has references from other tracks
 
     TrackGroupBox mTrackGroupBox;  ///< Track Group Box
-    bool mHasTrackGroupBox;        ///< Flag that shows whether the track has a track group box
+    bool mHasTrackGroupBox{false};        ///< Flag that shows whether the track has a track group box
 
     TrackTypeBox mTrackTypeBox;  ///< Track Type Box
-    bool mHasTrackTypeBox;       ///< Flag that shows whether the track has a track type box
+    bool mHasTrackTypeBox{false};       ///< Flag that shows whether the track has a track type box
 
     std::shared_ptr<EditBox> mEditBox;  ///< Edit box (optional)
 };

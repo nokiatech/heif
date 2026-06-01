@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,11 +15,11 @@
 #define ITEMREFERENCEBOX_HPP
 
 #include <cstdint>
-#include <list>
 
 #include "bbox.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include "fourccint.hpp"
 
 namespace ISOBMFF
 {
@@ -37,7 +37,7 @@ public:
      * @brief Constructor
      * @param isLarge True if the box is parsed and serialized as a SingleItemTypeReferenceBoxLarge.
      */
-    SingleItemTypeReferenceBox(bool isLarge = false);
+    explicit SingleItemTypeReferenceBox(bool isLarge = false);
     ~SingleItemTypeReferenceBox() override = default;
 
     /** @brief Set 4CC reference type
@@ -72,7 +72,7 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    std::uint32_t mFromItemId;         ///< "From-Item" item Id value
+    std::uint32_t mFromItemId{0};         ///< "From-Item" item Id value
     Vector<std::uint32_t> mToItemIds;  ///< Vector of "To-Item" item Id values
     bool mIsLarge;                     ///< True if this is a SingleItemTypeReferenceBoxLarge
 };

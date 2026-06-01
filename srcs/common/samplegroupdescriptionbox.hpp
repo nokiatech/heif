@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,10 +14,11 @@
 #ifndef SAMPLEGROUPDESCRIPTIONBOX_HPP
 #define SAMPLEGROUPDESCRIPTIONBOX_HPP
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include "fourccint.hpp"
 #include "samplegroupdescriptionentry.hpp"
+#include <cstdint>
 
 
 /** @brief Sample Group Description Box class. Extends from FullBox.
@@ -27,10 +28,6 @@ class SampleGroupDescriptionBox : public FullBox
 public:
     SampleGroupDescriptionBox();
     ~SampleGroupDescriptionBox() override = default;
-
-    /** @brief Set the version of the Box.
-     *  @param [in] version Box version */
-    void setVersion(std::uint8_t version);  // TODO: Not-Implemented!
 
     /** @brief Set the grouping type to use.
      *  @param [in] groupingType Grouping Type as defined in ISOBMFF standard.
@@ -81,7 +78,7 @@ public:
 
 private:
     FourCCInt mGroupingType;       ///< Grouping type
-    std::uint32_t mDefaultLength;  ///< Default byte size of the description
+    std::uint32_t mDefaultLength{0};  ///< Default byte size of the description
 
     Vector<UniquePtr<SampleGroupDescriptionEntry>> mSampleGroupEntry;  ///< Vector of sample group entries
 };

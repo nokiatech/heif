@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,7 +16,6 @@
 
 #include <cstdint>
 
-#include "customallocator.hpp"
 #include "fullbox.hpp"
 
 namespace ISOBMFF
@@ -58,8 +57,8 @@ public:
     void parseBox(ISOBMFF::BitStream& input) override;
 
 private:
-    std::uint32_t mHorizontalOffset;  ///< 0-based horizontal offset in pixels of the left-most pixel column.
-    std::uint32_t mVerticalOffset;    ///< 0-based vertical offset in pixels of the top-most pixel row.
+    std::uint32_t mHorizontalOffset{0};  ///< 0-based horizontal offset in pixels of the left-most pixel column.
+    std::uint32_t mVerticalOffset{0};    ///< 0-based vertical offset in pixels of the top-most pixel row.
 };
 
 #endif

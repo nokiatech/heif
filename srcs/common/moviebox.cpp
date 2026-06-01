@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,6 +15,14 @@
 
 #include "bitstream.hpp"
 #include "log.hpp"
+#include "fourccint.hpp"
+#include "handlerbox.hpp"
+#include "mediabox.hpp"
+#include "trackbox.hpp"
+#include "trackheaderbox.hpp"
+#include <memory>
+#include <utility>
+#include <vector>
 
 MovieBox::MovieBox()
     : Box("moov")
@@ -105,7 +113,7 @@ void MovieBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else if (boxType == "trak")
         {
-            UniquePtr<TrackBox> trackBox(CUSTOM_NEW(TrackBox, ()));
+            auto trackBox = makeCustomUnique<TrackBox, TrackBox>();
             trackBox->parseBox(subBitstr);
             // Ignore box if the handler type is not pict
             FourCCInt handlerType = trackBox->getMediaBox().getHandlerBox().getHandlerType();
@@ -114,7 +122,7 @@ void MovieBox::parseBox(ISOBMFF::BitStream& bitstr)
                 handlerType == "soun" ||  // Audio track
                 handlerType == "vide")    // Video track
             {
-                mTracks.push_back(move(trackBox));
+                mTracks.push_back(std::move(trackBox));
             }
         }
         else if (boxType == "mvex")
@@ -125,7 +133,7 @@ void MovieBox::parseBox(ISOBMFF::BitStream& bitstr)
         else
         {
             logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside movie box."
-                         << std::endl;
+                         << '\n';
         }
     }
 }

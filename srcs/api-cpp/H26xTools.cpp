@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -258,6 +258,16 @@ bool NAL_State::convertFromByteStream(uint8_t* aBuffer,
             delete[] aData;
             aData = tmp;
         }
+        // Defensive: the realloc block above guarantees aSize >= curSize + 4 + nal_len,
+        // but static analysers (MSVC C6386) cannot prove it across the reallocation path.
+        if (curSize + 4 + nal_len > aSize)
+        {
+            break;  // unreachable
+        }
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 6386)  // C6386 false positive: bounds proven by the if-guard above
+#endif
         // Write length.
         aData[curSize + 0] = (nal_len >> 24) & 0xFF;
         aData[curSize + 1] = (nal_len >> 16) & 0xFF;
@@ -265,6 +275,9 @@ bool NAL_State::convertFromByteStream(uint8_t* aBuffer,
         aData[curSize + 3] = (nal_len >> 0) & 0xFF;
         // Write payload.
         std::memcpy(aData + curSize + 4, nal_data, nal_len);
+#if defined(_MSC_VER)
+#pragma warning(pop)  // C6386
+#endif
         curSize += nal_len + 4;
     }
     aSize = curSize;

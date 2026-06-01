@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -8,7 +8,7 @@
 #
 # Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
 
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.5...3.28)
 
 project(heifjni LANGUAGES CXX C)
 
@@ -41,6 +41,10 @@ set(sources
     PixelInformationPropertyJNI.cpp
     PixelAspectRatioJNI.cpp
     RelativeLocationPropertyJNI.cpp
+    LayerSelectorPropertyJNI.cpp
+    TargetOlsPropertyJNI.cpp
+    OperatingPointsPropertyJNI.cpp
+    SubSamplePropertyJNI.cpp
     OverlayImageItemJNI.cpp
     AuxiliaryPropertyJNI.cpp
     MirrorPropertyJNI.cpp
@@ -49,6 +53,7 @@ set(sources
     AVCDecoderConfigJNI.cpp
     AVCImageItemJNI.cpp
     HEVCDecoderConfigJNI.cpp
+    LHEVCDecoderConfigJNI.cpp
     JPEGDecoderConfigJNI.cpp
     JPEGImageItemJNI.cpp
     MPEG7ItemJNI.cpp
@@ -72,6 +77,9 @@ set(sources
     StereoPairGroupJNI.cpp
     ImageSequenceJNI.cpp
     VideoSampleJNI.cpp
+    VVCDecoderConfigJNI.cpp
+    VVCImageItemJNI.cpp 
+    VVCSampleJNI.cpp
     )
 
 
@@ -83,3 +91,9 @@ add_library( # Sets the name of the library.
              )
 
 target_link_libraries(heifjni heifpp)
+
+include(GNUInstallDirs)
+install(TARGETS heifjni
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT jni
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT jni
+)

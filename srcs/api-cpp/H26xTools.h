@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -37,7 +37,7 @@ namespace HEIFPP
         const std::uint8_t* mData;
         std::uint64_t mLength;
 
-    private:
+    public:
         NAL_State& operator=(const NAL_State&) = delete;
         NAL_State& operator=(NAL_State&&) = delete;
         NAL_State(const NAL_State&)       = delete;

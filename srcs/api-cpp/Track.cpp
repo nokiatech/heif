@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,13 +13,14 @@
 #include "Track.h"
 
 #include "AlternativeTrackGroup.h"
-#include "DecoderConfiguration.h"
+#include "Heif.h"
 #include "EntityGroup.h"
-#include "MetaItem.h"
 #include "Sample.h"
-#include "VideoTrack.h"
 #include "heifreader.h"
 #include "heifwriter.h"
+#include "heifcommondatatypes.h"
+#include "heifreaderdatatypes.h"
+#include "helpers.h"
 
 using namespace HEIFPP;
 
@@ -370,7 +371,7 @@ bool Track::hasSampleEquivalenceGrouping() const  ///< The track has one or more
     }
     if (ret != ((mFeatures & HEIF::TrackFeatureEnum::Feature::HasSampleEquivalenceGrouping) != 0))
     {
-        HEIF_ASSERT(false);
+        HEIF_LOG_INVARIANT(false, "Track: HasSampleEquivalenceGrouping feature flag inconsistent with detected grouping");
     }
     return ret;
 }
@@ -529,11 +530,16 @@ void Track::addReference(const HEIF::FourCC& aType, Track* aTrack)
 
 void Track::removeReference(const HEIF::FourCC& aType, Track* aTrack)
 {
-    if (aTrack)
-    {
-        if (RemoveItemFrom(mRefs[aType], aTrack))
-        {
-            aTrack->mIsRefTo[aType].addLink(this);
+    if(aTrack){
+        auto it = mRefs.find(aType);
+        if(it != mRefs.end()){
+            if(RemoveItemFrom(it->second, aTrack)){
+                aTrack->mIsRefTo[aType].removeLink(this);
+                // Clean up empty reference type entries
+                if (it->second.empty()){
+                    mRefs.erase(it);
+                }
+            }
         }
     }
 }
@@ -655,13 +661,85 @@ Sample* Track::getSample(std::uint32_t aId) const
     return nullptr;
 }
 
-Sample* Track::getSampleByType(HEIF::TrackSampleType, std::uint32_t)
+Sample* Track::getSampleByType(HEIF::TrackSampleType aType, std::uint32_t aIndex)
 {
+    std::uint32_t cnt = 0;
+    for (auto* s : mSamples)
+    {
+        if (s == nullptr)
+        {
+            continue;
+        }
+        bool match = false;
+        switch (aType)
+        {
+        case HEIF::TrackSampleType::out_ref:
+            match = (s->getSampleType() == HEIF::SampleType::OUTPUT_REFERENCE_FRAME);
+            break;
+        case HEIF::TrackSampleType::out_non_ref:
+            match = (s->getSampleType() == HEIF::SampleType::OUTPUT_NON_REFERENCE_FRAME);
+            break;
+        case HEIF::TrackSampleType::non_out_ref:
+            match = (s->getSampleType() == HEIF::SampleType::NON_OUTPUT_REFERENCE_FRAME);
+            break;
+        case HEIF::TrackSampleType::display:
+            match = (s->getSampleType() == HEIF::SampleType::OUTPUT_REFERENCE_FRAME) ||
+                    (s->getSampleType() == HEIF::SampleType::OUTPUT_NON_REFERENCE_FRAME);
+            break;
+        case HEIF::TrackSampleType::samples:
+            match = true;
+            break;
+        }
+        if (match)
+        {
+            if (cnt == aIndex)
+            {
+                return s;
+            }
+            cnt++;
+        }
+    }
     return nullptr;
 }
 
-Sample* Track::getSampleByType(HEIF::TrackSampleType, std::uint32_t) const
+Sample* Track::getSampleByType(HEIF::TrackSampleType aType, std::uint32_t aIndex) const
 {
+    std::uint32_t cnt = 0;
+    for (auto* s : mSamples)
+    {
+        if (s == nullptr)
+        {
+            continue;
+        }
+        bool match = false;
+        switch (aType)
+        {
+        case HEIF::TrackSampleType::out_ref:
+            match = (s->getSampleType() == HEIF::SampleType::OUTPUT_REFERENCE_FRAME);
+            break;
+        case HEIF::TrackSampleType::out_non_ref:
+            match = (s->getSampleType() == HEIF::SampleType::OUTPUT_NON_REFERENCE_FRAME);
+            break;
+        case HEIF::TrackSampleType::non_out_ref:
+            match = (s->getSampleType() == HEIF::SampleType::NON_OUTPUT_REFERENCE_FRAME);
+            break;
+        case HEIF::TrackSampleType::display:
+            match = (s->getSampleType() == HEIF::SampleType::OUTPUT_REFERENCE_FRAME) ||
+                    (s->getSampleType() == HEIF::SampleType::OUTPUT_NON_REFERENCE_FRAME);
+            break;
+        case HEIF::TrackSampleType::samples:
+            match = true;
+            break;
+        }
+        if (match)
+        {
+            if (cnt == aIndex)
+            {
+                return s;
+            }
+            cnt++;
+        }
+    }
     return nullptr;
 }
 
@@ -737,7 +815,7 @@ const void* Track::getContext() const
     return mContext;
 }
 
-const HEIF::SequenceId& Track::getId() const
+const HEIF::SequenceId& Track::getId() const noexcept
 {
     return mId;
 }
@@ -824,7 +902,7 @@ EntityGroup* Track::getGroupById(const HEIF::GroupId& aId)
 
 std::uint32_t Track::getTimestampCount()
 {
-    return mTimestamps.size;
+    return static_cast<std::uint32_t>(mTimestamps.size);
 }
 
 void Track::getTimestamp(std::uint32_t index, std::uint32_t& sampleId, std::int64_t& timestamp)

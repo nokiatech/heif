@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,7 +11,18 @@
  */
 #pragma once
 
-#include "Heif.h"
+#include <heifcommondatatypes.h>
+
+#include <cstdint>
+#include <vector>
+
+namespace HEIFPP
+{
+    class Heif;
+    class Item;
+    class Track;
+    class Sample;
+}  // namespace HEIFPP
 
 namespace HEIFPP
 {
@@ -26,7 +37,7 @@ namespace HEIFPP
         void setContext(const void* aContext);
         const void* getContext() const;
 
-        const HEIF::GroupId& getId() const;
+        const HEIF::GroupId& getId() const noexcept;
         const HEIF::FourCC& getType() const;
         std::uint32_t getEntityCount() const;
 
@@ -68,9 +79,9 @@ namespace HEIFPP
         class Entity
         {
         public:
-            Entity(Item* aItem) noexcept;
-            Entity(Track* aTrack) noexcept;
-            Entity(Sample* aSample) noexcept;
+            explicit Entity(Item* aItem) noexcept;
+            explicit Entity(Track* aTrack) noexcept;
+            explicit Entity(Sample* aSample) noexcept;
             virtual ~Entity();
             bool isItem() const;
             bool isTrack() const;
@@ -90,7 +101,9 @@ namespace HEIFPP
             Track* mTrack;
         };
         std::vector<Entity> mItems;
-        const void* mContext;
+        const void* mContext{nullptr};
+
+    public:
         EntityGroup& operator=(const EntityGroup&) = delete;
         EntityGroup& operator=(EntityGroup&&) = delete;
         EntityGroup(const EntityGroup&)       = delete;

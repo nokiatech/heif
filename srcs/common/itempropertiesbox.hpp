@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,10 +14,12 @@
 #ifndef ITEMPROPERTIESBOX_HPP
 #define ITEMPROPERTIESBOX_HPP
 
+#include <cstdint>
 #include "customallocator.hpp"
-#include "fullbox.hpp"
 #include "itempropertyassociation.hpp"
 #include "itempropertycontainer.hpp"
+#include "bbox.hpp"
+#include <memory>
 
 
 /** @brief Item Properties Box class.
@@ -40,7 +42,7 @@ public:
     Vector<std::uint8_t> getPropertyDataByIndex(std::uint32_t index) const;
 
     /**  Item Property and Item Full Property types recognized by ItemPropertiesBox */
-    enum class PropertyType
+    enum class PropertyType : std::uint8_t
     {
         RAW,   ///< Property of an unrecognized type. It is accessible only as raw data. @see CustomPropertyBox.
         ALTT,  ///< Acessibility text. @see AccessibilityText
@@ -56,12 +58,25 @@ public:
         ISCL,  ///< Image scaling. @see ImageScaling
         ISPE,  ///< Image spatial extents. @see ImageSpatialExtentsProperty
         JPGC,  ///< JPEG configuration item property. @see JpegConfigurationBox
+        LSEL,  ///< Layer selector. @see LayerSelectorProperty
+        LHVC,  ///< L-HEVC decoder configuration item property ('lhv1' items). @see LhevcConfigurationBox
         MDFT,  ///< Modification time information. @see ModificationTimeInformation
+        OINF,  ///< Operating Points Information. @see OperatingPointsInformationProperty
         PASP,  ///< Pixel aspect ratio. @see PixelAspectRatioBox
         PIXI,  ///< Pixel information. @see PixelInformationProperty
         RLOC,  ///< Relative location. @see RelativeLocationProperty
         RREF,  ///< Required Reference Types Property. @see RequiredReferenceTypesProperty
+        TOLS,  ///< Target Output Layer Set. @see TargetOlsProperty
         UDES,  ///< User description. @see UserDescriptionProperty
+        VVCC,  ///< VVC configuration @see VvcDecoderConfigurationBox
+        AMVE,  ///< Ambient viewing environment @see AmbientViewingEnvironmentBox
+        CLLI,  ///< Content Light Level Information @see ContentLightLevelBox
+        CCLV,  ///< Content Color Volume @see ContentColourVolumeBox
+        MDCV,  ///< Mastering Display Colour Volume @see MasteringDisplayColourVolume
+        NDWT,  ///< Nominal Diffuse White @see NominalDiffuseWhiteBox
+        REVE,   ///< Reference Viewing Environment @see ReferenceViewingEnvironmentBox
+        SUBS,   ///< Sub-sample information @see SubSampleInformationProperty
+        AV1C    ///< AV1 configuration, not implemented
     };
 
     /** Information about a property associated to an item. Information here comes from both contained boxes
@@ -93,7 +108,7 @@ public:
      * @param [in] itemIds Item ids to which associate the new property.
      * @param [in] essential Essential flag of the property. Reader is required to process essential properties.
      * @return 1-based index of the added property in the ItemPropertyContainer. */
-    std::uint16_t addProperty(std::shared_ptr<Box> box, const Vector<std::uint32_t>& itemIds, bool essential);
+    std::uint16_t addProperty(const std::shared_ptr<Box>& box, const Vector<std::uint32_t>& itemIds, bool essential);
 
     /** Associate an existing property to item ids.
      * @param [in] index Property index in the ItemPropertyContainer

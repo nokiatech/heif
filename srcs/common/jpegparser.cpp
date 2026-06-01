@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,15 +14,14 @@
 #include "jpegparser.hpp"
 
 #include <map>
+#include <string>
 
+#include "customallocator.hpp"
 #include "log.hpp"
 
 JpegParser::JpegParser()
-    : mData(nullptr)
-    , mSize(0)
-    , mIndex(0)
-{
-}
+     
+= default;
 
 JpegParser::JpegInfo JpegParser::parse(uint8_t* data, const unsigned int size)
 {
@@ -55,22 +54,22 @@ JpegParser::JpegInfo JpegParser::parse(uint8_t* data, const unsigned int size)
             }
 
             logInfo() << "JpegParser: SOFn marker found. Read image dimensions (WxH):" << info.imageWidth << " x "
-                      << info.imageHeight << std::endl;
+                      << info.imageHeight << '\n';
 
             if (info.imageHeight == 0)
             {
-                logWarning() << "JpegParser: Image height extraction from frame data is not supported." << std::endl;
+                logWarning() << "JpegParser: Image height extraction from frame data is not supported." << '\n';
                 // Height should be extracted from frame data, but it is not supported yet.
                 break;
             }
         }
         else if (marker == Marker::APP0)
         {
-            logInfo() << "JpegParser: APP0 segment found. This could imply a JFIF file." << std::endl;
+            logInfo() << "JpegParser: APP0 segment found. This could imply a JFIF file." << '\n';
         }
         else if (marker == Marker::APP1)
         {
-            logInfo() << "JpegParser: APP1 segment found. This could imply an Exif file." << std::endl;
+            logInfo() << "JpegParser: APP1 segment found. This could imply an Exif file." << '\n';
         }
         else if (marker == Marker::EOI)
         {
@@ -87,7 +86,7 @@ JpegParser::JpegInfo JpegParser::parse(uint8_t* data, const unsigned int size)
 
 bool JpegParser::readNextSegment(Marker& marker, unsigned int& size)
 {
-    logInfo() << "JpegParser: Reading a segment from offset: " << mIndex << std::endl;
+    logInfo() << "JpegParser: Reading a segment from offset: " << mIndex << '\n';
     if (!readNextMarker(marker))
     {
         return false;
@@ -102,7 +101,7 @@ bool JpegParser::readNextSegment(Marker& marker, unsigned int& size)
         // SOS segment does not start with length, end needs to be searched.
         if (!getSosSegmentSize(size))
         {
-            logWarning() << "JpegParser: Failure while reading SOS segment." << std::endl;
+            logWarning() << "JpegParser: Failure while reading SOS segment." << '\n';
             return false;
         }
     }
@@ -138,7 +137,7 @@ bool JpegParser::readNextMarker(Marker& marker)
     }
     if (!foundFF)
     {
-        logInfo() << "JpegParser: Not found 0xff byte when looking for marker." << std::endl;
+        logInfo() << "JpegParser: Not found 0xff byte when looking for marker." << '\n';
         return false;
     }
 
@@ -170,7 +169,7 @@ std::uint16_t JpegParser::readUint16(const unsigned int index) const
     {
         throw RuntimeError("JpegParser: Failure while reading an uint16 from JPEG file bitstream.");
     }
-    return ((mData[index] & 0xff) << 8) | (mData[index + 1] & 0xff);
+    return static_cast<std::uint16_t>(((mData[index] & 0xff) << 8) | (mData[index + 1] & 0xff));
 }
 
 void JpegParser::printName(const Marker marker) const
@@ -190,10 +189,10 @@ void JpegParser::printName(const Marker marker) const
 
     if (markerNames.count(marker))
     {
-        logInfo() << "JpegParser: Read marker '" << markerNames.at(marker) << "'" << std::endl;
+        logInfo() << "JpegParser: Read marker '" << markerNames.at(marker) << "'" << '\n';
     }
     else
     {
-        logInfo() << "JpegParser: Read an unrecognized marker." << std::endl;
+        logInfo() << "JpegParser: Read an unrecognized marker." << '\n';
     }
 }

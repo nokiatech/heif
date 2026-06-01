@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,6 +16,9 @@
 #include <heifwriter.h>
 
 #include <cstring>
+#include "ItemProperty.h"
+#include "heifreaderdatatypes.h"
+#include <stdint.h>
 
 using namespace HEIFPP;
 
@@ -89,7 +92,7 @@ HEIF::ErrorCode ColourInformationProperty::save(HEIF::Writer* aWriter)
 
 PixelInformationProperty::PixelInformationProperty(Heif* aHeif)
     : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::PIXI, "pixi")
-    , mPixelInformation{0}
+    , mPixelInformation{0,{},{}}
 {
 }
 
@@ -209,4 +212,120 @@ const std::vector<uint8_t>& AuxiliaryProperty::subType()
 void AuxiliaryProperty::subType(const std::vector<uint8_t>& aType)
 {
     mSubType = aType;
+}
+
+LayerSelectorProperty::LayerSelectorProperty(Heif* aHeif)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::LSEL, "lsel")
+    , mLayerSelector{}
+{
+}
+
+HEIF::ErrorCode LayerSelectorProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
+{
+    HEIF::ErrorCode error;
+    error = DescriptiveProperty::load(aReader, aId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        error = aReader->getProperty(aId, mLayerSelector);
+    }
+    return error;
+}
+
+HEIF::ErrorCode LayerSelectorProperty::save(HEIF::Writer* aWriter)
+{
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mLayerSelector, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
+}
+
+TargetOlsProperty::TargetOlsProperty(Heif* aHeif)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::TOLS, "tols")
+    , mTargetOls{}
+{
+}
+
+HEIF::ErrorCode TargetOlsProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
+{
+    HEIF::ErrorCode error;
+    error = DescriptiveProperty::load(aReader, aId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        error = aReader->getProperty(aId, mTargetOls);
+    }
+    return error;
+}
+
+HEIF::ErrorCode TargetOlsProperty::save(HEIF::Writer* aWriter)
+{
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mTargetOls, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
+}
+
+OperatingPointsProperty::OperatingPointsProperty(Heif* aHeif)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::OINF, "oinf")
+    , mOperatingPoints{}
+{
+}
+
+HEIF::ErrorCode OperatingPointsProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
+{
+    HEIF::ErrorCode error;
+    error = DescriptiveProperty::load(aReader, aId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        error = aReader->getProperty(aId, mOperatingPoints);
+    }
+    return error;
+}
+
+HEIF::ErrorCode OperatingPointsProperty::save(HEIF::Writer* aWriter)
+{
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mOperatingPoints, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
+}
+
+SubSampleProperty::SubSampleProperty(Heif* aHeif)
+    : DescriptiveProperty(aHeif, HEIF::ItemPropertyType::SUBS, "subs")
+    , mSubSampleInfo{}
+{
+}
+
+HEIF::ErrorCode SubSampleProperty::load(HEIF::Reader* aReader, const HEIF::PropertyId& aId)
+{
+    HEIF::ErrorCode error;
+    error = DescriptiveProperty::load(aReader, aId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        error = aReader->getProperty(aId, mSubSampleInfo);
+    }
+    return error;
+}
+
+HEIF::ErrorCode SubSampleProperty::save(HEIF::Writer* aWriter)
+{
+    HEIF::PropertyId newId;
+    HEIF::ErrorCode error;
+    error = aWriter->addProperty(mSubSampleInfo, newId);
+    if (HEIF::ErrorCode::OK == error)
+    {
+        setId(newId);
+    }
+    return error;
 }

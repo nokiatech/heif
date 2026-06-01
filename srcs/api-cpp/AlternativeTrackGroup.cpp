@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,13 +11,16 @@
  */
 #include "AlternativeTrackGroup.h"
 
+#include "ErrorContext.h"
+#include "Heif.h"
 #include "Track.h"
+#include "helpers.h"
 
 using namespace HEIFPP;
 
 AlternativeTrackGroup::AlternativeTrackGroup(Heif* aHeif)
     : mHeif(aHeif)
-    , mContext(nullptr)
+     
 {
     mHeif->addAlternativeTrackGroup(this);
 }
@@ -30,21 +33,16 @@ AlternativeTrackGroup::~AlternativeTrackGroup()
     }
     mHeif->removeAlternativeTrackGroup(this);
 }
-/** Sets the custom user data
- *  @param [in] aContext Pointer to the custom data */
 void AlternativeTrackGroup::setContext(const void* aContext)
 {
     mContext = aContext;
 }
 
-/** Returns a pointer to the custom user data. */
 const void* AlternativeTrackGroup::getContext() const
 {
     return mContext;
 }
 
-
-/** Returns the parent HEIF object of the item */
 Heif* AlternativeTrackGroup::getHeif()
 {
     return mHeif;
@@ -79,8 +77,9 @@ Result AlternativeTrackGroup::addTrack(Track* aTrack)
     AlternativeTrackGroup* tmp = aTrack->getAlternativeTrackGroup();
     if ((tmp) && (tmp != this))
     {
-        // Fail. already in a group.
-        return Result::ALREADY_IN_GROUP;
+        return HEIFPP_FAIL(Result::ALREADY_IN_GROUP,
+                           ErrorSource::Api_Validation,
+                           "AlternativeTrackGroup::addTrack: track already belongs to a different group");
     }
     if (AddItemTo(mTracks, aTrack))
     {

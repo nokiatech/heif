@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -464,7 +464,7 @@ private:
     /// moves elements from mSmallContents to mVector and sets mSmall = false
     void convertLarge();
 
-    bool mSmall;  // true if mNumElements and mSmallContents are used, otherwise mVector is used
+    bool mSmall{true};  // true if mNumElements and mSmallContents are used, otherwise mVector is used
     size_type mNumElements;
     Value mSmallContents[Size];
     UniquePtr<Vector> mVector;
@@ -472,17 +472,14 @@ private:
 
 template <typename Value, size_t Size>
 SmallVector<Value, Size>::SmallVector()
-    : mSmall(true)
-    , mNumElements(0)
+    : 
+     mNumElements(0)
 {
     // nothing
 }
 
 template <typename Value, size_t Size>
-SmallVector<Value, Size>::~SmallVector()
-{
-    // nothing
-}
+SmallVector<Value, Size>::~SmallVector() = default;
 
 template <typename Value, size_t Size>
 SmallVector<Value, Size>::SmallVector(const SmallVector<Value, Size>& other)
@@ -495,7 +492,7 @@ SmallVector<Value, Size>::SmallVector(const SmallVector<Value, Size>& other)
     }
     else
     {
-        mVector.reset(CUSTOM_NEW(Vector, (*other.mVector)));
+        mVector.reset(customNew<Vector>(*other.mVector));
     }
 }
 
@@ -518,7 +515,7 @@ SmallVector<Value, Size>& SmallVector<Value, Size>::operator=(const SmallVector<
         }
         else
         {
-            mVector.reset(CUSTOM_NEW(Vector, (*other.mVector)));
+            mVector.reset(customNew<Vector>(*other.mVector));
         }
     }
     return *this;
@@ -594,7 +591,7 @@ void SmallVector<Value, Size>::convertLarge()
     if (mSmall)
     {
         mSmall = false;
-        mVector.reset(CUSTOM_NEW(Vector, (mSmallContents, mSmallContents + mNumElements)));
+        mVector.reset(customNew<Vector>(mSmallContents, mSmallContents + mNumElements));
         for (size_type i = 0; i < mNumElements; ++i)
         {
             mSmallContents[i] = Value();

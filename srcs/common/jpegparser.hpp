@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -43,9 +43,9 @@ public:
     JpegInfo parse(uint8_t* data, unsigned int size);
 
 private:
-    uint8_t* mData;       ///< JPEG file data.
-    unsigned int mSize;   ///< JPEG file data size.
-    unsigned int mIndex;  ///< Parsing index in the data.
+    uint8_t* mData{nullptr};       ///< JPEG file data.
+    unsigned int mSize{0};   ///< JPEG file data size.
+    unsigned int mIndex{0};  ///< Parsing index in the data.
 
     /// JPEG segment marker types.
     enum Marker : uint8_t

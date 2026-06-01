@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,10 +14,9 @@
 #ifndef TRACKFRAGMENTHEADERBOX_HPP
 #define TRACKFRAGMENTHEADERBOX_HPP
 
-#include "bitstream.hpp"
-#include "customallocator.hpp"
 #include "fullbox.hpp"
 #include "moviefragmentsdatatypes.hpp"
+#include <cstdint>
 
 /**
  * @brief  Track Fragment Header Box class
@@ -26,7 +25,7 @@
 class TrackFragmentHeaderBox : public FullBox
 {
 public:
-    TrackFragmentHeaderBox(std::uint32_t tr_flags = 0);
+    explicit TrackFragmentHeaderBox(std::uint32_t tr_flags = 0);
     ~TrackFragmentHeaderBox() override = default;
 
     enum TrackFragmentHeaderFlags
@@ -101,13 +100,13 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    uint32_t mTrackId;
+    uint32_t mTrackId{0};
 
     // Optional fields:
-    uint64_t mBaseDataOffset;
-    uint32_t mSampleDescriptionIndex;
-    uint32_t mDefaultSampleDuration;
-    uint32_t mDefaultSampleSize;
+    uint64_t mBaseDataOffset{0};
+    uint32_t mSampleDescriptionIndex{0};
+    uint32_t mDefaultSampleDuration{0};
+    uint32_t mDefaultSampleSize{0};
     MOVIEFRAGMENTS::SampleFlags mDefaultSampleFlags;
 };
 

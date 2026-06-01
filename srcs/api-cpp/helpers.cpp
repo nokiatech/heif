@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,12 +12,73 @@
 
 #include "helpers.h"
 
+#include <cstdio>
 #include <limits>
+#include <string>
 
-#include "Heif.h"
+#include "ErrorCodes.h"
+#include "ErrorContext.h"
 
 namespace HEIFPP
 {
+    class CodedImageItem;
+    class DecoderConfig;
+    class DerivedImageItem;
+    class ImageItem;
+    class Item;
+    class MetaItem;
+    class Sample;
+    class Track;
+}  // namespace HEIFPP
+
+namespace HEIFPP
+{
+    // Sink-routed implementation of HEIF_LOG_INVARIANT (declared in helpers.h).
+    //
+    // Records the failure into the per-thread ErrorContext slot with
+    // source = Internal_Invariant and code = ERROR_UNDEFINED, then falls back
+    // to a single stderr line ONLY if no HEIFPP sink is installed -- so an
+    // unconfigured embedder still sees the failure rather than silent
+    // breakage of an internal-consistency check.
+    //
+    // noexcept: the call site is in branches that are already handling a
+    // failure path; throwing here would change observable behavior and risk
+    // unwinding through a destructor or noexcept boundary. We swallow any
+    // std::bad_alloc from string construction.
+    void reportInvariant(const char* file, int line, const char* msg) noexcept
+    {
+        try
+        {
+            ErrorContext ctx;
+            ctx.code    = Result::ERROR_UNDEFINED;
+            ctx.source  = ErrorSource::Internal_Invariant;
+            ctx.message = (msg != nullptr) ? msg : "<no message>";
+            ctx.file    = (file != nullptr) ? file : "<unknown>";
+            ctx.line    = line;
+            ctx.valid   = true;
+            const bool sinkWillFire = hasErrorSink();
+            setLastError(ctx); // dispatches to sink if installed
+            if (!sinkWillFire)
+            {
+                // No sink -- keep the historical "loud failure" behavior so
+                // an unconfigured embedder still notices broken invariants.
+                std::fprintf(stderr,
+                             "[heif] [Internal_Invariant@%s:%d] HEIF invariant violated: %s\n",
+                             ctx.file, ctx.line, ctx.message.c_str());
+            }
+        }
+        catch (...)
+        {
+            // Best-effort fallback: if even the slot population threw
+            // (std::bad_alloc on the std::string), at least emit one line.
+            std::fprintf(stderr,
+                         "[heif] [Internal_Invariant@%s:%d] HEIF invariant violated (slot population failed): %s\n",
+                         (file != nullptr) ? file : "<unknown>",
+                         line,
+                         (msg != nullptr) ? msg : "<no message>");
+        }
+    }
+
     template <class T>
     void LinkArray<T>::addLink(T aTarget)
     {
@@ -50,7 +111,7 @@ namespace HEIFPP
             }
         }
         // Tried to remove nonexistant link.
-        HEIF_ASSERT(false);
+        HEIF_LOG_INVARIANT(false, "LinkArray::removeLink: target was not linked");
         return false;
     }
 
@@ -62,7 +123,7 @@ namespace HEIFPP
     template <class T>
     std::uint32_t LinkArray<T>::size() const
     {
-        return (uint32_t) mList.size();
+        return static_cast<uint32_t>(mList.size());
     }
     template <class T>
     std::pair<T, std::uint32_t>& LinkArray<T>::operator[](uint32_t aId)
@@ -93,14 +154,13 @@ namespace HEIFPP
         {
             i >>= 1;
         }
-        return (shift << 1) + 1;
+        return static_cast<std::uint8_t>((shift << 1) + 1);
     }
 
     BitStream::BitStream(std::uint8_t* aData, std::uint32_t aLen)
         : mSrc(aData)
         , mLen(aLen)
-        , mCBit(0)
-        , mWriteByte(0)
+         
     {
     }
 
@@ -111,7 +171,7 @@ namespace HEIFPP
         for (std::uint32_t i = 0; i < bits; i++)
         {
             auto index         = static_cast<std::uint32_t>(tempCBit / 8);
-            std::uint32_t cbit = static_cast<std::uint8_t>(tempCBit - (index * 8));
+            std::uint32_t cbit = static_cast<std::uint8_t>(tempCBit - (static_cast<std::uint64_t>(index) * 8));
             res |= ((static_cast<std::uint32_t>(mSrc[index]) >> (7u - cbit)) & 1u) << (bits - i - 1u);
             tempCBit++;
         }
@@ -124,7 +184,7 @@ namespace HEIFPP
         for (std::uint32_t i = 0; i < bits; i++)
         {
             auto index         = static_cast<std::uint32_t>(mCBit / 8);
-            std::uint32_t cbit = static_cast<std::uint8_t>(mCBit - (index * 8));
+            std::uint32_t cbit = static_cast<std::uint8_t>(mCBit - (static_cast<std::uint64_t>(index) * 8));
             res |= ((static_cast<std::uint32_t>(mSrc[index]) >> (7u - cbit)) & 1u) << (bits - i - 1u);
             mCBit++;
         }
@@ -142,7 +202,7 @@ namespace HEIFPP
             do
             {
                 auto index         = static_cast<std::uint32_t>(mCBit / 8);
-                std::uint32_t cbit = static_cast<std::uint8_t>(mCBit - (index * 8));
+                std::uint32_t cbit = static_cast<std::uint8_t>(mCBit - (static_cast<std::uint64_t>(index) * 8));
 
                 const unsigned int numBitsLeftInByte = 8 - cbit;
                 if (numBitsLeftInByte > len)
@@ -185,13 +245,13 @@ namespace HEIFPP
 
     std::uint64_t BitStream::bits_to_decode()
     {
-        return (mLen * 8) - mCBit;
+        return (static_cast<uint64_t>(mLen) * 8) - mCBit;
     }
 
     std::int32_t BitStream::getSignedExpGolombCode()  // se(v)
     {
         std::uint32_t codeNum = getExpGolombCode();
-        auto signedVal        = std::int32_t((codeNum + 1) >> 1);
+        auto signedVal        = static_cast<std::int32_t>((codeNum + 1) >> 1);
 
         if ((codeNum & 1) == 0)
         {

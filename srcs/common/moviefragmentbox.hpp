@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,14 +14,12 @@
 #ifndef MOVIEFRAGMENTBOX_HPP
 #define MOVIEFRAGMENTBOX_HPP
 
-#include <memory>
 
 #include "bbox.hpp"
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "moviefragmentheaderbox.hpp"
-#include "trackextendsbox.hpp"
 #include "trackfragmentbox.hpp"
+#include <cstdint>
 
 /**
  * @brief  Movie Fragment Box class
@@ -30,7 +28,7 @@
 class MovieFragmentBox : public Box
 {
 public:
-    MovieFragmentBox(Vector<MOVIEFRAGMENTS::SampleDefaults>& sampleDefaults);
+    explicit MovieFragmentBox(Vector<MOVIEFRAGMENTS::SampleDefaults>& sampleDefaults);
     ~MovieFragmentBox() override = default;
 
     /** @return Reference to the contained MovieFragmentHeaderBox. */
@@ -66,7 +64,7 @@ private:
     MovieFragmentHeaderBox mMovieFragmentHeaderBox;
     Vector<UniquePtr<TrackFragmentBox>> mTrackFragmentBoxes;  ///< Contained TrackFragmentBoxes
     Vector<MOVIEFRAGMENTS::SampleDefaults>& mSampleDefaults;
-    std::uint64_t mFirstByteOffset;  ///< Offset of 1st byte of this moof inside its segment/file
+    std::uint64_t mFirstByteOffset{0};  ///< Offset of 1st byte of this moof inside its segment/file
 };
 
 #endif /* end of include guard: MOVIEFRAGMENTBOX_HPP */

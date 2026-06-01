@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,7 +13,11 @@
 
 #include "mediabox.hpp"
 
+#include "bitstream.hpp"
+
 #include "log.hpp"
+#include "fourccint.hpp"
+#include <iosfwd>
 
 using namespace std;
 
@@ -94,7 +98,7 @@ void MediaBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside MediaBox." << std::endl;
+            logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside MediaBox." << '\n';
         }
     }
 }

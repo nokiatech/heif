@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,19 +14,31 @@
 #ifndef HEIFREADERIMPL_HPP
 #define HEIFREADERIMPL_HPP
 
+#include <cstdint>
 #include "decodepts.hpp"
 #include "extendedtypebox.hpp"
 #include "filetypebox.hpp"
 #include "heiffiledatatypesinternal.hpp"
 #include "heifreader.h"
 #include "heifreadersegment.hpp"
-#include "heifstreamgeneric.hpp"
-#include "heifstreaminternal.hpp"
-#include "imagespatialextentsproperty.hpp"
 #include "metabox.hpp"
 #include "moviebox.hpp"
 #include "moviefragmentbox.hpp"
+#include "sampledescriptionbox.hpp"
+#include "samplegroupdescriptionbox.hpp"
+#include "sampletogroupbox.hpp"
 #include "segmentindexbox.hpp"
+#include "trackbox.hpp"
+
+#include "tonemapimage.hpp"
+#include "bitstream.hpp"
+#include "customallocator.hpp"
+#include "fourccint.hpp"
+#include "heifcommondatatypes.h"
+#include "heifreaderdatatypes.h"
+#include <cstddef>
+#include <functional>
+#include <map>
 
 class CleanApertureBox;
 class AuxiliaryTypeInfoBox;
@@ -136,11 +148,15 @@ namespace HEIF
                               uint64_t& memoryBufferSize,
                               bool bytestreamHeaders = true) override;
 
+
         /// @see Reader::getItem()
         ErrorCode getItem(const ImageId& itemId, Overlay& iovlItem) const override;
 
         /// @see Reader::getItem()
         ErrorCode getItem(const ImageId& itemId, Grid& gridItem) const override;
+
+        /// @see Reader::getItemTmap()
+        ErrorCode getItem(const ImageId& tmapItemId, Tonemap& tonemap) const override;
 
         /// @see Reader::getProperty()
         ErrorCode getProperty(const PropertyId& index, RequiredReferenceTypes& rref) const override;
@@ -169,6 +185,12 @@ namespace HEIF
         ErrorCode getProperty(const PropertyId& index, RelativeLocation& rloc) const override;
 
         /// @see Reader::getProperty()
+        ErrorCode getProperty(const PropertyId& index, LayerSelector& lsel) const override;
+        ErrorCode getProperty(const PropertyId& index, TargetOls& tols) const override;
+        ErrorCode getProperty(const PropertyId& index, OperatingPointsInfo& oinf) const override;
+        ErrorCode getProperty(const PropertyId& index, SubSampleInfo& subs) const override;
+
+        /// @see Reader::getProperty()
         ErrorCode getProperty(const PropertyId& index, PixelInformation& pixi) const override;
 
         /// @see Reader::getProperty()
@@ -188,6 +210,27 @@ namespace HEIF
 
         /// @see Reader::getProperty()
         ErrorCode getProperty(const PropertyId& index, AccessibilityText& altt) const override;
+
+        /// @see Reader::getProperty()
+        ErrorCode getProperty(const PropertyId& index, SpatialExtents& ispe) const override;
+
+        /// @see Reader::getProperty()
+        ErrorCode getProperty(const PropertyId& index, ContentLightLevel& clli) const override;
+
+        /// @see Reader::getProperty()
+        ErrorCode getProperty(const PropertyId& index, MasteringDisplayColorVolume& mdcv) const override;
+
+        /// @see Reader::getProperty()
+        ErrorCode getProperty(const PropertyId& index, ContentColorVolume& cclv) const override;
+
+        /// @see Reader::getProperty()
+        ErrorCode getProperty(const PropertyId& index, AmbientViewingEnvironment& amve) const override;
+
+        /// @see Reader::getProperty()
+        ErrorCode getProperty(const PropertyId& index, ReferenceViewingEnvironment& reve) const override;
+
+        /// @see Reader::getProperty()
+        ErrorCode getProperty(const PropertyId& index, NominalDiffuseWhite& ndwt) const override;
 
         /// @see Reader::getProperty()
         ErrorCode getProperty(const SequenceId& sequenceId,
@@ -250,6 +293,10 @@ namespace HEIF
         /// @see Reader::getDecoderParameterSets()
         ErrorCode getDecoderParameterSets(const ImageId& itemId, DecoderConfiguration& decoderInfos) const override;
 
+        /// @see Reader::getDecoderParameterSetsForAllLayers()
+        ErrorCode getDecoderParameterSetsForAllLayers(const ImageId& itemId,
+                                                      DecoderConfiguration& decoderInfos) const override;
+
         /// @see Reader::getDecoderParameterSets()
         ErrorCode getDecoderParameterSets(const SequenceId& sequenceId,
                                           const SequenceImageId& itemId,
@@ -269,13 +316,13 @@ namespace HEIF
         ErrorCode parseSegmentIndex(StreamInterface* streamInterface, Array<SegmentInformation>& segmentIndex) override;
 
     private:
-        enum class State
+        enum class State : std::uint8_t
         {
             UNINITIALIZED,  ///< State before starting to read file and after closing it
             INITIALIZING,   ///< State during parsing the file
             READY           ///< State after the file has been parsed and information extracted
         };
-        State mState;  ///< Running state of the reader API implementation
+        State mState{State::UNINITIALIZED};  ///< Running state of the reader API implementation
 
         StreamIO mFileStream;  ///< File IO stream
 
@@ -304,7 +351,7 @@ namespace HEIF
         /* ****************** Common for meta and track content ***************** */
         /* ********************************************************************** */
 
-        bool mIsPrimaryItemSet;  ///< True if Primary Item Box is present.
+        bool mIsPrimaryItemSet{false};  ///< True if Primary Item Box is present.
         ImageId mPrimaryItemId;  ///< ID of the primary item.
 
         FileTypeBox mFtyp;      ///< File Type Box for later information retrieval
@@ -336,7 +383,7 @@ namespace HEIF
 
         ErrorCode handleFtyp(StreamIO& io);
         ErrorCode handleEtyp(StreamIO& io);
-        ErrorCode handleMeta(StreamIO& io);
+        ErrorCode handleMeta(StreamIO& io, bool fromMini);
         ErrorCode handleMoov(StreamIO& io);
 
 
@@ -364,7 +411,7 @@ namespace HEIF
         /** Move decoder configuration parameter data to ParamSetMap
          * @param record decoder configuration
          * @return Decoder parameters */
-        static ParameterSetMap makeDecoderParameterSetMap(const DecoderConfigurationRecord& record);
+        static ParameterSetMap makeDecoderParameterSetMap(const DecoderConfigurationRecord& record, const uint16_t& nuh_layer_id = 0);
 
         /**
          * Get ids of all items of a image collection.
@@ -399,6 +446,25 @@ namespace HEIF
          *  @return ErrorCode: OK, FILE_READ_ERROR */
         static ErrorCode processHevcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize);
 
+        /** Process item data from VVC bitstream
+         *  @param [in] data  char pointer to raw VVC bitstream data.
+         *  @param [in] size  size of data to be modified.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, FILE_READ_ERROR */
+        static ErrorCode processVvcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize, const uint8_t& lengthSize);
+
+        /** @brief Process and modify Item Data of a Compact VVC.
+         * @note Functionality is different from processVvcItemData
+         * @details processVvcItemData() turns the fileformat specified nalu length bytes
+         *          preceding every nalu into a startcode. Compact VVC doesn't contain these bytes so this
+         *          method inserts those bytes to the memorybuffer with the appropriate value.
+         * @param [in,out] memoryBuffer char pointer to raw VVC bitstream data.
+         * @param [in,out] memoryBufferSize size of data to be modified.
+         * @param [in] itemSizes Vector containing the size (sum of all extents) for every item
+         * @return ErrorCode: OK, FILE_READ_ERROR
+         */
+        static ErrorCode processCompactVvcItemData(uint8_t* memoryBuffer, uint64_t& memoryBufferSize);
+
         /* ********************************************************************** */
         /* *********************** Meta-specific section  *********************** */
         /* ********************************************************************** */
@@ -407,8 +473,20 @@ namespace HEIF
         Map<DecoderConfigId, ParameterSetMap> mImageItemParameterSetMap;  ///< Extracted decoder parameter sets
         Map<ImageId, DecoderConfigId> mImageToParameterSetMap;  ///< Map from image item to parameter set map entry
 
+        /// All-layers parameter set cache for multi-layer VVC items, keyed by
+        /// the BASE configIndex (the iprp property index, with no per-layer
+        /// encoding in the upper bits). Only populated for items whose vvcC
+        /// has multi_layer_flag = 1; non-multilayer items rely on the per-layer
+        /// cache above instead. @see getDecoderParameterSetsForAllLayers
+        /// Mutable: populated from the const member processDecoderConfigProperties.
+        mutable Map<DecoderConfigId, ParameterSetMap> mImageItemAllLayersParameterSetMap;
+        /// Map from a multi-layer VVC item to its base configIndex (the key
+        /// into mImageItemAllLayersParameterSetMap). Items not present here
+        /// are not part of any multi-layer VVC stream.
+        mutable Map<ImageId, DecoderConfigId> mImageToAllLayersParameterSetMap;
+
         MetaBox mMetaBox;  ///< Root-level MetaBox for later information retrieval
-        bool mMetaBoxLoaded;
+        bool mMetaBoxLoaded{false};
 
         typedef Map<uint32_t, PropertyTypeVector> Properties;  ///< Convenience type for mapping properties
 
@@ -428,7 +506,7 @@ namespace HEIF
         typedef Map<ImageId, ItemInfo> ItemInfoMap;
 
         /**
-         * @brief Recognize image item types ( "avc1", "hvc1", "grid", "iovl", "iden", "jpeg")
+         * @brief Recognize image item types ( "avc1", "hvc1", "vvc1", "grid", "iovl", "iden", "jpeg")
          *        as well as mime content type "image/jpeg"
          * @param ItemInfo for the item
          * @return True if the 4CC is an image type or if it's a mime type and content type "image/jpeg" */
@@ -469,6 +547,7 @@ namespace HEIF
             ItemInfoMap itemInfoMap;                   ///< Information of other items
             Map<ImageId, Grid> gridItems;              ///< Data of image grid items
             Map<ImageId, Overlay> iovlItems;           ///< Data of image overlay items
+            Map<ImageId, ToneMapImage> tmapItems;      ///< Data of tonemap items
             Properties properties;                     ///< Property information of each item
         };
         MetaBoxInfo mMetaBoxInfo;  ///< MetaBoxInfo struct for root-level MetaBox
@@ -511,12 +590,39 @@ namespace HEIF
         Properties processItemProperties() const;
 
         /**
-         * @brief Fill imageItemParameterSetMap, imageToParameterSetMap and imageItemCodeTypeMap from metabox */
-        static void processDecoderConfigProperties(const ItemPropertiesBox& iprp,
-                                                   const ItemFeaturesMap& itemFeaturesMap,
-                                                   Map<DecoderConfigId, ParameterSetMap>& imageItemParameterSetMap,
-                                                   Map<ImageId, DecoderConfigId>& imageToParameterSetMap,
-                                                   Map<ImageId, FourCCInt>& imageItemCodeTypeMap);
+         * @brief Fill imageItemParameterSetMap, imageToParameterSetMap and imageItemCodeTypeMap from metabox
+         * @details For VVC items, the per-item nuh_layer_id is discovered by
+         *          peeking at the first byte of the item's NAL header, and the
+         *          parameter sets cached for the item are restricted to that
+         *          layer. Items sharing the same (config, layer) pair share a
+         *          single cache entry; items sharing the config but on
+         *          different layers get distinct entries.
+         *          Non-static because layer-id discovery requires reading from
+         *          the input stream via loadItemData().
+         * @return ErrorCode: OK, FILE_HEADER_ERROR */
+        ErrorCode processDecoderConfigProperties(const ItemPropertiesBox& iprp,
+                                                 const ItemFeaturesMap& itemFeaturesMap,
+                                                 const MetaBox& metaBox,
+                                                 Map<DecoderConfigId, ParameterSetMap>& imageItemParameterSetMap,
+                                                 Map<ImageId, DecoderConfigId>& imageToParameterSetMap,
+                                                 Map<ImageId, FourCCInt>& imageItemCodeTypeMap) const;
+
+        /**
+         * @brief Discover nuh_layer_id of a VVC image item by reading the first
+         *        NAL header byte from the item's bitstream.
+         * @param metaBox      MetaBox holding the item.
+         * @param itemId       Item id.
+         * @param lengthSize   NALU length-prefix size from the item's vvcC
+         *                     (1, 2 or 4 bytes). The item layout is
+         *                     [length][NAL header][NAL payload]...
+         * @param [out] nuhLayerId  Captured layer id (0..63). On error the value
+         *                          is left unchanged so callers may default to 0.
+         * @return ErrorCode: OK on success, otherwise an IO/parse error. */
+        ErrorCode getVvcItemNuhLayerId(const MetaBox& metaBox,
+                                       ImageId itemId,
+                                       uint8_t lengthSize,
+                                       uint16_t& nuhLayerId) const;
+
 
         /**
          * @brief Extract MetaBoxInfo struct for reader internal use
@@ -764,6 +870,33 @@ namespace HEIF
         static Array<DirectReferenceSamples> getDirectReferenceSamplesGroups(const TrackBox* trackBox);
 
         /**
+         * @brief Extract information about sample RectangularRegionGroupEntry() groups ('trif') for the reader
+         * interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return Rectangular region group entry information. */
+        static Array<RectangularRegion> getRectangularRegionGroups(const TrackBox* trackBox);
+
+        /**
+         * @brief Extract information about sample VvcSubpicOrderEntry() groups ('spor') for the reader
+         * interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return VVC subpic order entry sample group information. */
+        static Array<VvcSubpicOrder> getVvcSubpicOrderEntryGroups(const TrackBox* trackBox);
+
+        /**
+         * @brief Extract information about sample VvcSubpicLayoutMapEntry() groups ('sulm') for the reader interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return VVC subpicture layout map entry sample group information. */
+        static Array<VvcSubpicLayoutMap> getVvcSubpicLayoutEntryGroups(const TrackBox* trackBox);
+
+        /**
+         * @brief Extract information about sample VvcMixedNALUnitTypePicEntry() groups ('minp') for the reader
+         * interface.
+         * @param [in] trackBox TrackBox to extract data from.
+         * @return VVC mixed NAL unit type pictures sample group information. */
+        static Array<VvcMixedNalUnitTypePic> getVvcMixedNalUnitTypePicEntryGroups(const TrackBox* trackBox);
+
+        /**
          * @brief Extract information about alternate track IDs for a track for the reader interface
          * @param [in] trackBox TrackBox to look alternate track IDs for
          * @param [in] moovBox  MovieBox containing the TrackBox
@@ -845,7 +978,7 @@ namespace HEIF
         class FileReaderException : public ISOBMFF::Exception
         {
         public:
-            FileReaderException(ErrorCode status, const char* message = nullptr)
+            explicit FileReaderException(ErrorCode status, const char* message = nullptr)
                 : Exception(message)
                 , mErrorCode(status)
             {

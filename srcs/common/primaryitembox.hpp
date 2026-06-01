@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,8 +14,8 @@
 #ifndef PRIMARYITEMBOX_HPP
 #define PRIMARYITEMBOX_HPP
 
-#include "customallocator.hpp"
 #include "fullbox.hpp"
+#include <cstdint>
 
 /**
  * @brief Primary Item Box class
@@ -43,7 +43,7 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    std::uint32_t mItemId;  ///< The identifier of the primary item
+    std::uint32_t mItemId{0};  ///< The identifier of the primary item
 };
 
 #endif /* end of include guard: PRIMARYITEMBOX_HPP */

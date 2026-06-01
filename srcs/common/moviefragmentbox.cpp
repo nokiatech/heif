@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,14 +13,20 @@
 
 #include "moviefragmentbox.hpp"
 
+#include "bitstream.hpp"
+
 #include "log.hpp"
+#include "fourccint.hpp"
+#include <memory>
+#include <utility>
+#include <vector>
 
 MovieFragmentBox::MovieFragmentBox(Vector<MOVIEFRAGMENTS::SampleDefaults>& sampleDefaults)
     : Box("moof")
     , mMovieFragmentHeaderBox()
     , mTrackFragmentBoxes()
     , mSampleDefaults(sampleDefaults)
-    , mFirstByteOffset(0)
+     
 {
 }
 
@@ -80,14 +86,14 @@ void MovieFragmentBox::parseBox(BitStream& bitstr)
         }
         else if (boxType == "traf")
         {
-            UniquePtr<TrackFragmentBox> trackFragmentBox(CUSTOM_NEW(TrackFragmentBox, (mSampleDefaults)));
+            auto trackFragmentBox = makeCustomUnique<TrackFragmentBox, TrackFragmentBox>(mSampleDefaults);
             trackFragmentBox->parseBox(subBitstr);
             mTrackFragmentBoxes.push_back(std::move(trackFragmentBox));
         }
         else
         {
             logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside MovieFragmentBox."
-                         << std::endl;
+                         << '\n';
         }
     }
 }

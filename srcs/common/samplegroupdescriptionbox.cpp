@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,19 +13,27 @@
 
 #include "samplegroupdescriptionbox.hpp"
 
-#include <stdexcept>
 
 #include "bitstream.hpp"
 #include "directreferencesampleslist.hpp"
 #include "log.hpp"
+#include "rectangularregiongroupentry.hpp"
 #include "sampletometadataitementry.hpp"
 #include "visualequivalenceentry.hpp"
+#include "vvcmixednalunittypepicentry.hpp"
+#include "vvcsubpicidentry.hpp"
+#include "vvcsubpicorderentry.hpp"
+#include "samplegroupdescriptionentry.hpp"
+#include <memory>
+#include <utility>
+#include <vector>
+
 
 SampleGroupDescriptionBox::SampleGroupDescriptionBox()
     : FullBox("sgpd", 0, 0)
     , mGroupingType()
-    , mDefaultLength(0)
-    , mSampleGroupEntry()
+    , 
+     mSampleGroupEntry()
 {
 }
 
@@ -148,26 +156,52 @@ void SampleGroupDescriptionBox::parseBox(ISOBMFF::BitStream& bitstr)
 
         if (mGroupingType == "refs")
         {
-            UniquePtr<SampleGroupDescriptionEntry> directReferenceSampleListEntry(
-                CUSTOM_NEW(DirectReferenceSamplesList, ()));
+            auto directReferenceSampleListEntry =
+                makeCustomUnique<DirectReferenceSamplesList, SampleGroupDescriptionEntry>();
             directReferenceSampleListEntry->parseEntry(subBitstr);
             mSampleGroupEntry.push_back(std::move(directReferenceSampleListEntry));
         }
         else if (mGroupingType == "eqiv")
         {
-            UniquePtr<SampleGroupDescriptionEntry> visualEquivalenceEntry(CUSTOM_NEW(VisualEquivalenceEntry, ()));
+            auto visualEquivalenceEntry = makeCustomUnique<VisualEquivalenceEntry, SampleGroupDescriptionEntry>();
             visualEquivalenceEntry->parseEntry(subBitstr);
             mSampleGroupEntry.push_back(std::move(visualEquivalenceEntry));
         }
         else if (mGroupingType == "stmi")
         {
-            UniquePtr<SampleGroupDescriptionEntry> sampleToMetadataItemEntry(CUSTOM_NEW(SampleToMetadataItemEntry, ()));
+            auto sampleToMetadataItemEntry = makeCustomUnique<SampleToMetadataItemEntry, SampleGroupDescriptionEntry>();
             sampleToMetadataItemEntry->parseEntry(subBitstr);
             mSampleGroupEntry.push_back(std::move(sampleToMetadataItemEntry));
         }
+        else if (mGroupingType == "spor")
+        {
+            auto vvcSubpicOrderEntry = makeCustomUnique<VvcSubpicOrderEntry, SampleGroupDescriptionEntry>();
+            vvcSubpicOrderEntry->parseEntry(subBitstr);
+            mSampleGroupEntry.push_back(std::move(vvcSubpicOrderEntry));
+        }
+        else if (mGroupingType == "spid")
+        {
+            auto vvcSubpicIdEntry = makeCustomUnique<VvcSubpicIdEntry, SampleGroupDescriptionEntry>();
+            vvcSubpicIdEntry->parseEntry(subBitstr);
+            mSampleGroupEntry.push_back(std::move(vvcSubpicIdEntry));
+        }
+        else if (mGroupingType == "trif")
+        {
+            auto rectangularRegionGroupEntry =
+                makeCustomUnique<RectangularRegionGroupEntry, SampleGroupDescriptionEntry>();
+            rectangularRegionGroupEntry->parseEntry(subBitstr);
+            mSampleGroupEntry.push_back(std::move(rectangularRegionGroupEntry));
+        }
+        else if (mGroupingType == "minp")
+        {
+            auto vvcMixedNalUnitTypePicEntry =
+                makeCustomUnique<VvcMixedNalUnitTypePicEntry, SampleGroupDescriptionEntry>();
+            vvcMixedNalUnitTypePicEntry->parseEntry(subBitstr);
+            mSampleGroupEntry.push_back(std::move(vvcMixedNalUnitTypePicEntry));
+        }
         else
         {
-            /** @todo Add support for other entry types here. */
+            ///@todo Add support for other entry types here.
             logWarning() << "Skipping an entry of SampleGroupDescriptionBox of an unknown grouping type '"
                          << mGroupingType.getString() << "'.";
         }

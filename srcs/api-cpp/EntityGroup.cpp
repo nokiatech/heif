@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,9 +11,12 @@
  */
 #include "EntityGroup.h"
 
+#include "Heif.h"
 #include "Item.h"
 #include "Sample.h"
 #include "Track.h"
+#include "heifcommondatatypes.h"
+#include "helpers.h"
 
 using namespace HEIFPP;
 
@@ -111,7 +114,7 @@ EntityGroup::EntityGroup(Heif* aHeif, const HEIF::FourCC& aType)
     : mHeif(aHeif)
     , mId(Heif::InvalidGroup)
     , mType(aType)
-    , mContext(nullptr)
+     
 {
     mHeif->addGroup(this);
 }
@@ -135,7 +138,7 @@ const void* EntityGroup::getContext() const
     return mContext;
 }
 
-const HEIF::GroupId& EntityGroup::getId() const
+const HEIF::GroupId& EntityGroup::getId() const noexcept
 {
     return mId;
 }
@@ -257,7 +260,7 @@ bool EntityGroup::hasTracks() const
     // TODO: instead of scanning, keep a count of types.
     for (auto& ent : mItems)
     {
-        if (ent.isSample())
+        if (ent.isTrack())
         {
             return true;
         }
@@ -269,7 +272,7 @@ bool EntityGroup::hasSamples() const
     // TODO: instead of scanning, keep a count of types.
     for (auto& ent : mItems)
     {
-        if (ent.isTrack())
+        if (ent.isSample())
         {
             return true;
         }
@@ -317,7 +320,7 @@ bool EntityGroup::addEntity(Item* aItem, Track* aTrack, Sample* aSample, std::in
     }
     else
     {
-        HEIF_ASSERT(false);
+        HEIF_LOG_INVARIANT(false, "EntityGroup::addEntity: all of aItem/aTrack/aSample are null");
     }
 
     aIndex = static_cast<std::int32_t>(mItems.size() - 1);

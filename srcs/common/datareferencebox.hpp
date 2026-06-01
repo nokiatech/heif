@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,9 +16,10 @@
 
 #include <cstdint>
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include "fourccint.hpp"
+#include <memory>
 
 /** @brief Data Entry Box class. Extends from FullBox.
  *  @details This is the base class for DataEntryUrlBox and DataEntryUrnBox
@@ -55,13 +56,13 @@ private:
 class DataEntryUrlBox : public DataEntryBox
 {
 public:
-    enum IsSelfContained
+    enum IsSelfContained : std::uint8_t
     {
         NotSelfContained,
         SelfContained
     };
 
-    DataEntryUrlBox(IsSelfContained isSelfContained = NotSelfContained);
+    explicit DataEntryUrlBox(IsSelfContained isSelfContained = NotSelfContained);
     ~DataEntryUrlBox() override = default;
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,14 +12,18 @@
  */
 
 #include "avcsampleentry.hpp"
+#include "customallocator.hpp"
+
+#include "bitstream.hpp"
 
 #include "log.hpp"
+#include "fourccint.hpp"
 
 AvcSampleEntry::AvcSampleEntry()
     : VisualSampleEntryBox("avc1", "AVC Coding")
     , mAvcConfigurationBox()
     , mCodingConstraintsBox()
-    , mIsCodingConstraintsPresent(false)
+     
 {
 }
 
@@ -87,14 +91,14 @@ void AvcSampleEntry::parseBox(ISOBMFF::BitStream& bitstr)
         else
         {
             logWarning() << "Skipping unknown box of type '" << boxType.getString() << "' inside AvcSampleEntry"
-                         << std::endl;
+                         << '\n';
         }
     }
 }
 
 AvcSampleEntry* AvcSampleEntry::clone() const
 {
-    return CUSTOM_NEW(AvcSampleEntry, (*this));
+    return customNew<AvcSampleEntry>(*this);
 }
 
 const DecoderConfigurationRecord* AvcSampleEntry::getConfigurationRecord() const

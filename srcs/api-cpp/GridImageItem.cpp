@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,8 +12,16 @@
 
 #include "GridImageItem.h"
 
+#include "Heif.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
+
+#include "ErrorContext.h"
+#include "ImageItem.h"
+#include "helpers.h"
+#include <stddef.h>
+#include <vector>
 
 using namespace HEIFPP;
 
@@ -50,7 +58,7 @@ void GridImageItem::resize(uint32_t aColumns, std::uint32_t aRows)
     std::uint32_t mx = aColumns > mColumns ? mColumns : aColumns;
     std::uint32_t my = aRows > mRows ? mRows : aRows;
 
-    tmp.resize(aColumns * aRows);
+    tmp.resize(static_cast<size_t>(aColumns) * aRows);
     for (uint32_t y = 0; y < my; ++y)
     {
         for (uint32_t x = 0; x < mx; ++x)
@@ -93,7 +101,9 @@ Result GridImageItem::getImage(uint32_t aColumn, std::uint32_t aRow, ImageItem*&
 {
     if (aColumn >= mColumns || aRow >= mRows)
     {
-        return Result::INDEX_OUT_OF_BOUNDS;
+        return HEIFPP_FAIL(Result::INDEX_OUT_OF_BOUNDS,
+                           ErrorSource::Api_Validation,
+                           "GridImageItem::getImage: column or row exceeds grid dimensions");
     }
     aImage = getSourceImage(aColumn + aRow * mColumns);
     return Result::OK;
@@ -103,7 +113,9 @@ Result GridImageItem::setImage(uint32_t aColumn, std::uint32_t aRow, ImageItem* 
 {
     if (aColumn >= mColumns || aRow >= mRows)
     {
-        return Result::INDEX_OUT_OF_BOUNDS;
+        return HEIFPP_FAIL(Result::INDEX_OUT_OF_BOUNDS,
+                           ErrorSource::Api_Validation,
+                           "GridImageItem::setImage: column or row exceeds grid dimensions");
     }
     setSourceImage(aColumn + aRow * mColumns, aImage);
     return Result::OK;
@@ -116,7 +128,9 @@ Result GridImageItem::removeImage(ImageItem* aImage)
     {
         return Result::OK;
     }
-    return Result::INVALID_HANDLE;
+    return HEIFPP_FAIL(Result::INVALID_HANDLE,
+                       ErrorSource::Api_Validation,
+                       "GridImageItem::removeImage: image not found in grid sources");
 }
 
 HEIF::ErrorCode GridImageItem::load(HEIF::Reader* aReader, const HEIF::ImageId& aId)

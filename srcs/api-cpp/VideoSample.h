@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,13 +13,15 @@
 #pragma once
 
 #include <Sample.h>
+#include "heifcommondatatypes.h"
+#include <cstdint>
 
 namespace HEIFPP
 {
     class VideoSample : public Sample
     {
     public:
-        VideoSample(Heif* aHeif);
+        explicit VideoSample(Heif* aHeif);
         std::uint32_t getWidth() const;
         std::uint32_t getHeight() const;
 
@@ -31,7 +33,7 @@ namespace HEIFPP
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
         std::uint32_t mWidth, mHeight;
 
-    private:
+    public:
         VideoSample& operator=(const VideoSample&) = delete;
         VideoSample& operator=(VideoSample&&) = delete;
         VideoSample(const VideoSample&)       = delete;

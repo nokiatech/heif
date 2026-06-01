@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,9 @@
 
 #include "trackbox.hpp"
 
+#include "bitstream.hpp"
+#include "customallocator.hpp"
+#include "fourccint.hpp"
 #include "log.hpp"
 
 using namespace std;
@@ -22,12 +25,12 @@ TrackBox::TrackBox()
     , mTrackHeaderBox()
     , mMediaBox()
     , mTrackReferenceBox()
-    , mHasTrackReferences(false)
-    , mTrackGroupBox()
-    , mHasTrackGroupBox(false)
-    , mTrackTypeBox()
-    , mHasTrackTypeBox(false)
-    , mEditBox(nullptr)
+    , 
+     mTrackGroupBox()
+    , 
+     mTrackTypeBox()
+    , 
+     mEditBox(nullptr)
 {
 }
 
@@ -186,7 +189,7 @@ void TrackBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else if (boxType == "meta")
         {
-            /** @todo Implement this when reading meta box in tracks is supported. */
+            ///@todo Implement this when reading meta box in tracks is supported.
         }
         else if (boxType == "tref")
         {
@@ -210,7 +213,7 @@ void TrackBox::parseBox(ISOBMFF::BitStream& bitstr)
         }
         else
         {
-            logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside TrackBox." << std::endl;
+            logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside TrackBox." << '\n';
         }
     }
 }

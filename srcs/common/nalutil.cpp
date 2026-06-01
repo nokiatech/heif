@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -10,6 +10,10 @@
  * Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior
  * written consent of Nokia.
  */
+
+#include <cstdint>
+#include <stddef.h>
+#include <vector>
 
 #include "nalutil.hpp"
 
@@ -57,7 +61,7 @@ bool convertByteStreamToRBSP(const Vector<uint8_t>& byteStr, Vector<uint8_t>& ou
     i += NALU_HEADER_LENGTH;
 
     // copy rest of the data while removing start code emulation prevention bytes
-    enum class State
+    enum class State : std::uint8_t
     {
         COPY_DATA,
         ONE_ZERO_FOUND,
@@ -111,6 +115,8 @@ bool convertByteStreamToRBSP(const Vector<uint8_t>& byteStr, Vector<uint8_t>& ou
             {
                 state = State::COPY_DATA;
             }
+            break;
+        default:
             break;
         }
     }

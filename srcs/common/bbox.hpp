@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -70,7 +70,7 @@ public:
     virtual void parseBox(ISOBMFF::BitStream& bitstr) = 0;
 
 protected:
-    Box(FourCCInt boxType);
+    explicit Box(FourCCInt boxType);
     virtual ~Box() = default;
 
     /** @brief Sets the size of the Box
@@ -107,15 +107,15 @@ protected:
 
 private:
     /// @brief size of the Box
-    mutable std::uint64_t mSize;
+    mutable std::uint64_t mSize{8};
     /// @brief type of the Box
     FourCCInt mType;
     /// @brief When the box type is "uuid", user defined type to be used as extended Type.
     Vector<std::uint8_t> mUserType;
     /// @brief Internal variable to keep track of the byte position for bitstream operations.
-    mutable std::uint64_t mStartLocation;
+    mutable std::uint64_t mStartLocation{0};
     /// @brief Use 64-bit size field instead of default 32-bit.
-    bool mLargeSize;
+    bool mLargeSize{false};
 };
 
 #endif /* end of include guard: BBOX_HPP */

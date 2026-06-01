@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -27,7 +27,10 @@
 
 namespace HEIF
 {
-    enum TrackSampleType
+    // Public-header enums in this file have their underlying
+    // type pinned to its natural width (std::uint8_t / std::uint16_t /
+    // HEIF::FeatureBitMask).
+    enum TrackSampleType : std::uint8_t
     {
         out_ref,      ///< output reference frames
         out_non_ref,  ///< output non-reference frames
@@ -39,7 +42,7 @@ namespace HEIF
     // Item property related data types
 
     /// Item Property type identifiers
-    enum class ItemPropertyType
+    enum class ItemPropertyType : std::uint8_t
     {
         INVALID = 0,  ///< Can be used for error checking. Not a valid property type.
 
@@ -56,12 +59,24 @@ namespace HEIF
         ISCL,  ///< Image scaling
         ISPE,  ///< Image spatial extents
         JPGC,  ///< JPEG configuration
+        LSEL,  ///< Layer selector
         MDFT,  ///< Modification time information
         PASP,  ///< Pixel aspect ratio
         PIXI,  ///< Pixel information
         RLOC,  ///< Relative location
         RREF,  ///< Required reference types
         UDES,  ///< User description
+        VVCC,  ///< VVC configuration
+        AMVE,  ///< Ambient viewing environment
+        CLLI,  ///< Content Light Level Information
+        CCLV,  ///< Content Color Volume
+        MDCV,  ///< Mastering Display Colour Volume
+        NDWT,  ///< Nominal Diffuse White
+        REVE,  ///< Reference Viewing Environment
+        TOLS,  ///< Target Output Layer Set
+        OINF,  ///< Operating Points Information
+        SUBS,  ///< Sub-sample information
+        LHVC   ///< L-HEVC configuration ('lhv1' items)
     };
 
     /// Information about a single property associated to an image item
@@ -82,7 +97,7 @@ namespace HEIF
     {
         enum Feature
         {
-            HasSingleImage      = 1u,       ///< File copntains only 1 master image
+            HasSingleImage      = 1u,       ///< File contains only 1 master image
             HasImageCollection  = 1u << 1,  ///< File contains Image Collection (more than 1 master images)
             HasImageSequence    = 1u << 2,  ///< File contains Image Sequence
             HasRootLevelMetaBox = 1u << 3,  ///< File has root level metabox
@@ -142,6 +157,7 @@ namespace HEIF
             HasUnrecognzedRequiredReferences =
                 1u << 20,  ///< Item has required references listed in 'rref' property not recognzed by the reader
             IsPredictivelyCodedImage = 1u << 21,  ///< This image has other images as decoding dependencies.
+            IsGainmapImage = 1u << 22,  ///< Image is a gainmap (referenced by tmap via dimg, hidden)
         };
     }
 
@@ -279,6 +295,53 @@ namespace HEIF
         Array<SequenceImageId> referenceItemIds;  ///< sample_id values of the direct reference samples that a sample
                                                   ///< belonging to this group may be predicted from.
     };
+    
+    /**
+     * Information from RectangularRegionGroupEntry sample group description entry.
+     */
+    struct HEIF_DLL_PUBLIC RectangularRegion
+    {
+        uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
+        Trif trif;
+    };
+
+    /**
+     * Information from VvcSubpicOrderEntry sample group description entry.
+     */
+    struct HEIF_DLL_PUBLIC VvcSubpicOrder
+    {
+        uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
+        bool subpicIdInfoFlag;
+        Array<uint16_t> subpTrackRefIdx;
+        uint8_t subpicdLenMinus1;  ///< valid value only if subpicIdInfoFlag is true
+        uint16_t subpicIdBitPos;   ///< valid value only if subpicIdInfoFlag is true
+        bool startCodeEmulFlag;    ///< valid value only if subpicIdInfoFlag is true
+        bool ppsSpsSubpicIdFlag;   ///< valid value only if subpicIdInfoFlag is true
+        uint8_t ppsId;  ///< PPS ID, valid value only if subpicIdInfoFlag is true and ppsSpsSubpicIdFlag is true
+        uint8_t spsId;  ///< SPS ID, valid value only if subpicIdInfoFlag is true and ppsSpsSubpicIdFlag is false
+    };
+
+    /**
+     * Information from VvcSubpicLayoutMapEntry sample group description entry.
+     */
+    struct HEIF_DLL_PUBLIC VvcSubpicLayoutMap
+    {
+        uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
+        FourCC groupIdInfo4cc;
+        Array<uint16_t> groupIds;
+    };
+
+    /**
+     * Information from VvcMixedNALUnitTypePicEntry sample group description entry.
+     */
+    struct HEIF_DLL_PUBLIC VvcMixedNalUnitTypePic
+    {
+        uint32_t sampleGroupDescriptionIndex;  ///< Index of the sample group description entry.
+        Array<uint16_t> mixSubpTrackIdx1;
+        Array<uint16_t> mixSubpTrackIdx2;
+        uint16_t ppsMixNaluTypesInPicBitPos;
+        uint8_t ppsId;
+    };
 
     /** Sample Flags Field as defined in 8.8.3.1 of ISO/IEC 14496-12:2015(E) */
     struct SampleFlagsType
@@ -294,8 +357,9 @@ namespace HEIF
         SampleFlagsType flags;
     };
 
-    /** @brief SampleType enumeration to indicate the type of the frame. */
-    enum SampleType
+    /** @brief SampleType enumeration to indicate the type of the frame.
+     *  Underlying type pinned to std::uint8_t. */
+    enum SampleType : std::uint8_t
     {
         OUTPUT_NON_REFERENCE_FRAME,
         OUTPUT_REFERENCE_FRAME,
@@ -321,12 +385,28 @@ namespace HEIF
         bool hasAuxi;                         ///< AuxiliaryTypeInfoBox is present in the sample entry
         CodingConstraints codingConstraints;  ///< CodingConstraints for sample
         uint64_t size;                        ///< size of sample data in bytes
-        SegmentId segmentId;                  ///< in which segment sample is located
-        uint64_t earliestTimestamp;           ///< earliest timestamps of the sample
+        /** Segment of origin for this sample.  Meaningful only for
+         *  samples that came from a parsed media segment in the
+         *  fragmented streaming flow (`parseSegment()`); zero for
+         *  samples drawn from a non-fragmented moov / init-segment
+         *  sample table. */
+        SegmentId segmentId;
+        /** Earliest presentation timestamp in milliseconds.  Sourced
+         *  from `sidx` / `tfdt` of the owning media segment in the
+         *  fragmented flow; zero for non-fragmented sample-table
+         *  entries (use `sampleDurationTS` accumulation if you need
+         *  a timeline for those). */
+        uint64_t earliestTimestamp;
         SampleFlags sampleFlags;              ///< Sample Flags Field as defined in 8.8.3.1 of ISO/IEC 14496-12:2015(E)
-        uint64_t earliestTimestampTS;         ///< earliest timestamps of the sample in time scale units
+        uint64_t earliestTimestampTS;         ///< earliest timestamps of the sample in time scale units; same provenance as `earliestTimestamp`.
     };
 
+    /** Per-track snapshot returned via `getFileInformation` and
+     *  `getTrackInformations`.  See `Reader::getFileInformation` for
+     *  snapshot semantics: in the fragmented streaming flow the
+     *  `sampleProperties` array grows as `parseSegment()` is called
+     *  and per-segment fields on `SampleInformation` only carry
+     *  useful data for samples drawn from a parsed media segment. */
     struct HEIF_DLL_PUBLIC TrackInformation
     {
         SequenceId trackId;
@@ -345,11 +425,40 @@ namespace HEIF
         Array<DirectReferenceSamples>
             referenceSamples;     ///< Data from  DirectReferenceSamplesList ('refs') sample group entries
                                   ///< of this track. Indexed using sampleGroupDescriptionIndex
+        Array<RectangularRegion>
+            rectangularRegions;  ///< Data from RectangularRegionGroupEntry ('trif') sample group entries of this track.
+                             ///< Indexed using sampleGroupDescriptionIndex.
+        Array<VvcSubpicOrder> vvcSubpicOrders;  ///< Data from VvcSubpicOrderEntry ('spor') sample group entries of this
+                                            ///< track. Indexed using sampleGroupDescriptionIndex.
+        Array<VvcSubpicLayoutMap>
+            vvcSubpicLayoutMaps;  ///< Data from VvcSubpicLayoutMapEntry ('sulm') sample group entries of this track.
+                              ///< Indexed using sampleGroupDescriptionIndex.
+        Array<VvcMixedNalUnitTypePic>
+            vvcMixedNalUnitTypePics;  ///< Data from VvcMixedNALUnitTypePicEntry ('minp') sample group entries of this
+                                  ///< track. Indexed using sampleGroupDescriptionIndex.
+
         uint64_t maxSampleSize;   ///< Size of largest sample inside the track (can be used to allocate client side read
                                   ///< buffer).
         uint32_t timeScale;       ///< Time scale of the track; useful for video stream procsesing purposes
         EditList editList;        ///< Editlist for this track.
-        Rational frameRate;       ///< Frames per second
+        /** Library-derived approximate frame rate.  Not a spec field
+         *  (ISOBMFF / HEIF do not store frame rate).  Computed from
+         *  the media timeline as `Rational{mdhd.timescale,
+         *  durSum / sampleCount}` where `durSum` is the sum of
+         *  per-sample `stts.sample_delta` values.  The numerator is
+         *  intentionally left unreduced so the source clock
+         *  (`mdhd.timescale`) is preserved for round-tripping.
+         *
+         *  - Constant-rate tracks (single `stts` entry): exact.
+         *  - Variable-rate tracks: average; per-sample truth lives
+         *    in `SampleInformation::sampleDurationTS`.
+         *  - Edit-list `media_rate` scaling is NOT folded in; this
+         *    is the raw media-rate, not the post-edit-list playback
+         *    rate.  Cross-reference `getPlaybackDurationInSecs` if
+         *    the track carries an edit list.
+         *  - `Rational{0, 0}` means the library could not derive a
+         *    value (e.g. empty track). */
+        Rational frameRate;
         bool hasTypeInformation;  ///< Signals if optional fields, majorBrand, minorVerion and compatibleBrands are used
         TrackTypeInformation type;  ///< Track's brand, version and compatible brands
     };

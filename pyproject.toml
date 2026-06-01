@@ -1,0 +1,195 @@
+# --------------------------------------------------------------------------
+#  Nokia HEIF -- top-level Python packaging
+#
+#  This file is the canonical sdist / wheel build entry point.  It uses
+#  `scikit-build-core` so that `pip install nokia-heif` (or
+#  `python -m build --sdist` / `python -m build --wheel`) drives the
+#  existing CMake build to produce `libheif_shared.so.4`, then stages
+#  that library plus the pure-Python source under `bindings/python/heif/`
+#  into the wheel layout.
+#
+#  Two pyproject.toml files live in this repo on purpose:
+#
+#    * THIS FILE (repo root) -- the release-track packaging.  Used by
+#      `python -m build` for sdists and (later) by `cibuildwheel` if a
+#      maintainer ever takes on a future phase.  Has CMake as a build-time
+#      dependency and produces a self-contained sdist that includes
+#      `srcs/`, `bindings/python/`, `CMakeLists.txt`, etc.
+#
+#    * `bindings/python/pyproject.toml` -- the in-tree dev workflow.
+#      Pure-`setuptools`, no CMake invocation, no compilation.  Use it
+#      when you have already built `libheif_shared.so` separately
+#      (`cmake --build build`) and just want
+#      `pip install -e bindings/python/` to register the binding as
+#      a real Python package without rebuilding C++ each time pip is
+#      invoked.  The four-tier resolver in `bindings/python/heif/_ffi.py`
+#      finds the in-tree library automatically.
+#
+#  Choose this file (the repo-root one) for: sdist publication to PyPI,
+#  TestPyPI shakedowns, and any environment where the user does not have
+#  a pre-built shared library.
+#
+#  Choose the binding-local one for: incremental Python-only iteration
+#  on a developer's workstation.
+#
+#  Both pyproject.toml files declare the same project name
+#  (`nokia-heif`) and version (`1.0.0`) -- they are alternate
+#  install paths for the same distribution, never installed
+#  simultaneously.
+# --------------------------------------------------------------------------
+
+[build-system]
+requires = [
+    "scikit-build-core>=0.8",
+    "cffi>=1.16",          # runtime + cdef parsing during build
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name            = "nokia-heif"
+version         = "1.0.0"
+description     = "Python binding for the Nokia HEIF reader."
+readme          = "bindings/python/README.md"
+license         = { text = "Nokia HEIF License v2.1" }
+requires-python = ">=3.9"
+authors         = [{ name = "Nokia Corporation" }]
+keywords        = ["heif", "heic", "iso/iec 23008-12", "image", "hdr", "avif"]
+classifiers     = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: Other/Proprietary License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+]
+dependencies = ["cffi>=1.16"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.urls]
+"Source" = "https://github.com/nokiatech/heif"
+"Issues" = "https://github.com/nokiatech/heif/issues"
+
+# --------------------------------------------------------------------------
+#  scikit-build-core configuration
+# --------------------------------------------------------------------------
+#
+#  cmake.source-dir          -- repo root (this directory).  The top-level
+#                              CMakeLists.txt does `add_subdirectory(srcs)`.
+#
+#  cmake.targets             -- only build heif_shared (the only target the
+#                              binding consumes).  Skips readerapp,
+#                              examples, JNI, etc.
+#                              automatically because of the
+#                              HEIF_PYTHON_BINDING_ONLY=ON option below
+#                              that early-skips those subdirectories.
+#
+#  cmake.define              -- flags passed to CMake configure.  The key
+#                              one is HEIF_PYTHON_BINDING_ONLY=ON which
+#                              flips srcs/CMakeLists.txt into wheel-build
+#                              mode (skips ancillary subdirs, replaces
+#                              the system-install ruleset with a single
+#                              install(TARGETS heif_shared) into the
+#                              wheel's heif/ package directory).
+#
+#  install.components        -- only install the python_binding component.
+#                              Belt-and-braces with the targets filter:
+#                              even if the build accidentally produced
+#                              other artifacts, only heif_shared lands in
+#                              the wheel.
+#
+#  wheel.packages            -- explicit paths to the Python source.  The
+#                              binding lives at bindings/python/heif/
+#                              rather than at the repo root, so we point
+#                              scikit-build-core at it.  The CMake install
+#                              of libheif_shared.so.4 lands at heif/
+#                              (relative to the wheel root), so the .so
+#                              ends up next to _ffi.py -- exactly where
+#                              tier 2 of the resolver looks for it.
+#
+#  sdist.include             -- additional directories needed in the sdist
+#                              for a from-source build to succeed.
+#                              scikit-build-core defaults to including
+#                              everything under cmake.source-dir; we list
+#                              what matters explicitly so future maintainers
+#                              know what is required.
+#
+#  sdist.exclude             -- keep the tarball lean: omit build trees,
+#                              IDE config, etc.
+# --------------------------------------------------------------------------
+
+[tool.scikit-build]
+cmake.version    = ">=3.13"
+cmake.source-dir = "."
+cmake.build-type = "Release"
+cmake.targets    = ["heif_shared"]
+cmake.define     = { HEIF_PYTHON_BINDING_ONLY = "ON" }
+
+install.components = ["python_binding"]
+
+# Where to find the pure-Python source.  Everything under this directory
+# is copied verbatim into the wheel as the `heif` package (because the
+# directory is named `heif`).
+wheel.packages = ["bindings/python/heif"]
+
+# Minimum scikit-build-core version we tested with.
+minimum-version = "0.8"
+
+# What to include in the sdist tarball.  scikit-build-core gathers from
+# cmake.source-dir by default; these globs add explicitly-listed Python
+# sources (already covered by wheel.packages but listed for clarity) and
+# the binding's runtime metadata.
+sdist.include = [
+    "CMakeLists.txt",
+    "srcs/**",
+    "bindings/python/heif/**",
+    "bindings/python/README.md",
+    "README.md",
+    "LICENSE.TXT",
+    "CHANGELOG.md",
+]
+
+# What NOT to include.  Keeps the sdist tarball lean.
+sdist.exclude = [
+    # Build trees the maintainer accumulates locally
+    "build/**",
+    "build-*/**",
+    # IDE / editor metadata
+    ".vscode/**",
+    ".idea/**",
+    "*.code-workspace",
+    # Compiler-generated profiling artifacts
+    "**/*.gcda",
+    "**/*.gcno",
+    "**/*.profraw",
+    # OS / VCS / Python detritus
+    ".git/**",
+    ".gitignore",
+    "**/__pycache__/**",
+    "**/*.pyc",
+    "**/.pytest_cache/**",
+    # Documentation build outputs
+    "docs/doxygen_html/**",
+    "docs/CMakeFiles/**",
+    "docs/Makefile",
+    "docs/cmake_install.cmake",
+    "docs/CMakeCache.txt",
+]
+
+# --------------------------------------------------------------------------
+#  pytest configuration -- kept duplicated with bindings/python/pyproject.toml
+#  so `pytest bindings/python/` works after either install path.
+# --------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["bindings/python/tests"]
+addopts   = "-q"

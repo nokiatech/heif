@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2021 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,7 +14,6 @@
 #ifndef SAMPLEGROUP_HPP
 #define SAMPLEGROUP_HPP
 
-#include "customallocator.hpp"
 #include "fourccint.hpp"
 class SampleGroupDescriptionBox;
 class SampleToGroupBox;
@@ -26,7 +25,7 @@ class SampleToGroupBox;
 class SampleGroup
 {
 public:
-    SampleGroup(const FourCCInt& groupingType);
+    explicit SampleGroup(const FourCCInt& groupingType);
     virtual ~SampleGroup() = default;
 
     /**

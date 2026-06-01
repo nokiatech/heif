@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,10 +13,20 @@
 
 #include "sampledescriptionbox.hpp"
 
+#include "bitstream.hpp"
+
 #include "avcsampleentry.hpp"
 #include "hevcsampleentry.hpp"
 #include "log.hpp"
 #include "mp4audiosampleentrybox.hpp"
+#include "vvcsampleentry.hpp"
+#include "vvcsubpicsampleentry.hpp"
+#include "fourccint.hpp"
+#include "sampleentrybox.hpp"
+#include <memory>
+#include <utility>
+#include <vector>
+
 
 SampleDescriptionBox::SampleDescriptionBox()
     : FullBox("stsd", 0, 0)
@@ -56,47 +66,55 @@ void SampleDescriptionBox::parseBox(ISOBMFF::BitStream& bitstr)
         FourCCInt boxType;
         BitStream entryBitStream = bitstr.readSubBoxBitStream(boxType);
 
-        /** @todo Add new sample entry types based on handler if necessary */
+        ///@todo Add new sample entry types based on handler if necessary
         if (boxType == "hvc1" || boxType == "hev1")
         {
-            UniquePtr<HevcSampleEntry, SampleEntryBox> hevcSampleEntry(CUSTOM_NEW(HevcSampleEntry, ()));
+            auto hevcSampleEntry = makeCustomUnique<HevcSampleEntry, SampleEntryBox>();
             hevcSampleEntry->parseBox(entryBitStream);
 
             mIndex.push_back(std::move(hevcSampleEntry));
         }
         else if (boxType == "avc1" || boxType == "avc3")
         {
-            UniquePtr<AvcSampleEntry, SampleEntryBox> avcSampleEntry(CUSTOM_NEW(AvcSampleEntry, ()));
+            auto avcSampleEntry = makeCustomUnique<AvcSampleEntry, SampleEntryBox>();
             avcSampleEntry->parseBox(entryBitStream);
             mIndex.push_back(std::move(avcSampleEntry));
         }
+        else if (boxType == "vvc1")
+        {
+            auto vvcSampleEntry = makeCustomUnique<VvcSampleEntry, SampleEntryBox>();
+            vvcSampleEntry->parseBox(entryBitStream);
+            mIndex.push_back(std::move(vvcSampleEntry));
+        }
+        else if (boxType == "vvs1")
+        {
+            auto vvcSubpicSampleEntry = makeCustomUnique<VvcSubpicSampleEntry, SampleEntryBox>();
+            vvcSubpicSampleEntry->parseBox(entryBitStream);
+            mIndex.push_back(std::move(vvcSubpicSampleEntry));
+        }
         else if (boxType == "mp4a")
         {
-            UniquePtr<MP4AudioSampleEntryBox, SampleEntryBox> mp4AudioSampleEntry(
-                CUSTOM_NEW(MP4AudioSampleEntryBox, ()));
+            auto mp4AudioSampleEntry = makeCustomUnique<MP4AudioSampleEntryBox, SampleEntryBox>();
             mp4AudioSampleEntry->parseBox(entryBitStream);
             mIndex.push_back(std::move(mp4AudioSampleEntry));
         }
         else
         {
             logWarning() << "Skipping unknown SampleDescriptionBox entry of type '" << boxType.getString() << "'"
-                         << std::endl;
+                         << '\n';
             // Push nullptr to keep indexing correct, in case it will still be possible to operate with the file.
             mIndex.push_back(nullptr);
         }
     }
 }
 
-/** @brief Get the list of sample entries.
- *  @returns Vector of sample entries */
+// Get the list of sample entries.
 const Vector<UniquePtr<SampleEntryBox>>& SampleDescriptionBox::getSampleEntries() const
 {
     return mIndex;
 }
 
-/** @brief Get the sample entry at a particular index from the list.
- *  @param [in] index 1-based index of the sample entry
- *  @returns Sample Entry of defined type */
+// Get the sample entry at a particular index from the list.
 const SampleEntryBox* SampleDescriptionBox::getSampleEntry(unsigned int index) const
 {
     if (mIndex.size() < index || index == 0)

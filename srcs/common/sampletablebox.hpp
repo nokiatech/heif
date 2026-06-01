@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,18 +15,19 @@
 #define SAMPLETABLEBOX_HPP
 
 #include "bbox.hpp"
-#include "bitstream.hpp"
 #include "chunkoffsetbox.hpp"
 #include "compositionoffsetbox.hpp"
 #include "compositiontodecodebox.hpp"
 #include "customallocator.hpp"
 #include "sampledescriptionbox.hpp"
-#include "samplegroupdescriptionbox.hpp"
 #include "samplesizebox.hpp"
 #include "sampletochunkbox.hpp"
+#include "samplegroupdescriptionbox.hpp"
 #include "sampletogroupbox.hpp"
 #include "syncsamplebox.hpp"
 #include "timetosamplebox.hpp"
+#include "fourccint.hpp"
+#include <memory>
 
 
 /**
@@ -196,7 +197,7 @@ private:
         mSampleGroupDescriptionBoxes;              ///< Vectory of sample group description boxes
     Vector<SampleToGroupBox> mSampleToGroupBoxes;  ///< Vectory of sample-to-group boxes
 
-    bool mHasSyncSampleBox;
+    bool mHasSyncSampleBox{false};
 };
 
 #endif /* end of include guard: SAMPLETABLEBOX_HPP */

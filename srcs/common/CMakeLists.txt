@@ -1,6 +1,6 @@
 # This file is part of Nokia HEIF library
 #
-# Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+# Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 #
 # Contact: heif@nokia.com
 #
@@ -8,17 +8,13 @@
 #
 # Copying, including reproducing, storing, adapting or translating, any or all of this material requires the prior written consent of Nokia.
 
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
-
-if(${CMAKE_EXTRA_GENERATOR} MATCHES "Eclipse CDT4")
-    set(CMAKE_ECLIPSE_VERSION "4.4" CACHE STRING "Eclipse version" FORCE)
-    set(CMAKE_CXX_COMPILER_ARG1 "-std=c++11" CACHE STRING "C++ version for eclipse" FORCE)
-endif()
+cmake_minimum_required(VERSION 3.5...3.28 FATAL_ERROR)
 
 project( common LANGUAGES CXX )
 
 set(COMMON_SRCS
     accessibilitytext.cpp
+    ambientviewingenvironmentbox.cpp
     audiosampleentrybox.cpp
     auxiliarytypeinfobox.cpp
     auxiliarytypeproperty.cpp
@@ -37,6 +33,8 @@ set(COMMON_SRCS
     colourinformationbox.cpp
     compositionoffsetbox.cpp
     compositiontodecodebox.cpp
+    contentlightlevelbox.cpp
+    contentcolourvolumebox.cpp
     creationtimeinformation.cpp
     datainformationbox.cpp
     datareferencebox.cpp
@@ -72,7 +70,11 @@ set(COMMON_SRCS
     itemreferencebox.cpp
     jpegconfigurationbox.cpp
     jpegparser.cpp
+    layerselectorproperty.cpp
+    lhevcconfigurationbox.cpp
+    lhevcdecoderconfigrecord.cpp
     log.cpp
+    masteringdisplaycolourvolumebox.cpp
     mediabox.cpp
     mediadatabox.cpp
     mediaheaderbox.cpp
@@ -88,12 +90,16 @@ set(COMMON_SRCS
     mp4audiodecoderconfigrecord.cpp
     mp4audiosampleentrybox.cpp
     nalutil.cpp
+    nominaldiffusewhitebox.cpp
     nullmediaheaderbox.cpp
+    operatingpointsinformationproperty.cpp
     pixelaspectratiobox.cpp
     pixelinformationproperty.cpp
     primaryitembox.cpp
     protectionschemeinfobox.cpp
     rawpropertybox.cpp
+    rectangularregiongroupentry.cpp
+    referenceviewingenvironmentbox.cpp
     requiredreferencetypesproperty.cpp
     sampledescriptionbox.cpp
     sampleentrybox.cpp
@@ -108,8 +114,11 @@ set(COMMON_SRCS
     segmentindexbox.cpp
     segmenttypebox.cpp
     soundmediaheaderbox.cpp
+    subsampleinformationproperty.cpp
     syncsamplebox.cpp
+    targetolsproperty.cpp
     timetosamplebox.cpp
+    tonemapimage.cpp
     trackbox.cpp
     trackextendsbox.cpp
     trackfragmentbasemediadecodetimebox.cpp
@@ -127,10 +136,21 @@ set(COMMON_SRCS
     videomediaheaderbox.cpp
     visualequivalenceentry.cpp
     visualsampleentrybox.cpp
+    vvcconfigurationbox.cpp
+    vvcdecoderconfigrecord.cpp
+    vvcnaluconfigbox.cpp
+    vvcsampleentry.cpp
+    vvcsubpicidentry.cpp
+    vvcsubpicorderentry.cpp
+    vvcsubpicsampleentry.cpp
+    vvcsubpicturelayoutmapentry.cpp
+    vvcmixednalunittypepicentry.cpp
     )
+
 
 set(COMMON_HDRS
     accessibilitytext.hpp
+    ambientviewingenvironmentbox.hpp
     customallocator.hpp
     audiosampleentrybox.hpp
     avccommondefs.hpp
@@ -150,6 +170,8 @@ set(COMMON_HDRS
     colourinformationbox.hpp
     compositionoffsetbox.hpp
     compositiontodecodebox.hpp
+    contentlightlevelbox.hpp
+    contentcolourvolumebox.hpp
     creationtimeinformation.hpp
     datainformationbox.hpp
     datareferencebox.hpp
@@ -167,6 +189,7 @@ set(COMMON_HDRS
     fullbox.hpp
     groupslistbox.hpp
     handlerbox.hpp
+    ../api/common/heiferrorinfo.h
     hevccommondefs.hpp
     hevcconfigurationbox.hpp
     hevcdecoderconfigrecord.hpp
@@ -188,7 +211,11 @@ set(COMMON_HDRS
     itemreferencebox.hpp
     jpegconfigurationbox.hpp
     jpegparser.hpp
+    layerselectorproperty.hpp
+    lhevcconfigurationbox.hpp
+    lhevcdecoderconfigrecord.hpp
     log.hpp
+    masteringdisplaycolourvolumebox.hpp
     mediabox.hpp
     mediadatabox.hpp
     mediaheaderbox.hpp
@@ -205,12 +232,15 @@ set(COMMON_HDRS
     mp4audiosampleentrybox.hpp
     mp4audiodecoderconfigrecord.hpp
     nalutil.hpp
+    nominaldiffusewhitebox.hpp
     nullmediaheaderbox.hpp
     pixelaspectratiobox.hpp
     pixelinformationproperty.hpp
     primaryitembox.hpp
     protectionschemeinfobox.hpp
     rawpropertybox.hpp
+    referenceviewingenvironmentbox.hpp
+    rectangularregiongroupentry.hpp
     requiredreferencetypesproperty.hpp
     sampledescriptionbox.hpp
     sampleentrybox.hpp
@@ -226,8 +256,11 @@ set(COMMON_HDRS
     segmenttypebox.hpp
     smallvector.hpp
     soundmediaheaderbox.hpp
+    subsampleinformationproperty.hpp
     syncsamplebox.hpp
+    targetolsproperty.hpp
     timetosamplebox.hpp
+    tonemapimage.hpp
     trackbox.hpp
     trackextendsbox.hpp
     trackfragmentbasemediadecodetimebox.cpp
@@ -245,10 +278,40 @@ set(COMMON_HDRS
     videomediaheaderbox.hpp
     visualequivalenceentry.hpp
     visualsampleentrybox.hpp
+    vvccommondefs.hpp
+    vvcconfigurationbox.hpp
+    vvcdecoderconfigrecord.hpp
+    vvcnaluconfigbox.hpp
+    vvcsampleentry.hpp
+    vvcsubpicidentry.hpp
+    vvcsubpicorderentry.hpp
+    vvcsubpicsampleentry.hpp
+    vvcsubpicturelayoutmapentry.hpp
+    vvcmixednalunittypepicentry.hpp
     writeoncemap.hpp
     )
 
 add_library(common OBJECT ${COMMON_SRCS} ${COMMON_HDRS})
-set_property(TARGET common PROPERTY CXX_STANDARD 11)
+set_property(TARGET common PROPERTY CXX_STANDARD 17)
+
+# On Windows the OBJECT library must define HEIF_BUILDING_LIB so that
+# HEIF_DLL_PUBLIC expands to nothing (not __declspec(dllimport)).
+# On non-Windows we must NOT define it, because the -fvisibility=hidden
+# flag is in effect and HEIF_DLL_PUBLIC must expand to
+# __attribute__((visibility("default"))) for symbols that belong in the
+# shared-library ABI surface (e.g. the trace-sink API in log.cpp).
+if(WIN32)
+    target_compile_definitions(common PRIVATE HEIF_BUILDING_LIB)
+endif()
 
 set_property(TARGET common PROPERTY POSITION_INDEPENDENT_CODE 1)
+
+#Include api common files like heifreadercommondatatypes.h for HEIF::ErrorCode
+target_include_directories(common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../api/common)
+
+target_link_libraries(common PUBLIC vvcparser)
+# vvc-parser is an internal codec helper; keep its include dir PRIVATE so it
+# does not bleed onto the PUBLIC interface of in-tree consumers.
+target_include_directories(common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../vvc-parser)
+
+

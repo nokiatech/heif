@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -17,6 +17,15 @@
 #include "bbox.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+
+#include <cstdint>
+#include <memory>
+#include <type_traits>
+
+namespace ISOBMFF
+{
+    class BitStream;
+}
 
 /** @brief Edit List Box class. Extends from FullBox.
  *  @details 'elst' box implementation as specified in the ISOBMFF specification
@@ -86,12 +95,14 @@ const T& EditListBox::getEntry(const std::uint32_t index) const
 {
     if (std::is_same<T, EditListBox::EntryVersion0>::value)
     {
-        return (const T&) mEntryVersion0.at(index);
+        // The is_same guard above guarantees T == EntryVersion0 on this path.
+        return reinterpret_cast<const T&>(mEntryVersion0.at(index));
     }
 
     if (std::is_same<T, EditListBox::EntryVersion1>::value)
     {
-        return (const T&) mEntryVersion1.at(index);
+        // The is_same guard above guarantees T == EntryVersion1 on this path.
+        return reinterpret_cast<const T&>(mEntryVersion1.at(index));
     }
 }
 

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -23,7 +23,7 @@ namespace HEIF
     class Segments
     {
     public:
-        Segments(HeifReaderImpl& impl);
+        explicit Segments(HeifReaderImpl& impl);
 
         class iterator
         {
@@ -67,7 +67,7 @@ namespace HEIF
     class ConstSegments
     {
     public:
-        ConstSegments(const HeifReaderImpl& impl);
+        explicit ConstSegments(const HeifReaderImpl& impl);
 
         typedef Segments::const_iterator iterator;
         typedef Segments::const_iterator const_iterator;

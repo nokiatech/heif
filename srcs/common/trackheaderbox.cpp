@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,19 +13,15 @@
 
 #include "trackheaderbox.hpp"
 
-#include "log.hpp"
+#include "bitstream.hpp"
+
+#include "fourccint.hpp"
+#include <vector>
 
 TrackHeaderBox::TrackHeaderBox()
     : FullBox("tkhd", 0, 0)
-    , mCreationTime(0)
-    , mModificationTime(0)
-    , mTrackID(0)
-    , mDuration(0)
-    , mWidth(0)
-    , mHeight(0)
-    , mAlternateGroup(0)
-    , mVolume(0)
-    , mMatrix({0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000})
+    , 
+     mMatrix({0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000})
 {
 }
 

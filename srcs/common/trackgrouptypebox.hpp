@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -16,9 +16,8 @@
 
 #include <cstdint>
 
-#include "bitstream.hpp"
-#include "customallocator.hpp"
 #include "fullbox.hpp"
+#include "fourccint.hpp"
 
 /** @brief Track Group Type Box class. Extends from FullBox.
  *  @details inside 'trgr' box as specified in the ISOBMFF specification
@@ -26,7 +25,7 @@
 class TrackGroupTypeBox : public FullBox
 {
 public:
-    TrackGroupTypeBox(FourCCInt boxType, std::uint32_t trackGroupId = 0);
+    explicit TrackGroupTypeBox(FourCCInt boxType, std::uint32_t trackGroupId = 0);
     ~TrackGroupTypeBox() override = default;
 
     /** @brief Gets track group id.

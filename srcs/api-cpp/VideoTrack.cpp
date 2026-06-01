@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,11 +12,14 @@
 
 #include "VideoTrack.h"
 
-#include "DecoderConfiguration.h"
-#include "MetaItem.h"
+#include "Heif.h"
 #include "VideoSample.h"
 #include "heifreader.h"
 #include "heifwriter.h"
+#include "Sample.h"
+#include "Track.h"
+#include <stddef.h>
+#include <vector>
 
 using namespace HEIFPP;
 
@@ -31,6 +34,16 @@ VideoTrack::VideoTrack(Heif* aHeif)
 }
 VideoTrack::~VideoTrack() = default;
 
+void VideoTrack::setDisplayWidth(std::uint32_t aWidth) const
+{
+    // NOTE: mWidth is mutable or this is a const design issue in the header.
+    // Implementing as declared in the header (const method setting member).
+    const_cast<VideoTrack*>(this)->mWidth = aWidth;
+}
+void VideoTrack::setDisplayHeight(std::uint32_t aHeight) const
+{
+    const_cast<VideoTrack*>(this)->mHeight = aHeight;
+}
 std::uint32_t VideoTrack::getDisplayWidth() const
 {
     return mWidth;

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,9 +13,10 @@
 
 #include "datareferencebox.hpp"
 
-#include <stdexcept>
+#include "bitstream.hpp"
 
-#include "log.hpp"
+
+#include <vector>
 
 DataEntryBox::DataEntryBox(FourCCInt boxType, const std::uint8_t version, const std::uint32_t flags)
     : FullBox(boxType, version, flags)

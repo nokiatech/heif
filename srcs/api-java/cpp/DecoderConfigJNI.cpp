@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -18,6 +18,9 @@
 
 #include "DecoderConfiguration.h"
 #include "Helpers.h"
+#include "heifcommondatatypes.h"
+#include "jni_md.h"
+#include <stdint.h>
 
 #define CLASS_NAME DecoderConfig
 
@@ -25,21 +28,31 @@ extern "C"
 {
     JNI_METHOD(void, destroyContextNative)
     {
+        JNI_TRY
+        {
         NATIVE_DECODER_CONFIG(nativeItem, self);
         setNativeHandle(env, self, 0);
         delete nativeItem;
+            }
+        JNI_CATCH_RETURN_VOID("DecoderConfig.destroyContextNative")
     }
 
     JNI_METHOD_ARG(void, setConfigNative, jbyteArray configdata)
     {
+        JNI_TRY
+        {
         NATIVE_SELF;
         jbyte* nativeData = env->GetByteArrayElements(configdata, nullptr);
         nativeSelf->setConfig((uint8_t*) nativeData, static_cast<uint32_t>(env->GetArrayLength(configdata)));
         env->ReleaseByteArrayElements(configdata, nativeData, 0);
+            }
+        JNI_CATCH_RETURN_VOID("DecoderConfig.setConfigNative")
     }
 
     JNI_METHOD(jobject, getConfigNative)
     {
+        JNI_TRY
+        {
         NATIVE_SELF;
         const HEIF::Array<HEIF::DecoderSpecificInfo>& codecInfo = nativeSelf->getConfig();
         size_t totalSize                                        = 0;
@@ -59,5 +72,7 @@ extern "C"
         env->SetByteArrayRegion(output, 0, static_cast<jsize>(totalSize), data);
         delete[] data;
         return output;
+            }
+        JNI_CATCH_RETURN(nullptr, "DecoderConfig.getConfigNative")
     }
 }

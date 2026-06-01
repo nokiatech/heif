@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,10 @@
 #ifndef SAMPLETOGROUPBOX_HPP
 #define SAMPLETOGROUPBOX_HPP
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include "fourccint.hpp"
+#include <cstdint>
 
 
 /** @brief SampleToGroupBox class. Extends from FullBox.
@@ -84,8 +85,8 @@ public:
 
 private:
     FourCCInt mGroupingType;               ///< Grouping Type
-    std::uint32_t mEntryCount;             ///< Entry count value
-    std::uint32_t mGroupingTypeParameter;  ///< Grouping Type parameter as defined in the ISOBMFF specification
+    std::uint32_t mEntryCount{0};             ///< Entry count value
+    std::uint32_t mGroupingTypeParameter{0};  ///< Grouping Type parameter as defined in the ISOBMFF specification
 
     /// Data structure of a run-length coded sample run
     struct SampleRun

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,14 +13,22 @@
 
 #include "fullbox.hpp"
 
+#include <iosfwd>
+
+#include "bitstream.hpp"
+
 using namespace std;
 
+// version+flags are part of the MP4 FullBox header layout (ISO/IEC 14496-12);
+// a strong-typedef refactor would touch every box subclass.
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 FullBox::FullBox(FourCCInt boxType, uint8_t version, uint32_t flags)
     : Box(boxType)
     , mVersion(version)
     , mFlags(flags)
 {
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
 
 void FullBox::setVersion(uint8_t version)
 {

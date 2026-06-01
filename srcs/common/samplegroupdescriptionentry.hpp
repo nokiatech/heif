@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,8 +14,9 @@
 #ifndef SAMPLEGROUPENTRY_HPP
 #define SAMPLEGROUPENTRY_HPP
 
+#include "fourccint.hpp"
+#include <cstdint>
 #include "bitstream.hpp"
-#include "customallocator.hpp"
 
 /** @brief SampleGroupDescriptionEntry class.
  *  @details Provides abstract methods to generate a sample group description entry.
@@ -26,7 +27,7 @@ public:
     /**
      * @param type Grouping type which identifies the associated SampleToGroupBox.
      */
-    SampleGroupDescriptionEntry(const FourCCInt& type);
+    explicit SampleGroupDescriptionEntry(const FourCCInt& type);
     virtual ~SampleGroupDescriptionEntry() = default;
 
     /** @brief Get the type of the Sample Group Entry.

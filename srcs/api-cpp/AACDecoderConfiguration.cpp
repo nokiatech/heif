@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,10 +12,11 @@
 
 #include "AACDecoderConfiguration.h"
 
-#include <heifreader.h>
-#include <heifwriter.h>
 
 #include <cstring>
+#include "DecoderConfiguration.h"
+#include "heifreaderdatatypes.h"
+#include "helpers.h"
 
 using namespace HEIFPP;
 
@@ -478,6 +479,8 @@ uint32_t AACDecoderConfiguration::getSampleRate()
         sampleRate = mAudioSpecificConfig.samplingFrequency;
         break;
     }
+    default:
+        break;
     }
     return sampleRate;
 }
@@ -489,8 +492,8 @@ uint8_t AACDecoderConfiguration::getChannels()
     case 0:
         // TODO: AudioObjectTyped specific config..
         // not sure about this.
-        return mProgramConfig.num_back_channel_elements + mProgramConfig.num_front_channel_elements +
-               mProgramConfig.num_lfe_channel_elements + mProgramConfig.num_side_channel_elements;
+        return static_cast<uint8_t>(mProgramConfig.num_back_channel_elements + mProgramConfig.num_front_channel_elements +
+               mProgramConfig.num_lfe_channel_elements + mProgramConfig.num_side_channel_elements);
         break;
     case 1:
         // SPEAKER_FRONT_CENTER);

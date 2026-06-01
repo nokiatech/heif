@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,8 +14,13 @@
 
 #include <Item.h>
 
+#include <helpers.h>
+#include "heifcommondatatypes.h"
+#include "helpers.h"
+
 namespace HEIFPP
 {
+    class ImageItem;
     class Sample;
     // generic base for all 'meta' type items.
     class MetaItem : public HEIFPP::Item
@@ -40,7 +45,7 @@ namespace HEIFPP
         LinkArray<ImageItem*> mIsMetaToItem;
         LinkArray<Sample*> mIsMetaToSample;
 
-    private:
+    public:
         MetaItem& operator=(const MetaItem&) = delete;
         MetaItem& operator=(MetaItem&&) = delete;
         MetaItem(const MetaItem&)       = delete;

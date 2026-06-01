@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,10 +12,10 @@
 
 #include "ItemProperty.h"
 
-#include <heifreader.h>
-#include <heifwriter.h>
-
-#include "ImageItem.h"
+#include "ErrorContext.h"
+#include "Heif.h"
+#include "Item.h"
+#include <utility>
 
 using namespace HEIFPP;
 
@@ -57,7 +57,7 @@ void ItemProperty::setId(const HEIF::PropertyId& aId)
 {
     mId = aId;
 }
-const HEIF::PropertyId& ItemProperty::getId() const
+const HEIF::PropertyId& ItemProperty::getId() const noexcept
 {
     return mId;
 }
@@ -87,7 +87,9 @@ HEIFPP::Result ItemProperty::setRawType(const HEIF::FourCC& aFourCC)
         mRawType = aFourCC;
         return HEIFPP::Result::OK;
     }
-    return HEIFPP::Result::ALREADY_SET;
+    return HEIFPP_FAIL(HEIFPP::Result::ALREADY_SET,
+                       HEIFPP::ErrorSource::Api_State,
+                       "ItemProperty::setRawType: raw type already set");
 }
 bool ItemProperty::isTransformative() const
 {

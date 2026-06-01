@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,15 +13,18 @@
 
 #include "sampletochunkbox.hpp"
 
+#include "bitstream.hpp"
+
 #include <limits>
-#include <stdexcept>
+#include "fourccint.hpp"
+#include <vector>
 
 using namespace std;
 
 SampleToChunkBox::SampleToChunkBox()
     : FullBox("stsc", 0, 0)
     , mRunOfChunks()
-    , mMaxSampleCount(-1)
+     
 {
 }
 
@@ -131,7 +134,7 @@ uint32_t SampleToChunkBox::getSampleCountLowerBound(uint32_t chunkEntryCount) co
             chunkRepetitions = chunkEntryCount - mRunOfChunks.at(chunkEntryIndex).firstChunk + 1;
         }
 
-        sampleCount += uint64_t(chunkRepetitions) * samplesPerChunk;
+        sampleCount += static_cast<uint64_t>(chunkRepetitions) * samplesPerChunk;
     }
 
     if (sampleCount <= std::numeric_limits<uint32_t>::max())
@@ -182,7 +185,7 @@ void SampleToChunkBox::decodeEntries(std::uint32_t chunkEntryCount)
             chunkRepetitions = chunkEntryCount - mRunOfChunks.at(chunkEntryIndex).firstChunk + 1;
         }
 
-        if (mMaxSampleCount != -1 && std::uint64_t(samplesPerChunk) * chunkRepetitions > std::uint64_t(mMaxSampleCount))
+        if (mMaxSampleCount != -1 && static_cast<std::uint64_t>(samplesPerChunk) * chunkRepetitions > static_cast<std::uint64_t>(mMaxSampleCount))
         {
             throw RuntimeError("SampleToChunkBox::parseBox samplesPerChunk is larger than total number of samples");
         }

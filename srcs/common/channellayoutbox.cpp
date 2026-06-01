@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,19 +13,18 @@
 
 #include "channellayoutbox.hpp"
 
-#include <stdexcept>
+#include "bitstream.hpp"
+
+#include "fourccint.hpp"
+#include <vector>
 
 #define CHANNEL_STRUCTURED 1u
 #define OBJECT_STRUCTURED 2u
 
 ChannelLayoutBox::ChannelLayoutBox()
     : FullBox("chnl", 0, 0)
-    , mStreamStructure(0)
-    , mDefinedLayout(0)
-    , mOmittedChannelsMap(0)
-    , mObjectCount(0)
-    , mChannelCount(0)
-    , mChannelLayouts()
+    , 
+     mChannelLayouts()
 {
 }
 

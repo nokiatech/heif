@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,14 +13,18 @@
 
 #include "mediainformationbox.hpp"
 
+#include "bitstream.hpp"
+
 #include "log.hpp"
+#include "fourccint.hpp"
+#include <iosfwd>
 
 using namespace std;
 
 MediaInformationBox::MediaInformationBox()
     : Box("minf")
-    , mMediaType(MediaType::Null)
-    , mVideoMediaHeaderBox()
+    , 
+     mVideoMediaHeaderBox()
     , mSoundMediaHeaderBox()
     , mNullMediaHeaderBox()
     , mDataInformationBox()
@@ -112,6 +116,8 @@ void MediaInformationBox::writeBox(BitStream& bitstr) const
         mSoundMediaHeaderBox.writeBox(bitstr);
         break;
     }
+    default:
+        break;
     }
     mDataInformationBox.writeBox(bitstr);
     mSampleTableBox.writeBox(bitstr);
@@ -158,7 +164,7 @@ void MediaInformationBox::parseBox(ISOBMFF::BitStream& bitstr)
         else
         {
             logWarning() << "Skipping an unsupported box '" << boxType.getString() << "' inside MediaInformationBox."
-                         << std::endl;
+                         << '\n';
         }
     }
 }

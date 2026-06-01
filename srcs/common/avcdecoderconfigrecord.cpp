@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,7 +13,9 @@
 
 #include "avcdecoderconfigrecord.hpp"
 
-#include <cassert>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 #include "avccommondefs.hpp"
 #include "avcparser.hpp"
@@ -21,17 +23,8 @@
 #include "nalutil.hpp"
 
 AvcDecoderConfigurationRecord::AvcDecoderConfigurationRecord()
-    : mConfigurationVersion(1)
-    , mAvcProfileIndication(66)
-    , mProfileCompatibility(128)
-    , mAvcLevelIndication(30)
-    , mLengthSizeMinus1(3)
-    , mChromaFormat(0)
-    , mBitDepthLumaMinus8(0)
-    , mBitDepthChromaMinus8(0)
-    , mPicWidth(0)
-    , mPicHeight(0)
-    , mNalArray()
+    : 
+     mNalArray()
 {
 }
 
@@ -115,7 +108,10 @@ void AvcDecoderConfigurationRecord::writeDecConfigRecord(BitStream& bitstr) cons
     const NALArray* nalArray = getNALArray(AvcNalUnitType::SPS);
     auto count               = static_cast<unsigned int>(nalArray ? nalArray->nalList.size() : 0);
 
-    assert(count < (1 << 6));  // Must fit into 5 bits
+    if (count >= (1 << 5))
+    {
+        throw std::runtime_error("AvcDecoderConfigurationRecord: too many SPS NALs to encode (max 31)");
+    }
     bitstr.writeBits(count, 5);
 
     if (count)
@@ -131,7 +127,10 @@ void AvcDecoderConfigurationRecord::writeDecConfigRecord(BitStream& bitstr) cons
     nalArray = getNALArray(AvcNalUnitType::PPS);
     count    = static_cast<unsigned int>(nalArray ? nalArray->nalList.size() : 0);
 
-    assert(count < (1 << 9));  // Must fit into 8 bits
+    if (count >= (1 << 8))
+    {
+        throw std::runtime_error("AvcDecoderConfigurationRecord: too many PPS NALs to encode (max 255)");
+    }
     bitstr.writeBits(count, 8);
 
     if (count)
@@ -157,7 +156,10 @@ void AvcDecoderConfigurationRecord::writeDecConfigRecord(BitStream& bitstr) cons
         nalArray = getNALArray(AvcNalUnitType::SPS_EXT);
         count    = static_cast<unsigned int>(nalArray ? nalArray->nalList.size() : 0);
 
-        assert(count < (1 << 9));  // Must fit into 8 bits
+        if (count >= (1 << 8))
+        {
+            throw std::runtime_error("AvcDecoderConfigurationRecord: too many SPS_EXT NALs to encode (max 255)");
+        }
         bitstr.writeBits(count, 8);
 
         if (count)
@@ -369,7 +371,7 @@ void AvcDecoderConfigurationRecord::setBitDepthChromaMinus8(std::uint8_t bitDept
     mBitDepthChromaMinus8 = bitDepthChromaMinus8;
 }
 
-void AvcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap) const
+void AvcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap, const uint16_t& /*nuh_layer_id*/) const
 {
     Vector<std::uint8_t> sps;
     Vector<std::uint8_t> pps;
@@ -377,6 +379,6 @@ void AvcDecoderConfigurationRecord::getConfigurationMap(ConfigurationMap& aMap) 
     getOneParameterSet(pps, AvcNalUnitType::PPS);
 
     aMap.clear();
-    aMap.insert({DecoderParameterType::AVC_SPS, move(sps)});
-    aMap.insert({DecoderParameterType::AVC_PPS, move(pps)});
+    aMap.insert({DecoderParameterType::AVC_SPS, std::move(sps)});
+    aMap.insert({DecoderParameterType::AVC_PPS, std::move(pps)});
 }

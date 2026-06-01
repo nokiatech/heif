@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,10 +13,11 @@
 
 #include "visualequivalenceentry.hpp"
 
+#include "bitstream.hpp"
+
 VisualEquivalenceEntry::VisualEquivalenceEntry()
     : SampleGroupDescriptionEntry("eqiv")
-    , mTimeOffset(0)
-    , mTimescaleMultiplier(0)
+     
 {
 }
 

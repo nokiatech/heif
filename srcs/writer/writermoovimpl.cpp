@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,7 +11,6 @@
  * written consent of Nokia.
  */
 
-#include <cassert>
 #include <limits>
 
 #include "auxiliarytypeinfobox.hpp"
@@ -22,13 +21,78 @@
 #include "elementarystreamdescriptorbox.hpp"
 #include "hevcsampleentry.hpp"
 #include "mp4audiosampleentrybox.hpp"
+#include "rectangularregiongroupentry.hpp"
 #include "refsgroup.hpp"
 #include "sampletometadataitementry.hpp"
-#include "soundmediaheaderbox.hpp"
 #include "timeutility.hpp"
 #include "visualequivalenceentry.hpp"
+#include "vvcmixednalunittypepicentry.hpp"
+
+#include "vvcparser.hpp"
+#include "vvcsampleentry.hpp"
+#include "vvcsubpicidentry.hpp"
+#include "vvcsubpicorderentry.hpp"
+#include "vvcsubpicsampleentry.hpp"
+#include "vvcsubpicturelayoutmapentry.hpp"
 #include "writerconstants.hpp"
 #include "writerimpl.hpp"
+
+#include "heiferrorinfo.h"
+#include "avccommondefs.hpp"
+#include "avcconfigurationbox.hpp"
+#include "avcdecoderconfigrecord.hpp"
+#include "chunkoffsetbox.hpp"
+#include "codingconstraintsbox.hpp"
+#include "compositionoffsetbox.hpp"
+#include "compositiontodecodebox.hpp"
+#include "datainformationbox.hpp"
+#include "datareferencebox.hpp"
+#include "editbox.hpp"
+#include "filetypebox.hpp"
+#include "fourccint.hpp"
+#include "handlerbox.hpp"
+#include "heifcommondatatypes.h"
+#include "heifwriterdatatypes.h"
+#include "hevccommondefs.hpp"
+#include "hevcconfigurationbox.hpp"
+#include "hevcdecoderconfigrecord.hpp"
+#include "idgenerators.hpp"
+#include "mediabox.hpp"
+#include "mediaheaderbox.hpp"
+#include "mediainformationbox.hpp"
+#include "moviebox.hpp"
+#include "movieheaderbox.hpp"
+#include "sampledescriptionbox.hpp"
+#include "sampleentrybox.hpp"
+#include "samplegroupdescriptionbox.hpp"
+#include "samplegroupdescriptionentry.hpp"
+#include "samplesizebox.hpp"
+#include "sampletablebox.hpp"
+#include "sampletochunkbox.hpp"
+#include "sampletogroupbox.hpp"
+#include "syncsamplebox.hpp"
+#include "timetosamplebox.hpp"
+#include "trackbox.hpp"
+#include "trackgroupbox.hpp"
+#include "trackgrouptypebox.hpp"
+#include "trackheaderbox.hpp"
+#include "trackreferencebox.hpp"
+#include "trackreferencetypebox.hpp"
+#include "visualsampleentrybox.hpp"
+#include "vvccommondefs.hpp"
+#include "vvcconfigurationbox.hpp"
+#include "vvcdecoderconfigrecord.hpp"
+#include "vvcnaluconfigbox.hpp"
+#include "writerdatatypesinternal.hpp"
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <set>
+#include <stddef.h>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 using namespace std;
 
@@ -63,10 +127,10 @@ namespace HEIF
                     value.numerator   = sequence.clap.widthN;
                     value.denominator = sequence.clap.widthD;
                     clapBox->setWidth(value);
-                    value.numerator   = sequence.clap.horizontalOffsetN;
+                    value.numerator   = static_cast<uint32_t>(sequence.clap.horizontalOffsetN);
                     value.denominator = sequence.clap.horizontalOffsetD;
                     clapBox->setHorizOffset(value);
-                    value.numerator   = sequence.clap.verticalOffsetN;
+                    value.numerator   = static_cast<uint32_t>(sequence.clap.verticalOffsetN);
                     value.denominator = sequence.clap.verticalOffsetD;
                     clapBox->setVertOffset(value);
                 }
@@ -110,24 +174,30 @@ namespace HEIF
                     decCfg.addNalUnit(nalVector, AvcNalUnitType::SPS);
                     if (decCfg.makeConfigFromSPS(nalVector) == false)
                     {
-                        return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                        return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                         ErrorOrigin::Writer_DecoderConfig,
+                                         "makeAVCVideoSampleEntryBox: makeConfigFromSPS rejected SPS NAL");
                     }
                 }
                 else
                 {
-                    return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                     ErrorOrigin::Writer_DecoderConfig,
+                                     "makeAVCVideoSampleEntryBox: unexpected/duplicate NAL unit type for AVC track");
                 }
             }
 
             if (!spsFound || !ppsFound)
             {
-                return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                 ErrorOrigin::Writer_DecoderConfig,
+                                 "makeAVCVideoSampleEntryBox: missing required SPS or PPS NAL unit");
             }
 
             box->setWidth(decCfg.getPicWidth());
             box->setHeight(decCfg.getPicHeight());
-            if (uint32_t(sequence.maxDimensions.height * sequence.maxDimensions.width) <
-                uint32_t(decCfg.getPicWidth() * decCfg.getPicHeight()))
+            if (sequence.maxDimensions.height * sequence.maxDimensions.width <
+                static_cast<uint32_t>(decCfg.getPicWidth()) * decCfg.getPicHeight())
             {
                 sequence.maxDimensions.width  = decCfg.getPicWidth();
                 sequence.maxDimensions.height = decCfg.getPicHeight();
@@ -176,24 +246,30 @@ namespace HEIF
                     decCfg.addNalUnit(nalVector, HevcNalUnitType::SPS, true);
                     if (decCfg.makeConfigFromSPS(nalVector) == false)
                     {
-                        return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                        return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                         ErrorOrigin::Writer_DecoderConfig,
+                                         "makeHEVCVideoSampleEntryBox: makeConfigFromSPS rejected SPS NAL");
                     }
                 }
                 else
                 {
-                    return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                     ErrorOrigin::Writer_DecoderConfig,
+                                     "makeHEVCVideoSampleEntryBox: unexpected/duplicate NAL unit type for HEVC track");
                 }
             }
 
             if (!spsFound || !ppsFound || !vpsFound)
             {
-                return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                 ErrorOrigin::Writer_DecoderConfig,
+                                 "makeHEVCVideoSampleEntryBox: missing required SPS, PPS or VPS NAL unit");
             }
 
             box->setWidth(decCfg.getPicWidth());
             box->setHeight(decCfg.getPicHeight());
-            if (uint32_t(sequence.maxDimensions.height * sequence.maxDimensions.width) <
-                uint32_t(decCfg.getPicWidth() * decCfg.getPicHeight()))
+            if (sequence.maxDimensions.height * sequence.maxDimensions.width <
+                static_cast<uint32_t>(decCfg.getPicWidth()) * decCfg.getPicHeight())
             {
                 sequence.maxDimensions.width  = decCfg.getPicWidth();
                 sequence.maxDimensions.height = decCfg.getPicHeight();
@@ -206,6 +282,161 @@ namespace HEIF
             sampleEntryBox = std::move(box);
             return ErrorCode::OK;
         }
+
+// C6262: MSVC /analyze reports ~60 KB stack.  The VvcSampleEntry box
+// contains a VvcDecoderConfigurationRecord whose addNalUnit() path
+// triggers VPS parsing with spec-mandated fixed-size arrays.  The
+// object itself is heap-allocated (makeCustomUnique); the analyser
+// counts the transient stack of the called parse chain.  60 KB is
+// well within the 1 MB default stack.
+#if defined(_MSC_VER)
+#pragma warning(suppress : 6262)
+#endif
+        HEIF::ErrorCode makeVVCVideoSampleEntryBox(ImageSequence& sequence,
+                                                           const Array<DecoderSpecificInfo>& nalUnits,
+                                                           UniquePtr<SampleEntryBox>& sampleEntryBox)
+        {
+            auto box = makeCustomUnique<::VvcSampleEntry, ::SampleEntryBox>();
+
+            box->setDataReferenceIndex(1);
+
+            VvcConfigurationBox& cfg = box->getVvcConfigurationBox();
+
+            VvcDecoderConfigurationRecord decCfg;
+
+            bool spsFound = false;
+            bool ppsFound = false;
+
+            for (auto& nalUnit : nalUnits)
+            {
+                const auto nalVector = vectorize(nalUnit.decSpecInfoData);
+
+                if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_PPS && !ppsFound)
+                {
+                    ppsFound = true;
+                    decCfg.addNalUnit(nalVector, VvcNalUnitType::PPS_NUT, true);
+                }
+                else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_SPS && !spsFound)
+                {
+                    spsFound = true;
+                    decCfg.addNalUnit(nalVector, VvcNalUnitType::SPS_NUT, true);
+                    if (decCfg.makeConfigFromSPS(nalVector) == false)
+                    {
+                        return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                         ErrorOrigin::Writer_DecoderConfig,
+                                         "makeVVCVideoSampleEntryBox: makeConfigFromSPS rejected SPS NAL");
+                    }
+                }
+                else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_VPS)
+                {
+                    decCfg.addNalUnit(nalVector, VvcNalUnitType::VPS_NUT, true);
+                }
+                else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_APS_PREFIX)
+                {
+                    // VVC allows multiple APS NAL units
+                    decCfg.addNalUnit(nalVector, VvcNalUnitType::PREFIX_APS_NUT, true);
+                }
+                else if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_APS_SUFFIX)
+                {
+                    // VVC allows multiple APS NAL units
+                    decCfg.addNalUnit(nalVector, VvcNalUnitType::SUFFIX_APS_NUT, true);
+                }
+                else
+                {
+                    return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                     ErrorOrigin::Writer_DecoderConfig,
+                                     "makeVVCVideoSampleEntryBox: unexpected/duplicate NAL unit type for VVC track");
+                }
+            }
+
+            if (!spsFound || !ppsFound)
+            {
+                return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                 ErrorOrigin::Writer_DecoderConfig,
+                                 "makeVVCVideoSampleEntryBox: missing required SPS or PPS NAL unit");
+            }
+
+            box->setWidth(decCfg.getMaxPictureWidth());
+            box->setHeight(decCfg.getMaxPictureHeight());
+            if (sequence.maxDimensions.height * sequence.maxDimensions.width <
+                static_cast<uint32_t>(decCfg.getMaxPictureWidth()) * decCfg.getMaxPictureHeight())
+            {
+                sequence.maxDimensions.width  = decCfg.getMaxPictureWidth();
+                sequence.maxDimensions.height = decCfg.getMaxPictureHeight();
+            }
+
+            cfg.setConfiguration(decCfg);
+
+            fillVisualSampleEntryCommon(sequence, box.get());
+
+            sampleEntryBox = std::move(box);
+            return ErrorCode::OK;
+        }
+
+
+// C6262: MSVC /analyze reports ~60 KB stack.  Same root cause as
+// makeVVCVideoSampleEntryBox above — VVC decoder config parsing
+// with spec-mandated fixed-size OLS/layer arrays in the call chain.
+#if defined(_MSC_VER)
+#pragma warning(suppress : 6262)
+#endif
+        HEIF::ErrorCode makeVvcSubpicVideoSampleEntryBox(ImageSequence& sequence,
+                                                            const Array<DecoderSpecificInfo>& nalUnits,
+                                                            UniquePtr<SampleEntryBox>& sampleEntryBox)
+        {
+            auto box = makeCustomUnique<::VvcSubpicSampleEntry, ::SampleEntryBox>();
+
+            box->setDataReferenceIndex(1);
+
+            VvcNaluConfigBox& cfg = box->getVvcNaluConfigBox();
+            cfg.setLengthSizeMinusOne(3);
+            // substitute subpicture track is signaled by 'vvnC' flags=1
+            if (sequence.isSubstituteSubpictureTrack)
+            {
+                cfg.setFlags(1);
+            }
+
+            VvcDecoderConfigurationRecord decCfg;
+
+            bool spsFound = false;
+            for (auto& nalUnit : nalUnits)
+            {
+                const auto nalVector = vectorize(nalUnit.decSpecInfoData);
+
+                if (nalUnit.decSpecInfoType == DecoderSpecInfoType::VVC_SPS && !spsFound)
+                {
+                    spsFound = true;
+                    decCfg.addNalUnit(nalVector, VvcNalUnitType::SPS_NUT, true);
+                    if (decCfg.makeConfigFromSPS(nalVector) == false)
+                    {
+                        return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                         ErrorOrigin::Writer_DecoderConfig,
+                                         "makeVvcSubpicVideoSampleEntryBox: makeConfigFromSPS rejected SPS NAL");
+                    }
+                }
+            }
+            if (!spsFound)
+            {
+                return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                 ErrorOrigin::Writer_DecoderConfig,
+                                 "makeVvcSubpicVideoSampleEntryBox: missing required SPS NAL unit");
+            }
+
+            box->setWidth(decCfg.getMaxPictureWidth());
+            box->setHeight(decCfg.getMaxPictureHeight());
+            if (sequence.maxDimensions.height * sequence.maxDimensions.width <
+                static_cast<uint32_t>(decCfg.getMaxPictureWidth()) * decCfg.getMaxPictureHeight())
+            {
+                sequence.maxDimensions.width  = decCfg.getMaxPictureWidth();
+                sequence.maxDimensions.height = decCfg.getMaxPictureHeight();
+            }
+
+            fillVisualSampleEntryCommon(sequence, box.get());
+
+            sampleEntryBox = std::move(box);
+            return ErrorCode::OK;
+        }
+
 
         HEIF::ErrorCode makeMP4AudioSampleEntryBox(ImageSequence& sequence,
                                                    const Array<DecoderSpecificInfo>& nalUnits,
@@ -257,7 +488,9 @@ namespace HEIF
 
                 if (!audioSpecificConfigFound)
                 {
-                    return ErrorCode::DECODER_CONFIGURATION_ERROR;
+                    return HEIF_FAIL(ErrorCode::DECODER_CONFIGURATION_ERROR,
+                                     ErrorOrigin::Writer_DecoderConfig,
+                                     "makeMP4AudioSampleEntryBox: missing AudioSpecificConfig");
                 }
             }
             esdBox.setESDescriptor(esd);
@@ -287,17 +520,23 @@ namespace HEIF
                                            const CodingConstraints& aCodingConstraints,
                                            SequenceId& aId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addImageSequence: called before initialize()");
         }
 
         if (aTimeBase.den == 0 || aTimeBase.num == 0)
         {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;  // timebase / timebase can't be zero
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addImageSequence: invalid argument");
         }
 
-        uint32_t currentTime = TimeUtility::getSecondsSince1904();
+        uint32_t currentTime = static_cast<uint32_t>(TimeUtility::getSecondsSince1904());
         if (!mImageSequences.size())
         {
             mMovieBox.getMovieHeaderBox().setCreationTime(currentTime);
@@ -324,6 +563,7 @@ namespace HEIF
         sequence.anyNonSyncSample  = false;
         sequence.codingConstraints = aCodingConstraints;
         sequence.matrix            = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
+        sequence.subpicId          = 0;
 
         mImageSequences[sequence.id] = sequence;
 
@@ -355,6 +595,9 @@ namespace HEIF
         mMovieBox.addTrackBox(std::move(trackBox));
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addImageSequence: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addImage(const SequenceId& aSequenceId,
@@ -362,28 +605,40 @@ namespace HEIF
                                    const SampleInfo& aSampleInfo,
                                    SequenceImageId& aSequenceImageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addImage(SampleInfo): called before initialize()");
         }
 
         if (!mImageSequences.count(aSequenceId))
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addImage(SampleInfo): sequence (track) id not found");
         }
         if (!mMediaData.count(aMediaDataId))
         {
-            return ErrorCode::INVALID_MEDIADATA_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_MEDIADATA_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addImage(SampleInfo): media-data id not found");
         }
         if (aSampleInfo.duration == 0)
         {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addImage(SampleInfo): invalid argument");
         }
 
         ImageSequence& sequence = mImageSequences.at(aSequenceId);
         if (sequence.samples.size() && mMediaData.at(aMediaDataId).mediaFormat != sequence.mediaFormat)
         {  // do not allow mediaData from different media formats
-            return ErrorCode::INVALID_MEDIA_FORMAT;
+            return HEIF_FAIL(ErrorCode::INVALID_MEDIA_FORMAT,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addImage(SampleInfo): unrecognised or unsupported media format");
         }
         else
         {
@@ -414,7 +669,9 @@ namespace HEIF
             }
             if (!found)
             {
-                return ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
+                return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_IMAGE_ID,
+                                 ErrorOrigin::Writer_BoxBuild,
+                                 "WriterImpl::addImage(SampleInfo): sequence image id not found");
             }
         }
 
@@ -470,15 +727,22 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addImage(SampleInfo): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addMetadataItemReference(const MetadataItemId& metadataItemId,
                                                    const SequenceId& sequenceId,
                                                    const SequenceImageId& sequenceImageId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addMetadataItemReference: called before initialize()");
         }
 
         ErrorCode error(ErrorCode::OK);
@@ -499,7 +763,9 @@ namespace HEIF
 
         if (!found)
         {
-            return ErrorCode::INVALID_METADATAITEM_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_METADATAITEM_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addMetadataItemReference: metadata item id not found");
         }
 
         ImageSequence& imageSequence = mImageSequences.at(sequenceId);
@@ -512,19 +778,30 @@ namespace HEIF
             }
         }
 
-        return ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
+        return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_IMAGE_ID,
+                         ErrorOrigin::Writer_BoxBuild,
+                         "WriterImpl::addMetadataItemReference: sequence image id not found");
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addMetadataItemReference: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addThumbnails(const SequenceId& thumbSequenceId, const SequenceId& sequenceId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addThumbnails: called before initialize()");
         }
 
         if (!mImageSequences.count(sequenceId) || !mImageSequences.count(thumbSequenceId))
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addThumbnails: sequence (track) id not found");
         }
 
         ImageSequence& thumpSequence = mImageSequences.at(thumbSequenceId);
@@ -532,7 +809,9 @@ namespace HEIF
         if (thumpSequence.handlerType != PICT_HANDLER && imageSequence.handlerType != PICT_HANDLER)
         {
             // as per "7.5.2 Thumbnail image sequence track" only 'pict' allowed
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addThumbnails: sequence (track) id not found");
         }
 
         // Add tracks to same Alternate Group
@@ -547,13 +826,20 @@ namespace HEIF
         // flag thumb track as preview
         thumpSequence.trackPreview = true;
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addThumbnails: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::setImageHidden(const SequenceImageId& sequenceImageId, const bool hidden)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setImageHidden: called before initialize()");
         }
 
         bool success = false;
@@ -586,46 +872,68 @@ namespace HEIF
         }
         else
         {
-            return ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_IMAGE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::setImageHidden: sequence image id not found");
         }
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::setImageHidden: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addProperty(const CleanAperture& clap, const SequenceId& sequenceId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addProperty: called before initialize()");
         }
 
         if (!mImageSequences.count(sequenceId))
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addProperty: sequence (track) id not found");
         }
 
         ImageSequence& sequence = mImageSequences.at(sequenceId);
         if (sequence.handlerType == SOUN_HANDLER)
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addProperty: sequence (track) id not found");
         }
 
         sequence.containsCleanApertureBox = true;
         sequence.clap                     = clap;
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addProperty: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addAuxiliaryReference(const AuxiliaryType& auxC,
                                                 const SequenceId& auxiliarySequenceId,
                                                 const SequenceId& sequenceId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addAuxiliaryReference: called before initialize()");
         }
 
         if (!mImageSequences.count(sequenceId) || !mImageSequences.count(auxiliarySequenceId) ||
             mImageSequences.at(sequenceId).handlerType == SOUN_HANDLER)
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addAuxiliaryReference: sequence (track) id not found");
         }
 
         ImageSequence& auxlSequence  = mImageSequences.at(auxiliarySequenceId);
@@ -641,18 +949,27 @@ namespace HEIF
         // set AuxReferenceType:
         auxlSequence.auxiliaryType = String(auxC.auxType.begin(), auxC.auxType.end());
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addAuxiliaryReference: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::setAlternateGrouping(const SequenceId& sequenceId1, const SequenceId& sequenceId2)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setAlternateGrouping: called before initialize()");
         }
 
         if (!mImageSequences.count(sequenceId1) || !mImageSequences.count(sequenceId2))
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::setAlternateGrouping: sequence (track) id not found");
         }
 
         ImageSequence& sequence1 = mImageSequences.at(sequenceId1);
@@ -674,6 +991,9 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::setAlternateGrouping: exception escaped firewall")
     }
 
     /* *************************************************************** */
@@ -681,7 +1001,9 @@ namespace HEIF
     /* *************************************************************** */
     ErrorCode WriterImpl::generateMoovBox()
     {
-        uint32_t modificationTime = TimeUtility::getSecondsSince1904();
+        HEIF_TRY
+        {
+        uint32_t modificationTime = static_cast<uint32_t>(TimeUtility::getSecondsSince1904());
         uint64_t movieDuration    = 0;
         uint32_t movieTimescale   = 1000;
 
@@ -760,6 +1082,23 @@ namespace HEIF
                     writeEquivalenceSampleGroup(sequence);
                 }
 
+                if (sequence.mediaFormat ==
+                    MediaFormat::VVC_SUBPIC)  // Add VvcSubpicOrderEntry for VVC subpicture track
+                {
+                    writeVvcSubpicIdEntry(sequence);
+                }
+
+                if (sequence.isBaseTrack)
+                {
+                    writeVvcSubpicOrderEntry(sequence);
+                    writeRectangularRegionGroupEntry(sequence);
+                    writeVvcSubpictureLayoutMapEntry(sequence);
+                    ErrorCode error = writeVvcMixedNalUnitTypePicEntry(sequence);
+                    if (error != ErrorCode::OK)
+                    {
+                        return error;
+                    }
+                }
 
                 // modifies sequence.maxDimensions so needs to be done before trackHeaderBox dimensions setting.
                 ErrorCode stblError = writeMoovSampleTable(sequence);
@@ -806,6 +1145,9 @@ namespace HEIF
             mMovieBox.getMovieHeaderBox().setMatrix(mMatrix);
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::generateMoovBox: exception escaped firewall")
     }
 
     void WriterImpl::writeTrackGroups(ImageSequence& imageSequence)
@@ -829,19 +1171,27 @@ namespace HEIF
 
     ErrorCode WriterImpl::addToGroup(const GroupId& groupId, const SequenceId& id)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addToGroup: called before initialize()");
         }
 
         if (mImageSequences.count(id) == 0)
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addToGroup: sequence (track) id not found");
         }
 
         if (mEntityGroups.count(groupId) == 0)
         {
-            return ErrorCode::INVALID_GROUP_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_GROUP_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addToGroup: group id not found");
         }
 
         EntityGroup::Entity entry;
@@ -855,6 +1205,9 @@ namespace HEIF
         }
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addToGroup: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addToEquivalenceGroup(const GroupId& equivalenceGroupId,
@@ -862,14 +1215,20 @@ namespace HEIF
                                                 const SequenceImageId& id,
                                                 const EquivalenceTimeOffset& offset)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addToEquivalenceGroup: called before initialize()");
         }
 
         if (mEntityGroups.count(equivalenceGroupId) == 0)
         {
-            return ErrorCode::INVALID_GROUP_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_GROUP_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addToEquivalenceGroup: group id not found");
         }
 
         bool entryFound = false;
@@ -913,11 +1272,18 @@ namespace HEIF
             }
         }
 
-        return ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
+        return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_IMAGE_ID,
+                         ErrorOrigin::Writer_BoxBuild,
+                         "WriterImpl::addToEquivalenceGroup: sequence image id not found");
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addToEquivalenceGroup: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::updateMoovBox(uint64_t mdatOffset)
     {
+        HEIF_TRY
+        {
         for (auto& imageSequence : mImageSequences)
         {
             ImageSequence& sequence = imageSequence.second;
@@ -930,24 +1296,35 @@ namespace HEIF
             }
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::updateMoovBox: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::setEditList(const SequenceId& sequenceId, const EditList& editList)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setEditList: called before initialize()");
         }
 
         if (mImageSequences.count(sequenceId) == 0)
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::setEditList: sequence (track) id not found");
         }
 
         // Edit list must have one or more entries.
         if (editList.editUnits.size == 0)
         {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::setEditList: invalid argument");
         }
 
         mImageSequences.at(sequenceId).editList = editList;
@@ -960,6 +1337,9 @@ namespace HEIF
         trackBox->setEditBox(editBox);
 
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::setEditList: exception escaped firewall")
     }
 
     /* *************************************************************** */
@@ -969,13 +1349,19 @@ namespace HEIF
     ErrorCode WriterImpl::isValidSequenceImage(const SequenceId& sequenceId,
                                                const SequenceImageId& sequenceImageId) const
     {
+        HEIF_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::isValidSequenceImage: called before initialize()");
         }
         if (!mImageSequences.count(sequenceId))
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::isValidSequenceImage: sequence (track) id not found");
         }
 
         for (auto& sample : mImageSequences.at(sequenceId).samples)
@@ -985,7 +1371,12 @@ namespace HEIF
                 return ErrorCode::OK;
             }
         }
-        return ErrorCode::INVALID_SEQUENCE_IMAGE_ID;
+        return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_IMAGE_ID,
+                         ErrorOrigin::Writer_BoxBuild,
+                         "WriterImpl::isValidSequenceImage: sequence image id not found");
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::isValidSequenceImage: exception escaped firewall")
     }
 
     void WriterImpl::writeMoovHiddenSamples(ImageSequence& sequence)
@@ -1046,6 +1437,8 @@ namespace HEIF
 
     ErrorCode WriterImpl::writeMoovSampleTable(ImageSequence& sequence)
     {
+        HEIF_TRY
+        {
         if (sequence.samples.size())
         {
             TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
@@ -1110,7 +1503,7 @@ namespace HEIF
                 // compositionTimes:
                 if (!compositionOffsets.size() || compositionOffsets.back().second != sample.compositionOffset)
                 {
-                    compositionOffsets.push_back({1, sample.compositionOffset});
+                    compositionOffsets.emplace_back(1, sample.compositionOffset);
                     if (sample.compositionOffset < 0)
                     {
                         isNegativeCompositionOffsetPresent = true;
@@ -1147,7 +1540,9 @@ namespace HEIF
                         if ((ct.second < std::numeric_limits<std::int32_t>::min()) ||
                             (ct.second > std::numeric_limits<std::int32_t>::max()))
                         {
-                            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+                            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                                             ErrorOrigin::Writer_Validation,
+                                             "WriterImpl::writeMoovSampleTable: invalid argument");
                         }
                         ctts.addCompositionOffsetEntryVersion1({ct.first, static_cast<int32_t>(ct.second)});
                     }
@@ -1159,7 +1554,9 @@ namespace HEIF
                         if ((ct.second < std::numeric_limits<std::uint32_t>::min()) ||
                             (ct.second > std::numeric_limits<std::uint32_t>::max()))
                         {
-                            return ErrorCode::INVALID_FUNCTION_PARAMETER;
+                            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                                             ErrorOrigin::Writer_Validation,
+                                             "WriterImpl::writeMoovSampleTable: invalid argument");
                         }
                         ctts.addCompositionOffsetEntryVersion0({ct.first, static_cast<uint32_t>(ct.second)});
                     }
@@ -1208,6 +1605,26 @@ namespace HEIF
                     }
                     stsd.addSampleEntry(std::move(sampleEntryBox));
                 }
+                else if (sequence.mediaFormat == MediaFormat::VVC)
+                {
+                    ErrorCode error =
+                        makeVVCVideoSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig), sampleEntryBox);
+                    if (error != ErrorCode::OK)
+                    {
+                        return error;
+                    }
+                    stsd.addSampleEntry(std::move(sampleEntryBox));
+                }
+                else if (sequence.mediaFormat == MediaFormat::VVC_SUBPIC)
+                {
+                    ErrorCode error = makeVvcSubpicVideoSampleEntryBox(sequence, mAllDecoderConfigs.at(decoderConfig),
+                                                                       sampleEntryBox);
+                    if (error != ErrorCode::OK)
+                    {
+                        return error;
+                    }
+                    stsd.addSampleEntry(std::move(sampleEntryBox));
+                }
                 else if (sequence.mediaFormat == MediaFormat::AAC)
                 {
                     ErrorCode error =
@@ -1221,6 +1638,9 @@ namespace HEIF
             }
         }
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::writeMoovSampleTable: exception escaped firewall")
     }
 
     void WriterImpl::writeEquivalenceSampleGroup(ImageSequence& sequence)
@@ -1245,14 +1665,14 @@ namespace HEIF
 
             if (equivalenceOffsets.size())
             {
-                UniquePtr<SampleGroupDescriptionBox> sgpd(CUSTOM_NEW(SampleGroupDescriptionBox, ()));
-                sgpd->FullBox::setVersion(1);
+                auto sgpd = makeCustomUnique<SampleGroupDescriptionBox, SampleGroupDescriptionBox>();
+                sgpd->setVersion(1);
                 sgpd->setGroupingType("eqiv");
 
                 for (const auto& offset : equivalenceOffsets)
                 {
-                    UniquePtr<VisualEquivalenceEntry, SampleGroupDescriptionEntry> eqivEntry(
-                        CUSTOM_NEW(VisualEquivalenceEntry, ()));
+                    auto eqivEntry =
+                        makeCustomUnique<VisualEquivalenceEntry, SampleGroupDescriptionEntry>();
                     eqivEntry->setTimeOffset(offset.timeOffset);
                     eqivEntry->setTimescaleMultiplier(offset.timescaleMultiplier);
                     sgpd->setDefaultLength(eqivEntry->getSize());
@@ -1330,7 +1750,7 @@ namespace HEIF
                 refsList.push_back(sample.referenceSamples);
             }
 
-            UniquePtr<SampleGroupDescriptionBox> sgpd(CUSTOM_NEW(SampleGroupDescriptionBox, ()));
+            auto sgpd = makeCustomUnique<SampleGroupDescriptionBox, SampleGroupDescriptionBox>();
             SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();
 
             RefsGroup refsGroup;
@@ -1340,6 +1760,361 @@ namespace HEIF
 
             stbl.addSampleGroupDescriptionBox(std::move(sgpd));
         }
+    }
+
+    ErrorCode WriterImpl::writeVvcSubpictureLayoutMapEntry(ImageSequence& sequence)
+        {
+        HEIF_TRY
+        {
+        if (sequence.sulmEntries.size() == 0)
+        {
+            return ErrorCode::OK;
+        }
+
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        auto sgpd = makeCustomUnique<SampleGroupDescriptionBox, SampleGroupDescriptionBox>();
+
+        const uint32_t runSampleCount     = static_cast<uint32_t>(sequence.samples.size());
+        uint32_t runGroupDescriptionIndex = 1;
+        for (const auto& sulmInfo : sequence.sulmEntries)
+        {
+            auto sulm =
+                makeCustomUnique<VvcSubpictureLayoutMapEntry, SampleGroupDescriptionEntry>();
+
+            sulm->setGroupIdInfo4CC(sulmInfo.groupIdInfo.value);
+            const vector<uint16_t> ids(sulmInfo.groupIds.begin(), sulmInfo.groupIds.end());
+            sulm->setGroupIds(ids);
+
+            SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+            sbgp.setGroupingType("sulm");
+            sbgp.setVersion(1);
+            sbgp.setGroupingTypeParameter(
+                runGroupDescriptionIndex);  // could be something else too, just need unique parameter here as there can
+                                            // be several sulm entries
+            sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+
+            sgpd->setVersion(1);  // version 1 for DefaultLength support
+            sgpd->setDefaultLength(sulm->getSize());
+            sgpd->setGroupingType("sulm");
+            sgpd->addEntry(std::move(sulm));
+
+            runGroupDescriptionIndex++;
+        }
+
+        stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::writeVvcSubpictureLayoutMapEntry: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::writeRectangularRegionGroupEntry(ImageSequence& sequence)
+    {
+        HEIF_TRY
+        {
+        if (sequence.trifEntries.size() == 0)
+        {
+            return ErrorCode::OK;
+        }
+
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        auto sgpd = makeCustomUnique<SampleGroupDescriptionBox, SampleGroupDescriptionBox>();
+
+        const uint32_t runSampleCount     = static_cast<uint32_t>(sequence.samples.size());
+        uint32_t runGroupDescriptionIndex = 1;
+        for (const auto& trifInfo : sequence.trifEntries)
+        {
+            auto trif =
+                makeCustomUnique<RectangularRegionGroupEntry, SampleGroupDescriptionEntry>();
+
+            trif->setGroupId(trifInfo.groupId);
+            trif->setRectRegionFlag(trifInfo.rectRegionFlag);
+            trif->setIndependentIdc(static_cast<uint8_t>(trifInfo.independentIdc));
+            trif->setFilteringDisabled(trifInfo.filteringDisabled);
+            trif->setHasDependencyList(trifInfo.dependencyRectRegionGroupIds.size > 0);
+            trif->setHorizontalOffset(trifInfo.horizontalOffset);
+            trif->setVerticalOffset(trifInfo.verticalOffset);
+            trif->setRegionWidth(trifInfo.regionWidth);
+            trif->setRegionHeight(trifInfo.regionHeight);
+            const vector<uint16_t> ids(trifInfo.dependencyRectRegionGroupIds.begin(),
+                                       trifInfo.dependencyRectRegionGroupIds.end());
+            trif->setDependencyRectRegionGroupIds(ids);
+
+            SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+            sbgp.setGroupingType("trif");
+            sbgp.setVersion(1);
+            sbgp.setGroupingTypeParameter(
+                runGroupDescriptionIndex);  // could be something else too, just need unique parameter here as there can
+                                            // be several trif entries
+            sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+
+            sgpd->setVersion(1);  // version 1 for DefaultLength support
+            sgpd->setDefaultLength(trif->getSize());
+            sgpd->setGroupingType("trif");
+            sgpd->addEntry(std::move(trif));
+
+            runGroupDescriptionIndex++;
+        }
+
+
+        stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::writeRectangularRegionGroupEntry: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::writeVvcSubpicOrderEntry(ImageSequence& sequence)
+    {
+        HEIF_TRY
+        {
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        auto sgpd = makeCustomUnique<SampleGroupDescriptionBox, SampleGroupDescriptionBox>();
+        auto spor = makeCustomUnique<VvcSubpicOrderEntry, SampleGroupDescriptionEntry>();
+        spor->setSubpicIdInfoFlag(true);
+
+        // Set subp_track_ref_idx of 'spor'.
+        {
+            const auto& decodingOrder = sequence.subpictureTrackDecodingOrder;
+            const bool allZeros =
+                std::all_of(decodingOrder.cbegin(), decodingOrder.cend(), [](unsigned int i) { return i == 0; });
+            if (!allZeros)
+            {
+                const auto subpTrefCount = sequence.trackReferences.at(SUBP_TREF_TYPE).size();
+                if (subpTrefCount != decodingOrder.size())
+                {
+                    return HEIF_FAIL(ErrorCode::NOT_APPLICABLE,
+                                     ErrorOrigin::Writer_State,
+                                     "WriterImpl::writeVvcSubpicOrderEntry: operation not valid for this file/state");
+                }
+                std::vector<std::uint16_t> subpTrackRefIdx;
+                std::set<std::uint16_t> foundIndices;
+                for (const auto subpTrefIndex : decodingOrder)
+                {
+                    if ((foundIndices.count(static_cast<uint16_t>(subpTrefIndex)) != 0) || (subpTrefIndex == 0) ||
+                        (subpTrefIndex > subpTrefCount + 1))
+                    {
+                        return HEIF_FAIL(ErrorCode::NOT_APPLICABLE,
+                                         ErrorOrigin::Writer_State,
+                                         "WriterImpl::writeVvcSubpicOrderEntry: operation not valid for this file/state");
+                    }
+                    foundIndices.insert(static_cast<uint16_t>(subpTrefIndex));
+                    subpTrackRefIdx.push_back(static_cast<uint16_t>(subpTrefIndex));
+                }
+                spor->setSubpicRefIdx(subpTrackRefIdx);
+            }
+        }
+
+        for (const auto& configId : sequence.decoderConfigs)
+        {
+            // Prefer the cached SPS/PPS info captured at feedDecoderConfig()
+            // time -- this avoids invoking VvcParser::parseSps / parsePps
+            // again over bytes we have already parsed once. The legacy parse
+            // path is kept as a fallback for entries that failed to cache
+            // (e.g. parser threw at feed time).
+            const auto cacheIt = mVvcParsedConfigs.find(configId);
+            const VvcParsedConfig* cached =
+                (cacheIt != mVvcParsedConfigs.end()) ? &cacheIt->second : nullptr;
+
+            for (const auto& decoderInfo : mAllDecoderConfigs.at(configId))
+            {
+                if (decoderInfo.decSpecInfoType == DecoderSpecInfoType::VVC_PPS)
+                {
+                    if (cached != nullptr && cached->hasPps)
+                    {
+                        const auto& info = cached->pps;
+                        if (info.isSubpicMappingPresent)
+                        {
+                            spor->setPpsSpsSubpicIdFlag(true);
+                            spor->setPpsId(static_cast<uint8_t>(info.ppsId));
+                            spor->setSubpicIdLenMinus1(static_cast<uint16_t>(info.subpicIdLen - 1));
+                            spor->setSubpicIdBitPos(static_cast<uint16_t>(info.subpicIdBitPos));
+                            spor->setStartCodeEmulFlag(info.startCodeEmulationFlag);
+                        }
+                    }
+                    else
+                    {
+                        const auto nalVector = vectorize(decoderInfo.decSpecInfoData);
+                        const auto info = VvcParser::parsePps(nalVector);
+                        if (info.isSubpicMappingPresent)
+                        {
+                            spor->setPpsSpsSubpicIdFlag(true);
+                            spor->setPpsId(static_cast<uint8_t>(info.ppsId));
+                            spor->setSubpicIdLenMinus1(static_cast<uint16_t>(info.subpicIdLen - 1));
+                            spor->setSubpicIdBitPos(static_cast<uint16_t>(info.subpicIdBitPos));
+                            spor->setStartCodeEmulFlag(info.startCodeEmulationFlag);
+                        }
+                    }
+                }
+                else if (decoderInfo.decSpecInfoType == DecoderSpecInfoType::VVC_SPS)
+                {
+                    if (cached != nullptr && cached->hasSps)
+                    {
+                        const auto& info = cached->sps;
+                        spor->setSpsId(static_cast<uint8_t>(info.spsId));
+                        spor->setSubpicIdLenMinus1(static_cast<uint16_t>(info.subpicIdLen - 1));
+                        spor->setSubpicIdBitPos(static_cast<uint16_t>(info.subpicIdBitPos));
+                        spor->setStartCodeEmulFlag(info.startCodeEmulationFlag);
+                    }
+                    else
+                    {
+                        const auto nalData = vectorize(decoderInfo.decSpecInfoData);
+                        const auto info = VvcParser::parseSps(nalData);
+                        spor->setSpsId(static_cast<uint8_t>(info.spsId));
+                        spor->setSubpicIdLenMinus1(static_cast<uint16_t>(info.subpicIdLen - 1));
+                        spor->setSubpicIdBitPos(static_cast<uint16_t>(info.subpicIdBitPos));
+                        spor->setStartCodeEmulFlag(info.startCodeEmulationFlag);
+                    }
+                }
+            }
+        }
+
+        sgpd->setVersion(1);  // version 1 for DefaultLength support
+        sgpd->setDefaultLength(spor->getSize());
+        sgpd->setGroupingType("spor");
+        sgpd->addEntry(std::move(spor));
+        stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+
+        SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+        sbgp.setGroupingType("spor");
+
+        uint32_t runSampleCount           = static_cast<uint32_t>(sequence.samples.size());
+        uint32_t runGroupDescriptionIndex = 1;
+        sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::writeVvcSubpicOrderEntry: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::writeVvcMixedNalUnitTypePicEntry(ImageSequence& sequence)
+    {
+        HEIF_TRY
+        {
+        if (sequence.minpGroupings.size() == 0)
+        {
+            return ErrorCode::OK;
+        }
+
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        for (const auto& mixedNal : sequence.minpGroupings)
+        {
+            // sgpd / minp must be constructed fresh per iteration: the previous
+            // iteration std::move()'s both into stbl / sgpd at the bottom of the
+            // body, so reusing the outer-scope objects on a 2nd+ iteration would
+            // dereference a moved-from UniquePtr (caught by clang-tidy
+            // bugprone-use-after-move). In practice minpGroupings is usually
+            // size <= 1 so the bug had never surfaced; this fix is defensive.
+            auto sgpd = makeCustomUnique<SampleGroupDescriptionBox, SampleGroupDescriptionBox>();
+            auto minp =
+                makeCustomUnique<VvcMixedNalUnitTypePicEntry, SampleGroupDescriptionEntry>();
+
+            const auto ppsId = mixedNal.second.ppsId;
+
+            minp->setPpsId(static_cast<uint8_t>(ppsId));
+
+            Vector<VvcMixedNalUnitTypePicEntry::MixSubpTrackIdxs> minpIds;
+            minpIds.reserve(mixedNal.second.mixedNalUnitInfos.size());
+            for (const auto& i : mixedNal.second.mixedNalUnitInfos)
+            {
+                minpIds.emplace_back(i.first.get(), i.second.get());
+            }
+            minp->setMixSubpTrackIds(minpIds);
+            // flag position is fixed, as there is no optional fields before it
+            minp->setPpsMixNaluTypesInPicBitPos(10);
+
+            sgpd->setVersion(1);  // version 1 for DefaultLength support
+            sgpd->setDefaultLength(minp->getSize());
+            sgpd->setGroupingType(MINP_GROUP_TYPE);
+            sgpd->addEntry(std::move(minp));
+            stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+        }
+
+        SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+        sbgp.setVersion(0);
+        sbgp.setGroupingType(MINP_GROUP_TYPE);
+
+        uint32_t runSampleCount           = 0;
+        uint32_t runGroupDescriptionIndex = 0;
+        for (const auto& sample : sequence.samples)
+        {
+            uint32_t sampleGroupDescriptionIndex = 0;  // 0 index = not member of group
+            if (sample.mixedNalUnitTypeIds.size())     // is this sample member of any group?
+            {
+                uint32_t i = 1;  // index start at 1 for SampleGroupDescriptionBox Entry
+                // find index of SampleGroupDescriptionBox Entry
+                for (const auto& entry : sequence.minpGroupings)
+                {
+                    if (entry.first == *sample.mixedNalUnitTypeIds.begin())
+                    {
+                        sampleGroupDescriptionIndex = i;
+                        break;
+                    }
+                    i++;
+                }
+            }
+
+            // new run?
+            if (runGroupDescriptionIndex != sampleGroupDescriptionIndex)
+            {
+                // end old run if any
+                if (runSampleCount)
+                {
+                    sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+                }
+                runSampleCount           = 1;
+                runGroupDescriptionIndex = sampleGroupDescriptionIndex;
+            }
+            else
+            {
+                runSampleCount++;
+            }
+        }
+        // close last sample run
+        if (runSampleCount)
+        {
+            sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
+        }
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::writeVvcMixedNalUnitTypePicEntry: exception escaped firewall")
+    }
+
+
+    void WriterImpl::writeVvcSubpicIdEntry(ImageSequence& sequence)
+    {
+        TrackBox* track      = mMovieBox.getTrackBox(sequence.trackId.get());
+        SampleTableBox& stbl = track->getMediaBox().getMediaInformationBox().getSampleTableBox();
+
+        auto sgpd = makeCustomUnique<SampleGroupDescriptionBox, SampleGroupDescriptionBox>();
+        auto spid = makeCustomUnique<VvcSubpicIdEntry, SampleGroupDescriptionEntry>();
+        spid->setSubPicIds({sequence.subpicId});
+        sgpd->setVersion(1);  // version 1 for DefaultLength support
+        sgpd->setDefaultLength(spid->getSize());
+        sgpd->setGroupingType("spid");
+        sgpd->addEntry(std::move(spid));
+        stbl.addSampleGroupDescriptionBox(std::move(sgpd));
+
+        SampleToGroupBox& sbgp = stbl.getSampleToGroupBox();  // creates new SampleToGroupBox for group
+
+        sbgp.setGroupingType("spid");
+
+        uint32_t runSampleCount           = static_cast<uint32_t>(sequence.samples.size());
+        uint32_t runGroupDescriptionIndex = 1;
+        sbgp.addSampleRun(runSampleCount, runGroupDescriptionIndex);
     }
 
     void WriterImpl::writeMetadataItemGroups(ImageSequence& sequence)
@@ -1373,16 +2148,16 @@ namespace HEIF
             // add unique entries to SampleGroupDescriptionBox
             if (entries.size())
             {
-                UniquePtr<SampleGroupDescriptionBox> sgpd(CUSTOM_NEW(SampleGroupDescriptionBox, ()));
-                sgpd->FullBox::setVersion(1);  // version 1 for DefaultLength support
+                auto sgpd = makeCustomUnique<SampleGroupDescriptionBox, SampleGroupDescriptionBox>();
+                sgpd->setVersion(1);  // version 1 for DefaultLength support
                 sgpd->setGroupingType(STMI_GROUP_TYPE);
 
                 bool canUseDefaultSize = true;
                 size_t defaultSize     = 0;
                 for (const auto& entry : entries)
                 {
-                    UniquePtr<SampleToMetadataItemEntry, SampleGroupDescriptionEntry> stmiEntry(
-                        CUSTOM_NEW(SampleToMetadataItemEntry, ()));
+                    auto stmiEntry =
+                        makeCustomUnique<SampleToMetadataItemEntry, SampleGroupDescriptionEntry>();
                     if (canUseDefaultSize && (entry.size() != entries.begin()->size()))
                     {
                         canUseDefaultSize = false;
@@ -1470,7 +2245,10 @@ namespace HEIF
         }
 
         const EditListBox* editListBox = editBox->getEditListBox();
-        assert(editListBox != nullptr);
+        if (editListBox == nullptr)
+        {
+            throw std::runtime_error("getTrackDurationTS: EditBox present but EditListBox is null");
+        }
         decodePts.loadBox(editListBox, movieTimeScale, mediaTimeScale);
         decodePts.loadBox(&stbl.getTimeToSampleBox());
         decodePts.loadBox(stbl.getCompositionOffsetBox().get());
@@ -1577,9 +2355,13 @@ namespace HEIF
 
     ErrorCode WriterImpl::setMatrix(const Array<int32_t>& matrix)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setMatrix: called before initialize()");
         }
 
         if (matrix.size == 9)
@@ -1587,19 +2369,30 @@ namespace HEIF
             mMatrix = vectorize(matrix);
             return ErrorCode::OK;
         }
-        return ErrorCode::INVALID_FUNCTION_PARAMETER;
+        return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                         ErrorOrigin::Writer_Validation,
+                         "WriterImpl::setMatrix: invalid argument");
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::setMatrix: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::setMatrix(const SequenceId& aSequenceId, const Array<int32_t>& matrix)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setMatrix: called before initialize()");
         }
 
         if (!mImageSequences.count(aSequenceId))
         {
-            return ErrorCode::INVALID_SEQUENCE_ID;
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::setMatrix: sequence (track) id not found");
         }
 
         if (matrix.size == 9)
@@ -1608,22 +2401,147 @@ namespace HEIF
             return ErrorCode::OK;
         }
 
-        return ErrorCode::INVALID_FUNCTION_PARAMETER;
+        return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                         ErrorOrigin::Writer_Validation,
+                         "WriterImpl::setMatrix: invalid argument");
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::setMatrix: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addSubpictureTrack(const SequenceId& aBaseTrackSequenceId,
+                                             const unsigned int decodingOrder,
+                                             SequenceId& aId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addSubpictureTrack: called before initialize()");
+        }
+
+        if (!mImageSequences.count(aBaseTrackSequenceId))
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addSubpictureTrack: sequence (track) id not found");
+        }
+
+        const uint32_t currentTime = static_cast<uint32_t>(TimeUtility::getSecondsSince1904());
+        if (!mImageSequences.size())
+        {
+            mMovieBox.getMovieHeaderBox().setCreationTime(currentTime);
+        }
+
+        ImageSequence sequence{};
+        sequence.id          = Context::getValue();
+        aId                  = sequence.id;
+        sequence.trackId     = Track::createTrackId();
+        sequence.handlerType = VIDE_HANDLER;
+        // sequence.mediaId is filled when first sample is fed to Image Sequence
+        sequence.timeBase = mImageSequences[aBaseTrackSequenceId].timeBase;
+        // sequence.maxDimensions is filled in finalize() when all DecoderSpecificInfo
+        // are gone through
+        sequence.duration          = 0;
+        sequence.creationTime      = currentTime;
+        sequence.modificationTime  = sequence.creationTime;
+        sequence.trackEnabled      = true;
+        sequence.trackInMovie      = false;  // must be false for 'vvs1' sample entry VVC subpicture track
+        sequence.trackPreview      = false;
+        sequence.containsHidden    = false;
+        sequence.alternateGroup    = 0;
+        sequence.auxiliaryType     = "";
+        sequence.anyNonSyncSample  = false;
+        sequence.codingConstraints = {};
+        sequence.matrix            = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
+        sequence.subpicId          = mNextSubpicId;
+        mNextSubpicId++;
+
+        mImageSequences[sequence.id] = sequence;
+
+        UniquePtr<TrackBox> trackBox = makeCustomUnique<TrackBox, TrackBox>();
+        TrackHeaderBox& trackHeader  = trackBox->getTrackHeaderBox();
+        trackHeader.setCreationTime(sequence.creationTime);
+        trackHeader.setModificationTime(sequence.modificationTime);
+        trackHeader.setTrackID(sequence.trackId.get());
+
+        MediaBox& mediaBox = trackBox->getMediaBox();
+
+        MediaHeaderBox& mediaHeaderBox = mediaBox.getMediaHeaderBox();
+        mediaHeaderBox.setCreationTime(sequence.creationTime);
+        mediaHeaderBox.setModificationTime(sequence.modificationTime);
+        mediaHeaderBox.setTimeScale(static_cast<uint32_t>(sequence.timeBase.den));
+
+        HandlerBox& handlerBox = mediaBox.getHandlerBox();
+        handlerBox.setHandlerType(VIDE_HANDLER);
+        handlerBox.setName("VideoTrack/VideoHandler");
+
+        MediaInformationBox& mediaInformationBox = mediaBox.getMediaInformationBox();
+        mediaInformationBox.setMediaType(MediaInformationBox::MediaType::Video);
+        DataInformationBox& dinf = mediaInformationBox.getDataInformationBox();
+        auto urlBox              = makeCustomShared<DataEntryUrlBox>();
+        urlBox->setFlags(1);  // Flag 0x01 tells the data is in this file.
+                              // DataEntryUrlBox will write only its header.
+        dinf.addDataEntryBox(urlBox);
+
+        mMovieBox.addTrackBox(std::move(trackBox));
+
+        mImageSequences.at(aBaseTrackSequenceId).subpictureTrackDecodingOrder.push_back(decodingOrder);
+        mImageSequences.at(aBaseTrackSequenceId).isBaseTrack = true;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addSubpictureTrack: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::setSubstituteSubpictureTrack(const SequenceId& sequence, bool isSubstituteSubpictureTrack)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::setSubstituteSubpictureTrack: called before initialize()");
+        }
+
+        if (!mImageSequences.count(sequence))
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::setSubstituteSubpictureTrack: sequence (track) id not found");
+        }
+
+        mImageSequences.at(sequence).isSubstituteSubpictureTrack = isSubstituteSubpictureTrack;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::setSubstituteSubpictureTrack: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addVideoTrack(const Rational& aTimeBase, SequenceId& aId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addVideoTrack(Rational): called before initialize()");
         }
 
         if (aTimeBase.den == 0 || aTimeBase.num == 0)
         {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;  // timebase / timebase can't be zero
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addVideoTrack(Rational): invalid argument");
         }
 
-        uint32_t currentTime = TimeUtility::getSecondsSince1904();
+        uint32_t currentTime = static_cast<uint32_t>(TimeUtility::getSecondsSince1904());
         if (!mImageSequences.size())
         {
             mMovieBox.getMovieHeaderBox().setCreationTime(currentTime);
@@ -1650,6 +2568,7 @@ namespace HEIF
         sequence.anyNonSyncSample  = false;
         sequence.codingConstraints = {};
         sequence.matrix            = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
+                sequence.subpicId          = 0;
 
         mImageSequences[sequence.id] = sequence;
 
@@ -1668,7 +2587,7 @@ namespace HEIF
 
         HandlerBox& handlerBox = mediaBox.getHandlerBox();
         handlerBox.setHandlerType(VIDE_HANDLER);
-        handlerBox.setName("HEIF/VideoTrack/VideoHandler");
+        handlerBox.setName("VideoTrack/VideoHandler");
 
         MediaInformationBox& mediaInformationBox = mediaBox.getMediaInformationBox();
         mediaInformationBox.setMediaType(MediaInformationBox::MediaType::Video);
@@ -1680,21 +2599,30 @@ namespace HEIF
 
         mMovieBox.addTrackBox(std::move(trackBox));
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addVideoTrack(Rational): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addAudioTrack(const Rational& aTimeBase, const AudioParams& aConfig, SequenceId& aId)
     {
+        HEIF_ENTRY_TRY
+        {
         if (mState != State::WRITING)
         {
-            return ErrorCode::UNINITIALIZED;
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addAudioTrack(AudioParams): called before initialize()");
         }
 
         if (aTimeBase.den == 0 || aTimeBase.num == 0)
         {
-            return ErrorCode::INVALID_FUNCTION_PARAMETER;  // timebase / timebase can't be zero
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addAudioTrack(AudioParams): invalid argument");
         }
 
-        uint32_t currentTime = TimeUtility::getSecondsSince1904();
+        uint32_t currentTime = static_cast<uint32_t>(TimeUtility::getSecondsSince1904());
         if (!mImageSequences.size())
         {
             mMovieBox.getMovieHeaderBox().setCreationTime(currentTime);
@@ -1722,6 +2650,7 @@ namespace HEIF
         sequence.codingConstraints = {};
         sequence.matrix            = {0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000};
         sequence.audioParams       = aConfig;
+        sequence.subpicId          = 0;
 
         mImageSequences[sequence.id] = sequence;
 
@@ -1753,6 +2682,9 @@ namespace HEIF
 
         mMovieBox.addTrackBox(std::move(trackBox));
         return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addAudioTrack(AudioParams): exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addVideo(const SequenceId& sequenceId,
@@ -1760,8 +2692,13 @@ namespace HEIF
                                    const SampleInfo& sampleInfo,
                                    SequenceImageId& sampleid)
     {
+        HEIF_ENTRY_TRY
+        {
         return addImage(sequenceId, mediaDataId, sampleInfo,
                         sampleid);  // use addImage() as internal functionality for samples is the same.
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addVideo: exception escaped firewall")
     }
 
     ErrorCode WriterImpl::addAudio(const SequenceId& sequenceId,
@@ -1769,8 +2706,242 @@ namespace HEIF
                                    const SampleInfo& sampleInfo,
                                    SequenceImageId& sampleid)
     {
+        HEIF_ENTRY_TRY
+        {
         return addImage(sequenceId, mediaDataId, sampleInfo,
                         sampleid);  // use addImage() as internal functionality for samples is the same.
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addAudio: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addMixedNalTypeGrouping(const SequenceId& baseTrackId,
+                                                  const unsigned int ppsId,
+                                                  MixedNalUnitTypeId& minpId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addMixedNalTypeGrouping: called before initialize()");
+        }
+
+        if (!mImageSequences.count(baseTrackId))
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addMixedNalTypeGrouping: sequence (track) id not found");
+        }
+
+        minpId = Context::getValue();
+        MinpVisualSampleGrouping minp;
+        minp.ppsId  = ppsId;
+        auto& minps = mImageSequences.at(baseTrackId).minpGroupings;
+
+        minps[minpId] = minp;
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addMixedNalTypeGrouping: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addMixedNalGrouping(const MixedNalUnitTypeId& minpId, const SequenceImageId& sequenceImageId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addMixedNalGrouping: called before initialize()");
+        }
+
+        auto sequenceIt = std::find_if(
+            mImageSequences.begin(), mImageSequences.end(),
+            [minpId](const pair<SequenceId, ImageSequence>& i) { return i.second.minpGroupings.count(minpId); });
+        if (sequenceIt == mImageSequences.end())
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addMixedNalGrouping: invalid argument");
+        }
+
+        auto& samples = sequenceIt->second.samples;
+        auto sampleIt = std::find_if(samples.begin(), samples.end(), [sequenceImageId](const ImageSequence::Sample& i) {
+            return i.sequenceImageId == sequenceImageId;
+        });
+        if (sampleIt == samples.end())
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_IMAGE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addMixedNalGrouping: sequence image id not found");
+        }
+
+        sampleIt->mixedNalUnitTypeIds.insert(minpId);
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addMixedNalGrouping: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addMixedNalPair(const MixedNalUnitTypeId& minpId,
+                                          const std::uint16_t mixSubpTrackIdx1,
+                                          const std::uint16_t mixSubpTrackIdx2)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addMixedNalPair: called before initialize()");
+        }
+
+        // Values shall not be equal.
+        if (mixSubpTrackIdx1 == mixSubpTrackIdx2)
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addMixedNalPair: invalid argument");
+        }
+
+        auto sequenceIt = std::find_if(
+            mImageSequences.begin(), mImageSequences.end(),
+            [minpId](const pair<SequenceId, ImageSequence>& i) { return i.second.minpGroupings.count(minpId); });
+        if (sequenceIt == mImageSequences.end())
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_FUNCTION_PARAMETER,
+                             ErrorOrigin::Writer_Validation,
+                             "WriterImpl::addMixedNalPair: invalid argument");
+        }
+
+        sequenceIt->second.minpGroupings[minpId].mixedNalUnitInfos.emplace_back(mixSubpTrackIdx1, mixSubpTrackIdx2);
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addMixedNalPair: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addRectangularRegionGrouping(const Trif& trif, const SequenceId& sequenceId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addRectangularRegionGrouping: called before initialize()");
+        }
+        if (!mImageSequences.count(sequenceId))
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addRectangularRegionGrouping: sequence (track) id not found");
+        }
+
+        mImageSequences.at(sequenceId).trifEntries.push_back(trif);
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addRectangularRegionGrouping: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addVvcSubpictureLayoutMapEntry(const Sulm& sulm, const SequenceId& sequenceId)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addVvcSubpictureLayoutMapEntry: called before initialize()");
+        }
+        if (!mImageSequences.count(sequenceId))
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addVvcSubpictureLayoutMapEntry: sequence (track) id not found");
+        }
+
+        mImageSequences.at(sequenceId).sulmEntries.push_back(sulm);
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addVvcSubpictureLayoutMapEntry: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addTrackReference(const SequenceId& from, const TrackGroupId& to, const FourCC& refType)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addTrackReference: called before initialize()");
+        }
+        if (!mImageSequences.count(from))
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addTrackReference: sequence (track) id not found");
+        }
+        if (!mTrackGroups.count(to))
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_GROUP_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addTrackReference: group id not found");
+        }
+
+        mImageSequences.at(from).trackReferences[refType.value].emplace_back(to.get());
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addTrackReference: exception escaped firewall")
+    }
+
+    ErrorCode WriterImpl::addTrackReference(const SequenceId& from, const SequenceId& to, const FourCC& refType)
+    {
+        HEIF_ENTRY_TRY
+        {
+        if (mState != State::WRITING)
+        {
+            return HEIF_FAIL(ErrorCode::UNINITIALIZED,
+                             ErrorOrigin::Writer_State,
+                             "WriterImpl::addTrackReference: called before initialize()");
+        }
+        if (!mImageSequences.count(from))
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addTrackReference: sequence (track) id not found");
+        }
+        if (!mImageSequences.count(to))
+        {
+            return HEIF_FAIL(ErrorCode::INVALID_SEQUENCE_ID,
+                             ErrorOrigin::Writer_BoxBuild,
+                             "WriterImpl::addTrackReference: sequence (track) id not found");
+        }
+
+        mImageSequences.at(from).trackReferences[refType.value].push_back(mImageSequences.at(to).trackId);
+
+        return ErrorCode::OK;
+            }
+        HEIF_CATCH_AND_RETURN(::HEIF::ErrorOrigin::Writer_BoxBuild,
+                              "WriterImpl::addTrackReference: exception escaped firewall")
+    }
+
+    void WriterImpl::resetSubpictureIds()
+    {
+        mNextSubpicId = 0;
     }
 
 }  // namespace HEIF

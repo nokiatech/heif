@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,18 +12,18 @@
  */
 
 #include "mediaheaderbox.hpp"
+#include "customallocator.hpp"
 
-#include "log.hpp"
+#include "bitstream.hpp"
+
+#include "fourccint.hpp"
+#include <iosfwd>
 
 using namespace std;
 
 MediaHeaderBox::MediaHeaderBox()
     : FullBox("mdhd", 0, 0)
-    , mCreationTime(0)
-    , mModificationTime(0)
-    , mTimeScale(0)
-    , mDuration(0)
-    , mLanguage(0)
+     
 {
 }
 
@@ -97,7 +97,7 @@ void MediaHeaderBox::writeBox(ISOBMFF::BitStream& bitstr) const
         throw RuntimeError("MediaHeaderBox::writeBox() supports only 'mdhd' version 0 and version 1");
     }
 
-    bitstr.write16Bits(0);  // Pad, Langauge
+    bitstr.write16Bits(mLanguage);  // Pad, Language
     bitstr.write16Bits(0);  // Predefined
 
     updateSize(bitstr);
@@ -132,6 +132,6 @@ void MediaHeaderBox::parseBox(ISOBMFF::BitStream& bitstr)
         mDuration = bitstr.read64Bits();
     }
 
-    bitstr.read16Bits();  // Pad, Langauge
+    mLanguage = static_cast<uint16_t>(bitstr.read16Bits());  // Pad, Language
     bitstr.read16Bits();  // Predefined
 }

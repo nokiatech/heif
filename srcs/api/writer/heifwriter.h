@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -32,11 +32,25 @@ namespace HEIF
          *
          *  If a custom memory allocator has not been set with SetCustomAllocator prior to
          *  calling this, the default allocator will be set into use.
+         *
+         *  @throws std::bad_alloc only. All other failures are deferred to
+         *          initialize() and surfaced through the ErrorCode return
+         *          channel; Create() itself never throws any other exception
+         *          and never returns nullptr (allocation failure throws).
+         *
+         *  @note  The returned pointer **must** be released via Writer::Destroy().
+         *         Marked [[nodiscard]] so an embedder cannot silently leak the
+         *         instance by ignoring the return value (e.g. accidental
+         *         `Writer::Create();` instead of `auto* w = Writer::Create();`).
+         *         The library does not retain any reference to the instance; lifetime
+         *         is entirely the caller's responsibility.
          */
-        static Writer* Create();
+        [[nodiscard]] static Writer* Create();
 
-        /** Destroy the instance returned by Create */
-        static void Destroy(Writer* instance);
+        /** Destroy the instance returned by Create.
+         *  Guaranteed to never throw - safe to call from destructors,
+         *  catch handlers, and JNI/COM bindings that assume no-throw. */
+        static void Destroy(Writer* instance) noexcept;
 
         /** Set an optional custom memory allocator. Call this before calling Create for the
             first time, unless your new allocator is able to release blocks allocated with the
@@ -223,6 +237,36 @@ namespace HEIF
          */
         virtual ErrorCode addProperty(const RelativeLocation& rloc, PropertyId& propertyId) = 0;
 
+        /** Add a 'lsel' Layer Selector property to the file.
+         *  @param [in]  lsel        Property data.
+         *  @param [out] propertyId  Identifier of the added property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED */
+        virtual ErrorCode addProperty(const LayerSelector& lsel, PropertyId& propertyId) = 0;
+
+        /** Add a 'tols' Target Output Layer Set property to the file.
+         *  @param [in]  tols        Property data.
+         *  @param [out] propertyId  Identifier of the added property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED */
+        virtual ErrorCode addProperty(const TargetOls& tols, PropertyId& propertyId) = 0;
+
+        /** Add an 'oinf' Operating Points Information property to the file.
+         *  @param [in]  oinf        Property data describing the operating points,
+         *                           profile/tier/level descriptors, and inter-layer
+         *                           dependency graph for a multi-layer item.
+         *  @param [out] propertyId  Identifier of the added property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED */
+        virtual ErrorCode addProperty(const OperatingPointsInfo& oinf, PropertyId& propertyId) = 0;
+
+        /** Add a 'subs' Sub-sample Information property to the file.
+         *  @param [in]  subs        Property data.
+         *  @param [out] propertyId  Identifier of the added property.
+         *  @pre initialize() has been called successfully.
+         *  @return ErrorCode: OK, UNINITIALIZED */
+        virtual ErrorCode addProperty(const SubSampleInfo& subs, PropertyId& propertyId) = 0;
+
         /**
          * Add a pixel information 'pixi' descriptive property.
          * It can be then associated to one or several images by using method associateProperty().
@@ -315,6 +359,64 @@ namespace HEIF
          * @return ErrorCode: OK or UNINITIALIZED
          */
         virtual ErrorCode addProperty(const ModificationTimeInformation& mdft, PropertyId& propertyId) = 0;
+
+        /**
+         * Add a Image Spatial Extents 'ispe' descriptive property.
+         * It can be then associated to one or several images by using method associateProperty().
+         * @param ispe       [in]  Parameters for the Image Spatial Extents property.
+         * @param propertyId [out] PropertyId of the added property, to be used as a parameter of associateProperty().
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+         virtual ErrorCode addProperty(const SpatialExtents& ispe, PropertyId& propertyId) = 0;
+
+        /**
+         * @brief Add Content Light Level Information Property ('clli')
+        *  @param [in]  clli  Data of the property.
+        *  @param [out] index Id of the property.
+        *  @return ErrorCode: OK or UNINITIALIZED
+            */
+        virtual ErrorCode addProperty(const ContentLightLevel& clli, PropertyId& index) = 0;
+
+        /**
+         * @brief Add Mastering Display Color Volume Property ('mdcv')
+         * @param [in]  mdcv  Data of the property.
+         * @param [out] index Id of the property.
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const MasteringDisplayColorVolume& mdcv, PropertyId& index) = 0;
+
+        /**
+         * @brief Add Content Color Volume Property ('cclv')
+         * @param [in]  cclv  Data of the property.
+         * @param [out] index Id of the property.
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const ContentColorVolume& cclv, PropertyId& index) = 0;
+
+        /**
+         * @brief Add Ambient Viewing Environment Property ('amve')
+         * @param [in] amve  Data of the property.
+         * @param [out] index Id of the property.
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const AmbientViewingEnvironment& amve, PropertyId& index) = 0;
+
+        /**
+         * @brief Add Reference Viewing Environment Property ('reve')
+         * @param [in]  reve  Data of the property.
+         * @param [out] index Id of the property.
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const ReferenceViewingEnvironment& reve, PropertyId& index) = 0;
+
+        /**
+         * @brief Add Nominal Diffuse White Point Property ('ndwt')
+         * @param [in]  ndwt  Data of the property.
+         * @param [out] index Id of the property.
+         * @return ErrorCode: OK or UNINITIALIZED
+         */
+        virtual ErrorCode addProperty(const NominalDiffuseWhite& ndwt, PropertyId& index) = 0;
+
 
         /**
          * Add a new property from binary data.
@@ -649,6 +751,29 @@ namespace HEIF
         /////////////////////////////////////////////////////////////////////
         // Support for optional MP4 video and audio tracks writing methods //
         /////////////////////////////////////////////////////////////////////
+        //
+        // The methods in this section let you mux a plain ISOBMFF video
+        // ('vide' handler) or audio ('soun' handler) track into the same
+        // file as a HEIF image sequence. They are an opt-in muxing
+        // utility, not a general-purpose MP4 writer:
+        //
+        //   * Audio is restricted to AAC-LC (mp4a / OTI 0x40). No Opus,
+        //     FLAC, AC-3, MPEG-H, or PCM. (See HEIFPP::AudioTrack::save
+        //     in srcs/api-cpp/AudioTrack.cpp:51 for the hard check.)
+        //   * Video is restricted to AVC, HEVC, or VVC sample entries.
+        //     No AV1, VP9, Dolby Vision, or MPEG-4 Part 2.
+        //   * The writer produces a plain progressive MP4 only -- there
+        //     is no fragmented-MP4 writer (no 'moof'/'mvex'/'tfdt'
+        //     emission). For DASH/CMAF segments, post-process with
+        //     GPAC's MP4Box or ffmpeg.
+        //   * No DRM / Common Encryption support on the writer side.
+        //   * OutputConfig::compatibleBrands is not validated against
+        //     produced structure -- the embedder owns brand correctness.
+        //
+        // The full normative reference for what is and is not supported
+        // (handler types, sample entries, brands, fragmented mode,
+        // sample groupings, known dead-code items, and the FAQ) is
+        // See the MP4 support documentation for details.
 
         /**
          * Add a new video (track with 'vide' handler type) to the file. For HEIF Image sequences use addImageSequence()
@@ -660,6 +785,76 @@ namespace HEIF
          * @return ErrorCode: OK, UNINITIALIZED
          */
         virtual ErrorCode addVideoTrack(const Rational& timeBase, SequenceId& id) = 0;
+
+        /**
+         * Add a new subpicture track for a (VVC) base track. This creates relevant VvcSubpicOrderEntry and
+         * VvcSubpicIDEntry VisualSampleGroupEntries. Note that 'subp' track references are not created automatically.
+         * @param baseTrackId   [in]  ID of the base track.
+         * @param decodingOrder [in]  Decoding order of this subpicture track.
+         * @param id            [out] Identifier of the added track. This is not necessary same the corresponding track
+         * ID in the file.
+         * @return ErrorCode: OK, UNINITIALIZED
+         */
+        virtual ErrorCode addSubpictureTrack(const SequenceId& baseTrackId,
+                                             unsigned int decodingOrder,
+                                             SequenceId& id) = 0;
+
+        /**
+         * Set or unset a track as a substitute subpicture track. This is used only for VVC subpicture tracks. Enabling
+         * this will cause VvcSubpicSampleEntry 'vvnC' flags to be set to 1.
+         * @param sequence                    [in] Sequence id of a substitute subpicture track.
+         * @param isSubstituteSubpictureTrack [in] True to enable, false to disable.
+         * @return ErrorCode: OK, UNINITIALIZED or INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode setSubstituteSubpictureTrack(const SequenceId& sequence, bool isSubstituteSubpictureTrack) = 0;
+
+        /**
+         * Add a new Mixed NAL unit type pictures sample group to a VVC track
+         * @param baseTrackId [in]  VVC merge base track SequenceId.
+         * @param ppsId       [in]  PPS ID of the PPS applying to this sample group description entry
+         * @param minpId      [out] Newly created MixedNalUnitTypeId to be used with addMixedNalPair.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode addMixedNalTypeGrouping(const SequenceId& baseTrackId,
+                                                  unsigned int ppsId,
+                                                  MixedNalUnitTypeId& minpId) = 0;
+
+        /**
+         * Add a new mix_subp_track_idx1[i] and mix_subp_track_idx2[i] pair to a
+         * VvcMixedNALUnitTypePicEntry.
+         * @param minpId           [in] MixedNalUnitTypeId received from addMixedNalTypeGrouping.
+         * @param mixSubpTrackIdx1 [in] mix_subp_track_idx1[i] value to be added
+         * @param mixSubpTrackIdx2 [in] mix_subp_track_idx2[i] value to be added
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_FUNCTION_PARAMETER
+         */
+        virtual ErrorCode addMixedNalPair(const MixedNalUnitTypeId& minpId,
+                                          std::uint16_t mixSubpTrackIdx1,
+                                          std::uint16_t mixSubpTrackIdx2) = 0;
+
+        /**
+         * Map a sample to this sample group description entry.
+         * @param minpId          [in] MixedNalUnitTypeId received from addMixedNalTypeGrouping.
+         * @param sequenceImageId [in] Id of the sample added to the 'minp' grouping.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_FUNCTION_PARAMETER
+         */
+        virtual ErrorCode addMixedNalGrouping(const MixedNalUnitTypeId& minpId,
+                                              const SequenceImageId& sequenceImageId) = 0;
+
+        /**
+         * Add a new Rectangular region grouping entry ('trif') to a VVC track.
+         * @param trif        [in] RectangularRegionGroupEntry data
+         * @param sequenceId  [in]
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode addRectangularRegionGrouping(const Trif& trif, const SequenceId& sequenceId) = 0;
+
+        /**
+         *
+         * @param sulm       [in] VvcSubpictureLayoutMapEntry data
+         * @param sequenceId [in]
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode addVvcSubpictureLayoutMapEntry(const Sulm& sulm, const SequenceId& sequenceId) = 0;
 
         /**
          * Add an video sample to a video track. Video bitstream must have been already fed by using feedMediaData().
@@ -702,6 +897,29 @@ namespace HEIF
                                    const MediaDataId& mediaDataId,
                                    const SampleInfo& sampleInfo,
                                    SequenceImageId& sampleid) = 0;
+
+        /**
+         * Add a new track reference to the TrackReferenceBox of a track.
+         * @param from    [in] SequenceId of the track referencing a track group in the presentation.
+         * @param to      [in] Track group id that the reference is pointing to.
+         * @param refType [in] FourCC type of the created track reference.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID, INVALID_GROUP_ID
+         */
+        virtual ErrorCode addTrackReference(const SequenceId& from, const TrackGroupId& to, const FourCC& refType) = 0;
+
+        /**
+         * Add a new track reference to the TrackReferenceBox of a track.
+         * @param from    [in] SequenceId of the track referencing another track in the presentation.
+         * @param to      [in] SequenceId of the track that the reference is pointing to.
+         * @param refType [in] FourCC type of the created track reference.
+         * @return ErrorCode: OK, UNINITIALIZED, INVALID_SEQUENCE_ID
+         */
+        virtual ErrorCode addTrackReference(const SequenceId& from, const SequenceId& to, const FourCC& refType) = 0;
+
+        /**
+         * Reset subpicture IDs when starting to add new subtrack alte group.
+         */
+        virtual void resetSubpictureIds() = 0;
 
     protected:
         virtual ~Writer() = default;

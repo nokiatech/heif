@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,7 +15,6 @@
 #define MOVIEEXTENDSBOX_HPP
 
 #include "bbox.hpp"
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "movieextendsheaderbox.hpp"
 #include "trackextendsbox.hpp"
@@ -62,7 +61,7 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    bool mMovieExtendsHeaderBoxPresent;
+    bool mMovieExtendsHeaderBoxPresent{false};
     MovieExtendsHeaderBox mMovieExtendsHeaderBox;
     Vector<UniquePtr<TrackExtendsBox>> mTrackExtends;  ///< Contained TrackExtendsBoxes
 };

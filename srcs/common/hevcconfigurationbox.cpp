@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,16 +13,16 @@
 
 #include "hevcconfigurationbox.hpp"
 
-#include "bitstream.hpp"
+#include "fourccint.hpp"
 
 HevcConfigurationBox::HevcConfigurationBox()
-    : DecoderConfigurationBox("hvcC")
+    : Box("hvcC")
     , mHevcConfig()
 {
 }
 
 HevcConfigurationBox::HevcConfigurationBox(const HevcConfigurationBox& box)
-    : DecoderConfigurationBox(box.getType())
+    : Box(box.getType())
     , mHevcConfig(box.mHevcConfig)
 {
 }

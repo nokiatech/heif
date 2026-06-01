@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,16 +14,14 @@
 #ifndef DECODEPTS_HPP
 #define DECODEPTS_HPP
 
-#include <algorithm>
-#include <map>
 
+#include "writeoncemap.hpp"
+#include <cstdint>
 #include "compositionoffsetbox.hpp"
 #include "compositiontodecodebox.hpp"
-#include "customallocator.hpp"
 #include "editbox.hpp"
 #include "timetosamplebox.hpp"
 #include "trackrunbox.hpp"
-#include "writeoncemap.hpp"
 
 /**
  * @brief Class for decoding presentation timestamps for samples of a TrackBox.
@@ -113,15 +111,15 @@ public:
     void getTimeTrackRunTS(PMapTS& oldPMapTS) const;
 
 private:
-    const EditListBox* mEditListBox;
-    std::uint32_t mMovieTimescale;
-    std::uint32_t mMediaTimescale;
-    const TimeToSampleBox* mTimeToSampleBox;
-    const CompositionOffsetBox* mCompositionOffsetBox;
-    const CompositionToDecodeBox* mCompositionToDecodeBox;
-    const TrackRunBox* mTrackRunBox;
+    const EditListBox* mEditListBox{nullptr};
+    std::uint32_t mMovieTimescale{0};
+    std::uint32_t mMediaTimescale{0};
+    const TimeToSampleBox* mTimeToSampleBox{nullptr};
+    const CompositionOffsetBox* mCompositionOffsetBox{nullptr};
+    const CompositionToDecodeBox* mCompositionToDecodeBox{nullptr};
+    const TrackRunBox* mTrackRunBox{nullptr};
 
-    std::uint64_t mMovieOffset;     ///< Movie offset in media timescale units.
+    std::uint64_t mMovieOffset{0};     ///< Movie offset in media timescale units.
     std::int64_t mMediaOffset = 0;  ///< keep track of the input offset, set from BaseMediaDecodeTime
 
     PMapTS mMediaPtsTS;  ///< Media presentation timestamps

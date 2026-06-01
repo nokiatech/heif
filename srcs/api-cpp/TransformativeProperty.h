@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,7 @@
 #pragma once
 
 #include <ItemProperty.h>
+#include "heifcommondatatypes.h"
 
 namespace HEIFPP
 {
@@ -26,7 +27,7 @@ namespace HEIFPP
         // valid types: 'clap' 'irot' 'imir'
         HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
 
-    private:
+    public:
         TransformativeProperty& operator=(const TransformativeProperty&) = delete;
         TransformativeProperty& operator=(TransformativeProperty&&) = delete;
         TransformativeProperty(const TransformativeProperty&)       = delete;
@@ -38,14 +39,14 @@ namespace HEIFPP
     {
     public:
         HEIF::CleanAperture mClap;
-        CleanApertureProperty(Heif* aHeif);
+        explicit CleanApertureProperty(Heif* aHeif);
         ~CleanApertureProperty() override = default;
 
     protected:
         HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         CleanApertureProperty& operator=(const CleanApertureProperty&) = delete;
         CleanApertureProperty& operator=(CleanApertureProperty&&) = delete;
         CleanApertureProperty(const CleanApertureProperty&)       = delete;
@@ -56,14 +57,14 @@ namespace HEIFPP
     {
     public:
         HEIF::Rotate mRotate;
-        RotateProperty(Heif* aHeif);
+        explicit RotateProperty(Heif* aHeif);
         ~RotateProperty() override = default;
 
     protected:
         HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         RotateProperty& operator=(const RotateProperty&) = delete;
         RotateProperty& operator=(RotateProperty&&) = delete;
         RotateProperty(const RotateProperty&)       = delete;
@@ -74,14 +75,14 @@ namespace HEIFPP
     {
     public:
         HEIF::Mirror mMirror;
-        MirrorProperty(Heif* aHeif);
+        explicit MirrorProperty(Heif* aHeif);
         ~MirrorProperty() override = default;
 
     protected:
         HEIF::ErrorCode load(HEIF::Reader*, const HEIF::PropertyId& aId) override;
         HEIF::ErrorCode save(HEIF::Writer* aWriter) override;
 
-    private:
+    public:
         MirrorProperty& operator=(const MirrorProperty&) = delete;
         MirrorProperty& operator=(MirrorProperty&&) = delete;
         MirrorProperty(const MirrorProperty&)       = delete;

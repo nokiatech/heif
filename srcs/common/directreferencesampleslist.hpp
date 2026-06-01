@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,9 @@
 #ifndef DIRECTREFEREBCESAMPLESLISTENTRY_HPP
 #define DIRECTREFEREBCESAMPLESLISTENTRY_HPP
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "samplegroupdescriptionentry.hpp"
+#include <cstdint>
 
 /** @brief DirectReferenceSamplesList class. Inherits from SampleGroupDescriptionEntry.
  *  @details Implements DirectReferenceSamplesList as defined in HEIF standard. */
@@ -59,7 +59,7 @@ public:
     void parseEntry(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    std::uint32_t mSampleId;                          ///< Sample Id whose referenced sample Id will be listed
+    std::uint32_t mSampleId{0};                          ///< Sample Id whose referenced sample Id will be listed
     Vector<std::uint32_t> mDirectReferenceSampleIds;  ///< Vector of direct reference sample Ids
 };
 

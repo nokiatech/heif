@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,10 +12,16 @@
 
 #include "ExifItem.h"
 
+#include "Heif.h"
+#include "helpers.h"
+
 #include <heifreader.h>
 #include <heifwriter.h>
 
 #include <cstring>
+#include "MetaItem.h"
+#include "heifreaderdatatypes.h"
+#include "heifwriterdatatypes.h"
 
 using namespace HEIFPP;
 
@@ -50,8 +56,7 @@ HEIF::ErrorCode ExifItem::save(HEIF::Writer* aWriter)
 {
     if (mBuffer == nullptr)
     {
-        // TODO: actual error is NO_MEDIA
-        return HEIF::ErrorCode::BUFFER_SIZE_TOO_SMALL;
+        return HEIF::ErrorCode::NO_MEDIA;
     }
 
     HEIF::MediaDataId mediaDataId;
@@ -119,7 +124,7 @@ HEIF::ErrorCode ExifItem::loadData()
         }
         else
         {
-            HEIF_ASSERT(false);
+            HEIF_LOG_INVARIANT(false, "ExifItem::loadItemData: missing Heif/Reader instance");
         }
     }
     return error;

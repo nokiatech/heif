@@ -1,16 +1,35 @@
+# CMake build artefacts
 Bins/
 CMakeCache.txt
 CMakeFiles
 Makefile
 cmake_install.cmake
+compile_commands.json
+buildinfo.hpp
+
+# Build output directories
+build-*/
+
+# Doxygen
+/docs/doxygen_html
+/docs/Doxyfile
+/docs/CMakeDoxyfile.in
+/docs/CMakeDoxygenDefaults.cmake
+/docs/Doxyfile.in.bak
 
 # Linux
 *.a
+*.so
+*.so.*
 
 # Windows
 *.exe
+*.pdb
+*.ilk
+*.lib
+*.dll
 .project
-.vscode/
+*.natvis
 
 *.bak
 *~
@@ -22,7 +41,21 @@ cmake_install.cmake
 
 # IDE files
 *.user
+.vscode/
+.idea/
 
 # MacOS
 .DS_Store
-.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# JavaScript/WASM binding build output
+/bindings/javascript-wasm/build/
+
+# Raw bitstream files
+*.h265
+*.h266

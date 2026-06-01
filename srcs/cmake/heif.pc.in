@@ -1,0 +1,29 @@
+# pkg-config file for the Nokia HEIF library.
+#
+# Lets non-CMake build systems (Meson, Bazel, autotools, raw Make, etc.)
+# discover the installed library:
+#
+#   pkg-config --cflags --libs heif
+#
+# Generated from srcs/cmake/heif.pc.in by configure_file() at install time.
+#
+# `prefix` is derived from ${pcfiledir} (the directory the .pc file lives in)
+# so the package stays relocatable: moving the install tree to a different
+# root does not break `pkg-config heif`. Assumes the standard layout
+# <prefix>/lib/pkgconfig/heif.pc -- adjust the `../..` if you change
+# CMAKE_INSTALL_LIBDIR to something deeper than one component.
+
+prefix=${pcfiledir}/../..
+exec_prefix=${prefix}
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: heif
+Description: Nokia HEIF (High Efficiency Image File Format) reader/writer library
+URL: https://github.com/nokiatech/heif
+Version: @PROJECT_VERSION@
+# Default link line: shared reader + shared writer + C++ convenience layer.
+# Static consumers should add `-Bstatic` flags themselves.
+Libs: -L${libdir} -lheif_shared -lheif_writer_shared
+Libs.private: -lpthread
+Cflags: -I${includedir}

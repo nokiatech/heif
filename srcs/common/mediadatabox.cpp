@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,9 +13,11 @@
 
 #include "mediadatabox.hpp"
 
-#include <fstream>
 #include <limits>
-#include <stdexcept>
+#include "fourccint.hpp"
+#include <list>
+#include <stddef.h>
+#include <vector>
 
 using namespace std;
 
@@ -23,8 +25,8 @@ MediaDataBox::MediaDataBox()
     : Box("mdat")
     , mHeaderData()
     , mMediaData()
-    , mTotalDataSize(0)
-    , mDataOffsetArray()
+    , 
+     mDataOffsetArray()
     , mDataLengthArray()
 {
     setLargeSize();
@@ -34,6 +36,11 @@ MediaDataBox::MediaDataBox()
 std::pair<const ISOBMFF::BitStream&, const List<Vector<uint8_t>>&> MediaDataBox::getSerializedData() const
 {
     return {mHeaderData, mMediaData};
+}
+
+const List<Vector<uint8_t>> MediaDataBox::getRawItemData() const
+{
+    return mMediaData;
 }
 
 void MediaDataBox::writeBox(ISOBMFF::BitStream& bitstr) const
@@ -63,23 +70,20 @@ void MediaDataBox::updateSize(ISOBMFF::BitStream& bitstr)
     }
 
     // Write updated size to the bitstream.
-    if (getLargeSize())
-    {
-        bitstr.setByte(8, (boxSize >> 56) & 0xff);
-        bitstr.setByte(9, (boxSize >> 48) & 0xff);
-        bitstr.setByte(10, (boxSize >> 40) & 0xff);
-        bitstr.setByte(11, (boxSize >> 32) & 0xff);
-        bitstr.setByte(12, (boxSize >> 24) & 0xff);
-        bitstr.setByte(13, (boxSize >> 16) & 0xff);
-        bitstr.setByte(14, (boxSize >> 8) & 0xff);
-        bitstr.setByte(15, boxSize & 0xff);
-    }
-    else
-    {
-        bitstr.setByte(0, (boxSize >> 24) & 0xff);
-        bitstr.setByte(1, (boxSize >> 16) & 0xff);
-        bitstr.setByte(2, (boxSize >> 8) & 0xff);
-        bitstr.setByte(3, boxSize & 0xff);
+    if(getLargeSize()){
+        bitstr.setByte(8, static_cast<std::uint8_t>((boxSize >> 56) & 0xff));
+        bitstr.setByte(9, static_cast<std::uint8_t>((boxSize >> 48) & 0xff));
+        bitstr.setByte(10, static_cast<std::uint8_t>((boxSize >> 40) & 0xff));
+        bitstr.setByte(11, static_cast<std::uint8_t>((boxSize >> 32) & 0xff));
+        bitstr.setByte(12, static_cast<std::uint8_t>((boxSize >> 24) & 0xff));
+        bitstr.setByte(13, static_cast<std::uint8_t>((boxSize >> 16) & 0xff));
+        bitstr.setByte(14, static_cast<std::uint8_t>((boxSize >> 8) & 0xff));
+        bitstr.setByte(15, static_cast<std::uint8_t>(boxSize & 0xff));
+    }else{
+        bitstr.setByte(0, static_cast<std::uint8_t>((boxSize >> 24) & 0xff));
+        bitstr.setByte(1, static_cast<std::uint8_t>((boxSize >> 16) & 0xff));
+        bitstr.setByte(2, static_cast<std::uint8_t>((boxSize >> 8) & 0xff));
+        bitstr.setByte(3, static_cast<std::uint8_t>(boxSize & 0xff));
     }
 }
 
@@ -144,8 +148,8 @@ void MediaDataBox::addNalData(const Vector<uint8_t>& srcData)
     std::uint64_t currPos  = 0;
     std::uint64_t totalLen = 0;
 
-    mDataOffsetArray.push_back(static_cast<std::uint64_t>(
-        mHeaderData.getSize() + mTotalDataSize));  // record offset for the picture to be added
+    mDataOffsetArray.push_back(
+        mHeaderData.getSize() + mTotalDataSize);  // record offset for the picture to be added
 
     Vector<uint8_t> mediaDataEntry;
     mediaDataEntry.reserve(srcData.size());
@@ -160,10 +164,10 @@ void MediaDataBox::addNalData(const Vector<uint8_t>& srcData)
         const std::uint64_t nalLen = startCodePos - currPos;
 
         // write length field
-        mediaDataEntry.push_back(static_cast<uint8_t>((uint32_t(nalLen) >> 24) & 0xff));
-        mediaDataEntry.push_back(static_cast<uint8_t>((uint32_t(nalLen) >> 16) & 0xff));
-        mediaDataEntry.push_back(static_cast<uint8_t>((uint32_t(nalLen) >> 8) & 0xff));
-        mediaDataEntry.push_back(static_cast<uint8_t>(uint32_t(nalLen) & 0xff));
+        mediaDataEntry.push_back(static_cast<uint8_t>((static_cast<uint32_t>(nalLen) >> 24) & 0xff));
+        mediaDataEntry.push_back(static_cast<uint8_t>((static_cast<uint32_t>(nalLen) >> 16) & 0xff));
+        mediaDataEntry.push_back(static_cast<uint8_t>((static_cast<uint32_t>(nalLen) >> 8) & 0xff));
+        mediaDataEntry.push_back(static_cast<uint8_t>(static_cast<uint32_t>(nalLen) & 0xff));
 
         auto sourceIt = srcData.begin() + static_cast<Vector<uint8_t>::difference_type>(currPos);
         mediaDataEntry.insert(mediaDataEntry.end(), sourceIt,

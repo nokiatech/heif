@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,6 +13,8 @@
 #pragma once
 
 #include <DecoderConfiguration.h>
+#include "heifcommondatatypes.h"
+#include <cstdint>
 
 namespace HEIFPP
 {
@@ -30,7 +32,7 @@ namespace HEIFPP
                                          std::uint32_t& aSize) const override;
         HEIF::ErrorCode convertFromRawData(const std::uint8_t* aData, std::uint32_t aSize) override;
 
-    private:
+    public:
         JPEGDecoderConfiguration& operator=(const JPEGDecoderConfiguration&) = delete;
         JPEGDecoderConfiguration& operator=(JPEGDecoderConfiguration&&) = delete;
         JPEGDecoderConfiguration(const JPEGDecoderConfiguration&)       = delete;

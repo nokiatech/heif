@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,18 +13,17 @@
 
 #include "segmentindexbox.hpp"
 
-#include <cassert>
-#include <iostream>
+#include "bitstream.hpp"
+
 #include <stdexcept>
+#include "fourccint.hpp"
+#include <vector>
 
 SegmentIndexBox::SegmentIndexBox(uint8_t version)
     : FullBox("sidx", version, 0)
-    , mReferenceID(0)
-    , mTimescale(0)
-    , mEarliestPresentationTime(0)
-    , mFirstOffset(0)
-    , mReferences()
-    , mReserveTotal(0)
+    , 
+     mReferences()
+     
 {
 }
 
@@ -76,7 +75,10 @@ uint64_t SegmentIndexBox::getFirstOffset() const
 void SegmentIndexBox::addReference(const SegmentIndexBox::Reference& reference)
 {
     mReferences.push_back(reference);
-    assert(mReserveTotal == 0 || mReferences.size() < mReserveTotal);
+    if (mReserveTotal != 0 && mReferences.size() >= mReserveTotal)
+    {
+        throw std::runtime_error("SegmentIndexBox::addReference: exceeded reserved reference count");
+    }
 }
 
 Vector<SegmentIndexBox::Reference> SegmentIndexBox::getReferences() const
@@ -111,12 +113,12 @@ void SegmentIndexBox::writeBox(BitStream& bitstr) const
 
     for (const auto& reference : mReferences)
     {
-        bitstr.writeBits(reference.referenceType ? uint64_t(1) : uint64_t(0), 1);  // bit (1) reference_type
-        bitstr.writeBits(uint64_t(0) | reference.referencedSize, 31);              // unsigned int(31) referenced_size
+        bitstr.writeBits(reference.referenceType ? static_cast<uint64_t>(1) : static_cast<uint64_t>(0), 1);  // bit (1) reference_type
+        bitstr.writeBits(static_cast<uint64_t>(0) | reference.referencedSize, 31);              // unsigned int(31) referenced_size
         bitstr.write32Bits(reference.subsegmentDuration);  // unsigned int(32) subsegment_duration
-        bitstr.writeBits(reference.startsWithSAP ? uint64_t(1) : uint64_t(0), 1);  // bit (1) starts_with_SAP
-        bitstr.writeBits(uint64_t(0) | reference.sapType, 3);                      // unsigned int(3) SAP_type
-        bitstr.writeBits(uint64_t(0) | reference.sapDeltaTime, 28);                // unsigned int(28) SAP_delta_time
+        bitstr.writeBits(reference.startsWithSAP ? static_cast<uint64_t>(1) : static_cast<uint64_t>(0), 1);  // bit (1) starts_with_SAP
+        bitstr.writeBits(static_cast<uint64_t>(0) | reference.sapType, 3);                      // unsigned int(3) SAP_type
+        bitstr.writeBits(static_cast<uint64_t>(0) | reference.sapDeltaTime, 28);                // unsigned int(28) SAP_delta_time
     }
 
     updateSize(bitstr);

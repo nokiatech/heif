@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,15 +13,63 @@
 #pragma once
 
 #include <cstdint>
-#include <map>
+#include <stdexcept>
+#include <utility>
 #include <vector>
+
+// HEIF_ASSERT: a fatal precondition guard, *always* active (release builds included).
+// Intended for situations where, if the condition is false, the very next line
+// of code would cause a hard fault (null deref, integer underflow, etc.).
+// Originally this was no-op'd in NDEBUG builds, silently turning every check
+// into dead code; now it always evaluates the expression and throws on failure
+// so misuse can never go unnoticed.
+//
+// Use HEIF_LOG_INVARIANT for "shouldn't reach here" markers in branches that
+// are already handled gracefully (return early, log, continue) and where
+// terminating the host program would be inappropriate.
 #if (defined(_DEBUG) || defined(DEBUG)) || (!defined(NDEBUG))
 #define HEIF_DEBUG
-#include <cassert>
-#define HEIF_ASSERT(x) assert(x)
-#else
-#define HEIF_ASSERT(x)
 #endif
+
+// Stringify __LINE__ so the assertion message embeds the source location at
+// compile time (no per-call snprintf cost). The two-level macro indirection is
+// the standard idiom for stringifying a token-paste of a macro value.
+#define HEIFPP_ASSERT_STR_(x) #x
+#define HEIFPP_ASSERT_STR(x)  HEIFPP_ASSERT_STR_(x)
+
+#define HEIF_ASSERT(x)                                                                                                 \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!(x))                                                                                                      \
+        {                                                                                                              \
+            throw std::logic_error("HEIF_ASSERT failed: " #x " at " __FILE__ ":" HEIFPP_ASSERT_STR(__LINE__));         \
+        }                                                                                                              \
+    } while (0)
+
+// HEIF_LOG_INVARIANT: a non-fatal "this branch should be unreachable" marker.
+// Use this at sites where the surrounding code already handles the failure
+// (returns an error code, breaks, ignores) and where throwing would be a
+// behavior change that could break callers relying on the silent-skip.
+//
+// Routes through HEIFPP::reportInvariant(file, line, msg) which:
+//   - populates the per-thread ErrorContext slot with
+//     source = ErrorSource::Internal_Invariant, code = INVARIANT_VIOLATION
+//   - dispatches to the installed HEIFPP error sink (if any)
+//   - falls back to writing one line to stderr if no sink is installed,
+//     so an unconfigured embedder still sees the failure.
+//
+// This macro honours the HEIFPP sink contract: embedders that have
+// installed a sink receive every invariant failure through the sink
+// and stderr stays clean. If no sink is installed, falls back to stderr.
+namespace HEIFPP { void reportInvariant(const char* file, int line, const char* msg) noexcept; }
+#define HEIF_LOG_INVARIANT(cond, msg)                                              \
+    do                                                                             \
+    {                                                                              \
+        if (!(cond))                                                               \
+        {                                                                          \
+            ::HEIFPP::reportInvariant(__FILE__, __LINE__, (msg));                  \
+        }                                                                          \
+    } while (0)
 
 namespace HEIFPP
 {
@@ -63,7 +111,7 @@ namespace HEIFPP
         list.push_back(item);
         return true;
     }
-#define IsItemIn(a, b) (FindItemIn(a, b) != a.end())
+#define IsItemIn(a, b) (FindItemIn((a), (b)) != (a).end())
 
     template <class T>
     class LinkArray
@@ -81,7 +129,7 @@ namespace HEIFPP
     protected:
         std::vector<std::pair<T, std::uint32_t>> mList;
 
-    private:
+    public:
         LinkArray<T>& operator=(const LinkArray<T>&) = delete;
         LinkArray<T>& operator=(LinkArray<T>&&) = delete;
         LinkArray<T>(const LinkArray<T>&)       = delete;
@@ -108,8 +156,8 @@ namespace HEIFPP
     protected:
         std::uint8_t* mSrc;
         std::uint32_t mLen;
-        std::uint64_t mCBit;
-        std::uint32_t mWriteByte;
+        std::uint64_t mCBit{0};
+        std::uint32_t mWriteByte{0};
     };
 
 

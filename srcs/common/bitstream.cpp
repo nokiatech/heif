@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,10 +15,12 @@
 
 #include <cstring>
 #include <limits>
-#include <stdexcept>
 #include <utility>
 
 #include "log.hpp"
+#include "fourccint.hpp"
+#include <string>
+#include <vector>
 
 namespace ISOBMFF
 {
@@ -38,6 +40,21 @@ namespace ISOBMFF
         , mBitOffset(0)
         , mStorageAllocated(false)
     {
+    }
+
+    BitStream::BitStream(BitStream& other, const uint64_t& size)
+        : mStorage(size)
+        , mCurrByte(0)
+        , mByteOffset(0)
+        , mBitOffset(0)
+        , mStorageAllocated(true)
+    {
+        if (other.mByteOffset + size > other.mStorage.size())
+        {
+            throw RuntimeError("BitStream copy ctor: source has fewer bytes remaining than requested size");
+        }
+        std::memcpy(mStorage.data(), other.mStorage.data() + other.mByteOffset, size);
+        other.mByteOffset += size;
     }
 
     BitStream::BitStream(BitStream&& other) noexcept
@@ -82,6 +99,23 @@ namespace ISOBMFF
         return mBitOffset ? false : true;
     }
 
+    void BitStream::skipToByteBoundary()
+    {
+        if(!isByteAligned()){
+            uint8_t n = static_cast<uint8_t>(8 - mBitOffset);
+            mBitOffset += static_cast<unsigned int>(n);
+            mByteOffset++;
+            mBitOffset = 0;
+        }
+    }
+
+    void BitStream::addTrailingBits()
+    {
+        if(!isByteAligned()){
+            writeBits(0,8-mBitOffset);
+        }
+    }
+
     void BitStream::setPosition(const std::uint64_t position)
     {
         mByteOffset = position;
@@ -121,7 +155,11 @@ namespace ISOBMFF
 
     void BitStream::skipBytes(const std::uint64_t count)
     {
-        mByteOffset += count;
+        if(numBytesLeft() < count){
+            throw RuntimeError("Trying to skip bytes to outside of storage.");
+        }else{
+            mByteOffset += count;
+        }
     }
 
     void BitStream::setByte(const std::uint64_t offset, const std::uint8_t byte)
@@ -209,7 +247,7 @@ namespace ISOBMFF
     {
         if (len == 0)
         {
-            logWarning() << "BitStream::writeBits called for zero-length bit sequence." << std::endl;
+            logWarning() << "BitStream::writeBits called for zero-length bit sequence." << '\n';
         }
         else
         {
@@ -242,7 +280,7 @@ namespace ISOBMFF
     {
         if (srcString.length() == 0)
         {
-            logWarning() << "BitStream::writeString called for zero-length string." << std::endl;
+            logWarning() << "BitStream::writeString called for zero-length string." << '\n';
         }
 
         for (const auto character : srcString)
@@ -290,7 +328,7 @@ namespace ISOBMFF
     {
         std::uint16_t ret = mStorage.at(mByteOffset);
         mByteOffset++;
-        ret = (ret << 8) | mStorage.at(mByteOffset);
+        ret = static_cast<std::uint16_t>((ret << 8) | mStorage.at(mByteOffset));
         mByteOffset++;
         return ret;
     }
@@ -343,7 +381,7 @@ namespace ISOBMFF
 
     void BitStream::read8BitsArray(Vector<std::uint8_t>& bits, const std::uint64_t len)
     {
-        if (static_cast<std::size_t>(mByteOffset + len) <= mStorage.size())
+        if ((mByteOffset + len) <= mStorage.size())
         {
             bits.insert(bits.end(), mStorage.begin() + static_cast<std::int64_t>(mByteOffset),
                         mStorage.begin() + static_cast<std::int64_t>(mByteOffset + len));
@@ -357,7 +395,7 @@ namespace ISOBMFF
 
     void BitStream::readByteArrayToBuffer(char* buffer, const std::uint64_t len)
     {
-        if (static_cast<std::size_t>(mByteOffset + len) <= mStorage.size())
+        if ((mByteOffset + len) <= mStorage.size())
         {
             std::memcpy(buffer, mStorage.data() + mByteOffset, len);
             mByteOffset += len;
@@ -428,6 +466,7 @@ namespace ISOBMFF
         }
     }
 
+
     void BitStream::readStringWithPosAndLen(String& dstString, const std::uint64_t pos, const std::uint32_t len)
     {
         dstString.clear();
@@ -463,13 +502,15 @@ namespace ISOBMFF
         std::uint32_t codeNum;
         std::uint32_t tmpBit = 0;
 
-        while (tmpBit == 0)
+    while (tmpBit == 0)
+    {
+        if (numBytesLeft() == 0 && mBitOffset == 0)
         {
-            tmpBit = readBits(1);
-            leadingZeroBits++;
+            throw RuntimeError("readExpGolombCode: bitstream exhausted in leading-zero run");
         }
-
-        auto shiftAmount = static_cast<std::uint32_t>(leadingZeroBits);
+        tmpBit = readBits(1);
+        leadingZeroBits++;
+    }        auto shiftAmount = static_cast<std::uint32_t>(leadingZeroBits);
         codeNum          = (static_cast<std::uint32_t>(1) << shiftAmount) - 1 + readBits(shiftAmount);
         return codeNum;
     }
@@ -477,7 +518,7 @@ namespace ISOBMFF
     int32_t BitStream::readSignedExpGolombCode()
     {
         unsigned int codeNum = readExpGolombCode();
-        int signedVal        = int((codeNum + 1) >> 1);
+        int signedVal        = static_cast<int>((codeNum + 1) >> 1);
 
         if ((codeNum & 1) == 0)
         {

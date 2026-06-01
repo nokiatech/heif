@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -21,7 +21,7 @@ void writeImageGrid(const ImageGrid& grid, BitStream& output)
 {
     bool write32BitFields = false;
     output.write8Bits(0);  // version = 0
-    if ((grid.outputWidth > std::numeric_limits<std::uint16_t>::max()) &&
+    if ((grid.outputWidth > std::numeric_limits<std::uint16_t>::max()) ||
         (grid.outputHeight > std::numeric_limits<std::uint16_t>::max()))
     {
         write32BitFields = true;

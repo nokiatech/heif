@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -29,12 +29,19 @@ namespace ISOBMFF
     {
     public:
         BitStream();
-        BitStream(Vector<std::uint8_t> strData);
+        explicit BitStream(Vector<std::uint8_t> strData);
         BitStream(const BitStream&) = default;
+        BitStream(BitStream&,const uint64_t&);
         BitStream& operator=(const BitStream&) = default;
         BitStream(BitStream&&) noexcept;
         BitStream& operator=(BitStream&&) noexcept;
         ~BitStream();
+
+        // NOLINTBEGIN(google-explicit-constructor): conversions used implicitly throughout the box parsers
+        // (e.g. NAL helpers and metabox.cpp pass a BitStream where a Vector<uint8_t>& is expected).
+        operator Vector<uint8_t>() const { return mStorage; }
+        operator const Vector<uint8_t>&() & { return mStorage; }
+        // NOLINTEND(google-explicit-constructor)
 
         union FloatToUint
         {
@@ -202,6 +209,14 @@ namespace ISOBMFF
         /// @return True if current bit offset location inside a byte is zero, false otherwise.
         bool isByteAligned() const;
 
+        ///@brief Set bit location to the start of the next byte
+        void skipToByteBoundary();
+
+        /**
+         * @brief Write bits until byte boundary. Bits values shall be zero
+         */
+        void addTrailingBits();
+
     private:
         /// @brief Bitstream data storage as a vector of unsigned integers
         Vector<std::uint8_t> mStorage;
@@ -210,6 +225,7 @@ namespace ISOBMFF
         unsigned int mCurrByte;
 
         /// @brief Cursor that points to the current byte location of the bitstream data storage
+        ///@note Doesn't function in writing. Implementation only for reading
         std::uint64_t mByteOffset;
 
         /// @brief Cursor that points to the current bit location of the current processed byte.

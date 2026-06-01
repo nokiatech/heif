@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,6 +15,7 @@
 #define MEDIADATABOX_HPP
 
 #include <cstdint>
+#include <utility>
 
 #include "bbox.hpp"
 #include "bitstream.hpp"
@@ -67,10 +68,13 @@ public:
      *  @param [out] output headerdata and mediadata. */
     std::pair<const ISOBMFF::BitStream&, const List<Vector<uint8_t>>&> getSerializedData() const;
 
+    /** @brief Return all item data payloads, without header information
+     *  @return List of raw item data payloads, index per item. Payload bytestream as Vector<uint8_t> */
+    const List<Vector<uint8_t>> getRawItemData() const;
 private:
     ISOBMFF::BitStream mHeaderData;    // header container
     List<Vector<uint8_t>> mMediaData;  // media data container
-    uint64_t mTotalDataSize;           // total size of mMediaData vectors
+    uint64_t mTotalDataSize{0};           // total size of mMediaData vectors
 
 
     Vector<std::uint64_t> mDataOffsetArray;  // offsets relative to the beginning of the media data box

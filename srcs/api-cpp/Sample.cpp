@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,12 +15,17 @@
 #include <cstring>
 
 #include "DecoderConfiguration.h"
+#include "Heif.h"
+#include "heifreaderdatatypes.h"
+#include "heifwriterdatatypes.h"
 #include "EntityGroup.h"
 #include "H26xTools.h"
 #include "MetaItem.h"
 #include "Track.h"
 #include "heifreader.h"
 #include "heifwriter.h"
+#include "heifcommondatatypes.h"
+#include "helpers.h"
 
 using namespace HEIFPP;
 
@@ -194,8 +199,7 @@ MetaItem* Sample::getMetadata(uint32_t aIndex)
 
 const MetaItem* Sample::getMetadata(uint32_t aIndex) const
 {
-    if (mMetaItems.size() >= aIndex)
-    {
+    if(aIndex >= mMetaItems.size()){
         return nullptr;
     }
     return mMetaItems[aIndex];
@@ -268,7 +272,7 @@ const HEIF::SampleType& Sample::getSampleType() const
 {
     return mSampleType;
 }
-const HEIF::SequenceImageId& Sample::getId() const
+const HEIF::SequenceImageId& Sample::getId() const noexcept
 {
     return mId;
 }
@@ -321,6 +325,7 @@ HEIF::ErrorCode Sample::loadSampleData(const HEIF::SequenceId& aTrackId)
                 {
                 case HEIF::MediaFormat::AVC:
                 case HEIF::MediaFormat::HEVC:
+                case HEIF::MediaFormat::VVC:
                 {
                     error = NAL_State::convertToByteStream(mBuffer, mBufferSize) ? HEIF::ErrorCode::OK
                                                                                  : HEIF::ErrorCode::MEDIA_PARSING_ERROR;
@@ -335,15 +340,12 @@ HEIF::ErrorCode Sample::loadSampleData(const HEIF::SequenceId& aTrackId)
         }
         else
         {
-            HEIF_ASSERT(false);
+            HEIF_LOG_INVARIANT(false, "Sample::load: unhandled coded image item type");
         }
     }
     return error;
 }
 
-/** Sets the item data for the image
- * @param [in] aData: A pointer to the data.
- * @param [in] aLength: The amount of data. */
 void Sample::setItemData(const std::uint8_t* aData, std::uint64_t aLength)
 {
     mBufferSize = aLength;
@@ -353,13 +355,11 @@ void Sample::setItemData(const std::uint8_t* aData, std::uint64_t aLength)
     std::memcpy(mBuffer, aData, mBufferSize);
 }
 
-/** Returns the size of the sample data */
 std::uint64_t Sample::getSampleDataSize() const
 {
     return mBufferSize;
 }
 
-/** Returns a pointer to the sample data */
 const std::uint8_t* Sample::getSampleData()
 {
     if (mBuffer == nullptr)
@@ -381,16 +381,15 @@ const DecoderConfig* Sample::getDecoderConfiguration() const
 }
 HEIF::ErrorCode Sample::setDecoderConfiguration(DecoderConfig* aConfig)
 {
-    if (mConfig)
-    {
-        mConfig->unlink(this);
-    }
     if (aConfig)
     {
         if (aConfig->getMediaType() != mType)
         {
             return HEIF::ErrorCode::DECODER_CONFIGURATION_ERROR;
         }
+    }
+    if (mConfig){
+        mConfig->unlink(this);
     }
     mConfig = aConfig;
     if (mConfig)

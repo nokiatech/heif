@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -19,6 +19,8 @@
 
 #include "Helpers.h"
 #include "ImageSequence.h"
+#include "heifcommondatatypes.h"
+#include "jni_md.h"
 
 
 #define CLASS_NAME ImageSequence
@@ -27,14 +29,20 @@ extern "C"
 {
     JNI_METHOD_ARG(jlong, createContextNative, jobject javaHEIF)
     {
+        JNI_TRY
+        {
         UNUSED(self);
         NATIVE_HEIF(nativeHeif, javaHEIF);
         auto* nativeObject = new HEIFPP::ImageSequence(nativeHeif);
         return reinterpret_cast<jlong>(nativeObject);
+            }
+        JNI_CATCH_RETURN(0, "ImageSequence.createContextNative")
     }
 
     JNI_METHOD(jstring, getAuxiliaryTypeInfoNative)
     {
+        JNI_TRY
+        {
         NATIVE_SELF;
         const auto aux = nativeSelf->aux();
         if (aux == nullptr)
@@ -42,10 +50,14 @@ extern "C"
             return nullptr;
         }
         return env->NewStringUTF(aux->auxType.elements);
+            }
+        JNI_CATCH_RETURN(nullptr, "ImageSequence.getAuxiliaryTypeInfoNative")
     }
 
     JNI_METHOD_ARG(void, setAuxNative, jstring auxType)
     {
+        JNI_TRY
+        {
         NATIVE_SELF;
         const char* inCStr = env->GetStringUTFChars(auxType, nullptr);
         if (nullptr == inCStr)
@@ -60,5 +72,7 @@ extern "C"
         env->ReleaseStringUTFChars(auxType, inCStr);
 
         nativeSelf->setAux(&aux);
+            }
+        JNI_CATCH_RETURN_VOID("ImageSequence.setAuxNative")
     }
 }

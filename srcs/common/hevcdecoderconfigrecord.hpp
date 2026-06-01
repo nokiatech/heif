@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,8 +14,11 @@
 #ifndef HEVCDECODERCONFIGRECORD_HPP
 #define HEVCDECODERCONFIGRECORD_HPP
 
+#include "customallocator.hpp"
 #include "decoderconfigrecord.hpp"
 #include "hevccommondefs.hpp"
+
+#include <cstdint>
 
 namespace ISOBMFF
 {
@@ -51,7 +54,7 @@ public:
      * @param [in,out] bitstr Decoder configuration appended is appended to
      * bitstr.
      */
-    void writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const;
+    void writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const override;
 
     /**
      * Deserialize HevcDecoderConfigurationRecord from ISOBMFF::BitStream
@@ -87,7 +90,7 @@ public:
     std::uint16_t getAvgFrameRate() const;
 
     /* @brief Returns configuration parameter map for this record */
-    void getConfigurationMap(ConfigurationMap& aMap) const override;
+    void getConfigurationMap(ConfigurationMap& aMap, const uint16_t& nuh_layer_id) const override;
 
     /**
      * @return Returns chroma_format_idc value.
@@ -125,29 +128,29 @@ private:
         Vector<Vector<std::uint8_t>> nalList;
     };
 
-    std::uint8_t mConfigurationVersion;
-    std::uint8_t mGeneralProfileSpace;
-    std::uint8_t mGeneralTierFlag;
-    std::uint8_t mGeneralProfileIdc;
-    std::uint32_t mGeneralProfileCompatibilityFlags;
+    std::uint8_t mConfigurationVersion{1};
+    std::uint8_t mGeneralProfileSpace{0};
+    std::uint8_t mGeneralTierFlag{0};
+    std::uint8_t mGeneralProfileIdc{0};
+    std::uint32_t mGeneralProfileCompatibilityFlags{0};
     Vector<std::uint8_t> mGeneralConstraintIndicatorFlags;
-    std::uint8_t mGeneralLevelIdc;
-    std::uint16_t mMinSpatialSegmentationIdc;
-    std::uint8_t mParallelismType;
-    std::uint8_t mChromaFormat;
-    std::uint16_t mPicWidthInLumaSamples;   // this is not written to an mp4 file
-    std::uint16_t mPicHeightInLumaSamples;  // this is not written to an mp4 file
-    std::uint16_t mConfWinLeftOffset;       // this is not written to an mp4 file
-    std::uint16_t mConfWinRightOffset;      // this is not written to an mp4 file
-    std::uint16_t mConfWinTopOffset;        // this is not written to an mp4 file
-    std::uint16_t mConfWinBottomOffset;     // this is not written to an mp4 file
-    std::uint8_t mBitDepthLumaMinus8;
-    std::uint8_t mBitDepthChromaMinus8;
-    std::uint16_t mAvgFrameRate;
-    std::uint8_t mConstantFrameRate;
-    std::uint8_t mNumTemporalLayers;
-    std::uint8_t mTemporalIdNested;
-    std::uint8_t mLengthSizeMinus1;
+    std::uint8_t mGeneralLevelIdc{0};
+    std::uint16_t mMinSpatialSegmentationIdc{0};
+    std::uint8_t mParallelismType{0};
+    std::uint8_t mChromaFormat{0};
+    std::uint16_t mPicWidthInLumaSamples{0};   // this is not written to an mp4 file
+    std::uint16_t mPicHeightInLumaSamples{0};  // this is not written to an mp4 file
+    std::uint16_t mConfWinLeftOffset{0};       // this is not written to an mp4 file
+    std::uint16_t mConfWinRightOffset{0};      // this is not written to an mp4 file
+    std::uint16_t mConfWinTopOffset{0};        // this is not written to an mp4 file
+    std::uint16_t mConfWinBottomOffset{0};     // this is not written to an mp4 file
+    std::uint8_t mBitDepthLumaMinus8{0};
+    std::uint8_t mBitDepthChromaMinus8{0};
+    std::uint16_t mAvgFrameRate{0};
+    std::uint8_t mConstantFrameRate{0};
+    std::uint8_t mNumTemporalLayers{0};
+    std::uint8_t mTemporalIdNested{0};
+    std::uint8_t mLengthSizeMinus1{0};
     Vector<NALArray> mNalArray;
 };
 

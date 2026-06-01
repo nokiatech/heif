@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,9 @@
 #ifndef SAMPLESIZEBOX_HPP
 #define SAMPLESIZEBOX_HPP
 
-#include "bitstream.hpp"
 #include "customallocator.hpp"
 #include "fullbox.hpp"
+#include <cstdint>
 
 /** @brief SampleSize Box. Extends FullBox.
  *  @details 'stsz' box provides the Sample size information as defined in the ISOBMFF standard. */
@@ -59,8 +59,8 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    std::uint32_t mSampleSize;   ///< Default sample size. Non-zero if all samples have the same sample size.
-    std::uint32_t mSampleCount;  ///< Number of samples to be listed
+    std::uint32_t mSampleSize{0};   ///< Default sample size. Non-zero if all samples have the same sample size.
+    std::uint32_t mSampleCount{0};  ///< Number of samples to be listed
     mutable Vector<std::uint32_t> mEntrySize;  ///< Sample sizes of each sample.
 };
 

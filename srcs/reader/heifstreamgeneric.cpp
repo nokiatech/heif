@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -25,9 +25,9 @@ namespace HEIF
     StreamInterface* openFile(const char* filename)
     {
 #ifdef HEIF_USE_LINUX_FILESTREAM
-        return CUSTOM_NEW(LinuxStream, (filename));
+        return customNew<LinuxStream>(filename);
 #else
-        return CUSTOM_NEW(FileStream, (filename));
+        return customNew<FileStream>(filename);
 #endif  // HEIF_USE_LINUX_FILESTREAM
     }
 }  // namespace HEIF

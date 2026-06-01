@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -144,7 +144,7 @@ namespace HEIF
     {
     public:
         /// Enumerated list of Moov Features
-        enum Feature
+        enum Feature : std::uint8_t
         {
             HasMoovLevelMetaBox,
             HasCoverImage
@@ -180,11 +180,13 @@ namespace HEIF
     typedef Vector<std::uint8_t> DataVector;
     typedef Map<FourCC, Vector<SequenceId>> TypeToIdsMap;
     typedef Vector<EntityGrouping> Groupings;
-    typedef Map<DecoderSpecInfoType, DataVector> ParameterSetMap;
+    typedef MultiMap<DecoderSpecInfoType, DataVector> ParameterSetMap;
     typedef Vector<ItemPropertyInfo> PropertyTypeVector;
 
+    // NOLINTBEGIN(google-explicit-constructor) -- IdType uses intentional implicit conversion.
     IdType(std::uint32_t, Sequence);
     IdType(std::uint32_t, SampleDescriptionIndex);
+    // NOLINTEND(google-explicit-constructor)
 
     typedef std::pair<SegmentId, SequenceId> SegmentTrackId;
     typedef std::pair<SequenceId, SampleDescriptionIndex> TrackSampleEntryIndex;
@@ -273,6 +275,14 @@ namespace HEIF
         Array<SampleToMetadataItem> metadatas;  ///< Data from SampleToMetadataItemEntry ('stmi') sample group entries
         Array<DirectReferenceSamples>
             referenceSamples;    ///< Data of DirectReferenceSamplesList ('refs') sample group entries
+        Array<RectangularRegion>
+            rectangularRegions;                 ///< Data of RectangularRegionGroupEntry ('trif') sample group entries
+        Array<VvcSubpicOrder> vvcSubpicOrders;  ///< Data of VvcSubpicOrderEntry ('spor') sample group entries
+        Array<VvcSubpicLayoutMap>
+            vvcSubpicLayoutMaps;  ///< Data of VvcSubpicLayoutMapEntry ('sulm') sample group entries
+        Array<VvcMixedNalUnitTypePic>
+            vvcMixedNalUnitTypePics;  ///< Data of VvcMixedNALUnitTypePicEntry ('minp') sample group entries
+
         uint64_t maxSampleSize;  ///< Size of largest sample inside the track (can be used to allocate client side read
                                  ///< buffer).
         uint32_t timeScale;

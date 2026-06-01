@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -13,9 +13,13 @@
 
 #include "itempropertiesbox.hpp"
 
-#include "hevcconfigurationbox.hpp"
-#include "imagespatialextentsproperty.hpp"
-#include "log.hpp"
+#include "bitstream.hpp"
+
+#include "fourccint.hpp"
+#include <map>
+#include <stddef.h>
+#include <utility>
+#include <vector>
 
 ItemPropertiesBox::ItemPropertiesBox()
     : Box("iprp")
@@ -64,9 +68,14 @@ ItemPropertiesBox::PropertyType ItemPropertiesBox::getPropertyType(const Box* pr
         {"clap", PropertyType::CLAP}, {"colr", PropertyType::COLR}, {"crtt", PropertyType::CRTT},
         {"free", PropertyType::FREE}, {"hvcC", PropertyType::HVCC}, {"imir", PropertyType::IMIR},
         {"irot", PropertyType::IROT}, {"iscl", PropertyType::ISCL}, {"ispe", PropertyType::ISPE},
-        {"jpgC", PropertyType::JPGC}, {"mdft", PropertyType::MDFT}, {"pasp", PropertyType::PASP},
+        {"jpgC", PropertyType::JPGC}, {"lhvC", PropertyType::LHVC}, {"lsel", PropertyType::LSEL},
+        {"mdft", PropertyType::MDFT},
+        {"pasp", PropertyType::PASP},
         {"pixi", PropertyType::PIXI}, {"rloc", PropertyType::RLOC}, {"rref", PropertyType::RREF},
-        {"skip", PropertyType::FREE}, {"udes", PropertyType::UDES},
+        {"skip", PropertyType::FREE}, {"udes", PropertyType::UDES}, {"vvcC", PropertyType::VVCC},
+        {"amve", PropertyType::AMVE}, {"cclv", PropertyType::CCLV}, {"clli", PropertyType::CLLI},
+        {"mdcv", PropertyType::MDCV}, {"ndwt", PropertyType::NDWT}, {"reve", PropertyType::REVE},
+        {"subs", PropertyType::SUBS}, {"tols", PropertyType::TOLS}, {"oinf", PropertyType::OINF}
     };
 
     const auto found = TYPE_MAPPING.find(boxType);
@@ -121,11 +130,11 @@ ItemPropertiesBox::PropertyInfos ItemPropertiesBox::getItemProperties(const std:
     return propertyInfoVector;
 }
 
-uint16_t ItemPropertiesBox::addProperty(std::shared_ptr<Box> box,
+uint16_t ItemPropertiesBox::addProperty(const std::shared_ptr<Box>& box,
                                         const Vector<std::uint32_t>& itemIds,
                                         const bool essential)
 {
-    const std::uint16_t propertyIndex = mContainer.addProperty(std::move(box));
+    const std::uint16_t propertyIndex = mContainer.addProperty(box);
     associateProperty(propertyIndex, itemIds, essential);
     return propertyIndex;
 }

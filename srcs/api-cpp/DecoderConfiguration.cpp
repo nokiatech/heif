@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,11 +12,16 @@
 
 #include "DecoderConfiguration.h"
 
-#include <heifreader.h>
+#include "Heif.h"
+
 #include <heifwriter.h>
 
 #include "CodedImageItem.h"
 #include "Sample.h"
+#include "heifcommondatatypes.h"
+#include "heifreaderdatatypes.h"
+#include "helpers.h"
+#include <utility>
 
 using namespace HEIFPP;
 
@@ -24,7 +29,7 @@ DecoderConfig::DecoderConfig(Heif* aHeif, const HEIF::FourCC& aType)
     : mHeif(aHeif)
     , mContext(nullptr)
     , mType(aType)
-    , mConfig{Heif::InvalidDecoderConfig, {0}}
+    , mConfig{Heif::InvalidDecoderConfig, HEIF::Array<HEIF::DecoderSpecificInfo>(0)}
     , mLinks()
     , mSampleLinks()
     , mBuffer(nullptr)
@@ -73,7 +78,7 @@ void DecoderConfig::setId(const HEIF::DecoderConfigId& aId)
 {
     mConfig.decoderConfigId = aId;
 }
-const HEIF::DecoderConfigId& DecoderConfig::getId() const
+const HEIF::DecoderConfigId& DecoderConfig::getId() const noexcept
 {
     return mConfig.decoderConfigId;
 }
@@ -116,11 +121,8 @@ void DecoderConfig::link(CodedImageItem* aImage)
 }
 void DecoderConfig::unlink(CodedImageItem* aImage)
 {
-    if (!mLinks.removeLink(aImage))
-    {
-        // Tried to remove a non-existant link.
-        HEIF_ASSERT(false);
-    }
+    HEIF_LOG_INVARIANT(mLinks.removeLink(aImage),
+                       "DecoderConfig::unlink(CodedImageItem): link not found");
 }
 
 void DecoderConfig::link(Sample* aImage)
@@ -129,9 +131,6 @@ void DecoderConfig::link(Sample* aImage)
 }
 void DecoderConfig::unlink(Sample* aImage)
 {
-    if (!mSampleLinks.removeLink(aImage))
-    {
-        // Tried to remove a non-existant link.
-        HEIF_ASSERT(false);
-    }
+    HEIF_LOG_INVARIANT(mSampleLinks.removeLink(aImage),
+                       "DecoderConfig::unlink(Sample): link not found");
 }

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,16 +15,29 @@
 #define MP4AUDIODECODERCONFIGRECORD_HPP
 
 #include "decoderconfigrecord.hpp"
+
+#include <stdint.h>
+
+namespace ISOBMFF
+{
+    class BitStream;
+}
+
 class ElementaryStreamDescriptorBox;
 
 class MP4AudioDecoderConfigurationRecord : public DecoderConfigurationRecord
 {
 public:
-    MP4AudioDecoderConfigurationRecord(ElementaryStreamDescriptorBox& aBox);
+    explicit MP4AudioDecoderConfigurationRecord(ElementaryStreamDescriptorBox& aBox);
     ~MP4AudioDecoderConfigurationRecord() override = default;
 
     /* @brief Returns configuration parameter map for this record */
-    void getConfigurationMap(ConfigurationMap& aMap) const override;
+    void getConfigurationMap(ConfigurationMap& aMap, const uint16_t& nuh_layer_id) const override;
+
+    /** @brief Writes config to bitstream
+     *  @param bitstr [in, out] the bitstream to write to
+     */
+    void writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const override;
 
 protected:
     const ElementaryStreamDescriptorBox& mESDBox;

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,10 +12,28 @@
 
 #pragma once
 
-#include <Heif.h>
+#include <heifcommondatatypes.h>
+
+#include "ErrorCodes.h"
+
+#include <cstdint>
+#include <string>
+#include <utility>
+#include <vector>
+#include "heifcommondatatypes.h"
+
+namespace HEIF
+{
+    class Reader;
+    class Writer;
+}  // namespace HEIF
 
 namespace HEIFPP
 {
+    class EntityGroup;
+    class Heif;
+    class ItemProperty;
+
     /** @brief Item abstraction*/
     class Item
     {
@@ -24,6 +42,25 @@ namespace HEIFPP
         friend class ImageItem;
 
     public:
+        /**
+         * Destructor. Removes this Item from its owning `Heif` container's
+         * indexing and from any groups it belongs to.
+         *
+         * @warning **Do not call `delete` on a pointer returned by
+         *          `Heif::getItem()` / `getImage()` / `getMasterImage()` /
+         *          `getItemOfType()` etc.** Those pointers are owned by
+         *          the parent `Heif` instance -- see the ownership contract
+         *          on @ref HEIFPP::Heif.
+         *
+         * @warning **Do not destroy individual Items after the parent
+         *          `Heif` has already been destroyed.** This destructor
+         *          back-references `mHeif` to deregister itself; calling it
+         *          on an Item whose parent has already gone away is
+         *          undefined behavior (use-after-free of the parent).
+         *          The safe pattern is always to let `~Heif()` cascade the
+         *          deletion of every owned Item, or to call
+         *          `Heif::removeItem(item)` while the parent is still live.
+         */
         virtual ~Item();
 
         /** Sets the custom user data
@@ -33,7 +70,7 @@ namespace HEIFPP
         /** Returns a pointer to the custom user data. */
         const void* getContext() const;
 
-        const HEIF::ImageId& getId() const;
+        const HEIF::ImageId& getId() const noexcept;
 
         /** Returns the type of the item as a FourCC code. */
         const HEIF::FourCC& getType() const;
@@ -138,6 +175,7 @@ namespace HEIFPP
         std::string mContentType;
         std::string mContentEncoding;
 
+    public:
         Item& operator=(const Item&) = delete;
         Item& operator=(Item&&) = delete;
         Item(const Item&)       = delete;

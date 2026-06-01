@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,9 +14,8 @@
 #ifndef MOVIEFRAGMENTHEADERBOX_HPP
 #define MOVIEFRAGMENTHEADERBOX_HPP
 
-#include "bitstream.hpp"
-#include "customallocator.hpp"
 #include "fullbox.hpp"
+#include <stdint.h>
 
 /**
  * @brief Movie Fragment Header Box class
@@ -49,7 +48,7 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    uint32_t mSequenceNumber;
+    uint32_t mSequenceNumber{0};
 };
 
 #endif /* end of include guard: MOVIEFRAGMENTHEADERBOX_HPP */

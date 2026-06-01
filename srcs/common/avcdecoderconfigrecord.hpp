@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,7 +15,10 @@
 #define AVCDECODERCONFIGRECORD_HPP
 
 #include "avccommondefs.hpp"
+#include "customallocator.hpp"
 #include "decoderconfigrecord.hpp"
+
+#include <cstdint>
 
 namespace ISOBMFF
 {
@@ -50,7 +53,7 @@ public:
      * Serialize decoder configuration to ISOBMFF::BitStream.
      * @param [in,out] bitstr Decoder configuration appended is appended to bitstr.
      */
-    void writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const;
+    void writeDecConfigRecord(ISOBMFF::BitStream& bitstr) const override;
 
     /**
      * Deserialize AvcDecoderConfigurationRecord from ISOBMFF::BitStream
@@ -114,7 +117,7 @@ public:
     void setBitDepthChromaMinus8(std::uint8_t bitDepthChromaMinus8);
 
     /* @brief Returns configuration parameter map for this record */
-    void getConfigurationMap(ConfigurationMap& aMap) const override;
+    void getConfigurationMap(ConfigurationMap& aMap, const uint16_t& nuh_layer_id) const override;
 
 private:
     // Member variable descriptions can be found from the Advanced Video Coding (AVC) specification.
@@ -125,18 +128,18 @@ private:
         Vector<Vector<std::uint8_t>> nalList;
     };
 
-    std::uint8_t mConfigurationVersion;
-    std::uint8_t mAvcProfileIndication;
-    std::uint8_t mProfileCompatibility;
-    std::uint8_t mAvcLevelIndication;
-    std::uint8_t mLengthSizeMinus1;
+    std::uint8_t mConfigurationVersion{1};
+    std::uint8_t mAvcProfileIndication{66};
+    std::uint8_t mProfileCompatibility{128};
+    std::uint8_t mAvcLevelIndication{30};
+    std::uint8_t mLengthSizeMinus1{3};
 
-    std::uint8_t mChromaFormat;
-    std::uint8_t mBitDepthLumaMinus8;
-    std::uint8_t mBitDepthChromaMinus8;
+    std::uint8_t mChromaFormat{0};
+    std::uint8_t mBitDepthLumaMinus8{0};
+    std::uint8_t mBitDepthChromaMinus8{0};
 
-    std::uint16_t mPicWidth;
-    std::uint16_t mPicHeight;
+    std::uint16_t mPicWidth{0};
+    std::uint16_t mPicHeight{0};
 
     Vector<NALArray> mNalArray;
 

@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -37,14 +37,14 @@ namespace MOVIEFRAGMENTS
         static SampleFlags read(ISOBMFF::BitStream& bitstr)
         {
             SampleFlags r;
-            r.flags.reserved                    = bitstr.readBits(4);
-            r.flags.is_leading                  = bitstr.readBits(2);
-            r.flags.sample_depends_on           = bitstr.readBits(2);
-            r.flags.sample_is_depended_on       = bitstr.readBits(2);
-            r.flags.sample_has_redundancy       = bitstr.readBits(2);
-            r.flags.sample_padding_value        = bitstr.readBits(3);
-            r.flags.sample_is_non_sync_sample   = bitstr.readBits(1);
-            r.flags.sample_degradation_priority = bitstr.readBits(16);
+            r.flags.reserved                    = bitstr.readBits(4)  & 0xFu;
+            r.flags.is_leading                  = bitstr.readBits(2)  & 0x3u;
+            r.flags.sample_depends_on           = bitstr.readBits(2)  & 0x3u;
+            r.flags.sample_is_depended_on       = bitstr.readBits(2)  & 0x3u;
+            r.flags.sample_has_redundancy       = bitstr.readBits(2)  & 0x3u;
+            r.flags.sample_padding_value        = bitstr.readBits(3)  & 0x7u;
+            r.flags.sample_is_non_sync_sample   = bitstr.readBits(1)  & 0x1u;
+            r.flags.sample_degradation_priority = bitstr.readBits(16) & 0xFFFFu;
             return r;
         }
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,7 +12,25 @@
 
 #pragma once
 
-#include <Heif.h>
+#include <heifcommondatatypes.h>
+#include <heifreaderdatatypes.h>
+#include <heifwriterdatatypes.h>
+
+#include <helpers.h>
+
+#include <cstdint>
+
+namespace HEIF
+{
+    class Writer;
+}  // namespace HEIF
+
+namespace HEIFPP
+{
+    class Heif;
+    class CodedImageItem;
+    class Sample;
+}  // namespace HEIFPP
 
 namespace HEIFPP
 {
@@ -26,7 +44,7 @@ namespace HEIFPP
         virtual ~DecoderConfig();
 
         /** Returns the id of the decoder config. */
-        const HEIF::DecoderConfigId& getId() const;
+        const HEIF::DecoderConfigId& getId() const noexcept;
 
         /** Returns the media format of the decoder configuration */
         HEIF::MediaFormat getMediaFormat() const;
@@ -82,7 +100,7 @@ namespace HEIFPP
         std::uint8_t* mBuffer;
         std::uint32_t mBufferSize;
 
-    private:
+    public:
         DecoderConfig& operator=(const DecoderConfig&) = delete;
         DecoderConfig& operator=(DecoderConfig&&) = delete;
         DecoderConfig(const DecoderConfig&)       = delete;

@@ -1,7 +1,7 @@
 /*
  * This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -11,15 +11,20 @@
  */
 #pragma once
 
+#include <cstdint>
+#include <map>
+#include <utility>
+
 #include "EntityGroup.h"
-#include "Heif.h"
 
 namespace HEIFPP
 {
+    class Heif;
+    class Sample;
     class EquivalenceGroup : public EntityGroup
     {
     public:
-        EquivalenceGroup(Heif* aHeif);
+        explicit EquivalenceGroup(Heif* aHeif);
         void addSample(Sample* aSample, std::int16_t aOffset, std::uint16_t aMultiplier);
         std::int16_t getOffset(Sample* aItem);
         std::uint16_t getMultiplier(Sample* aItem);
@@ -29,7 +34,7 @@ namespace HEIFPP
     protected:
         std::map<Sample*, std::pair<std::int16_t, std::uint16_t>> mOffsets;
 
-    private:
+    public:
         EquivalenceGroup& operator=(const EquivalenceGroup&) = delete;
         EquivalenceGroup& operator=(EquivalenceGroup&&) = delete;
         EquivalenceGroup(const EquivalenceGroup&)       = delete;

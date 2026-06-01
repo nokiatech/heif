@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,7 +14,7 @@
 #ifndef TRACKRUNBOX_HPP
 #define TRACKRUNBOX_HPP
 
-#include "bitstream.hpp"
+#include <cstdint>
 #include "customallocator.hpp"
 #include "fullbox.hpp"
 #include "moviefragmentsdatatypes.hpp"
@@ -26,7 +26,7 @@
 class TrackRunBox : public FullBox
 {
 public:
-    TrackRunBox(uint8_t version = 0, std::uint32_t tr_flags = 0);
+    explicit TrackRunBox(uint8_t version = 0, std::uint32_t tr_flags = 0);
     ~TrackRunBox() override = default;
 
     struct SampleDetailsVersion0
@@ -51,7 +51,7 @@ public:
         SampleDetailsVersion1 version1;
     };
 
-    enum TrackRunFlags
+    enum TrackRunFlags : std::uint16_t
     {
         DataOffsetPresent                   = 0x000001,
         FirstSampleFlagsPresent             = 0x000004,
@@ -110,12 +110,12 @@ public:
     void parseBox(ISOBMFF::BitStream& bitstr) override;
 
 private:
-    bool mSampleDefaultsSet;
+    bool mSampleDefaultsSet{false};
     MOVIEFRAGMENTS::SampleDefaults mSampleDefaults;
 
-    uint32_t mSampleCount;
+    uint32_t mSampleCount{0};
     // optional fields:
-    int32_t mDataOffset;
+    int32_t mDataOffset{0};
     MOVIEFRAGMENTS::SampleFlags mFirstSampleFlags;
     Vector<SampleDetails> mSampleDetails;
 };

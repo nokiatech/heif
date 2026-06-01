@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -15,9 +15,9 @@
 #define DATAINFORMATIONBOX_HPP
 
 #include "bbox.hpp"
-#include "bitstream.hpp"
-#include "customallocator.hpp"
 #include "datareferencebox.hpp"
+#include <cstdint>
+#include <memory>
 
 
 /** @brief Data Information Box class
@@ -32,7 +32,7 @@ public:
 
     /** @brief Add a Data Entry Box. there can be exactly one Data Entry Box.
      *  @param [in] dataEntryBox pointer to the DataEntryBox */
-    std::uint16_t addDataEntryBox(std::shared_ptr<DataEntryBox> dataEntryBox);
+    std::uint16_t addDataEntryBox(const std::shared_ptr<DataEntryBox>& dataEntryBox);
 
     /** @brief Creates the bitstream that represents the box in the ISOBMFF file
      *  @param [out] bitstr Bitstream that contains the box data. */

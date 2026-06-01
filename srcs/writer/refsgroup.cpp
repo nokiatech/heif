@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -14,7 +14,6 @@
 #include "refsgroup.hpp"
 
 #include <algorithm>
-#include <iterator>
 #include <set>
 #include <tuple>
 
@@ -22,6 +21,9 @@
 #include "samplegroupdescriptionbox.hpp"
 #include "samplegroupdescriptionentry.hpp"
 #include "sampletogroupbox.hpp"
+#include <memory>
+#include <utility>
+#include <vector>
 
 RefsGroup::RefsGroup()
     : SampleGroup("refs")
@@ -86,7 +88,7 @@ void RefsGroup::fillSgpd(SampleGroupDescriptionBox* sgpd)
     allotId();
     makeSet();
 
-    sgpd->FullBox::setVersion(1);
+    sgpd->setVersion(1);
     sgpd->setGroupingType(mGroupingType);
     for (const auto& entry : mEntrySet)
     {
@@ -94,13 +96,13 @@ void RefsGroup::fillSgpd(SampleGroupDescriptionBox* sgpd)
         Vector<std::uint32_t> refs;
         std::tie(tag, refs) = entry;
 
-        UniquePtr<DirectReferenceSamplesList, SampleGroupDescriptionEntry> refsEntry(
-            CUSTOM_NEW(DirectReferenceSamplesList, ()));
+        auto refsEntry =
+            makeCustomUnique<DirectReferenceSamplesList, SampleGroupDescriptionEntry>();
         refsEntry->setSampleId(tag);
         refsEntry->setDirectReferenceSampleIds(refs);
         sgpd->addEntry(std::move(refsEntry));
 
-        mIdxEntry.push_back(std::make_tuple(tag, refs));
+        mIdxEntry.emplace_back(tag, refs);
     }
 }
 
@@ -135,12 +137,12 @@ void RefsGroup::fillSbgp(SampleToGroupBox& sbgp)
         }
         else
         {
-            runsList.push_back(std::make_tuple(prevIdx, idxRuns));
+            runsList.emplace_back(prevIdx, idxRuns);
             prevIdx = currIdx;
             idxRuns = 1;
         }
     }
-    runsList.push_back(std::make_tuple(prevIdx, idxRuns));
+    runsList.emplace_back(prevIdx, idxRuns);
 
     for (auto entry : runsList)
     {

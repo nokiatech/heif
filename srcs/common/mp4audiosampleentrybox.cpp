@@ -1,6 +1,6 @@
 /* This file is part of Nokia HEIF library
  *
- * Copyright (c) 2015-2025 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (c) 2015-2026 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  *
  * Contact: heif@nokia.com
  *
@@ -12,8 +12,11 @@
  */
 
 #include "mp4audiosampleentrybox.hpp"
+#include "customallocator.hpp"
 
-#include <string>
+#include "bitstream.hpp"
+
+#include "fourccint.hpp"
 
 MP4AudioSampleEntryBox::MP4AudioSampleEntryBox()
     : AudioSampleEntryBox("mp4a")
@@ -58,7 +61,7 @@ void MP4AudioSampleEntryBox::parseBox(BitStream& bitstr)
 
 MP4AudioSampleEntryBox* MP4AudioSampleEntryBox::clone() const
 {
-    return CUSTOM_NEW(MP4AudioSampleEntryBox, (*this));
+    return customNew<MP4AudioSampleEntryBox>(*this);
 }
 
 const Box* MP4AudioSampleEntryBox::getConfigurationBox() const
